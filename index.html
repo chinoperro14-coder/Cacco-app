@@ -338,7 +338,60 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 /* Ocultar restos de la versión anterior */
 .lw,.lh,.ll,.lo,.ld,.lcard-old,.lsub,.lroles,.rbtn,.rico,.rnom,.rdsc{all:unset;}
 
-@media(max-width:768px){.sid{position:fixed;top:60px;left:0;height:calc(100vh - 60px);z-index:300;transform:translateX(-100%);transition:transform .25s ease;box-shadow:4px 0 16px rgba(0,0,0,.25);}.sid.open{transform:translateX(0);}.sid-overlay{display:none;position:fixed;inset:0;top:60px;background:rgba(0,0,0,.4);z-index:299;}.sid-overlay.open{display:block;}.sg{grid-template-columns:1fr 1fr;}.fr{grid-template-columns:1fr;}.cont{padding:16px;}header{padding:0 16px;}.hdep{display:none;}.hmb{display:flex!important;}}
+@media(max-width:768px){
+  /* Sidebar drawer */
+  .sid{position:fixed;top:60px;left:0;height:calc(100vh - 60px);z-index:300;transform:translateX(-100%);transition:transform .25s ease;box-shadow:4px 0 16px rgba(0,0,0,.25);}
+  .sid.open{transform:translateX(0);}
+  .sid-overlay{display:none;position:fixed;inset:0;top:60px;background:rgba(0,0,0,.4);z-index:299;}
+  .sid-overlay.open{display:block;}
+  /* Header */
+  header{padding:0 12px;}
+  .hdep{display:none;}
+  .hmb{display:flex!important;}
+  /* Layout */
+  .cont{padding:12px;}
+  .alay{display:block;}
+  /* Stats grids */
+  .sg{grid-template-columns:1fr 1fr;}
+  .sg[style*="repeat(3"]{grid-template-columns:1fr 1fr 1fr!important;}
+  /* Forms */
+  .fr{grid-template-columns:1fr;}
+  /* Section header */
+  .sh2{flex-direction:column;align-items:flex-start;gap:10px;margin-bottom:14px;}
+  .sh2>div:last-child{width:100%;display:flex;flex-wrap:wrap;gap:8px;}
+  /* Tables — horizontal scroll */
+  .tc{overflow-x:auto;}
+  table{min-width:480px;}
+  th,td{padding:9px 12px;}
+  /* Task cards */
+  .tcard-cab{padding:12px 14px;}
+  .tcard-body{padding:8px 14px 14px;}
+  .tcard-tit{font-size:14px;}
+  .tcard-meta{flex-wrap:wrap;gap:5px;}
+  /* Calendar — compact */
+  .cgrid{font-size:10px;}
+  .cdn{padding:6px 2px;font-size:9px;}
+  .cd{padding:4px 3px;min-height:52px;}
+  .cdnum{font-size:11px;margin-bottom:2px;}
+  .cev{font-size:9px;padding:2px 4px;margin-bottom:2px;}
+  /* Modals */
+  .mo,.molg{max-width:100%;border-radius:12px 12px 0 0;position:fixed;bottom:0;left:0;right:0;top:auto;max-height:88vh;}
+  .mov{align-items:flex-end;padding:0;}
+  .mcab{padding:16px 18px 14px;}
+  .mbody{padding:16px 18px;}
+  .mpie{padding:14px 18px;flex-direction:column-reverse;gap:8px;}
+  .mpie .btn{width:100%;justify-content:center;}
+  /* Report tabs */
+  .rtabs{flex-wrap:wrap;width:100%;}
+  .rtab{flex:1;text-align:center;padding:7px 10px;}
+  /* Equipo/Horas grids — 1 col on very small */
+  .eqgrid{grid-template-columns:1fr;}
+  /* Grow rows (subtask assignment) */
+  .grow{flex-direction:column;align-items:flex-start;gap:8px;}
+  .grow .btn-comp,.grow .btn-hecho{width:100%;justify-content:center;}
+  /* Historial items */
+  .hitem{flex-direction:column;gap:6px;}
+}
 </style>
 </head>
 <body>
