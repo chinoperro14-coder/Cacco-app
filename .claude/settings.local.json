@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node app.js)",
+      "Bash(curl -s -X POST http://localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"coordinadora@cacco.com\",\"password\":\"1234\"}')",
+      "Bash(lsof -ti:3000)",
+      "Bash(xargs kill -9)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('OK' if d.get\\('token'\\) else 'FALLO: '+str\\(d\\)\\)\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/login -H 'Content-Type: application/json' -d '{\"email\":\"coordinadora@cacco.com\",\"password\":\"nueva1234\"}')",
+      "Bash(python3 -c ' *)",
+      "Bash(curl -s -X POST http://localhost:3000/api/login -H \"Content-Type: application/json\" -d '{\"email\":\"coordinadora@cacco.com\",\"password\":\"nueva1234\"}')",
+      "Bash(node -e ' *)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(node /Users/mikegraph/Desktop/cacco-app/app.js)",
+      "Bash(pkill -f \"node app.js\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/)",
+      "Bash(node -e \"const jwt=require\\('jsonwebtoken'\\);console.log\\(jwt.sign\\({id:'t',email:'x',nivel:'lider'},'cacco_secret_2024',{expiresIn:'1h'}\\)\\)\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/reporte-pdf -H 'Content-Type: application/json' -H 'Authorization: Bearer __CMDSUB_OUTPUT__' -d '{\"tipo\":\"semanal\",\"generadoPor\":\"Soporte\"}' -o ~/Desktop/CACCO_Semanal_v3.pdf -w '%{http_code}')",
+      "Read(//Users/mikegraph/Desktop/**)",
+      "mcp__visualize__read_me",
+      "mcp__visualize__show_widget",
+      "Bash(node -e \"const j=require\\('jsonwebtoken'\\);console.log\\(j.sign\\({id:'t',nivel:'lider'},'cacco_secret_2024',{expiresIn:'1h'}\\)\\)\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/reporte-pdf -H 'Content-Type: application/json' -H 'Authorization: Bearer __CMDSUB_OUTPUT__' -d '{\"tipo\":\"diario\",\"generadoPor\":\"Maria Coordinadora\"}' -o ~/Desktop/CACCO_nuevo.pdf -w '%{http_code}')",
+      "Bash(open -a \"Adobe Acrobat\" ~/Desktop/CACCO_nuevo.pdf)",
+      "Bash(pkill -9 -f \"node app\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/reporte-pdf -H 'Content-Type: application/json' -H 'Authorization: Bearer __CMDSUB_OUTPUT__' -d '{\"tipo\":\"diario\",\"generadoPor\":\"Maria Coordinadora\"}' -o ~/Desktop/CACCO_final.pdf -w '%{http_code}')",
+      "Bash(pkill -9 -f node)",
+      "Bash(curl -s -X POST http://localhost:3000/api/reporte-pdf -H 'Content-Type: application/json' -H 'Authorization: Bearer __TRACKED_VAR__' -d '{\"tipo\":\"diario\",\"generadoPor\":\"Maria Coordinadora\"}' -o /tmp/CACCO_check.pdf -w '%{http_code}')",
+      "Bash(cp /tmp/CACCO_check.pdf ~/Desktop/CACCO_NUEVO_FORMATO.pdf)",
+      "Bash(open ~/Desktop/CACCO_NUEVO_FORMATO.pdf)",
+      "Bash(npm install *)",
+      "Bash(node migrar.js)"
+    ]
+  }
+}

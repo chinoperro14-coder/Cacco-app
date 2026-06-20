@@ -1,0 +1,1008 @@
+{
+  "tareas": [
+    {
+      "id": "mqlhhtqqulhrtdfd2o9",
+      "titulo": "PARTIDO PANAMA VS INGLATERRA",
+      "etiquetas": [
+        "Evento externo"
+      ],
+      "prioridad": "Alta",
+      "fecha": "2026-06-27",
+      "hora": "16:00",
+      "notas": "PARTIDO DE PANAMA VS INGLATERRA -PATIO INTERNO.",
+      "recurrencia": "ninguna",
+      "creadaEn": "2026-06-19",
+      "creadaPor": "MIGUEL ANTONIO",
+      "secciones": {
+        "Audiovisual": {
+          "responsables": [
+            "u4"
+          ],
+          "estado": "Pendiente",
+          "completadoPor": null,
+          "completadoEn": null
+        },
+        "Redes Sociales": {
+          "responsables": [
+            "u2",
+            "mql2kw986485wvr8lsk"
+          ],
+          "estado": "Pendiente",
+          "completadoPor": null,
+          "completadoEn": null
+        }
+      },
+      "redesSociales": {
+        "instagram": {
+          "publicaciones": 1,
+          "publicaciones_comp": 0,
+          "reels": 1,
+          "reels_comp": 0,
+          "historias": 10,
+          "historias_comp": 0
+        },
+        "facebook": {
+          "publicaciones": 0,
+          "publicaciones_comp": 0,
+          "historias": 0,
+          "historias_comp": 0
+        },
+        "tiktok": {
+          "videos": 0,
+          "videos_comp": 0,
+          "lives": 0,
+          "lives_comp": 0
+        }
+      },
+      "mediosData": null,
+      "entregables": []
+    },
+    {
+      "id": "mqlheu0w52zrk9edq4q",
+      "titulo": "El País de los SinCeros",
+      "etiquetas": [
+        "Evento externo"
+      ],
+      "prioridad": "Baja",
+      "fecha": "2026-06-26",
+      "hora": "19:00",
+      "notas": "El País de los SinCeros - Auditorio (Función a las 7:00 PM), viernes, 26 jun · 17:00–21:30",
+      "recurrencia": "ninguna",
+      "creadaEn": "2026-06-19",
+      "creadaPor": "MIGUEL ANTONIO",
+      "secciones": {
+        "Audiovisual": {
+          "responsables": [
+            "u3",
+            "u4"
+          ],
+          "estado": "Pendiente",
+          "completadoPor": null,
+          "completadoEn": null
+        },
+        "Protocolo": {
+          "responsables": [],
+          "estado": "Pendiente",
+          "completadoPor": null,
+          "completadoEn": null
+        },
+        "Diseño": {
+          "responsables": [],
+          "estado": "Pendiente",
+          "completadoPor": null,
+          "completadoEn": null
+        },
+        "Redes Sociales": {
+          "responsables": [
+            "u2",
+            "mql2kw986485wvr8lsk"
+          ],
+          "estado": "Pendiente",
+          "completadoPor": null,
+          "completadoEn": null
+        }
+      },
+      "redesSociales": {
+        "instagram": {
+          "publicaciones": 0,
+          "publicaciones_comp": 0,
+          "reels": 0,
+          "reels_comp": 0,
+          "historias": 0,
+          "historias_comp": 0
+        },
+        "facebook": {
+          "publicaciones": 0,
+          "publicaciones_comp": 0,
+          "historias": 0,
+          "historias_comp": 0
+        },
+        "tiktok": {
+          "videos": 0,
+          "videos_comp": 0,
+          "lives": 0,
+          "lives_comp": 0
+        }
+      },
+      "mediosData": null,
+      "entregables": []
+    },
+    {
+      "id": "mqlhd98l0m90qx8f7zo",
+      "titulo": "PULSO",
+      "etiquetas": [
+        "MICULTURA"
+      ],
+      "prioridad": "Alta",
+      "fecha": "2026-06-24",
+      "hora": "11:00",
+      "notas": "Presentación de danza \"ENLACES\" - Auditorio, miércoles, 24 jun · 08:00–12:30",
+      "recurrencia": "ninguna",
+      "creadaEn": "2026-06-19",
+      "creadaPor": "MIGUEL ANTONIO",
+      "secciones": {
+        "Audiovisual": {
+          "responsables": [
+            "u3",
+            "u4"
+          ],
+          "estado": "Pendiente",
+          "completadoPor": null,
+          "completadoEn": null
+        },
+        "Redes Sociales": {
+          "responsables": [
+            "u2",
+            "mql2kw986485wvr8lsk"
+          ],
+          "estado": "Pendiente",
+          "completadoPor": null,
+          "completadoEn": null
+        }
+      },
+      "redesSociales": {
+        "instagram": {
+          "publicaciones": 1,
+          "publicaciones_comp": 0,
+          "tipo_publicaciones": "Carrusel",
+          "reels": 1,
+          "reels_comp": 0,
+          "tipo_reels": "Carrusel",
+          "historias": 0,
+          "historias_comp": 0,
+          "tipo_historias": "Carrusel"
+        },
+        "facebook": {
+          "publicaciones": 0,
+          "publicaciones_comp": 0,
+          "tipo_publicaciones": "Carrusel",
+          "historias": 0,
+          "historias_comp": 0,
+          "tipo_historias": "Carrusel"
+        },
+        "tiktok": {
+          "videos": 1,
+          "videos_comp": 0,
+          "tipo_videos": "Carrusel",
+          "lives": 0,
+          "lives_comp": 0,
+          "tipo_lives": "Carrusel"
+        }
+      },
+      "mediosData": null,
+      "entregables": []
+    },
+    {
+      "id": "mqlh8fttuq74qyatuye",
+      "titulo": "EMBAJADA DE CHINA",
+      "etiquetas": [
+        "Evento externo",
+        "ABEL"
+      ],
+      "prioridad": "Alta",
+      "fecha": "2026-06-22",
+      "hora": "18:30",
+      "notas": "Presentación cultural y artística de un grupo proveniente de Chengdu \"Embajada de la República Popular de China en Panamá\" (Función a las 7:00 - Palabras por Abel) - Auditorio, lunes, 22 jun · 13:00–21:00",
+      "recurrencia": "ninguna",
+      "creadaEn": "2026-06-19",
+      "creadaPor": "MIGUEL ANTONIO",
+      "secciones": {
+        "Audiovisual": {
+          "responsables": [
+            "u3",
+            "u4"
+          ],
+          "estado": "Pendiente",
+          "completadoPor": null,
+          "completadoEn": null
+        },
+        "Protocolo": {
+          "responsables": [
+            "u2"
+          ],
+          "estado": "Pendiente",
+          "completadoPor": null,
+          "completadoEn": null
+        },
+        "Redes Sociales": {
+          "responsables": [
+            "u2",
+            "mql2kw986485wvr8lsk"
+          ],
+          "estado": "Pendiente",
+          "completadoPor": null,
+          "completadoEn": null
+        }
+      },
+      "redesSociales": {
+        "instagram": {
+          "publicaciones": 1,
+          "publicaciones_comp": 0,
+          "tipo_publicaciones": "Video",
+          "reels": 1,
+          "reels_comp": 0,
+          "tipo_reels": "Video",
+          "historias": 10,
+          "historias_comp": 0,
+          "tipo_historias": "Video"
+        },
+        "facebook": {
+          "publicaciones": 0,
+          "publicaciones_comp": 0,
+          "tipo_publicaciones": "Video",
+          "historias": 0,
+          "historias_comp": 0,
+          "tipo_historias": "Video"
+        },
+        "tiktok": {
+          "videos": 0,
+          "videos_comp": 0,
+          "tipo_videos": "Video",
+          "lives": 0,
+          "lives_comp": 0,
+          "tipo_lives": "Video"
+        }
+      },
+      "mediosData": null,
+      "entregables": []
+    },
+    {
+      "id": "mqlh5iyk41v60ldkpmr",
+      "titulo": "THE GREAT AMERICAN FAIR",
+      "etiquetas": [
+        "Evento externo"
+      ],
+      "prioridad": "Media",
+      "fecha": "2026-06-21",
+      "hora": "11:00",
+      "notas": "Feria con actividades culturales y comerciales de EE.UU.",
+      "recurrencia": "ninguna",
+      "creadaEn": "2026-06-19",
+      "creadaPor": "MIGUEL ANTONIO",
+      "secciones": {
+        "Audiovisual": {
+          "responsables": [
+            "u3",
+            "u4"
+          ],
+          "estado": "Pendiente",
+          "completadoPor": null,
+          "completadoEn": null
+        },
+        "Redes Sociales": {
+          "responsables": [
+            "u2"
+          ],
+          "estado": "Pendiente",
+          "completadoPor": null,
+          "completadoEn": null
+        },
+        "Medios": {
+          "responsables": [],
+          "estado": "Pendiente",
+          "completadoPor": null,
+          "completadoEn": null
+        }
+      },
+      "redesSociales": {
+        "instagram": {
+          "publicaciones": 0,
+          "publicaciones_comp": 0,
+          "reels": 0,
+          "reels_comp": 0,
+          "historias": 0,
+          "historias_comp": 0
+        },
+        "facebook": {
+          "publicaciones": 0,
+          "publicaciones_comp": 0,
+          "historias": 0,
+          "historias_comp": 0
+        },
+        "tiktok": {
+          "videos": 0,
+          "videos_comp": 0,
+          "lives": 0,
+          "lives_comp": 0
+        }
+      },
+      "mediosData": {
+        "radio": {
+          "notas": 0,
+          "notas_comp": 0,
+          "entrevistas": 0,
+          "entrevistas_comp": 0
+        },
+        "tv": {
+          "notas": 0,
+          "notas_comp": 0,
+          "entrevistas": 0,
+          "entrevistas_comp": 0
+        },
+        "prensa": {
+          "notas": 2,
+          "notas_comp": 0,
+          "comunicados": 2,
+          "comunicados_comp": 0
+        },
+        "redaccion": {
+          "articulos": 0,
+          "articulos_comp": 0,
+          "notas": 0,
+          "notas_comp": 0
+        }
+      },
+      "entregables": []
+    },
+    {
+      "id": "mqlgbmj7gxer196xbvn",
+      "titulo": "COMUNIDAD JUVENIL - CACCO",
+      "etiquetas": [
+        "COMUNIDAD JUVENIL"
+      ],
+      "prioridad": "Alta",
+      "fecha": "2026-06-20",
+      "hora": "13:30",
+      "notas": "INICIA CON ACTIVIDAD DE INTEGRACIÓN, CINE DEBATE Y CONVERSATORIO.",
+      "recurrencia": "ninguna",
+      "creadaEn": "2026-06-19",
+      "creadaPor": "MIGUEL ANTONIO",
+      "secciones": {
+        "Audiovisual": {
+          "responsables": [
+            "u3",
+            "u4"
+          ],
+          "estado": "Pendiente",
+          "completadoPor": null,
+          "completadoEn": null
+        },
+        "Redes Sociales": {
+          "responsables": [
+            "mql2kw986485wvr8lsk"
+          ],
+          "estado": "Pendiente",
+          "completadoPor": null,
+          "completadoEn": null
+        }
+      },
+      "redesSociales": {
+        "instagram": {
+          "publicaciones": 0,
+          "publicaciones_comp": 0,
+          "reels": 0,
+          "reels_comp": 0,
+          "historias": 5,
+          "historias_comp": 0
+        },
+        "facebook": {
+          "publicaciones": 0,
+          "publicaciones_comp": 0,
+          "historias": 0,
+          "historias_comp": 0
+        },
+        "tiktok": {
+          "videos": 0,
+          "videos_comp": 0,
+          "lives": 0,
+          "lives_comp": 0
+        }
+      },
+      "mediosData": {
+        "radio": {
+          "notas": 0,
+          "notas_comp": 0,
+          "entrevistas": 0,
+          "entrevistas_comp": 0
+        },
+        "tv": {
+          "notas": 0,
+          "notas_comp": 0,
+          "entrevistas": 0,
+          "entrevistas_comp": 0
+        },
+        "prensa": {
+          "notas": 0,
+          "notas_comp": 0,
+          "comunicados": 0,
+          "comunicados_comp": 0
+        },
+        "redaccion": {
+          "articulos": 0,
+          "articulos_comp": 0,
+          "notas": 0,
+          "notas_comp": 0
+        }
+      },
+      "entregables": []
+    }
+  ],
+  "horasExtra": [],
+  "equipo": [
+    {
+      "id": "u1",
+      "nombre": "SOPORTE",
+      "cargo": "SOPORTE",
+      "email": "soporte@cacco.org",
+      "nivel": "lider",
+      "ingreso": "2024-01-01",
+      "foto": "",
+      "cats": [
+        "Audiovisual",
+        "Protocolo",
+        "Diseño",
+        "Redes Sociales",
+        "Medios"
+      ],
+      "secciones": [
+        "Audiovisual",
+        "Protocolo",
+        "Diseño",
+        "Redes Sociales",
+        "Medios"
+      ]
+    },
+    {
+      "id": "u2",
+      "nombre": "YESAULI GUTIERREZ",
+      "cargo": "RELACIONES PUBLICAS",
+      "email": "ygutierrez@cacco.org",
+      "nivel": "colaborador",
+      "ingreso": "2024-01-01",
+      "foto": "",
+      "cats": [
+        "Protocolo",
+        "Redes Sociales",
+        "Medios"
+      ],
+      "secciones": [
+        "Protocolo",
+        "Redes Sociales",
+        "Medios"
+      ]
+    },
+    {
+      "id": "u3",
+      "nombre": "MIGUEL ANTONIO",
+      "cargo": "COORDINADOR AUDIOVISUAL",
+      "email": "mantonio@cacco.org",
+      "nivel": "editor",
+      "ingreso": "2024-02-12",
+      "foto": "",
+      "cats": [
+        "Audiovisual"
+      ],
+      "secciones": [
+        "Audiovisual"
+      ]
+    },
+    {
+      "id": "u4",
+      "nombre": "FELIPE ANAYA",
+      "cargo": "Fotógrafo",
+      "email": "fanaya@cacco.org",
+      "nivel": "colaborador",
+      "ingreso": "2024-03-01",
+      "foto": "",
+      "cats": [
+        "Audiovisual"
+      ],
+      "secciones": [
+        "Audiovisual"
+      ]
+    },
+    {
+      "id": "u5",
+      "nombre": "ANA RUSSELL",
+      "cargo": "Diseñadora Grafica",
+      "email": "arussel@cacco.org",
+      "nivel": "colaborador",
+      "ingreso": "2024-02-10",
+      "foto": "",
+      "cats": [
+        "Diseño"
+      ],
+      "secciones": [
+        "Diseño"
+      ]
+    },
+    {
+      "id": "mql2k19e1v6cty6y056",
+      "nombre": "HENRY GONZALEZ",
+      "cargo": "LIDER DE COMUNICACIONES",
+      "email": "hgonzalez@cacco.org",
+      "nivel": "editor",
+      "ingreso": "2026-06-19",
+      "foto": "",
+      "cats": [
+        "Audiovisual",
+        "Protocolo",
+        "Diseño",
+        "Redes Sociales",
+        "Medios"
+      ],
+      "secciones": []
+    },
+    {
+      "id": "mql2kw986485wvr8lsk",
+      "nombre": "DIONICIO SEGURA",
+      "cargo": "REDES",
+      "email": "dsegura@cacco.org",
+      "nivel": "colaborador",
+      "ingreso": "2026-06-19",
+      "foto": "",
+      "cats": [
+        "Audiovisual",
+        "Diseño",
+        "Redes Sociales"
+      ],
+      "secciones": [
+        "Redes Sociales"
+      ]
+    },
+    {
+      "id": "mql2luvqp0ttaemugx8",
+      "nombre": "NAYRETH PRESTAN",
+      "cargo": "ASISTENTE DE PROTOCOLO",
+      "email": "nprestan@cacco.org",
+      "nivel": "colaborador",
+      "ingreso": "2026-06-19",
+      "foto": "",
+      "cats": [
+        "Protocolo",
+        "Redes Sociales",
+        "Medios"
+      ],
+      "secciones": [
+        "Protocolo"
+      ]
+    }
+  ],
+  "bitacora": [
+    {
+      "id": "mqlhnxkwenf8ol3pqxl",
+      "fecha": "19 jun 2026",
+      "hora": "05:16 p. m.",
+      "usuario": "SOPORTE",
+      "accion": "Bitácora limpiada",
+      "detalle": "Por SOPORTE"
+    }
+  ],
+  "notifs": [
+    {
+      "id": "mqlhlxmdogyq43fbv4f",
+      "ico": "📋",
+      "txt": "Nueva tarea: \"test\"",
+      "sub": "Secciones: Audiovisual, Protocolo, Diseño, Redes Sociales",
+      "ts": "05:15 p. m."
+    },
+    {
+      "id": "mqlhhtqskgwgqn9w1vg",
+      "ico": "📋",
+      "txt": "Nueva tarea: \"PARTIDO PANAMA VS INGLATERRA\"",
+      "sub": "Secciones: Audiovisual, Redes Sociales",
+      "ts": "05:12 p. m."
+    },
+    {
+      "id": "mqlheu0zcbp4thxkt5",
+      "ico": "📋",
+      "txt": "Nueva tarea: \"El País de los SinCeros\"",
+      "sub": "Secciones: Audiovisual, Protocolo, Diseño, Redes Sociales",
+      "ts": "05:09 p. m."
+    },
+    {
+      "id": "mqlhd98myi644nnq32g",
+      "ico": "📋",
+      "txt": "Nueva tarea: \"PULSO\"",
+      "sub": "Secciones: Audiovisual, Redes Sociales",
+      "ts": "05:08 p. m."
+    },
+    {
+      "id": "mqlh8ftu4qmasm0l3q",
+      "ico": "📋",
+      "txt": "Nueva tarea: \"EMBAJADA DE CHINA\"",
+      "sub": "Secciones: Audiovisual, Protocolo, Redes Sociales",
+      "ts": "05:04 p. m."
+    },
+    {
+      "id": "mqlh5iym2uycn7e1ljq",
+      "ico": "📋",
+      "txt": "Nueva tarea: \"THE GREAT AMERICAN FAIR\"",
+      "sub": "Secciones: Audiovisual, Redes Sociales, Medios",
+      "ts": "05:02 p. m."
+    },
+    {
+      "id": "mqlgbmj8ejpcf500v97",
+      "ico": "📋",
+      "txt": "Nueva tarea: \"COMUNIDAD JUVENIL - CACCO\"",
+      "sub": "Secciones: Audiovisual, Redes Sociales, Medios",
+      "ts": "04:39 p. m."
+    },
+    {
+      "id": "mqlfqp27ticw739xf6d",
+      "ico": "🗂️",
+      "txt": "Mes cerrado: junio de 2026",
+      "sub": "Datos operativos reiniciados · Histórico guardado",
+      "ts": "04:23 p. m."
+    },
+    {
+      "id": "mqlfpxvqdph2un3joti",
+      "ico": "✅",
+      "txt": "Horas aprobadas: FELIPE ANAYA",
+      "sub": "4 hrs",
+      "ts": "04:22 p. m."
+    },
+    {
+      "id": "mqlfghs4jjb2hd2aayg",
+      "ico": "✅",
+      "txt": "Redes Sociales completado: \"COBERTURA USA\"",
+      "sub": "Por SOPORTE",
+      "ts": "04:15 p. m."
+    },
+    {
+      "id": "mqlff7walan55icde2g",
+      "ico": "⏱️",
+      "txt": "1 hora(s) pendiente(s) de aprobación",
+      "sub": "Horas Extras",
+      "ts": "04:14 p. m."
+    },
+    {
+      "id": "mqlfevwz6tbo453yxb5",
+      "ico": "🎉",
+      "txt": "Tarea completada: \"PRUEBA DE TAREA 3\"",
+      "sub": "100% — todas las secciones listas",
+      "ts": "04:13 p. m."
+    },
+    {
+      "id": "mqlfevwy8jweb1i9uiq",
+      "ico": "✅",
+      "txt": "Audiovisual completado: \"PRUEBA DE TAREA 3\"",
+      "sub": "Por FELIPE ANAYA",
+      "ts": "04:13 p. m."
+    },
+    {
+      "id": "mqlfemql12ggeqsitme",
+      "ico": "📋",
+      "txt": "Nueva tarea: \"COBERTURA USA\"",
+      "sub": "Secciones: Protocolo, Redes Sociales",
+      "ts": "04:13 p. m."
+    },
+    {
+      "id": "mqlfd2g3gjeyy8tinj",
+      "ico": "⏱️",
+      "txt": "Solicitud de horas: FELIPE ANAYA",
+      "sub": "Pendiente de aprobación",
+      "ts": "04:12 p. m."
+    },
+    {
+      "id": "mqlf9gzqf20k857go47",
+      "ico": "📋",
+      "txt": "Nueva tarea: \"PRUEBA DE TAREA 3\"",
+      "sub": "Secciones: Audiovisual",
+      "ts": "04:09 p. m."
+    },
+    {
+      "id": "mql6ymb9jx5gaik781",
+      "ico": "🎉",
+      "txt": "Tarea completada: \"AGENDA DE RADIOS\"",
+      "sub": "100% — todas las secciones listas",
+      "ts": "12:17 p. m."
+    },
+    {
+      "id": "mql6ymb8ydau1mqmtj",
+      "ico": "✅",
+      "txt": "Medios completado: \"AGENDA DE RADIOS\"",
+      "sub": "Por SOPORTE",
+      "ts": "12:17 p. m."
+    },
+    {
+      "id": "mql6mnhbcui5zprnsik",
+      "ico": "📋",
+      "txt": "Nueva tarea: \"PRUEBA DE TAREAS\"",
+      "sub": "Secciones: Redes Sociales",
+      "ts": "12:07 p. m."
+    },
+    {
+      "id": "mql6jtds8cggejcqqdf",
+      "ico": "📋",
+      "txt": "Nueva tarea: \"AGENDA DE RADIOS\"",
+      "sub": "Secciones: Medios",
+      "ts": "12:05 p. m."
+    },
+    {
+      "id": "mql6fbmzhascjyr6kb",
+      "ico": "🗂️",
+      "txt": "Mes cerrado: junio de 2026",
+      "sub": "Datos operativos reiniciados · Histórico guardado",
+      "ts": "12:02 p. m."
+    },
+    {
+      "id": "mql6dm043q4r36o5dl7",
+      "ico": "🗂️",
+      "txt": "Mes cerrado: junio de 2026",
+      "sub": "Datos operativos reiniciados · Histórico guardado",
+      "ts": "12:00 p. m."
+    },
+    {
+      "id": "mql4fg7el62albp1zlq",
+      "ico": "📋",
+      "txt": "Nueva tarea: \"AFICHE - FIESTA AFROPANAMEÑA\"",
+      "sub": "Secciones: Diseño",
+      "ts": "11:06 a. m."
+    },
+    {
+      "id": "mql4abugo6x9yuqi9go",
+      "ico": "📋",
+      "txt": "Nueva tarea: \"PRUEBA DE RECURRENCIA\"",
+      "sub": "Secciones: Audiovisual, Protocolo, Diseño, Redes Sociales",
+      "ts": "11:02 a. m."
+    },
+    {
+      "id": "mql3i9vnmd0ypn1l0lc",
+      "ico": "✅",
+      "txt": "Redes Sociales completado: \"DIABLO TUN TUN\"",
+      "sub": "Por SOPORTE",
+      "ts": "10:40 a. m."
+    },
+    {
+      "id": "mql3hztd9j2xamz8jrh",
+      "ico": "✅",
+      "txt": "Protocolo completado: \"PRUEBA DE TAREA ASIGNADA POR USUARIO\"",
+      "sub": "Por SOPORTE",
+      "ts": "10:40 a. m."
+    },
+    {
+      "id": "mql3hyarv4h3vhl8z78",
+      "ico": "✅",
+      "txt": "Diseño completado: \"PRUEBA DE TAREA ASIGNADA POR USUARIO\"",
+      "sub": "Por SOPORTE",
+      "ts": "10:40 a. m."
+    },
+    {
+      "id": "mql3hx4geeggf609vgb",
+      "ico": "✅",
+      "txt": "Redes Sociales completado: \"PRUEBA DE TAREA ASIGNADA POR USUARIO\"",
+      "sub": "Por SOPORTE",
+      "ts": "10:40 a. m."
+    },
+    {
+      "id": "mql3hud36k8w6apv90q",
+      "ico": "✅",
+      "txt": "Medios completado: \"PRUEBA DE TAREA ASIGNADA POR USUARIO\"",
+      "sub": "Por SOPORTE",
+      "ts": "10:40 a. m."
+    },
+    {
+      "id": "mql3bhu6zvsisu0jp",
+      "ico": "🎉",
+      "txt": "Tarea completada: \"DIABLO TUN TUN\"",
+      "sub": "100% — todas las secciones listas",
+      "ts": "10:35 a. m."
+    },
+    {
+      "id": "mql3bhu610eddk8wxe7",
+      "ico": "✅",
+      "txt": "Medios completado: \"DIABLO TUN TUN\"",
+      "sub": "Por SOPORTE",
+      "ts": "10:35 a. m."
+    },
+    {
+      "id": "mql3bhh8g2rfcc8z4n9",
+      "ico": "✅",
+      "txt": "Redes Sociales completado: \"DIABLO TUN TUN\"",
+      "sub": "Por SOPORTE",
+      "ts": "10:35 a. m."
+    },
+    {
+      "id": "mql3aff1akrp6j2sza4",
+      "ico": "✅",
+      "txt": "Horas aprobadas: TEST",
+      "sub": "1 hrs",
+      "ts": "10:34 a. m."
+    },
+    {
+      "id": "mql37ltgo47tit4u9y",
+      "ico": "⏱️",
+      "txt": "Solicitud de horas: TEST",
+      "sub": "Pendiente de aprobación",
+      "ts": "10:32 a. m."
+    },
+    {
+      "id": "mql36to3fb12o9mpr4",
+      "ico": "📋",
+      "txt": "Nueva tarea: \"PRUEBA DE TAREA ASIGNADA POR USUARIO\"",
+      "sub": "Secciones: Audiovisual, Protocolo, Diseño, Redes Sociales, Medios",
+      "ts": "10:31 a. m."
+    },
+    {
+      "id": "mql32u0ve6h9l38ka7n",
+      "ico": "✅",
+      "txt": "Audiovisual completado: \"COBERTURA DE VIDEO - DANZA AEREA\"",
+      "sub": "Por TEST",
+      "ts": "10:28 a. m."
+    },
+    {
+      "id": "mql32qra0d2a98cyfzx4",
+      "ico": "✅",
+      "txt": "Audiovisual completado: \"DIABLO TUN TUN\"",
+      "sub": "Por TEST",
+      "ts": "10:28 a. m."
+    },
+    {
+      "id": "mql32mtysynndhaqw",
+      "ico": "✅",
+      "txt": "Audiovisual completado: \"DIABLO TUN TUN\"",
+      "sub": "Por TEST",
+      "ts": "10:28 a. m."
+    },
+    {
+      "id": "mql32kliovd6ne86zc",
+      "ico": "✅",
+      "txt": "Audiovisual completado: \"DIABLO TUN TUN\"",
+      "sub": "Por TEST",
+      "ts": "10:28 a. m."
+    },
+    {
+      "id": "mql2zcewyjukk53bggh",
+      "ico": "📋",
+      "txt": "Nueva tarea: \"PRUEBA DE TAREA\"",
+      "sub": "Secciones: Medios",
+      "ts": "10:25 a. m."
+    },
+    {
+      "id": "mql2xla5kpjxsnskma",
+      "ico": "📋",
+      "txt": "Nueva tarea: \"DIABLO TUN TUN\"",
+      "sub": "Secciones: Audiovisual, Redes Sociales, Medios",
+      "ts": "10:24 a. m."
+    },
+    {
+      "id": "mql2tc841ny14ur9v1s",
+      "ico": "✅",
+      "txt": "Redes Sociales completado: \"COBERTURA DE VIDEO - DANZA AEREA\"",
+      "sub": "Por SOPORTE",
+      "ts": "10:21 a. m."
+    },
+    {
+      "id": "mql2q0wa6at6vfa2swc",
+      "ico": "📋",
+      "txt": "Nueva tarea: \"COBERTURA DE VIDEO - DANZA AEREA\"",
+      "sub": "Secciones: Audiovisual, Redes Sociales",
+      "ts": "10:18 a. m."
+    },
+    {
+      "id": "mql28v5osbpv429deko",
+      "ico": "🗂️",
+      "txt": "Mes cerrado: junio de 2026",
+      "sub": "Datos operativos reiniciados · Histórico guardado",
+      "ts": "10:05 a. m."
+    },
+    {
+      "id": "mql272xiy6u2z3kpiaq",
+      "ico": "📋",
+      "txt": "Nueva tarea: \"COBERTURA DE VIDEO\"",
+      "sub": "Secciones: Audiovisual, Protocolo, Diseño",
+      "ts": "10:03 a. m."
+    },
+    {
+      "id": "mql0vuzaudk1xh2oenf",
+      "ico": "✅",
+      "txt": "Horas aprobadas: María González",
+      "sub": "2 hrs",
+      "ts": "09:27 a. m."
+    },
+    {
+      "id": "mql0vqz9ohvaigx18j",
+      "ico": "⏱️",
+      "txt": "1 hora(s) pendiente(s) de aprobación",
+      "sub": "Horas Extras",
+      "ts": "09:27 a. m."
+    },
+    {
+      "id": "mql0un2hl192nk9szth",
+      "ico": "⏱️",
+      "txt": "Solicitud de horas: María González",
+      "sub": "Pendiente de aprobación",
+      "ts": "09:26 a. m."
+    },
+    {
+      "id": "mql0txj3p467nhnzs3f",
+      "ico": "✅",
+      "txt": "Horas aprobadas: Asistente Comunicaciones",
+      "sub": "3 hrs",
+      "ts": "09:25 a. m."
+    },
+    {
+      "id": "mql0qww75hoppav0jl9",
+      "ico": "✅",
+      "txt": "Fotografía completado: \"COBERTURA ORQUESTA SINFONICA\"",
+      "sub": "Por Coordinadora CACCO",
+      "ts": "09:23 a. m."
+    }
+  ],
+  "etiquetas": [
+    "Urgente",
+    "Evento externo",
+    "Dirección",
+    "Patrocinador",
+    "Seguimiento",
+    "CURSO REGULAR",
+    "ABEL",
+    "COMUNIDAD JUVENIL",
+    "MICULTURA"
+  ],
+  "historico": [
+    {
+      "id": "mql28v5n4qxteezxg1p",
+      "mes": "junio de 2026",
+      "fecha": "2026-06-19",
+      "tareasTotales": 2,
+      "tareasCompletadas": 0,
+      "pct": 0,
+      "reporte": "REPORTE SEMANAL — EQUIPO DE COMUNICACIONES\nCACCO — Centro de Arte y Cultura de Colón\n══════════════════════════════════════════════════════\nFecha: viernes, 19 de junio de 2026\nGenerado por: Coordinadora CACCO\n\n🔴 ROJO — Requiere atención\n\n📈  RESUMEN\n  Total tareas:    2\n  ✅ Completadas:  0 (0%)\n  🔄 En progreso:  1\n  ⏳ Pendientes:   1\n  ⚠️  Vencidas:    0\n\n📦  AVANCE POR CATEGORÍA\n  • 📹 Audiovisual: 0/1 (0%)\n  • 🎯 Protocolo: 0/1 (0%)\n  • 🎨 Diseño: 0/1 (0%)\n\n👥  AVANCE POR PERSONA\n  • Coordinadora CACCO — Líder: 0 completados · 1 pendiente\n  • Asistente Comunicaciones — Editor: 0 completados · 1 pendiente\n  • María González — Colaborador: 0 completados · 1 pendiente\n  • Carlos Ramos — Colaborador: 0 completados · 1 pendiente\n  • Diana López — Colaborador: 0 completados · 1 pendiente\n\n⏱️  HORAS EXTRAS\n  Aprobadas: 0 registros · 0.0 horas\n  Sin horas aprobadas.\n\n══════════════════════════════════════════════════════\nCACCO — Reporte interno · Histórico: 0 reportes archivados",
+      "archivadoPor": "Coordinadora CACCO"
+    },
+    {
+      "id": "mql6dm02st6xxzfpot",
+      "mes": "junio de 2026",
+      "fecha": "2026-06-19",
+      "tareasTotales": 6,
+      "tareasCompletadas": 3,
+      "pct": 50,
+      "reporte": "REPORTE SEMANAL — EQUIPO DE COMUNICACIONES\nCACCO — Centro de Arte y Cultura de Colón\n══════════════════════════════════════════════════════\nFecha: viernes, 19 de junio de 2026\nGenerado por: SOPORTE\n\n🟡 AMARILLO — Rendimiento moderado\n\n📈  RESUMEN\n  Total tareas:    6\n  ✅ Completadas:  3 (50%)\n  🔄 En progreso:  0\n  ⏳ Pendientes:   3\n  ⚠️  Vencidas:    0\n\n📦  AVANCE POR CATEGORÍA\n  • 📹 Audiovisual: 3/4 (75%)\n  • 🎯 Protocolo: 1/2 (50%)\n  • 🎨 Diseño: 1/3 (33%)\n  • 📱 Redes Sociales: 3/4 (75%)\n    → IG:4pub · 2reels · TT:2vid · IG:1pub · 17reels · FB:1pub · TT:5vid · IG:1pub · 4reels · TT:2vid · IG:1pub · 1reel · FB:1pub · TT:2vid\n  • 📡 Medios: 2/3 (67%)\n\n👥  AVANCE POR PERSONA\n  • YESAULI GUTIERREZ — Colaborador: 2 completados · 1 pendiente\n  • MIGUEL ANTONIO (Audiovisual) — Editor: 3 completados · 2 pendientes\n  • FELIPE ANAYA (Audiovisual) — Colaborador: 3 completados · 2 pendientes\n  • ANA RUSSELL (Diseño) — Colaborador: 0 completados · 2 pendientes\n  • HENRY GONZALEZ — Editor: 0 completados · 1 pendiente\n  • DIONICIO SEGURA (Redes Sociales) — Colaborador: 5 completados · 2 pendientes\n  • NAYRETH PRESTAN (Protocolo) — Colaborador: 0 completados · 1 pendiente\n  • TEST (Audiovisual) — Colaborador: 1 completado · 0 pendientes\n\n⏱️  HORAS EXTRAS\n  Aprobadas: 2 registros · 4.0 horas\n  • YESAULI GUTIERREZ: 3.0 hrs\n  • TEST: 1.0 hrs\n\n══════════════════════════════════════════════════════\nCACCO — Reporte interno · Histórico: 1 reportes archivados",
+      "archivadoPor": "SOPORTE"
+    },
+    {
+      "id": "mql6fbmyxrdf15yilx9",
+      "mes": "junio de 2026",
+      "fecha": "2026-06-19",
+      "tareasTotales": 0,
+      "tareasCompletadas": 0,
+      "pct": 0,
+      "reporte": "REPORTE MENSUAL — EQUIPO DE COMUNICACIONES\nCACCO — Centro de Arte y Cultura de Colón\n══════════════════════════════════════════════════════\nFecha: viernes, 19 de junio de 2026\nGenerado por: SOPORTE\n\n🔴 ROJO — Requiere atención\n\n📈  RESUMEN\n  Total tareas:    0\n  ✅ Completadas:  0 (0%)\n  🔄 En progreso:  0\n  ⏳ Pendientes:   0\n  ⚠️  Vencidas:    0\n\n📦  AVANCE POR CATEGORÍA\n  Sin tareas.\n\n👥  AVANCE POR PERSONA\n  Sin asignaciones.\n\n⏱️  HORAS EXTRAS\n  Aprobadas: 0 registros · 0.0 horas\n  Sin horas aprobadas.\n\n══════════════════════════════════════════════════════\nCACCO — Reporte interno · Histórico: 2 reportes archivados",
+      "archivadoPor": "SOPORTE"
+    },
+    {
+      "id": "mqlfq8tppr80qqd6g6",
+      "mes": "junio de 2026 (parcial)",
+      "fecha": "2026-06-19",
+      "hora": "04:22 p. m.",
+      "tareasTotales": 4,
+      "tareasCompletadas": 1,
+      "pct": 25,
+      "reporte": "REPORTE SEMANAL — EQUIPO DE COMUNICACIONES\nCACCO — Centro de Arte y Cultura de Colón\n══════════════════════════════════════════════════════\nFecha: viernes, 19 de junio de 2026\nGenerado por: SOPORTE\n\n🔴 ROJO — Requiere atención\n\n📈  RESUMEN\n  Total tareas:    4\n  ✅ Completadas:  1 (25%)\n  🔄 En progreso:  1\n  ⏳ Pendientes:   2\n  ⚠️  Vencidas:    0\n\n📦  AVANCE POR CATEGORÍA\n  • 📹 Audiovisual: 0/1 (0%)\n  • 🎯 Protocolo: 0/1 (0%)\n  • 📱 Redes Sociales: 1/2 (50%)\n    → IG:1pub · 2reels · FB:1pub · IG:5pub · FB:2pub · TT:2vid\n  • 📡 Medios: 1/1 (100%)\n\n👥  AVANCE POR PERSONA\n\n  👤 YESAULI GUTIERREZ (Colaborador)\n    ✅ [Medios] \"AGENDA DE RADIOS\" — Completada\n\n  👤 MIGUEL ANTONIO · Audiovisual (Editor)\n    ⏳ [Audiovisual] \"PRUEBA DE TAREA 3\" — Pendiente\n\n  👤 FELIPE ANAYA · Audiovisual (Colaborador)\n    ⏳ [Audiovisual] \"PRUEBA DE TAREA 3\" — Pendiente\n\n  👤 DIONICIO SEGURA · Redes Sociales (Colaborador)\n    ✅ [Redes Sociales] \"COBERTURA USA\" — Completada\n\n  👤 NAYRETH PRESTAN · Protocolo (Colaborador)\n    ⏳ [Protocolo] \"COBERTURA USA\" — Pendiente\n\n  👤 TEST · Audiovisual (Colaborador)\n    ⏳ [Audiovisual] \"PRUEBA DE TAREA 3\" — Pendiente\n\n⏱️  HORAS EXTRAS\n  Aprobadas: 3 registros · 11.0 horas\n  • FELIPE ANAYA: 4.0 hrs\n  • HENRY GONZALEZ: 3.0 hrs\n  • DIONICIO SEGURA: 4.0 hrs\n\n══════════════════════════════════════════════════════\nCACCO — Reporte interno · Histórico: 3 reportes archivados",
+      "archivadoPor": "SOPORTE"
+    },
+    {
+      "id": "mqlfqp26zlwr04wm5s9",
+      "mes": "junio de 2026",
+      "fecha": "2026-06-19",
+      "hora": "04:23 p. m.",
+      "tareasTotales": 4,
+      "tareasCompletadas": 1,
+      "pct": 25,
+      "reporte": "REPORTE SEMANAL — EQUIPO DE COMUNICACIONES\nCACCO — Centro de Arte y Cultura de Colón\n══════════════════════════════════════════════════════\nFecha: viernes, 19 de junio de 2026\nGenerado por: SOPORTE\n\n🔴 ROJO — Requiere atención\n\n📈  RESUMEN\n  Total tareas:    4\n  ✅ Completadas:  1 (25%)\n  🔄 En progreso:  1\n  ⏳ Pendientes:   2\n  ⚠️  Vencidas:    0\n\n📦  AVANCE POR CATEGORÍA\n  • 📹 Audiovisual: 0/1 (0%)\n  • 🎯 Protocolo: 0/1 (0%)\n  • 📱 Redes Sociales: 1/2 (50%)\n    → IG:1pub · 2reels · FB:1pub · IG:5pub · FB:2pub · TT:2vid\n  • 📡 Medios: 1/1 (100%)\n\n👥  AVANCE POR PERSONA\n\n  👤 YESAULI GUTIERREZ (Colaborador)\n    ✅ [Medios] \"AGENDA DE RADIOS\" — Completada\n\n  👤 MIGUEL ANTONIO · Audiovisual (Editor)\n    ⏳ [Audiovisual] \"PRUEBA DE TAREA 3\" — Pendiente\n\n  👤 FELIPE ANAYA · Audiovisual (Colaborador)\n    ⏳ [Audiovisual] \"PRUEBA DE TAREA 3\" — Pendiente\n\n  👤 DIONICIO SEGURA · Redes Sociales (Colaborador)\n    ✅ [Redes Sociales] \"COBERTURA USA\" — Completada\n\n  👤 NAYRETH PRESTAN · Protocolo (Colaborador)\n    ⏳ [Protocolo] \"COBERTURA USA\" — Pendiente\n\n  👤 TEST · Audiovisual (Colaborador)\n    ⏳ [Audiovisual] \"PRUEBA DE TAREA 3\" — Pendiente\n\n⏱️  HORAS EXTRAS\n  Aprobadas: 3 registros · 11.0 horas\n  • FELIPE ANAYA: 4.0 hrs\n  • HENRY GONZALEZ: 3.0 hrs\n  • DIONICIO SEGURA: 4.0 hrs\n\n══════════════════════════════════════════════════════\nCACCO — Reporte interno · Histórico: 4 reportes archivados",
+      "archivadoPor": "SOPORTE"
+    }
+  ]
+}

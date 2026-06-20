@@ -1,0 +1,50 @@
+[
+  {
+    "id": "u1",
+    "email": "soporte@cacco.org",
+    "password": "$2b$10$9VAPq1Yjsbm8YN9HDE/RfeQ6uVQOnP8GzbTndZsOswsmtZG6N7dbe",
+    "nivel": "lider"
+  },
+  {
+    "id": "u2",
+    "email": "ygutierrez@cacco.org",
+    "password": "$2b$10$xI/33cVQmRfzxnwQrMZzVO4u8pytvA4u5a107nHC/kOKNytJe9wBi",
+    "nivel": "colaborador"
+  },
+  {
+    "id": "u3",
+    "email": "mantonio@cacco.org",
+    "password": "$2b$10$vSyA4vmK.UlcUGFv0XZVkOHrAtOo7dkVA89ky6g3Oazvo1d5p6QnC",
+    "nivel": "editor"
+  },
+  {
+    "id": "u4",
+    "email": "fanaya@cacco.org",
+    "password": "$2b$10$6/nUYI7GjZ3XiTyC7RHjjeUViR3boywbjv6A2kbIMH0gmb63XJQQ2",
+    "nivel": "colaborador"
+  },
+  {
+    "id": "u5",
+    "email": "arussel@cacco.org",
+    "password": "$2b$10$2d9FvFkTId6AxcjriqzDfennyiDgFTXZLjme30XArlXX8Y1pO.Nyy",
+    "nivel": "colaborador"
+  },
+  {
+    "id": "mql2k19e1v6cty6y056",
+    "email": "hgonzalez@cacco.org",
+    "password": "$2b$10$WmPMBXAEuMhHhGOcYhr6PO1KeDwujRrcwy8BN7p.rkBchVG0wO8ZK",
+    "nivel": "editor"
+  },
+  {
+    "id": "mql2kw986485wvr8lsk",
+    "email": "dsegura@cacco.org",
+    "password": "$2b$10$zWuEMSFUYAqzMOExj0Kd1.EDUoV90qd74.iQq07LYq67xPsUtMnya",
+    "nivel": "colaborador"
+  },
+  {
+    "id": "mql2luvqp0ttaemugx8",
+    "email": "nprestan@cacco.org",
+    "password": "$2b$10$4fgBIp1iDICdqgfjv4WbfuOnB0pK.D3ng2U2HlrEU9QUVJE/i7WW.",
+    "nivel": "colaborador"
+  }
+]
