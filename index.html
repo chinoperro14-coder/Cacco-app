@@ -963,7 +963,21 @@ async function tryLogin() {
   }
 }
 
-function entrarLect(){
+async function entrarLect(){
+  try{
+    const res=await fetch('/api/data/public');
+    if(res.ok){
+      const s=await res.json();
+      if(s&&Object.keys(s).length){
+        E=s;
+        if(!E.etiquetas)E.etiquetas=[...ETIQ_DEF];
+        if(!E.notifs)E.notifs=[];
+        if(!E.historico)E.historico=[];
+        if(!E.equipo)E.equipo=[];
+        E.equipo.forEach(u=>{if(!u.secciones){u.secciones=u.seccion?[u.seccion]:[];}delete u.seccion;});
+      }
+    }
+  }catch(e){}
   const l=E.equipo.find(u=>u.nivel==='lector');
   if(l){entrar(l.id);return;}
   uAct={id:'inv',nombre:'Invitado',cargo:'',nivel:'lector',foto:'',ingreso:'',cats:[]};niv='lector';iniciarApp();

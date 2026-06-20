@@ -116,6 +116,10 @@ app.post("/api/login", async (req, res) => {
 // ════════════════════════
 //  DATOS COMPARTIDOS
 // ════════════════════════
+app.get("/api/data/public", async (req, res) => {
+  try { res.json(await leerData()); }
+  catch { res.status(500).json({ error: "Error leyendo datos" }); }
+});
 app.get("/api/data", verificarToken, async (req, res) => {
   try { res.json(await leerData()); }
   catch { res.status(500).json({ error: "Error leyendo datos" }); }
