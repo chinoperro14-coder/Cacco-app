@@ -351,9 +351,8 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   /* Layout */
   .cont{padding:12px;}
   .alay{display:block;}
-  /* Stats grids */
-  .sg{grid-template-columns:1fr 1fr;}
-  .sg[style*="repeat(3"]{grid-template-columns:1fr 1fr 1fr!important;}
+  /* Stats grids — force 2 cols on mobile, overrides inline styles */
+  .sg{grid-template-columns:1fr 1fr!important;}
   /* Forms */
   .fr{grid-template-columns:1fr;}
   /* Section header */
@@ -391,6 +390,17 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   .grow .btn-comp,.grow .btn-hecho{width:100%;justify-content:center;}
   /* Historial items */
   .hitem{flex-direction:column;gap:6px;}
+  /* Notifications panel */
+  .npanel{width:calc(100vw - 16px);right:8px;left:8px;}
+  /* Content area — allow child scroll */
+  .cont{overflow-x:visible;}
+  /* Calendar nav */
+  #calTit{min-width:0!important;font-size:13px!important;}
+  /* Tareas — badge/progress row */
+  .tcard [style*="width:100px"]{width:70px;}
+  /* Botones de acción en tareas */
+  .tcard [style*="justify-content:flex-end"]{justify-content:stretch!important;flex-wrap:wrap;}
+  .tcard [style*="justify-content:flex-end"] .btn{flex:1;}
 }
 </style>
 </head>
