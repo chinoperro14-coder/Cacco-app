@@ -2366,13 +2366,21 @@ function cerrarMes(){
   if(!puede('cerrarMes')){alert('Solo el Líder puede cerrar el mes.');return;}
   const ahora=new Date();
   const nombreMes=ahora.toLocaleDateString('es-PA',{month:'long',year:'numeric'});
-  if(!confirm(`¿Cerrar el mes de ${nombreMes}?\n\n✅ El reporte actual quedará archivado.\n🗑 Las tareas y horas extras serán eliminadas.\n👥 El equipo, bitácora e histórico se conservan.\n\nEsta acción no se puede deshacer.`))return;
+  if(!confirm(`¿Cerrar el mes de ${nombreMes}?\n\n✅ El reporte actual quedará archivado.\n🔁 Las tareas recurrentes se conservan y reinician.\n🗑 Las tareas únicas y horas extras serán eliminadas.\n👥 El equipo, bitácora e histórico se conservan.\n\nEsta acción no se puede deshacer.`))return;
   generarRep();
   const ts=E.tareas,comp=ts.filter(t=>eglobal(t)==='Completada').length;
   const _hora=new Date().toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit'});
   E.historico.push({id:gId(),mes:nombreMes,fecha:hoy(),hora:_hora,tareasTotales:ts.length,tareasCompletadas:comp,pct:ts.length?Math.round(comp/ts.length*100):0,reporte:repTxtActivo,archivadoPor:uAct?.nombre});
-  E.tareas=[];E.horasExtra=[];expandidas.clear();
-  reg('Mes cerrado',`${nombreMes} — ${comp}/${ts.length} tareas completadas — datos reiniciados`);
+  // Keep recurring tasks — reset their state for the new month
+  const recurrentes=E.tareas.filter(t=>t.recurrencia&&t.recurrencia!=='ninguna');
+  recurrentes.forEach(t=>{
+    if(t.secciones)Object.keys(t.secciones).forEach(sec=>{t.secciones[sec].estado='Pendiente';delete t.secciones[sec].completadoPor;delete t.secciones[sec].completadoEn;});
+    if(t.avances)Object.keys(t.avances).forEach(cat=>{t.avances[cat]={estado:'Pendiente'};});
+    if(t.redesSociales)Object.keys(t.redesSociales).forEach(r=>Object.keys(t.redesSociales[r]).forEach(k=>{if(k.endsWith('_comp'))t.redesSociales[r][k]=0;}));
+    if(t.mediosData)Object.keys(t.mediosData).forEach(m=>Object.keys(t.mediosData[m]).forEach(k=>{if(k.endsWith('_comp'))t.mediosData[m][k]=0;}));
+  });
+  E.tareas=recurrentes;E.horasExtra=[];expandidas.clear();
+  reg('Mes cerrado',`${nombreMes} — ${comp}/${ts.length} tareas completadas — ${recurrentes.length} recurrentes conservadas`);
   addNotif('🗂️',`Mes cerrado: ${nombreMes}`,'Datos operativos reiniciados · Histórico guardado');
   guardar();generarRep();renderTareas();renderHoras();actuCts();
   alert(`✅ Mes "${nombreMes}" cerrado.\n\nEl reporte está en "Histórico".\nEl sistema está listo para el nuevo mes.`);
