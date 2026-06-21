@@ -2221,6 +2221,19 @@ function imprimirReporte(){
     </tr>`;
   });
 
+  // Tareas completadas
+  let compRows='';
+  ts.filter(t=>eglobal(t)==='Completada').forEach(t=>{
+    const resps=t.secciones?Object.values(t.secciones).flatMap(sv=>(sv.responsables||[]).map(uid=>{const u=E.equipo.find(e=>e.id===uid);return u?u.nombre:uid;})):[]; 
+    const secs=t.secciones?Object.keys(t.secciones).filter(s=>t.secciones[s]).join(', '):'';
+    compRows+=`<tr style="background:#f0fdf4">
+      <td><strong>${t.titulo}</strong></td>
+      <td style="font-size:12px;color:#166534">${secs||'—'}</td>
+      <td style="font-size:12px">${t.fecha?fmt(t.fecha):'-'}</td>
+      <td style="font-size:12px">${[...new Set(resps)].join(', ')||'—'}</td>
+    </tr>`;
+  });
+
   // Horas extras
   let hrsRows='';
   E.equipo.forEach(u=>{
@@ -2276,6 +2289,10 @@ tr:last-child td{border-bottom:none;}
 <table><thead><tr><th>Colaborador</th><th style="text-align:center">Tareas</th><th>Progreso</th></tr></thead>
 <tbody>${persRows||'<tr><td colspan=3 style="color:#888;text-align:center">Sin asignaciones</td></tr>'}</tbody></table>
 
+<div class="sec-title">Tareas Completadas</div>
+<table><thead><tr><th>Tarea</th><th>Sección</th><th>Fecha</th><th>Responsable</th></tr></thead>
+<tbody>${compRows||'<tr><td colspan=4 style="color:#888;text-align:center">Sin tareas completadas</td></tr>'}</tbody></table>
+
 <div class="sec-title">Pendientes y Vencidas</div>
 <table><thead><tr><th>Tarea</th><th>Estado</th><th>Fecha</th><th>Responsable</th></tr></thead>
 <tbody>${pendRows||'<tr><td colspan=4 style="color:#16a34a;text-align:center">✅ Sin tareas pendientes</td></tr>'}</tbody></table>
@@ -2293,6 +2310,7 @@ ${thrs>0?`<div class="sec-title">Horas Extras Aprobadas</div>
 <div style="margin-top:24px;text-align:center">
   <button class="print-btn" onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button>
 </div>
+<script>window.onload=function(){setTimeout(function(){window.print();},600);};</script>
 </body></html>`;
   const blob=new Blob([htmlContent],{type:'text/html;charset=utf-8'});
   const url=URL.createObjectURL(blob);
