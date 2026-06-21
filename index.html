@@ -405,15 +405,15 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   .cont{overflow-x:visible;}
   /* Calendar nav */
   #calTit{min-width:0!important;font-size:13px!important;}
-  #vCalendario .sh2>div:last-child{justify-content:space-between;width:100%;}
-  #vCalendario .sh2>div:last-child .btn{flex:1;text-align:center;padding:8px 4px;font-size:13px;font-weight:700;}
-  #calGrid{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-  /* Calendar cells — ultra compact on mobile, force scroll for all 7 cols */
-  .cgrid{min-width:490px;}
-  .cdn{padding:5px 1px;font-size:9px;letter-spacing:0;}
-  .cd{padding:3px 2px;min-height:44px;}
-  .cdnum{font-size:10px;margin-bottom:1px;}
-  .cev{font-size:8px;padding:1px 3px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+  #vCalendario .sh2>div:last-child{justify-content:space-between;width:100%;gap:8px;}
+  #vCalendario .sh2>div:last-child .btn{flex:1;text-align:center;padding:10px 4px;font-size:13px;font-weight:700;background:var(--na)!important;color:#fff!important;border-color:var(--na)!important;border-radius:8px;}
+  /* Calendar — stretch to full screen width to fit all 7 columns */
+  #calGrid{margin:0 -12px;overflow-x:hidden;}
+  .cgrid{min-width:0;width:100%;border-radius:0;border-left:none;border-right:none;}
+  .cdn{padding:4px 0;font-size:8px;letter-spacing:0;text-align:center;}
+  .cd{padding:2px 1px;min-height:42px;}
+  .cdnum{font-size:9px;margin-bottom:1px;}
+  .cev{font-size:7px;padding:1px 2px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;border-left-width:2px;}
   /* Horas extras — override inline 3-col grid */
   #vHorasExtra .sg{grid-template-columns:1fr 1fr!important;}
   /* Reportes buttons — wrap cleanly */
