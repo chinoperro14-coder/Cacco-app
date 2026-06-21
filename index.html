@@ -406,10 +406,10 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   /* Calendar nav */
   #calTit{min-width:0!important;font-size:13px!important;}
   #vCalendario .sh2>div:last-child{justify-content:space-between;width:100%;}
-  #vCalendario .sh2>div:last-child .btn{flex:1;text-align:center;padding:6px 4px;font-size:12px;}
+  #vCalendario .sh2>div:last-child .btn{flex:1;text-align:center;padding:8px 4px;font-size:13px;font-weight:700;}
   #calGrid{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-  /* Calendar cells — ultra compact on mobile */
-  .cgrid{min-width:280px;}
+  /* Calendar cells — ultra compact on mobile, force scroll for all 7 cols */
+  .cgrid{min-width:490px;}
   .cdn{padding:5px 1px;font-size:9px;letter-spacing:0;}
   .cd{padding:3px 2px;min-height:44px;}
   .cdnum{font-size:10px;margin-bottom:1px;}
@@ -424,6 +424,10 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   /* Botones de acción en tareas */
   .tcard [style*="justify-content:flex-end"]{justify-content:stretch!important;flex-wrap:wrap;}
   .tcard [style*="justify-content:flex-end"] .btn{flex:1;}
+  /* Task title — allow wrap on mobile so full name is visible */
+  .t-tit{white-space:normal!important;overflow:visible!important;text-overflow:unset!important;line-height:1.2;}
+  /* Hide section badges in card header on mobile (visible in expanded body) */
+  .t-badges span[style*="border-radius:10px"]{display:none!important;}
   /* Perfil */
   #vPerfil .fr{grid-template-columns:1fr;}
   /* Landscape phone */
@@ -1322,11 +1326,11 @@ function renderTareas(){
         <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">
           <span style="font-size:17px;flex-shrink:0">${secIco}</span>
           <div style="min-width:0">
-            <div style="font-size:14px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.titulo}${t.recurrencia&&t.recurrencia!=='ninguna'?' 🔁':''}</div>
+            <div class="t-tit" style="font-size:14px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.titulo}${t.recurrencia&&t.recurrencia!=='ninguna'?' 🔁':''}</div>
             ${t.notas?`<div style="font-size:11px;color:rgba(255,255,255,.82);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:380px">📝 ${t.notas}</div>`:''}
           </div>
         </div>
-        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:10px">
+        <div class="t-badges" style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:10px">
           ${allSecBadges}
           <span style="color:rgba(255,255,255,.8);font-size:18px;transition:transform .2s;display:inline-block;transform:${abierta?'rotate(180deg)':'rotate(0)'}">▾</span>
         </div>
