@@ -2,12 +2,12 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>CACCO — Equipo de Comunicaciones</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 :root{--na:#E35205;--na2:#c44604;--nas:#fff4ee;--nab:#fcd9c4;--fo:#f5f4f2;--su:#ffffff;--su2:#f0eeeb;--bo:#e2ddd8;--tx:#1a1816;--tm:#6b6258;--ve:#166534;--ves:#dcfce7;--az:#1e40af;--azs:#dbeafe;--ro:#991b1b;--ros:#fee2e2;--am:#92400e;--ams:#fef3c7;--mo:#5b21b6;--mos:#ede9fe;--r:10px;--rs:6px;--sh:0 1px 3px rgba(0,0,0,.07),0 4px 12px rgba(0,0,0,.05);--shm:0 4px 16px rgba(0,0,0,.10),0 1px 4px rgba(0,0,0,.06);}
-body.osc{--fo:#0f0e0d;--su:#1c1917;--su2:#292524;--bo:#3d3834;--tx:#f5f0eb;--tm:#a8a09a;--nas:#2a1500;--nab:#6b2800;--ves:#052e16;--azs:#1e3a5f;--ros:#3b0a0a;--ams:#2d1a00;--mos:#1e0a3c;}
+body.osc{--fo:#111113;--su:#1e1e21;--su2:#28282d;--bo:#3a3a42;--tx:#f0f0f5;--tm:#9999aa;--nas:#2c1400;--nab:#7a3500;--ve:#4ade80;--ves:#0d2e1a;--az:#60a5fa;--azs:#1a2e4a;--ro:#f87171;--ros:#2e0e0e;--am:#fbbf24;--ams:#2e1e00;--mo:#c084fc;--mos:#1e1030;}
 body.hc{--tx:#000;--fo:#fff;--su:#fff;--su2:#f0f0f0;--bo:#000;--tm:#333;}
 body.osc.hc{--tx:#fff;--fo:#000;--su:#000;--su2:#111;--bo:#fff;--tm:#ccc;}
 *{margin:0;padding:0;box-sizing:border-box;}html{font-size:15px;}
@@ -345,9 +345,17 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   .sid-overlay{display:none;position:fixed;inset:0;top:60px;background:rgba(0,0,0,.4);z-index:299;}
   .sid-overlay.open{display:block;}
   /* Header */
-  header{padding:0 12px;}
+  header{padding:0 10px;}
   .hdep{display:none;}
   .hmb{display:flex!important;}
+  /* Ocultar botones que sobran en móvil */
+  #btnHC,#btnSync,.acb[onclick*="ajTxt"]{display:none!important;}
+  /* Salir — compacto */
+  .btn.bbl.bsm[onclick*="cerrarSes"]{padding:4px 8px;font-size:10px;}
+  /* Avatar nombre oculto */
+  .unom{display:none;}
+  /* Notif panel */
+  .npanel{width:calc(100vw - 16px);right:8px;left:8px;}
   /* Layout */
   .cont{padding:12px;}
   .alay{display:block;}
@@ -2121,12 +2129,18 @@ async function descargarPDF(){
     if(!res.ok)throw new Error('Error al generar PDF');
     const blob=await res.blob();
     const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
     const fecha=new Date().toISOString().split('T')[0];
     const tipo={diario:'Diario',semanal:'Semanal',mensual:'Mensual'}[repP]||'Diario';
-    a.href=url;a.download=`CACCO_Reporte_${tipo}_${fecha}.pdf`;
-    document.body.appendChild(a);a.click();document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const isiOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+    if(isiOS){
+      // iOS Safari no soporta descarga directa — abrir en nueva pestaña
+      window.open(url,'_blank');
+    } else {
+      const a=document.createElement('a');
+      a.href=url;a.download=`CACCO_Reporte_${tipo}_${fecha}.pdf`;
+      document.body.appendChild(a);a.click();document.body.removeChild(a);
+    }
+    setTimeout(()=>URL.revokeObjectURL(url),5000);
   }catch(e){alert('No se pudo generar el PDF: '+e.message);}
   finally{if(btn){btn.textContent='📄 Descargar PDF';btn.disabled=false;}}
 }
