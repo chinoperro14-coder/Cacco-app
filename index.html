@@ -405,11 +405,37 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   .cont{overflow-x:visible;}
   /* Calendar nav */
   #calTit{min-width:0!important;font-size:13px!important;}
+  #vCalendario .sh2>div:last-child{justify-content:space-between;width:100%;}
+  #vCalendario .sh2>div:last-child .btn{flex:1;text-align:center;padding:6px 4px;font-size:12px;}
+  #calGrid{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  /* Calendar cells — ultra compact on mobile */
+  .cgrid{min-width:280px;}
+  .cdn{padding:5px 1px;font-size:9px;letter-spacing:0;}
+  .cd{padding:3px 2px;min-height:44px;}
+  .cdnum{font-size:10px;margin-bottom:1px;}
+  .cev{font-size:8px;padding:1px 3px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+  /* Horas extras — override inline 3-col grid */
+  #vHorasExtra .sg{grid-template-columns:1fr 1fr!important;}
+  /* Reportes buttons — wrap cleanly */
+  #vReportes .sh2>div:last-child{flex-wrap:wrap;gap:6px;}
+  #vReportes .sh2>div:last-child .btn{flex:1 1 auto;text-align:center;min-width:calc(50% - 6px);}
   /* Tareas — badge/progress row */
   .tcard [style*="width:100px"]{width:70px;}
   /* Botones de acción en tareas */
   .tcard [style*="justify-content:flex-end"]{justify-content:stretch!important;flex-wrap:wrap;}
   .tcard [style*="justify-content:flex-end"] .btn{flex:1;}
+  /* Perfil */
+  #vPerfil .fr{grid-template-columns:1fr;}
+  /* Landscape phone */
+  @media(max-height:500px){
+    header{height:48px;}
+    .sid{top:48px;height:calc(100vh - 48px);}
+    .sid-overlay{top:48px;}
+    .cont{padding:8px;}
+    .sh2{margin-bottom:8px;}
+    .cd{min-height:36px;}
+    #calGrid{max-height:calc(100vh - 130px);overflow-y:auto;}
+  }
 }
 </style>
 </head>
@@ -1973,7 +1999,8 @@ let calMes=new Date().getMonth(), calAnio=new Date().getFullYear();
 function renderCal(){
   const ms=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   document.getElementById('calTit').textContent=`${ms[calMes]} ${calAnio}`;
-  const ds=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const mob=window.innerWidth<=768;
+  const ds=mob?['D','L','M','M','J','V','S']:['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 
   // Construir la grilla con tabla HTML para evitar problemas de layout
   let filas='';
