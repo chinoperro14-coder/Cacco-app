@@ -2140,36 +2140,163 @@ async function descargarPDF(){
 
 function imprimirReporte(){
   if(!puede('verReportes')){alert('Sin permiso.');return;}
-  const el=document.getElementById('vReportes');
-  if(!el){return;}
-  const fecha=new Date().toLocaleDateString('es-PA',{day:'2-digit',month:'long',year:'numeric'});
+  const ts=E.tareas,total=ts.length;
+  const comp=ts.filter(t=>eglobal(t)==='Completada').length;
+  const prog=ts.filter(t=>eglobal(t)==='En Progreso').length;
+  const pend=ts.filter(t=>eglobal(t)==='Pendiente').length;
+  const pct=total?Math.round(comp/total*100):0;
+  const venc=ts.filter(t=>t.fecha&&t.fecha<hoy()&&eglobal(t)!=='Completada');
+  const hapr=E.horasExtra.filter(h=>h.aprobacion==='Aprobado');
+  const thrs=hapr.reduce((s,h)=>s+parseFloat(h.horas||0),0);
+  const semTxt=pct>=80?'🟢 VERDE — Rendimiento excelente':pct>=50?'🟡 AMARILLO — Rendimiento moderado':'🔴 ROJO — Requiere atención';
+  const semCol=pct>=80?'#16a34a':pct>=50?'#d97706':'#dc2626';
+  const semBg=pct>=80?'#dcfce7':pct>=50?'#fef3c7':'#fee2e2';
   const tipo={diario:'Diario',semanal:'Semanal',mensual:'Mensual'}[repP]||'Semanal';
+  const fd=new Date().toLocaleDateString('es-PA',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  // Avance por sección
+  let secRows='';
+  SECC_NAMES.forEach(sec=>{
+    const tc=ts.filter(t=>t.secciones?.[sec]);if(!tc.length)return;
+    const cc=tc.filter(t=>t.secciones[sec].estado==='Completada').length;
+    const pp=tc.length?Math.round(cc/tc.length*100):0;
+    const col=pp>=80?'#16a34a':pp>=50?'#E35205':'#dc2626';
+    const resps=[...new Set(tc.flatMap(t=>(t.secciones[sec].responsables||[]).map(uid=>{const u=E.equipo.find(e=>e.id===uid);return u?u.nombre:null;}).filter(Boolean)))].join(', ');
+    secRows+=`<tr>
+      <td><strong>${SECCIONES[sec].ico} ${sec}</strong>${resps?'<br><span style="font-size:11px;color:#666">👤 '+resps+'</span>':''}</td>
+      <td style="text-align:center">${cc}/${tc.length}</td>
+      <td style="width:120px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="flex:1;height:8px;background:#eee;border-radius:4px;overflow:hidden">
+            <div style="width:${pp}%;height:100%;background:${col};border-radius:4px"></div>
+          </div>
+          <span style="font-size:11px;font-weight:700;color:${col};min-width:32px">${pp}%</span>
+        </div>
+      </td>
+    </tr>`;
+  });
+
+  // Avance por persona
+  let persRows='';
+  E.equipo.filter(u=>u.nivel!=='lector').forEach(u=>{
+    let tareasMiem=[];
+    ts.forEach(t=>{
+      if(!t.secciones)return;
+      Object.entries(t.secciones).forEach(([sec,sv])=>{
+        if(!(sv.responsables||[]).includes(u.id))return;
+        const est=sv.estado||'Pendiente';
+        tareasMiem.push({titulo:t.titulo,sec,est,fecha:t.fecha});
+      });
+    });
+    if(!tareasMiem.length)return;
+    const cmp=tareasMiem.filter(t=>t.est==='Completada').length;
+    const pp=tareasMiem.length?Math.round(cmp/tareasMiem.length*100):0;
+    const col=pp>=80?'#16a34a':pp>=50?'#E35205':'#dc2626';
+    const uSecsR=(u.secciones&&u.secciones.length)?u.secciones.join(', '):'';
+    persRows+=`<tr>
+      <td><strong>${u.nombre}</strong>${uSecsR?'<br><span style="font-size:11px;color:#666">'+uSecsR+'</span>':''}</td>
+      <td style="text-align:center">${cmp}/${tareasMiem.length}</td>
+      <td style="width:120px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="flex:1;height:8px;background:#eee;border-radius:4px;overflow:hidden">
+            <div style="width:${pp}%;height:100%;background:${col};border-radius:4px"></div>
+          </div>
+          <span style="font-size:11px;font-weight:700;color:${col};min-width:32px">${pp}%</span>
+        </div>
+      </td>
+    </tr>`;
+  });
+
+  // Pendientes / Vencidas
+  let pendRows='';
+  ts.filter(t=>eglobal(t)!=='Completada').sort((a,b)=>{if(!a.fecha&&!b.fecha)return 0;if(!a.fecha)return 1;if(!b.fecha)return -1;return a.fecha.localeCompare(b.fecha);}).forEach(t=>{
+    const eg=eglobal(t);
+    const isVenc=t.fecha&&t.fecha<hoy();
+    const estCol=eg==='En Progreso'?'#2563eb':isVenc?'#dc2626':'#d97706';
+    const estTxt=isVenc?'⚠️ VENCIDA':eg;
+    const resps=t.secciones?Object.values(t.secciones).flatMap(sv=>(sv.responsables||[]).map(uid=>{const u=E.equipo.find(e=>e.id===uid);return u?u.nombre.split(' ')[0]:null;})).filter(Boolean):[]; 
+    pendRows+=`<tr style="${isVenc?'background:#fff5f5':''} ">
+      <td><strong>${t.titulo}</strong>${t.notas?'<br><span style="font-size:11px;color:#666">📝 '+t.notas+'</span>':''}</td>
+      <td><span style="color:${estCol};font-weight:600;font-size:12px">${estTxt}</span></td>
+      <td style="font-size:12px">${t.fecha?fmt(t.fecha):'-'}</td>
+      <td style="font-size:12px">${resps.join(', ')||'—'}</td>
+    </tr>`;
+  });
+
+  // Horas extras
+  let hrsRows='';
+  E.equipo.forEach(u=>{
+    const mh=hapr.filter(h=>h.miembro===u.nombre).reduce((s,h)=>s+parseFloat(h.horas||0),0);
+    if(mh>0)hrsRows+=`<tr><td>${u.nombre}</td><td style="text-align:center">${hapr.filter(h=>h.miembro===u.nombre).length}</td><td style="text-align:center;font-weight:700">${mh.toFixed(1)} hrs</td></tr>`;
+  });
+
   const w=window.open('','_blank');
-  w.document.write('<html><head><title>Reporte CACCO '+tipo+' — '+fecha+'</title>');
-  w.document.write('<meta charset=UTF-8>');
-  w.document.write('<style>');
-  w.document.write('*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;font-size:13px;color:#111;padding:20px;}');
-  w.document.write('h1{font-size:18px;margin-bottom:4px;}');
-  w.document.write('.sub{color:#666;font-size:12px;margin-bottom:16px;}');
-  w.document.write('.blk{border:1px solid #ddd;border-radius:6px;padding:14px;margin-bottom:12px;}');
-  w.document.write('.blk h2{font-size:11px;font-weight:700;text-transform:uppercase;color:#888;margin-bottom:10px;letter-spacing:.5px;}');
-  w.document.write('.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:0;}');
-  w.document.write('.stat{border:1px solid #eee;border-radius:4px;padding:8px 10px;}');
-  w.document.write('.stat .lbl{font-size:10px;color:#888;text-transform:uppercase;}');
-  w.document.write('.stat .val{font-size:22px;font-weight:800;}');
-  w.document.write('table{width:100%;border-collapse:collapse;font-size:12px;}');
-  w.document.write('th{text-align:left;padding:6px 8px;background:#f5f5f5;border-bottom:2px solid #ddd;font-size:11px;}');
-  w.document.write('td{padding:6px 8px;border-bottom:1px solid #eee;}');
-  w.document.write('.bar{height:8px;background:#eee;border-radius:4px;overflow:hidden;margin-top:4px;}');
-  w.document.write('.fill{height:100%;background:#E35205;border-radius:4px;}');
-  w.document.write('@media print{body{padding:10px;}button{display:none;}}');
-  w.document.write('</style></head><body>');
-  w.document.write('<h1>📊 Reporte '+tipo+' — CACCO</h1>');
-  w.document.write('<div class=sub>Equipo de Comunicaciones · Generado: '+fecha+(uAct?.nombre?' · '+uAct.nombre:'')+'</div>');
-  // Copiar el contenido del reporte
-  w.document.write('<div class=blk>'+el.innerHTML+'</div>');
-  w.document.write('<br><button onclick=window.print() style="padding:8px 20px;background:#E35205;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer">🖨️ Imprimir / Guardar como PDF</button>');
-  w.document.write('</body></html>');
+  w.document.write(`<!DOCTYPE html><html lang="es"><head>
+<meta charset="UTF-8">
+<title>Reporte ${tipo} CACCO — ${fd}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#1a1a1a;background:#fff;padding:32px;max-width:860px;margin:0 auto;}
+.hdr{border-bottom:3px solid #E35205;padding-bottom:14px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-end;}
+.hdr h1{font-size:22px;font-weight:800;color:#E35205;}
+.hdr .meta{font-size:11px;color:#666;text-align:right;line-height:1.6;}
+.sem{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;font-size:14px;font-weight:700;margin-bottom:16px;background:${semBg};color:${semCol};}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
+.stat{border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;text-align:center;}
+.stat .lbl{font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.stat .val{font-size:28px;font-weight:800;line-height:1;}
+.stat .sub{font-size:11px;color:#888;margin-top:3px;}
+.sec-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#888;margin:20px 0 8px;padding-bottom:4px;border-bottom:1px solid #e5e7eb;}
+table{width:100%;border-collapse:collapse;margin-bottom:4px;}
+th{text-align:left;padding:8px 10px;background:#f9fafb;border-bottom:2px solid #e5e7eb;font-size:11px;font-weight:700;text-transform:uppercase;color:#666;letter-spacing:.4px;}
+td{padding:9px 10px;border-bottom:1px solid #f3f4f6;vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+.firma{margin-top:40px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;}
+.firma-box{text-align:center;}
+.firma-line{border-top:1px solid #111;margin-bottom:6px;padding-top:8px;font-size:11px;color:#444;}
+.print-btn{margin-top:24px;padding:10px 24px;background:#E35205;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;}
+@media print{.print-btn{display:none;}body{padding:16px;}}
+</style></head><body>
+<div class="hdr">
+  <div><h1>📊 Reporte ${tipo} — CACCO</h1><div style="font-size:12px;color:#666;margin-top:4px">Equipo de Comunicaciones · Centro de Arte y Cultura de Colón</div></div>
+  <div class="meta">${fd}<br>Generado por: ${uAct?.nombre||'—'}</div>
+</div>
+
+<div class="sec-title">Estado General</div>
+<div class="sem">${semTxt}</div>
+<div class="grid">
+  <div class="stat" style="border-top:3px solid #E35205"><div class="lbl">Total</div><div class="val">${total}</div></div>
+  <div class="stat" style="border-top:3px solid #16a34a"><div class="lbl">Completadas</div><div class="val">${comp}</div><div class="sub">${pct}%</div></div>
+  <div class="stat" style="border-top:3px solid #2563eb"><div class="lbl">En Progreso</div><div class="val">${prog}</div></div>
+  <div class="stat" style="border-top:3px solid #dc2626"><div class="lbl">Vencidas</div><div class="val">${venc.length}</div></div>
+</div>
+
+<div class="sec-title">Avance por Sección</div>
+<table><thead><tr><th>Sección</th><th style="text-align:center">Tareas</th><th>Progreso</th></tr></thead>
+<tbody>${secRows||'<tr><td colspan=3 style="color:#888;text-align:center">Sin tareas registradas</td></tr>'}</tbody></table>
+
+<div class="sec-title">Avance por Persona</div>
+<table><thead><tr><th>Colaborador</th><th style="text-align:center">Tareas</th><th>Progreso</th></tr></thead>
+<tbody>${persRows||'<tr><td colspan=3 style="color:#888;text-align:center">Sin asignaciones</td></tr>'}</tbody></table>
+
+<div class="sec-title">Pendientes y Vencidas</div>
+<table><thead><tr><th>Tarea</th><th>Estado</th><th>Fecha</th><th>Responsable</th></tr></thead>
+<tbody>${pendRows||'<tr><td colspan=4 style="color:#16a34a;text-align:center">✅ Sin tareas pendientes</td></tr>'}</tbody></table>
+
+${thrs>0?`<div class="sec-title">Horas Extras Aprobadas</div>
+<table><thead><tr><th>Colaborador</th><th style="text-align:center">Registros</th><th style="text-align:center">Total Horas</th></tr></thead>
+<tbody>${hrsRows}</tbody></table>`:''}
+
+<div class="firma">
+  <div class="firma-box"><div class="firma-line">Coordinación General</div></div>
+  <div class="firma-box"><div class="firma-line">Responsable de Área</div></div>
+  <div class="firma-box"><div class="firma-line">Dirección</div></div>
+</div>
+
+<div style="margin-top:24px;text-align:center">
+  <button class="print-btn" onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button>
+</div>
+</body></html>`);
   w.document.close();
 }
 
