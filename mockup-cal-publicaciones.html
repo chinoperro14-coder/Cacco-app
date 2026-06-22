@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CACCO — Mockup Cal. Publicaciones</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+/* ── CSS IDÉNTICO AL APP REAL ── */
+:root{--na:#E35205;--na2:#c44604;--nas:#fff4ee;--nab:#fcd9c4;--fo:#f5f4f2;--su:#ffffff;--su2:#f0eeeb;--bo:#e2ddd8;--tx:#1a1816;--tm:#6b6258;--ve:#166534;--ves:#dcfce7;--az:#1e40af;--azs:#dbeafe;--ro:#991b1b;--ros:#fee2e2;--am:#92400e;--ams:#fef3c7;--mo:#5b21b6;--mos:#ede9fe;--r:10px;--rs:6px;--sh:0 1px 3px rgba(0,0,0,.07),0 4px 12px rgba(0,0,0,.05);--shm:0 4px 16px rgba(0,0,0,.10),0 1px 4px rgba(0,0,0,.06);}
+*{margin:0;padding:0;box-sizing:border-box;}html{font-size:15px;}
+body{font-family:'Inter',sans-serif;background:var(--fo);color:var(--tx);min-height:100vh;line-height:1.6;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--rs);border:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;line-height:1;}
+.bna{background:var(--na);color:#fff;}.bna:hover{background:var(--na2);}
+.bbl{background:var(--su);color:var(--tx);border:1px solid var(--bo);}.bbl:hover{background:var(--su2);}
+.bgh{background:transparent;color:var(--tm);border:1px solid var(--bo);}.bgh:hover{background:var(--su2);color:var(--tx);}
+.bpe{background:var(--ros);color:var(--ro);border:none;}.bpe:hover{filter:brightness(.92);}
+.bve{background:var(--ves);color:var(--ve);border:none;}
+.bsm{padding:6px 12px;font-size:11px;}.blg{padding:12px 24px;font-size:15px;}
+/* HEADER — idéntico al real */
+header{background:var(--na);height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(227,82,5,.25);}
+.hmb{display:none;background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:6px 8px;margin-right:8px;border-radius:6px;line-height:1;}
+.hl{display:flex;align-items:center;gap:12px;}
+.horg{font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdep{font-size:11px;color:rgba(255,255,255,.82);}
+.hr{display:flex;align-items:center;gap:8px;}
+.acb{background:rgba(255,255,255,.15);border:none;border-radius:6px;padding:5px 9px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
+.nb{background:rgba(255,255,255,.15);border:none;border-radius:8px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:16px;}
+.uch{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.15);border-radius:20px;padding:5px 12px 5px 6px;cursor:pointer;}
+.uch .unom{font-size:12px;font-weight:600;color:#fff;}
+/* LAYOUT */
+.alay{display:flex;min-height:calc(100vh - 60px);}
+.sid{width:228px;background:var(--su);border-right:1px solid var(--bo);padding:18px 12px;display:flex;flex-direction:column;gap:2px;position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto;flex-shrink:0;}
+.nsep{font-size:10px;font-weight:700;color:var(--tm);letter-spacing:1px;text-transform:uppercase;padding:14px 8px 5px;}
+.ni{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:7px;font-size:13px;font-weight:500;color:var(--tm);cursor:pointer;transition:all .12s;border:none;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif;}
+.ni:hover{background:var(--nas);color:var(--na);}.ni.on{background:var(--nas);color:var(--na);font-weight:700;}
+.ni .ico{font-size:14px;width:18px;text-align:center;flex-shrink:0;}
+.ni .ct{margin-left:auto;font-size:11px;background:var(--su2);border:1px solid var(--bo);padding:1px 7px;border-radius:20px;font-weight:600;}
+.ni.on .ct{background:var(--na);color:#fff;border-color:var(--na);}
+.ni2{padding-left:26px;font-size:12px;}
+/* Item NUEVO en sidebar */
+.ni.new-item{border:1.5px dashed var(--nab);}
+.ni .new-tag{font-size:9px;font-weight:800;background:var(--na);color:#fff;padding:1px 5px;border-radius:8px;margin-left:auto;}
+.cont{flex:1;padding:28px;overflow-x:hidden;min-width:0;}
+/* STATS */
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.stat{background:var(--su);border:1px solid var(--bo);border-radius:var(--r);padding:20px 22px;box-shadow:var(--sh);border-top:3px solid transparent;}
+.sna{border-top-color:var(--na);}.sve{border-top-color:#16a34a;}.saz{border-top-color:#2563eb;}.sam{border-top-color:#d97706;}
+.slbl{font-size:11px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.snum{font-size:32px;font-weight:800;color:var(--tx);letter-spacing:-1.5px;line-height:1;}
+.ssub{font-size:12px;color:var(--tm);margin-top:4px;}
+/* BADGES */
+.bg{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;}
+.bpen{background:var(--ams);color:var(--am);}.bpro{background:var(--azs);color:var(--az);}.blis{background:var(--ves);color:var(--ve);}
+.balt{background:var(--ros);color:var(--ro);}.bmed{background:var(--ams);color:var(--am);}.bbaj{background:var(--ves);color:var(--ve);}
+.bnar{background:var(--nas);color:var(--na);}.bmor{background:var(--mos);color:var(--mo);}.bgr{background:var(--su2);color:var(--tm);border:1px solid var(--bo);}
+/* SH */
+.sh2{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px;}
+.stit{font-size:18px;font-weight:800;letter-spacing:-.3px;}
+/* TAREA CARD — idéntica al real */
+.tcard{background:var(--su);border:1px solid var(--bo);border-radius:var(--r);margin-bottom:12px;box-shadow:var(--sh);overflow:hidden;}
+.tprog{height:5px;background:var(--su2);border-radius:3px;overflow:hidden;margin-top:8px;max-width:280px;}
+.tpfill{height:100%;border-radius:3px;}
+/* GROW ROWS */
+.grow{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-radius:8px;margin-top:8px;background:var(--su);border:1px solid var(--bo);gap:12px;flex-wrap:wrap;}
+.grow.comp{background:var(--ves);border-color:#86efac;}
+.ginfo{display:flex;align-items:center;gap:10px;flex:1;min-width:0;}
+.gico{font-size:20px;flex-shrink:0;}
+.gnom{font-size:13px;font-weight:700;}
+.gsub{font-size:11px;color:var(--tm);margin-top:1px;}
+/* ENTREGABLES — idénticos al real */
+.ent-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bo);}
+.ent-item:last-child{border-bottom:none;}
+.ent-ico{width:30px;height:30px;border-radius:7px;background:var(--azs);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.ent-info{flex:1;min-width:0;}
+.ent-name{font-size:13px;font-weight:600;color:var(--tx);}
+.ent-url{font-size:11px;color:var(--az);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;}
+.ent-who{font-size:11px;color:var(--tm);white-space:nowrap;}
+/* ══ NUEVO: Botón Programar + badge ══ */
+.btn-prog{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:var(--rs);font-size:11px;font-weight:700;cursor:pointer;border:1.5px dashed var(--bo);background:transparent;color:var(--tm);font-family:'Inter',sans-serif;transition:all .15s;flex-shrink:0;}
+.btn-prog:hover{border-color:var(--na);background:var(--nas);color:var(--na);}
+.prog-badge{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:var(--rs);font-size:11px;font-weight:700;background:var(--nas);border:1.5px solid var(--nab);color:var(--na);flex-shrink:0;cursor:pointer;white-space:nowrap;}
+/* ══ NUEVO: Bloque publicaciones en tarea completada ══ */
+.pub-sec-tarea{margin-top:12px;background:var(--nas);border:1px solid var(--nab);border-radius:8px;padding:10px 14px;}
+.pub-sec-tit{font-size:10px;font-weight:800;color:var(--na);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.pub-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--nab);font-size:12px;}
+.pub-row:last-child{border-bottom:none;}
+.pub-hora{font-weight:800;color:var(--na);width:58px;flex-shrink:0;}
+.pub-nom{flex:1;font-weight:600;}
+.pub-plat-row{display:flex;gap:3px;flex-wrap:wrap;}
+.pc{font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;}
+.pc.ig{background:#fff0f5;color:#C13584;}
+.pc.fb{background:#e8f0fe;color:#1877F2;}
+.pc.tt{background:#f0f0f0;color:#111;}
+.pc.rd{background:#fff4ee;color:#FF6B00;}
+.pc.tv{background:#e8f5e9;color:#1b5e20;}
+.pc.pr{background:#ede7f6;color:#4527a0;}
+.pub-est-ico{font-size:13px;flex-shrink:0;}
+/* CALENDARIO */
+.cgrid{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--bo);border-radius:var(--r);overflow:hidden;}
+.cdn{background:var(--su2);padding:10px 6px;text-align:center;font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;border-bottom:1px solid var(--bo);}
+.cd{background:var(--su);padding:8px 7px;min-height:96px;border-right:1px solid var(--bo);border-bottom:1px solid var(--bo);vertical-align:top;}
+.cd:nth-child(7n){border-right:none;}
+.cd.otro{background:var(--fo);}
+.cd.hoy{background:var(--nas);}
+.cdnum{font-size:13px;font-weight:700;margin-bottom:5px;color:var(--tx);}
+.cd.hoy .cdnum{color:var(--na);font-weight:800;}
+.cev{font-size:11px;padding:3px 7px;border-radius:4px;margin-bottom:3px;line-height:1.35;background:var(--nas);color:var(--na);border:1px solid var(--nab);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer;font-weight:600;display:block;transition:all .12s;}
+.cev:hover{background:var(--na);color:#fff;border-color:var(--na);}
+/* ══ NUEVO: Chips de publicación en el calendario ══ */
+.cev-pub{font-size:10px;padding:2px 6px;border-radius:4px;margin-bottom:2px;line-height:1.4;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer;font-weight:600;display:block;border-left:3px solid;}
+/* REPORTES */
+.rtabs{display:flex;gap:4px;background:var(--su2);padding:4px;border-radius:8px;margin-bottom:20px;width:fit-content;}
+.rtab{padding:7px 20px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;color:var(--tm);border:none;background:transparent;font-family:'Inter',sans-serif;transition:all .12s;}
+.rtab.on{background:var(--su);color:var(--tx);box-shadow:var(--sh);}
+.rblk{background:var(--su);border:1px solid var(--bo);border-radius:var(--r);padding:22px;margin-bottom:16px;box-shadow:var(--sh);}
+.rbtit{font-size:13px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;}
+.rtxt{background:var(--su2);border:1px solid var(--bo);border-radius:var(--rs);padding:18px;font-family:monospace;font-size:12px;line-height:1.9;white-space:pre-wrap;max-height:500px;overflow-y:auto;color:var(--tx);}
+.pbar{height:8px;background:var(--su2);border-radius:4px;overflow:hidden;margin-top:4px;}
+.pfill{height:100%;border-radius:4px;}
+/* MODALES */
+.mov{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:500;padding:20px;backdrop-filter:blur(2px);}
+.mov.on{display:flex;}
+.mo{background:var(--su);border-radius:14px;border:1px solid var(--bo);width:100%;max-width:560px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.22);}
+.mcab{display:flex;align-items:center;justify-content:space-between;padding:22px 26px 18px;border-bottom:1px solid var(--bo);position:sticky;top:0;background:var(--su);z-index:1;border-radius:14px 14px 0 0;}
+.mtit{font-size:17px;font-weight:800;}
+.mx{background:none;border:none;font-size:22px;cursor:pointer;color:var(--tm);line-height:1;padding:4px 6px;border-radius:5px;}
+.mx:hover{background:var(--su2);}
+.mbody{padding:22px 26px;}
+.mpie{padding:18px 26px;border-top:1px solid var(--bo);display:flex;justify-content:flex-end;gap:10px;align-items:center;}
+.fg{margin-bottom:16px;}
+.fl{display:block;font-size:12px;font-weight:700;color:var(--tm);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;}
+.fc{width:100%;padding:10px 14px;border:1.5px solid var(--bo);border-radius:var(--rs);font-family:'Inter',sans-serif;font-size:14px;color:var(--tx);background:var(--su);transition:border-color .15s;outline:none;}
+.fc:focus{border-color:var(--na);box-shadow:0 0 0 3px rgba(227,82,5,.12);}
+textarea.fc{resize:none;min-height:80px;}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+/* CHIPS */
+.chw{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px;}
+.chip{display:flex;align-items:center;gap:6px;border:1.5px solid var(--bo);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:500;cursor:pointer;transition:all .12s;background:var(--su);color:var(--tx);user-select:none;}
+.chip:hover{border-color:var(--na);}.chip.sel{border-color:var(--na);background:var(--nas);color:var(--na);font-weight:700;}
+/* ══ NUEVO: Vista agenda y panel de día ══ */
+.agenda-dia{background:var(--su);border:1px solid var(--bo);border-radius:var(--r);margin-bottom:14px;box-shadow:var(--sh);overflow:hidden;}
+.agenda-dia-hdr{padding:10px 16px;background:var(--su2);border-bottom:1px solid var(--bo);font-size:13px;font-weight:700;}
+.agenda-pub{display:flex;align-items:flex-start;gap:10px;padding:10px 16px;border-bottom:1px solid var(--bo);}
+.agenda-pub:last-child{border-bottom:none;}
+.agenda-hora{font-size:12px;font-weight:800;color:var(--na);width:60px;flex-shrink:0;padding-top:2px;}
+.agenda-info{flex:1;min-width:0;}
+.agenda-nom{font-size:13px;font-weight:700;}
+.agenda-from{font-size:11px;color:var(--tm);margin-top:1px;}
+.dia-panel{background:var(--su);border:1px solid var(--nab);border-radius:var(--r);padding:18px;margin-top:16px;box-shadow:var(--sh);}
+.dia-panel-tit{font-size:14px;font-weight:800;margin-bottom:12px;color:var(--na);}
+.dia-pub-card{background:var(--fo);border:1px solid var(--bo);border-radius:8px;padding:12px 14px;margin-bottom:10px;}
+.dia-pub-card:last-child{margin-bottom:0;}
+.dia-pub-nom{font-size:13px;font-weight:700;margin-bottom:4px;}
+.dia-copy{font-size:12px;background:var(--su);border-radius:6px;padding:8px 12px;border-left:3px solid var(--nab);font-style:italic;color:var(--tm);margin-top:8px;line-height:1.6;}
+/* UTILS */
+.oculto{display:none!important;}
+::-webkit-scrollbar{width:5px;height:5px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--bo);border-radius:3px;}
+/* ══ TABS DEL MOCKUP (no existen en el app real) ══ */
+.mock-banner{background:var(--ams);color:var(--am);border-bottom:1px solid #fcd34d;padding:8px 28px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;}
+.mock-tabs{display:flex;gap:2px;background:var(--su2);border:1px solid var(--bo);border-radius:8px;padding:3px;margin-bottom:24px;width:fit-content;}
+.mock-tab{padding:7px 18px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;color:var(--tm);border:none;background:none;font-family:'Inter',sans-serif;transition:all .15s;}
+.mock-tab.on{background:var(--su);color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,.1);}
+@media(max-width:768px){
+  .sid{position:fixed;top:60px;left:0;height:calc(100vh - 60px);z-index:300;transform:translateX(-100%);transition:transform .25s ease;box-shadow:4px 0 16px rgba(0,0,0,.25);}
+  .sid.open{transform:translateX(0);}
+  .sid-overlay{display:none;position:fixed;inset:0;top:60px;background:rgba(0,0,0,.4);z-index:299;}
+  .sid-overlay.open{display:block;}
+  .hmb{display:flex!important;}
+  header{padding:0 10px;}
+  .hdep{display:none;}.unom{display:none;}.horg{display:none;}
+  .cont{padding:12px;}
+  .alay{display:block;}
+  .sg{grid-template-columns:1fr 1fr!important;}
+  .fr{grid-template-columns:1fr;}
+  .mo{max-width:100%;border-radius:12px 12px 0 0;position:fixed;bottom:0;left:0;right:0;top:auto;max-height:88vh;}
+  .mov{align-items:flex-end;padding:0;}
+  .mcab{padding:16px 18px 14px;}
+  .mbody{padding:16px 18px;}
+  .mpie{padding:14px 18px;flex-direction:column-reverse;gap:8px;}
+  .mpie .btn{width:100%;justify-content:center;}
+}
+</style>
+</head>
+<body>
+
+<!-- BANNER MOCKUP -->
+<div class="mock-banner">
+  ⚠️ <strong>MOCKUP</strong> — Previsualización antes de implementar. Los cambios están resaltados con borde punteado naranja.
+</div>
+
+<!-- HEADER — idéntico al app real -->
+<header>
+  <div class="hl">
+    <button class="hmb" onclick="togSid()">☰</button>
+    <div style="width:36px;height:36px;background:rgba(255,255,255,.25);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;flex-shrink:0;">C</div>
+    <div><div class="horg">CACCO</div><div class="hdep">Equipo de Comunicaciones</div></div>
+  </div>
+  <div class="hr">
+    <div style="display:flex;gap:4px">
+      <button class="acb">🌙</button>
+      <button class="acb">A+</button>
+      <button class="acb">A−</button>
+    </div>
+    <button class="acb">🔄</button>
+    <button class="nb">🔔</button>
+    <div class="uch">
+      <div style="width:26px;height:26px;border-radius:50%;background:#E35205;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0;">MA</div>
+      <span class="unom">María A.</span>
+    </div>
+    <button class="btn bbl bsm">Salir</button>
+  </div>
+</header>
+
+<div class="alay">
+
+<!-- SIDEBAR — idéntico al real + nuevo item -->
+<div class="sid-overlay" id="sidOverlay" onclick="togSid()"></div>
+<nav class="sid" id="sidNav">
+  <div class="nsep">Principal</div>
+  <button class="ni" onclick="switchMockTab('tareas',this)"><span class="ico">📋</span>Tareas<span class="ct">5</span></button>
+  <button class="ni" onclick="switchMockTab('tareas',this)"><span class="ico">📅</span>Calendario</button>
+  <button class="ni" onclick="switchMockTab('tareas',this)"><span class="ico">⏱️</span>Horas Extras<span class="ct">2</span></button>
+  <button class="ni" onclick="switchMockTab('tareas',this)"><span class="ico">👥</span>Equipo</button>
+  <div class="nsep">Coordinación</div>
+  <button class="ni" onclick="switchMockTab('reporte',this)"><span class="ico">📊</span>Reportes</button>
+  <button class="ni" onclick="switchMockTab('tareas',this)"><span class="ico">🗂️</span>Histórico</button>
+  <button class="ni" onclick="switchMockTab('tareas',this)"><span class="ico">📝</span>Bitácora</button>
+  <div class="nsep">Secciones</div>
+  <button class="ni" onclick="switchMockTab('tareas',this)"><span class="ico">🔘</span>Todas</button>
+  <button class="ni" onclick="switchMockTab('tareas',this)"><span class="ico">📹</span>Audiovisual</button>
+  <button class="ni" onclick="switchMockTab('tareas',this)"><span class="ico">🎯</span>Protocolo</button>
+  <button class="ni" onclick="switchMockTab('tareas',this)"><span class="ico">🎨</span>Diseño</button>
+  <button class="ni" onclick="switchMockTab('tareas',this)"><span class="ico">📱</span>Redes Sociales</button>
+  <button class="ni" onclick="switchMockTab('tareas',this)"><span class="ico">📡</span>Medios</button>
+  <!-- ══ NUEVO ══ -->
+  <div class="nsep">Publicaciones</div>
+  <button class="ni new-item on" id="sidCalPub" onclick="switchMockTab('cal',this)">
+    <span class="ico">📡</span>Cal. Publicaciones
+    <span class="new-tag">NUEVO</span>
+  </button>
+</nav>
+
+<main class="cont" id="mainCont">
+
+<!-- ══ TABS DEL MOCKUP ══ -->
+<div class="mock-tabs">
+  <button class="mock-tab" onclick="switchMockTab('tareas',this)" id="tabTareas">📋 Tareas (cambio mínimo)</button>
+  <button class="mock-tab on" onclick="switchMockTab('cal',this)" id="tabCal">📡 Cal. Publicaciones (nuevo)</button>
+  <button class="mock-tab" onclick="switchMockTab('reporte',this)" id="tabReporte">📊 Reporte (sección nueva)</button>
+</div>
+
+<!-- ══════════════════════════════════════
+     VISTA 1: TAREAS (cambio mínimo)
+══════════════════════════════════════ -->
+<div id="vTareas" class="oculto">
+  <div class="sh2">
+    <div class="stit">Tareas del equipo</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn bgh bsm">📊 Reporte</button>
+      <button class="btn bna bsm">+ Nueva Tarea</button>
+    </div>
+  </div>
+  <div class="sg">
+    <div class="stat sna"><div class="slbl">Total</div><div class="snum">5</div></div>
+    <div class="stat sam"><div class="slbl">Pendiente</div><div class="snum">1</div></div>
+    <div class="stat saz"><div class="slbl">En Progreso</div><div class="snum">2</div></div>
+    <div class="stat sve"><div class="slbl">Completadas</div><div class="snum">2</div></div>
+  </div>
+
+  <!-- Tarea 1: En Progreso — con entregables y botón Programar -->
+  <div class="tcard" style="border:1px solid #993C1D40">
+    <div style="background:#993C1D;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="togBody('b1')">
+      <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">
+        <span style="font-size:17px;flex-shrink:0">📱</span>
+        <div style="min-width:0">
+          <div class="t-tit" style="font-size:14px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Festival de Verano 2026</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:10px">
+        <span style="font-size:10px;padding:1px 6px;border-radius:10px;background:rgba(255,255,255,.25);color:#fff;font-weight:600">📱 Redes Sociales</span>
+        <span style="color:rgba(255,255,255,.8);font-size:18px;display:inline-block;" id="arr-b1">▾</span>
+      </div>
+    </div>
+    <div style="padding:10px 14px;background:#FAECE7;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;cursor:pointer" onclick="togBody('b1')">
+      <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+        <span class="bg bpro">En Progreso</span>
+        <span class="bg balt">Alta</span>
+        <span class="bg bgr">📅 28 jun</span>
+        <span class="bg bgr">🔗 3 entregables</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="tprog" style="width:100px"><div class="tpfill" style="width:60%;background:#993C1D"></div></div>
+        <span style="font-size:12px;font-weight:700;color:#993C1D">60%</span>
+      </div>
+    </div>
+    <div id="b1" style="padding:14px;border-top:2px solid #993C1D30">
+      <div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Avance por sección</div>
+      <div class="grow"><div class="ginfo"><span class="gico">📱</span><div><div class="gnom">Redes Sociales</div><div class="gsub">En Progreso</div></div></div><button class="btn bna bsm">Marcar Completo</button></div>
+      <!-- Entregables — estructura idéntica al real + btn-prog NUEVO -->
+      <div style="margin-top:12px;padding:12px;background:var(--su);border:1px solid var(--bo);border-radius:8px">
+        <div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🔗 Entregables (3)</div>
+        <!-- Entregable 1: ya programado -->
+        <div class="ent-item">
+          <div class="ent-ico">🔗</div>
+          <div class="ent-info">
+            <div class="ent-name">Afiche Festival de Verano</div>
+            <a class="ent-url" href="#">drive.google.com/file/afiche-festival-2026</a>
+          </div>
+          <span class="ent-who">María A.</span>
+          <!-- NUEVO: badge de programado -->
+          <div class="prog-badge" onclick="abrirModal('Afiche Festival de Verano','drive.google.com/file/afiche-festival-2026','Festival de Verano 2026')">
+            📅 22 jun · 9AM &nbsp;<span class="pc ig">IG</span><span class="pc fb">FB</span>
+          </div>
+          <button class="btn bpe bsm" style="margin-left:4px">🗑</button>
+        </div>
+        <!-- Entregable 2: ya programado -->
+        <div class="ent-item">
+          <div class="ent-ico">🔗</div>
+          <div class="ent-info">
+            <div class="ent-name">Cuña de radio — Festival</div>
+            <a class="ent-url" href="#">drive.google.com/file/cuna-radio-festival</a>
+          </div>
+          <span class="ent-who">Carlos M.</span>
+          <div class="prog-badge" onclick="abrirModal('Cuña de radio — Festival','drive.google.com/file/cuna-radio-festival','Festival de Verano 2026')">
+            📅 22 jun · 11AM &nbsp;<span class="pc rd">RD</span>
+          </div>
+          <button class="btn bpe bsm" style="margin-left:4px">🗑</button>
+        </div>
+        <!-- Entregable 3: sin programar aún — NUEVO botón -->
+        <div class="ent-item">
+          <div class="ent-ico">🔗</div>
+          <div class="ent-info">
+            <div class="ent-name">Carrusel Instagram — Festival</div>
+            <a class="ent-url" href="#">canva.com/design/carrusel-festival-2026</a>
+          </div>
+          <span class="ent-who">María A.</span>
+          <!-- NUEVO: botón Programar (dashed border, gris hasta hacer hover) -->
+          <button class="btn-prog" onclick="abrirModal('Carrusel Instagram — Festival','canva.com/design/carrusel-festival-2026','Festival de Verano 2026')">
+            📅 Programar
+          </button>
+          <button class="btn bpe bsm" style="margin-left:4px">🗑</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tarea 2: Completada — muestra resumen de publicaciones -->
+  <div class="tcard" style="border:1px solid #185FA540">
+    <div style="background:#185FA5;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="togBody('b2')">
+      <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">
+        <span style="font-size:17px;flex-shrink:0">📡</span>
+        <div style="min-width:0">
+          <div class="t-tit" style="font-size:14px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Apertura Temporada Cultural</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:10px">
+        <span style="font-size:10px;padding:1px 6px;border-radius:10px;background:rgba(255,255,255,.25);color:#fff;font-weight:600">📡 Medios</span>
+        <span style="color:rgba(255,255,255,.8);font-size:18px" id="arr-b2">▾</span>
+      </div>
+    </div>
+    <div style="padding:10px 14px;background:#E6F1FB;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;cursor:pointer" onclick="togBody('b2')">
+      <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+        <span class="bg blis">✅ Completada</span>
+        <span class="bg bmed">Media</span>
+        <span class="bg bgr">📅 15 jun</span>
+        <span class="bg bgr">🔗 2 entregables</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="tprog" style="width:100px"><div class="tpfill" style="width:100%;background:#185FA5"></div></div>
+        <span style="font-size:12px;font-weight:700;color:#185FA5">100%</span>
+      </div>
+    </div>
+    <div id="b2" style="display:none;padding:14px;border-top:2px solid #185FA530">
+      <div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Avance por sección</div>
+      <div class="grow comp"><div class="ginfo"><span class="gico">📡</span><div><div class="gnom">Medios</div><div class="gsub">Completado · 15 jun · Juan R.</div></div></div><span class="bg blis">✅</span></div>
+      <!-- Entregables -->
+      <div style="margin-top:12px;padding:12px;background:var(--su);border:1px solid var(--bo);border-radius:8px">
+        <div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🔗 Entregables (2)</div>
+        <div class="ent-item">
+          <div class="ent-ico">🔗</div>
+          <div class="ent-info">
+            <div class="ent-name">Nota de prensa — Apertura</div>
+            <a class="ent-url" href="#">drive.google.com/file/nota-prensa-apertura</a>
+          </div>
+          <span class="ent-who">Juan R.</span>
+          <div class="prog-badge">📅 15 jun · 7PM &nbsp;<span class="pc pr">PR</span></div>
+        </div>
+        <div class="ent-item">
+          <div class="ent-ico">🔗</div>
+          <div class="ent-info">
+            <div class="ent-name">Cuña radio apertura</div>
+            <a class="ent-url" href="#">drive.google.com/file/cuna-radio-apertura</a>
+          </div>
+          <span class="ent-who">María A.</span>
+          <div class="prog-badge">📅 15 jun · 8AM &nbsp;<span class="pc rd">RD</span></div>
+        </div>
+      </div>
+      <!-- NUEVO: bloque resumen publicaciones en tarea completada -->
+      <div class="pub-sec-tarea">
+        <div class="pub-sec-tit">📅 Publicaciones de esta tarea</div>
+        <div class="pub-row">
+          <span class="pub-hora">8:00 AM</span>
+          <span class="pub-nom">Cuña radio apertura</span>
+          <div class="pub-plat-row"><span class="pc rd">RD</span></div>
+          <span class="pub-est-ico">✅</span>
+        </div>
+        <div class="pub-row">
+          <span class="pub-hora">7:00 PM</span>
+          <span class="pub-nom">Nota de prensa — Apertura</span>
+          <div class="pub-plat-row"><span class="pc pr">PR</span></div>
+          <span class="pub-est-ico">✅</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tarea 3: Pendiente (sin entregables) -->
+  <div class="tcard" style="border:1px solid #0F6E5640">
+    <div style="background:#0F6E56;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+      <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">
+        <span style="font-size:17px;flex-shrink:0">📹</span>
+        <div><div class="t-tit" style="font-size:14px;font-weight:700;color:#fff">Cobertura Concierto de Cámara</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:10px">
+        <span style="font-size:10px;padding:1px 6px;border-radius:10px;background:rgba(255,255,255,.25);color:#fff;font-weight:600">📹 Audiovisual</span>
+        <span style="color:rgba(255,255,255,.8);font-size:18px">▾</span>
+      </div>
+    </div>
+    <div style="padding:10px 14px;background:#E1F5EE;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+        <span class="bg bpen">Pendiente</span>
+        <span class="bg balt">Alta</span>
+        <span class="bg bgr">📅 30 jun</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="tprog" style="width:100px"><div class="tpfill" style="width:0%;background:#0F6E56"></div></div>
+        <span style="font-size:12px;font-weight:700;color:#0F6E56">0%</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:16px;padding:14px 18px;background:var(--nas);border:1px solid var(--nab);border-radius:var(--r);font-size:13px;color:var(--am)">
+    <strong>Cambios en esta vista:</strong> Solo se agrega el botón <strong>📅 Programar</strong> (borde punteado) en cada entregable, y el bloque <strong>"📅 Publicaciones de esta tarea"</strong> al expandir una tarea completada. Nada más cambia.
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     VISTA 2: CAL. PUBLICACIONES (nuevo)
+══════════════════════════════════════ -->
+<div id="vCal">
+  <div class="sh2">
+    <div>
+      <div class="stit">📡 Calendario de Publicaciones</div>
+      <div style="font-size:13px;color:var(--tm);margin-top:3px">Junio 2026</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <!-- Toggle Mes / Agenda -->
+      <div style="display:flex;gap:2px;background:var(--su2);border:1px solid var(--bo);border-radius:7px;padding:2px">
+        <button class="btn bsm" id="btnMes" onclick="setVista('mes')" style="background:var(--su);color:var(--tx);box-shadow:var(--sh);border-radius:5px;border:none">Mes</button>
+        <button class="btn bsm" id="btnAgenda" onclick="setVista('agenda')" style="background:transparent;color:var(--tm);border:none">Agenda</button>
+      </div>
+      <button class="btn bgh bsm">◀</button>
+      <button class="btn bgh bsm">▶</button>
+    </div>
+  </div>
+
+  <!-- Filtros por plataforma -->
+  <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px;align-items:center">
+    <span style="font-size:12px;font-weight:600;color:var(--tm)">Plataformas:</span>
+    <span class="chip sel" onclick="this.classList.toggle('sel')"><span style="color:#C13584">●</span> Instagram</span>
+    <span class="chip sel" onclick="this.classList.toggle('sel')"><span style="color:#1877F2">●</span> Facebook</span>
+    <span class="chip sel" onclick="this.classList.toggle('sel')"><span style="color:#111">●</span> TikTok</span>
+    <span class="chip sel" onclick="this.classList.toggle('sel')"><span style="color:#FF6B00">●</span> Radio</span>
+    <span class="chip sel" onclick="this.classList.toggle('sel')"><span style="color:#1b5e20">●</span> TV</span>
+    <span class="chip sel" onclick="this.classList.toggle('sel')"><span style="color:#4527a0">●</span> Prensa</span>
+  </div>
+
+  <!-- Vista Mes -->
+  <div id="vistaMes">
+    <div class="cgrid">
+      <div class="cdn">Dom</div><div class="cdn">Lun</div><div class="cdn">Mar</div>
+      <div class="cdn">Mié</div><div class="cdn">Jue</div><div class="cdn">Vie</div><div class="cdn">Sáb</div>
+      <!-- fila 1: semana 1 -->
+      <div class="cd otro"><div class="cdnum" style="color:var(--tm)">1</div></div>
+      <div class="cd otro"><div class="cdnum" style="color:var(--tm)">2</div></div>
+      <div class="cd otro"><div class="cdnum" style="color:var(--tm)">3</div></div>
+      <div class="cd otro"><div class="cdnum" style="color:var(--tm)">4</div></div>
+      <div class="cd otro"><div class="cdnum" style="color:var(--tm)">5</div></div>
+      <div class="cd otro"><div class="cdnum" style="color:var(--tm)">6</div></div>
+      <div class="cd otro"><div class="cdnum" style="color:var(--tm)">7</div></div>
+      <!-- fila 2 -->
+      <div class="cd"><div class="cdnum">8</div></div>
+      <div class="cd"><div class="cdnum">9</div></div>
+      <div class="cd"><div class="cdnum">10</div></div>
+      <div class="cd"><div class="cdnum">11</div></div>
+      <div class="cd"><div class="cdnum">12</div></div>
+      <div class="cd"><div class="cdnum">13</div></div>
+      <div class="cd"><div class="cdnum">14</div></div>
+      <!-- fila 3 — semana del 15 al 21 -->
+      <div class="cd" onclick="verDia(15)">
+        <div class="cdnum">15</div>
+        <span class="cev-pub" style="background:#fff0f5;color:#C13584;border-left-color:#C13584">📸 Post apertura</span>
+        <span class="cev-pub" style="background:#ede7f6;color:#4527a0;border-left-color:#4527a0">📰 Nota prensa</span>
+      </div>
+      <div class="cd"><div class="cdnum">16</div></div>
+      <div class="cd"><div class="cdnum">17</div></div>
+      <div class="cd"><div class="cdnum">18</div></div>
+      <div class="cd"><div class="cdnum">19</div></div>
+      <div class="cd"><div class="cdnum">20</div></div>
+      <div class="cd"><div class="cdnum">21</div></div>
+      <!-- fila 4 — semana del 22 al 28 -->
+      <div class="cd hoy" onclick="verDia(22)">
+        <div class="cdnum">22</div>
+        <span class="cev-pub" style="background:#fff0f5;color:#C13584;border-left-color:#C13584">📸 Afiche festival</span>
+        <span class="cev-pub" style="background:#fff4ee;color:#FF6B00;border-left-color:#FF6B00">🎙 Cuña radio</span>
+      </div>
+      <div class="cd" onclick="verDia(23)">
+        <div class="cdnum">23</div>
+        <span class="cev-pub" style="background:#fff0f5;color:#C13584;border-left-color:#C13584">📸 Carrusel IG</span>
+        <span class="cev-pub" style="background:#e8f0fe;color:#1877F2;border-left-color:#1877F2">👍 Post FB</span>
+      </div>
+      <div class="cd" onclick="verDia(24)">
+        <div class="cdnum">24</div>
+        <span class="cev-pub" style="background:#f0f0f0;color:#111;border-left-color:#111">🎵 TikTok viral</span>
+      </div>
+      <div class="cd"><div class="cdnum">25</div></div>
+      <div class="cd"><div class="cdnum">26</div></div>
+      <div class="cd"><div class="cdnum">27</div></div>
+      <div class="cd" onclick="verDia(28)">
+        <div class="cdnum">28</div>
+        <span class="cev-pub" style="background:#fff0f5;color:#C13584;border-left-color:#C13584">📸 Post cierre</span>
+        <span class="cev-pub" style="background:#e8f0fe;color:#1877F2;border-left-color:#1877F2">👍 FB cierre</span>
+        <span class="cev-pub" style="background:#f0f0f0;color:#111;border-left-color:#111">+1 más</span>
+      </div>
+      <!-- fila 5 -->
+      <div class="cd otro"><div class="cdnum" style="color:var(--tm)">29</div></div>
+      <div class="cd otro"><div class="cdnum" style="color:var(--tm)">30</div></div>
+      <div class="cd otro"></div>
+      <div class="cd otro"></div>
+      <div class="cd otro"></div>
+      <div class="cd otro"></div>
+      <div class="cd otro"></div>
+    </div>
+
+    <!-- Panel de día (aparece al tocar un día) -->
+    <div class="dia-panel" id="diaPanel" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="dia-panel-tit" id="diaPanelTit">Domingo 22 de junio — Hoy</div>
+        <button class="btn bgh bsm" onclick="document.getElementById('diaPanel').style.display='none'">✕ Cerrar</button>
+      </div>
+      <div id="diaPanelBody"></div>
+    </div>
+  </div>
+
+  <!-- Vista Agenda (oculta por defecto) -->
+  <div id="vistaAgenda" style="display:none">
+    <div class="agenda-dia">
+      <div class="agenda-dia-hdr">Domingo 22 de junio — Hoy</div>
+      <div class="agenda-pub">
+        <div class="agenda-hora">9:00 AM</div>
+        <div class="agenda-info">
+          <div class="agenda-nom">Afiche Festival de Verano 2026</div>
+          <div class="agenda-from">📋 Festival de Verano 2026 · <span class="pc ig">IG</span> <span class="pc fb">FB</span></div>
+        </div>
+        <span style="font-size:11px;background:var(--ves);color:var(--ve);padding:2px 8px;border-radius:20px;font-weight:700">✅ Publicado</span>
+      </div>
+      <div class="agenda-pub">
+        <div class="agenda-hora">11:00 AM</div>
+        <div class="agenda-info">
+          <div class="agenda-nom">Cuña de radio — Festival</div>
+          <div class="agenda-from">📋 Festival de Verano 2026 · <span class="pc rd">RD</span></div>
+        </div>
+        <span style="font-size:11px;background:var(--ams);color:var(--am);padding:2px 8px;border-radius:20px;font-weight:700">⏳ Pendiente</span>
+      </div>
+    </div>
+    <div class="agenda-dia">
+      <div class="agenda-dia-hdr">Lunes 23 de junio</div>
+      <div class="agenda-pub">
+        <div class="agenda-hora">12:00 PM</div>
+        <div class="agenda-info">
+          <div class="agenda-nom">Carrusel Instagram — Festival</div>
+          <div class="agenda-from">📋 Festival de Verano 2026 · <span class="pc ig">IG</span> <span class="pc tt">TT</span></div>
+        </div>
+        <span style="font-size:11px;background:var(--ams);color:var(--am);padding:2px 8px;border-radius:20px;font-weight:700">⏳ Pendiente</span>
+      </div>
+    </div>
+    <div class="agenda-dia">
+      <div class="agenda-dia-hdr">Martes 24 de junio</div>
+      <div class="agenda-pub">
+        <div class="agenda-hora">6:00 PM</div>
+        <div class="agenda-info">
+          <div class="agenda-nom">Video TikTok — Detrás de escena</div>
+          <div class="agenda-from">📋 Festival de Verano 2026 · <span class="pc tt">TT</span></div>
+        </div>
+        <span style="font-size:11px;background:var(--ams);color:var(--am);padding:2px 8px;border-radius:20px;font-weight:700">⏳ Pendiente</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     VISTA 3: REPORTE (sección nueva)
+══════════════════════════════════════ -->
+<div id="vReporte" class="oculto">
+  <div class="sh2">
+    <div class="stit">Reportes</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn bbl bsm">🖨️ Imprimir / PDF</button>
+      <button class="btn bna bsm">📤 Exportar</button>
+    </div>
+  </div>
+
+  <div class="rtabs">
+    <button class="rtab on" onclick="switchRTab('dia',this)">Diario</button>
+    <button class="rtab" onclick="switchRTab('sem',this)">Semanal</button>
+    <button class="rtab" onclick="switchRTab('mes',this)">Mensual</button>
+  </div>
+
+  <!-- REPORTE DIARIO -->
+  <div id="rDia">
+    <div class="rblk">
+      <div class="rbtit">📊 Resumen del día — Domingo 22 de junio 2026</div>
+      <div class="rtxt">Tareas activas: 5
+Tareas completadas hoy: 0
+Secciones con avance: Redes Sociales, Medios
+Horas extras registradas: 0</div>
+    </div>
+    <div class="rblk">
+      <div class="rbtit">📋 Tareas</div>
+      <div class="rtxt">Festival de Verano 2026 ........... En Progreso (60%) — Alta
+Apertura Temporada Cultural .... Completada (100%) — Media
+Cobertura Concierto de Cámara . Pendiente (0%) — Alta</div>
+    </div>
+    <!-- NUEVO: Sección Publicaciones -->
+    <div class="rblk" style="border:2px solid var(--nab)">
+      <div class="rbtit" style="color:var(--na)">📅 Publicaciones del día</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="padding:12px;background:var(--fo);border:1px solid var(--bo);border-radius:8px;display:flex;align-items:flex-start;gap:12px">
+          <div style="font-size:11px;font-weight:800;color:var(--na);width:62px;flex-shrink:0;padding-top:2px">9:00 AM</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700">Afiche Festival de Verano 2026</div>
+            <div style="font-size:11px;color:var(--tm);margin-top:2px">📋 Festival de Verano 2026 · <span class="pc ig">IG</span> <span class="pc fb">FB</span></div>
+            <div style="font-size:12px;color:var(--tm);margin-top:6px;font-style:italic;background:var(--su);padding:7px 10px;border-radius:5px;border-left:3px solid var(--nab)">¡El Festival de Verano llega a Colón! 🎉 Tres días de música, arte y cultura para toda la familia...</div>
+          </div>
+          <span style="font-size:11px;background:var(--ves);color:var(--ve);padding:2px 8px;border-radius:20px;font-weight:700;flex-shrink:0">✅ Publicado</span>
+        </div>
+        <div style="padding:12px;background:var(--fo);border:1px solid var(--bo);border-radius:8px;display:flex;align-items:flex-start;gap:12px">
+          <div style="font-size:11px;font-weight:800;color:var(--na);width:62px;flex-shrink:0;padding-top:2px">11:00 AM</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700">Cuña de radio — Festival</div>
+            <div style="font-size:11px;color:var(--tm);margin-top:2px">📋 Festival de Verano 2026 · <span class="pc rd">RD</span></div>
+            <div style="font-size:12px;color:var(--tm);margin-top:6px;font-style:italic;background:var(--su);padding:7px 10px;border-radius:5px;border-left:3px solid var(--nab)">Los invitamos al Festival de Verano en el Centro Cultural de Colón. Del 25 al 28 de junio...</div>
+          </div>
+          <span style="font-size:11px;background:var(--ams);color:var(--am);padding:2px 8px;border-radius:20px;font-weight:700;flex-shrink:0">⏳ Pendiente</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REPORTE SEMANAL -->
+  <div id="rSem" class="oculto">
+    <div class="rblk">
+      <div class="rbtit">📊 Resumen semana — 16 al 22 de junio 2026</div>
+      <div class="rtxt">Tareas activas: 5  |  Completadas en el período: 1
+Horas extras: 3h aprobadas
+Sección más activa: Redes Sociales</div>
+    </div>
+    <!-- NUEVO: Publicaciones semana -->
+    <div class="rblk" style="border:2px solid var(--nab)">
+      <div class="rbtit" style="color:var(--na)">📅 Publicaciones de la semana</div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:12px">
+        <div style="text-align:center;font-size:10px;font-weight:700;color:var(--tm)">Dom 16</div>
+        <div style="text-align:center;font-size:10px;font-weight:700;color:var(--tm)">Lun 17</div>
+        <div style="text-align:center;font-size:10px;font-weight:700;color:var(--tm)">Mar 18</div>
+        <div style="text-align:center;font-size:10px;font-weight:700;color:var(--tm)">Mié 19</div>
+        <div style="text-align:center;font-size:10px;font-weight:700;color:var(--tm)">Jue 20</div>
+        <div style="text-align:center;font-size:10px;font-weight:700;color:var(--tm)">Vie 21</div>
+        <div style="text-align:center;font-size:10px;font-weight:700;color:var(--na)">Sáb 22</div>
+        <div style="background:var(--su2);border-radius:6px;padding:6px 4px;text-align:center;font-size:11px;color:var(--tm)">—</div>
+        <div style="background:var(--su2);border-radius:6px;padding:6px 4px;text-align:center;font-size:11px;color:var(--tm)">—</div>
+        <div style="background:var(--su2);border-radius:6px;padding:6px 4px;text-align:center;font-size:11px;color:var(--tm)">—</div>
+        <div style="background:var(--su2);border-radius:6px;padding:6px 4px;text-align:center;font-size:11px;color:var(--tm)">—</div>
+        <div style="background:var(--su2);border-radius:6px;padding:6px 4px;text-align:center;font-size:11px;color:var(--tm)">—</div>
+        <div style="background:var(--su2);border-radius:6px;padding:6px 4px;text-align:center;font-size:11px;color:var(--tm)">—</div>
+        <div style="background:var(--nas);border-radius:6px;padding:6px 4px;text-align:center;font-size:13px;font-weight:800;color:var(--na)">2</div>
+      </div>
+      <div style="font-size:12px;color:var(--tm)"><strong style="color:var(--tx)">2 publicaciones</strong> esta semana · 1 publicada ✅ · 1 pendiente ⏳</div>
+    </div>
+  </div>
+
+  <!-- REPORTE MENSUAL -->
+  <div id="rMes" class="oculto">
+    <div class="rblk">
+      <div class="rbtit">📊 Resumen mensual — Junio 2026</div>
+      <div class="rtxt">Tareas creadas: 5  |  Completadas: 2
+Sección más productiva: Redes Sociales (3 tareas)
+Horas extras registradas: 8h</div>
+    </div>
+    <!-- NUEVO: Publicaciones mes -->
+    <div class="rblk" style="border:2px solid var(--nab)">
+      <div class="rbtit" style="color:var(--na)">📅 Publicaciones del mes</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div style="background:var(--fo);border:1px solid var(--bo);border-radius:8px;padding:14px;text-align:center">
+          <div style="font-size:28px;font-weight:800;color:var(--na)">7</div>
+          <div style="font-size:11px;color:var(--tm);text-transform:uppercase;font-weight:600;margin-top:2px">Total programadas</div>
+        </div>
+        <div style="background:var(--fo);border:1px solid var(--bo);border-radius:8px;padding:14px;text-align:center">
+          <div style="font-size:28px;font-weight:800;color:var(--ve)">2</div>
+          <div style="font-size:11px;color:var(--tm);text-transform:uppercase;font-weight:600;margin-top:2px">Publicadas ✅</div>
+        </div>
+      </div>
+      <div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Por plataforma</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span><span class="pc ig">IG</span> Instagram</span><span style="font-weight:700">3 pubs</span></div>
+          <div class="pbar"><div class="pfill" style="width:43%;background:#C13584"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span><span class="pc fb">FB</span> Facebook</span><span style="font-weight:700">2 pubs</span></div>
+          <div class="pbar"><div class="pfill" style="width:29%;background:#1877F2"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span><span class="pc rd">RD</span> Radio</span><span style="font-weight:700">2 pubs</span></div>
+          <div class="pbar"><div class="pfill" style="width:29%;background:#FF6B00"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span><span class="pc pr">PR</span> Prensa</span><span style="font-weight:700">1 pub</span></div>
+          <div class="pbar"><div class="pfill" style="width:14%;background:#4527a0"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- ══ MODAL: Programar Publicación ══ -->
+<div class="mov" id="mProg">
+  <div class="mo">
+    <div class="mcab">
+      <div>
+        <div class="mtit">📅 Programar publicación</div>
+        <div style="font-size:12px;color:var(--tm);margin-top:3px" id="mProgSub">Afiche Festival de Verano</div>
+      </div>
+      <button class="mx" onclick="cerModal()">×</button>
+    </div>
+    <div class="mbody">
+      <!-- Info: tarea y entregable -->
+      <div style="background:var(--fo);border:1px solid var(--bo);border-radius:8px;padding:10px 14px;margin-bottom:18px;font-size:12px;color:var(--tm)">
+        <div style="display:flex;gap:8px;align-items:baseline;margin-bottom:4px">
+          <span style="font-weight:700;color:var(--tx)">📋 Tarea:</span>
+          <span id="mProgTarea">Festival de Verano 2026</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:baseline;margin-bottom:4px">
+          <span style="font-weight:700;color:var(--tx)">🔗 Entregable:</span>
+          <a href="#" class="ent-url" id="mProgLink" style="font-size:12px">drive.google.com/file/afiche</a>
+        </div>
+        <div style="display:flex;gap:8px;align-items:baseline">
+          <span style="font-weight:700;color:var(--tx)">👤 Publicará:</span>
+          <span style="color:var(--na);font-weight:600">María Álvarez <span style="color:var(--tm);font-weight:400">(tú)</span></span>
+        </div>
+      </div>
+
+      <!-- Bloque 1: Dónde y cuándo -->
+      <div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">¿Dónde y cuándo?</div>
+      <div class="fg">
+        <label class="fl">Plataformas *</label>
+        <div class="chw">
+          <span class="chip" onclick="togglePlat(this,'ig')"><span style="color:#C13584">●</span> Instagram</span>
+          <span class="chip" onclick="togglePlat(this,'fb')"><span style="color:#1877F2">●</span> Facebook</span>
+          <span class="chip" onclick="togglePlat(this,'tt')"><span style="color:#111">●</span> TikTok</span>
+          <span class="chip" onclick="togglePlat(this,'rd')"><span style="color:#FF6B00">●</span> Radio</span>
+          <span class="chip" onclick="togglePlat(this,'tv')"><span style="color:#1b5e20">●</span> Televisión</span>
+          <span class="chip" onclick="togglePlat(this,'pr')"><span style="color:#4527a0">●</span> Prensa</span>
+        </div>
+      </div>
+      <div class="fr">
+        <div class="fg">
+          <label class="fl">Fecha *</label>
+          <input type="date" class="fc" id="mProgFecha" value="2026-06-22">
+        </div>
+        <div class="fg">
+          <label class="fl">Hora *</label>
+          <input type="time" class="fc" id="mProgHora" value="09:00">
+        </div>
+      </div>
+
+      <!-- Bloque 2: Qué publicás -->
+      <div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;margin-top:4px">¿Qué publicás?</div>
+      <div class="fg">
+        <label class="fl">Copy / texto <span id="cntLbl" style="font-weight:400;text-transform:none;font-size:11px;color:var(--tm)">0 / 2200</span></label>
+        <textarea class="fc" id="mProgCopy" rows="4" placeholder="Escribí el texto que vas a publicar..." oninput="cntCopy(this)"></textarea>
+        <div style="height:3px;border-radius:2px;margin-top:4px;background:var(--bo);overflow:hidden"><div id="cntBar" style="height:100%;width:0%;background:var(--ve);border-radius:2px;transition:width .2s,background .2s"></div></div>
+      </div>
+      <div class="fg">
+        <label class="fl">Notas internas <span style="font-weight:400;text-transform:none;font-size:11px">(opcional)</span></label>
+        <textarea class="fc" id="mProgNotas" rows="2" placeholder="Observaciones para el equipo..."></textarea>
+      </div>
+    </div>
+    <div class="mpie">
+      <button class="btn bbl" onclick="cerModal()">Cancelar</button>
+      <button class="btn bna">💾 Guardar programación</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DIAS = {
+  15: {
+    tit: 'Domingo 15 de junio',
+    pubs: [
+      {hora:'8:00 AM', tit:'Cuña radio apertura', tarea:'Apertura Temporada Cultural', link:'drive.google.com/file/cuna-radio-apertura', plats:['rd'], copy:'Los invitamos a la Apertura de la Temporada Cultural...', est:'ok'},
+      {hora:'7:00 PM', tit:'Nota de prensa — Apertura', tarea:'Apertura Temporada Cultural', link:'drive.google.com/file/nota-prensa-apertura', plats:['pr'], copy:'La Temporada Cultural 2026 abre sus puertas este domingo con una gran gala...', est:'ok'},
+    ]
+  },
+  22: {
+    tit: 'Domingo 22 de junio — Hoy',
+    pubs: [
+      {hora:'9:00 AM', tit:'Afiche Festival de Verano 2026', tarea:'Festival de Verano 2026', link:'drive.google.com/file/afiche-festival', plats:['ig','fb'], copy:'¡El Festival de Verano llega a Colón! 🎉 Tres días de música, arte y cultura para toda la familia. Del 25 al 28 de junio en el Centro Cultural. ¡Entrada libre!', est:'ok'},
+      {hora:'11:00 AM', tit:'Cuña de radio — Festival', tarea:'Festival de Verano 2026', link:'drive.google.com/file/cuna-radio-festival', plats:['rd'], copy:'Los invitamos al Festival de Verano en el Centro Cultural de Colón. Del 25 al 28 de junio, con música en vivo, exposiciones y actividades para toda la familia. Entrada libre.', est:'pend'},
+    ]
+  },
+  23: {
+    tit: 'Lunes 23 de junio',
+    pubs: [
+      {hora:'12:00 PM', tit:'Carrusel Instagram — Festival', tarea:'Festival de Verano 2026', link:'canva.com/design/carrusel-festival', plats:['ig','tt'], copy:'¿Qué te espera en el Festival de Verano? 🎨🎵🎭 Deslizá para descubrir la programación completa. ¡Te esperamos!', est:'pend'},
+    ]
+  },
+  24: {
+    tit: 'Martes 24 de junio',
+    pubs: [
+      {hora:'6:00 PM', tit:'Video TikTok — Detrás de escena', tarea:'Festival de Verano 2026', link:'drive.google.com/file/video-tiktok-detras', plats:['tt'], copy:'POV: preparando el festival de arte más esperado del año 🎪✨ #FestivalDeVerano #CulturaCacaco #ColónCultural', est:'pend'},
+    ]
+  },
+  28: {
+    tit: 'Sábado 28 de junio',
+    pubs: [
+      {hora:'10:00 AM', tit:'Post cierre festival — IG', tarea:'Festival de Verano 2026', link:'canva.com/design/post-cierre', plats:['ig'], copy:'¡Gracias por ser parte del Festival de Verano 2026! 🙏🎉 Fue una semana inolvidable de arte, música y cultura...', est:'pend'},
+      {hora:'10:00 AM', tit:'Post cierre festival — FB', tarea:'Festival de Verano 2026', link:'canva.com/design/post-cierre', plats:['fb'], copy:'¡Gracias por ser parte del Festival de Verano 2026! 🙏🎉 Fue una semana inolvidable de arte, música y cultura...', est:'pend'},
+      {hora:'2:00 PM', tit:'Nota prensa — cierre festival', tarea:'Festival de Verano 2026', link:'drive.google.com/file/nota-cierre', plats:['pr'], copy:'El Festival de Verano 2026 cerró con más de 3000 asistentes y 20 artistas locales...', est:'pend'},
+    ]
+  }
+};
+
+const PLAT_COLORS = {ig:'#C13584',fb:'#1877F2',tt:'#111',rd:'#FF6B00',tv:'#1b5e20',pr:'#4527a0'};
+const PLAT_BG = {ig:'#fff0f5',fb:'#e8f0fe',tt:'#f0f0f0',rd:'#fff4ee',tv:'#e8f5e9',pr:'#ede7f6'};
+const PLAT_NOM = {ig:'IG',fb:'FB',tt:'TK',rd:'RD',tv:'TV',pr:'PR'};
+
+function switchMockTab(tab, el) {
+  document.getElementById('vTareas').classList.add('oculto');
+  document.getElementById('vCal').classList.add('oculto');
+  document.getElementById('vReporte').classList.add('oculto');
+  document.querySelectorAll('.mock-tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));
+  if (tab === 'tareas') {
+    document.getElementById('vTareas').classList.remove('oculto');
+    document.getElementById('tabTareas').classList.add('on');
+  } else if (tab === 'cal') {
+    document.getElementById('vCal').classList.remove('oculto');
+    document.getElementById('tabCal').classList.add('on');
+    document.getElementById('sidCalPub').classList.add('on');
+  } else if (tab === 'reporte') {
+    document.getElementById('vReporte').classList.remove('oculto');
+    document.getElementById('tabReporte').classList.add('on');
+  }
+  if (el && el.classList.contains('ni')) el.classList.add('on');
+  window.scrollTo(0, 0);
+}
+
+function togBody(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const show = el.style.display === 'none' || el.style.display === '';
+  el.style.display = show ? 'block' : 'none';
+}
+
+function setVista(v) {
+  document.getElementById('vistaMes').style.display = v === 'mes' ? 'block' : 'none';
+  document.getElementById('vistaAgenda').style.display = v === 'agenda' ? 'block' : 'none';
+  document.getElementById('btnMes').style.background = v === 'mes' ? 'var(--su)' : 'transparent';
+  document.getElementById('btnMes').style.color = v === 'mes' ? 'var(--tx)' : 'var(--tm)';
+  document.getElementById('btnMes').style.boxShadow = v === 'mes' ? 'var(--sh)' : 'none';
+  document.getElementById('btnAgenda').style.background = v === 'agenda' ? 'var(--su)' : 'transparent';
+  document.getElementById('btnAgenda').style.color = v === 'agenda' ? 'var(--tx)' : 'var(--tm)';
+  document.getElementById('btnAgenda').style.boxShadow = v === 'agenda' ? 'var(--sh)' : 'none';
+}
+
+function verDia(dia) {
+  const data = DIAS[dia];
+  if (!data) return;
+  const panel = document.getElementById('diaPanel');
+  document.getElementById('diaPanelTit').textContent = data.tit;
+  document.getElementById('diaPanelBody').innerHTML = data.pubs.map(p => {
+    const platsHtml = p.plats.map(pl => `<span class="pc ${pl}">${PLAT_NOM[pl]}</span>`).join(' ');
+    const estHtml = p.est === 'ok'
+      ? '<span style="font-size:11px;background:var(--ves);color:var(--ve);padding:2px 8px;border-radius:20px;font-weight:700">✅ Publicado</span>'
+      : '<span style="font-size:11px;background:var(--ams);color:var(--am);padding:2px 8px;border-radius:20px;font-weight:700">⏳ Pendiente</span>';
+    return `<div class="dia-pub-card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+        <div>
+          <div class="dia-pub-nom">${p.hora} · ${p.tit}</div>
+          <div style="font-size:11px;color:var(--tm);margin-top:2px">📋 ${p.tarea} · <a href="#" style="color:var(--az);font-size:11px">🔗 ${p.link}</a></div>
+          <div style="display:flex;gap:4px;margin-top:5px">${platsHtml}</div>
+        </div>
+        ${estHtml}
+      </div>
+      <div class="dia-copy">${p.copy}</div>
+    </div>`;
+  }).join('');
+  panel.style.display = 'block';
+  panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function abrirModal(nombre, link, tarea) {
+  document.getElementById('mProgSub').textContent = nombre;
+  document.getElementById('mProgTarea').textContent = tarea;
+  document.getElementById('mProgLink').textContent = link;
+  document.getElementById('mProg').classList.add('on');
+}
+
+function cerModal() {
+  document.getElementById('mProg').classList.remove('on');
+}
+
+function togglePlat(el) {
+  el.classList.toggle('sel');
+}
+
+function cntCopy(ta) {
+  const lim = 2200;
+  const len = ta.value.length;
+  const pct = Math.min((len / lim) * 100, 100);
+  document.getElementById('cntLbl').textContent = len + ' / ' + lim;
+  const bar = document.getElementById('cntBar');
+  bar.style.width = pct + '%';
+  bar.style.background = len > lim ? '#dc2626' : len > lim * 0.8 ? '#d97706' : '#16a34a';
+  document.getElementById('cntLbl').style.color = len > lim ? '#dc2626' : len > lim * 0.8 ? '#d97706' : 'var(--tm)';
+}
+
+function switchRTab(tab, el) {
+  document.getElementById('rDia').classList.add('oculto');
+  document.getElementById('rSem').classList.add('oculto');
+  document.getElementById('rMes').classList.add('oculto');
+  document.querySelectorAll('.rtab').forEach(t => t.classList.remove('on'));
+  document.getElementById('r' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.remove('oculto');
+  el.classList.add('on');
+}
+
+function togSid() {
+  document.getElementById('sidNav').classList.toggle('open');
+  document.getElementById('sidOverlay').classList.toggle('open');
+}
+
+// Iniciar en la pestaña del calendario
+switchMockTab('cal', null);
+</script>
+</body>
+</html>

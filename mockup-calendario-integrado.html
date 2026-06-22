@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CACCO — Calendario integrado (mockup)</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+:root{
+  --na:#E35205;--na2:#c44604;--nas:#fff4ee;--nab:#fcd9c4;
+  --fo:#f5f4f2;--su:#ffffff;--su2:#f0eeeb;--bo:#e2ddd8;
+  --tx:#1a1816;--tm:#6b6258;
+  --ve:#166534;--ves:#dcfce7;
+  --az:#1e40af;--azs:#dbeafe;
+  --ro:#991b1b;--ros:#fee2e2;
+  --am:#92400e;--ams:#fef3c7;
+  --teal:#006064;--teals:#e0f7fa;
+  --r:10px;--rs:6px;
+  --sh:0 1px 3px rgba(0,0,0,.07),0 4px 12px rgba(0,0,0,.05);
+  --shm:0 8px 32px rgba(0,0,0,.12);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--fo);color:var(--tx);line-height:1.5;}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 16px;border-radius:var(--rs);border:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.bna{background:var(--na);color:#fff;}.bna:hover{background:var(--na2);}
+.bbl{background:var(--su);color:var(--tx);border:1px solid var(--bo);}.bbl:hover{background:var(--su2);}
+.bpe{background:var(--ros);color:var(--ro);border:none;}
+.bsm{padding:5px 10px;font-size:11px;}
+.bg{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;}
+.bgr{background:var(--su2);color:var(--tm);border:1px solid var(--bo);}
+.bpro{background:var(--azs);color:var(--az);}
+.balt{background:var(--ros);color:var(--ro);}
+.blis{background:var(--ves);color:var(--ve);}
+
+header{background:var(--na);height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;position:sticky;top:0;z-index:300;box-shadow:0 2px 8px rgba(227,82,5,.25);}
+.horg{font-size:15px;font-weight:800;color:#fff;}
+.hdep{font-size:11px;color:rgba(255,255,255,.75);}
+.pill{background:rgba(255,255,255,.2);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;}
+
+.alay{display:flex;min-height:calc(100vh - 56px);}
+.sid{width:210px;background:var(--su);border-right:1px solid var(--bo);padding:14px 10px;flex-shrink:0;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;}
+.nsep{font-size:10px;font-weight:700;color:var(--tm);letter-spacing:1px;text-transform:uppercase;padding:10px 8px 4px;}
+.ni{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;font-size:13px;font-weight:500;color:var(--tm);cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif;}
+.ni:hover,.ni.on{background:var(--nas);color:var(--na);font-weight:600;}
+.ni .ico{font-size:14px;width:18px;text-align:center;}
+.cont{flex:1;padding:20px;overflow-x:hidden;min-width:0;}
+
+/* TABS */
+.tabs{display:flex;gap:2px;background:var(--su2);border:1px solid var(--bo);border-radius:8px;padding:3px;margin-bottom:20px;width:fit-content;flex-wrap:wrap;}
+.tab{padding:7px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;color:var(--tm);border:none;background:none;font-family:'Inter',sans-serif;transition:all .15s;}
+.tab.on{background:var(--su);color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,.1);}
+
+/* FLUJO BANNER */
+.flujo{display:flex;align-items:center;gap:0;background:var(--su);border:1px solid var(--bo);border-radius:var(--r);overflow:hidden;margin-bottom:18px;box-shadow:var(--sh);}
+.flujo-paso{flex:1;padding:10px 14px;text-align:center;font-size:12px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.flujo-paso .fp-ico{font-size:18px;}
+.flujo-paso .fp-lbl{font-size:10px;font-weight:600;color:var(--tm);}
+.flujo-arrow{font-size:16px;color:var(--bo);flex-shrink:0;padding:0 2px;}
+.flujo-paso.act{background:var(--nas);}
+.flujo-paso.act .fp-lbl{color:var(--na);}
+
+/* STATS BAR */
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
+.stat-c{background:var(--su);border:1px solid var(--bo);border-radius:var(--r);padding:12px 14px;box-shadow:var(--sh);border-top:3px solid var(--bo);}
+.stat-c.na{border-top-color:var(--na);}
+.stat-c.ve{border-top-color:#16a34a;}
+.stat-c.az{border-top-color:#2563eb;}
+.stat-c.am{border-top-color:#d97706;}
+.stat-num{font-size:26px;font-weight:800;letter-spacing:-1.5px;line-height:1;}
+.stat-lbl{font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-top:2px;}
+.stat-sub{font-size:11px;color:var(--tm);margin-top:3px;}
+
+/* GRID 2 COLUMNAS */
+.g2{display:grid;grid-template-columns:1fr 340px;gap:14px;align-items:start;}
+@media(max-width:900px){.g2{grid-template-columns:1fr;}}
+
+/* WIDGET publicaciones */
+.widget{background:var(--su);border:1px solid var(--bo);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;}
+.widget-cab{padding:12px 16px;border-bottom:1px solid var(--bo);display:flex;align-items:center;justify-content:space-between;}
+.widget-tit{font-size:13px;font-weight:800;}
+.widget-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--nas);color:var(--na);}
+.pub-item{padding:10px 16px;border-bottom:1px solid var(--bo);display:flex;gap:10px;align-items:flex-start;cursor:pointer;transition:background .12s;}
+.pub-item:last-child{border-bottom:none;}
+.pub-item:hover{background:var(--fo);}
+.pub-hora{font-size:12px;font-weight:800;color:var(--na);width:48px;flex-shrink:0;padding-top:1px;}
+.pub-info{flex:1;min-width:0;}
+.pub-tit{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pub-task{font-size:10px;color:var(--tm);}
+.pub-plats{display:flex;gap:3px;margin-top:3px;flex-wrap:wrap;}
+.plat-chip{font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;}
+.plat-chip.ig{background:#fff0f5;color:#C13584;}
+.plat-chip.fb{background:#e8f0fe;color:#1877F2;}
+.plat-chip.tt{background:#f0f0f0;color:#111;}
+.plat-chip.rd{background:#fff4ee;color:#FF6B00;}
+.plat-chip.tv{background:#e8f5e9;color:#1b5e20;}
+.plat-chip.pr{background:#ede7f6;color:#4527a0;}
+.pub-est{width:18px;height:18px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;margin-top:2px;}
+.est-ok{background:var(--ves);}
+.est-pend{background:var(--ams);}
+
+/* SECCION DÍA en widget */
+.pub-dia{padding:7px 16px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--tm);background:var(--fo);border-bottom:1px solid var(--bo);}
+
+/* TAREAS LISTA */
+.tlist{display:flex;flex-direction:column;gap:8px;}
+.tcard{background:var(--su);border:1px solid var(--bo);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;}
+.tc-head{padding:10px 14px;display:flex;align-items:center;gap:8px;cursor:pointer;}
+.tc-head .t-color{width:6px;height:32px;border-radius:3px;flex-shrink:0;}
+.tc-head .t-info{flex:1;min-width:0;}
+.tc-head .t-tit{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tc-head .t-meta{font-size:11px;color:var(--tm);}
+.tc-body{padding:12px 14px;border-top:1px solid var(--bo);background:var(--fo);}
+.ent-item{display:flex;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid var(--bo);}
+.ent-item:last-child{border-bottom:none;}
+.ent-ico{width:24px;height:24px;border-radius:5px;background:var(--azs);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
+.ent-info{flex:1;min-width:0;}
+.ent-name{font-size:12px;font-weight:600;}
+.ent-url{font-size:10px;color:var(--az);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;text-decoration:none;}
+.btn-prog{display:inline-flex;align-items:center;gap:3px;padding:4px 9px;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;border:1.5px dashed var(--bo);background:transparent;color:var(--tm);font-family:'Inter',sans-serif;transition:all .15s;flex-shrink:0;}
+.btn-prog:hover{border-color:var(--na);background:var(--nas);color:var(--na);}
+.prog-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:5px;font-size:10px;font-weight:700;background:var(--nas);border:1.5px solid var(--nab);color:var(--na);flex-shrink:0;cursor:pointer;}
+.prog-badge:hover{background:var(--na);color:#fff;}
+
+/* ── CALENDARIO ── */
+.cal-filters{display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap;}
+.fchip{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid transparent;transition:all .15s;user-select:none;}
+.fchip.tarea{border-color:#0F6E56;color:#0F6E56;background:#f0faf7;}
+.fchip.tarea.off{border-color:var(--bo);color:var(--tm);background:var(--su2);opacity:.6;}
+.fchip.pub{border-color:var(--na);color:var(--na);background:var(--nas);}
+.fchip.pub.off{border-color:var(--bo);color:var(--tm);background:var(--su2);opacity:.6;}
+.cgrid{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--bo);border-radius:var(--r);overflow:hidden;background:var(--su);box-shadow:var(--sh);}
+.cgrid.hide-tareas .cev-tarea{display:none!important;}
+.cgrid.hide-pub .cev-pub{display:none!important;}
+.cdn{background:var(--su2);padding:8px 4px;text-align:center;font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;border-bottom:1px solid var(--bo);}
+.cd{background:var(--su);padding:5px 4px;min-height:90px;border-right:1px solid var(--bo);border-bottom:1px solid var(--bo);cursor:pointer;transition:background .1s;}
+.cd:nth-child(7n){border-right:none;}
+.cd.otro{background:var(--fo);cursor:default;}
+.cd.hoy{background:#fff9f6;}
+.cd:not(.otro):hover{background:#fafaf9;}
+.cd.selday{background:var(--nas)!important;}
+.cdnum{font-size:12px;font-weight:700;margin-bottom:3px;color:var(--tx);}
+.cd.hoy .cdnum{background:var(--na);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;}
+.cev-tarea{font-size:10px;padding:2px 4px;border-radius:3px;margin-bottom:2px;display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:600;}
+.cev-pub{font-size:9px;padding:2px 4px;border-radius:3px;margin-bottom:2px;display:flex;align-items:center;gap:2px;font-weight:700;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;border-left:2px solid;cursor:pointer;}
+.cev-pub.ig{background:#fff0f5;color:#C13584;border-left-color:#C13584;}
+.cev-pub.fb{background:#e8f0fe;color:#1877F2;border-left-color:#1877F2;}
+.cev-pub.tt{background:#f5f5f5;color:#111;border-left-color:#111;}
+.cev-pub.multi{background:#fff4ee;color:#E35205;border-left-color:#E35205;}
+.cev-pub.rd{background:#fff4ee;color:#FF6B00;border-left-color:#FF6B00;}
+.cev-pub.tv{background:#e8f5e9;color:#1b5e20;border-left-color:#1b5e20;}
+.cev-pub.pr{background:#ede7f6;color:#4527a0;border-left-color:#4527a0;}
+.cev-pub .ph{font-size:8px;font-weight:500;flex-shrink:0;}
+.cal-mas{font-size:9px;color:var(--tm);padding:0 4px;}
+.cal-legend{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;font-size:11px;font-weight:600;}
+.cal-legend .li{display:flex;align-items:center;gap:5px;}
+.cal-legend .dot{width:9px;height:9px;border-radius:2px;}
+
+/* PANEL DÍA */
+.dia-panel{background:var(--su);border:1px solid var(--bo);border-radius:var(--r);margin-top:14px;box-shadow:var(--sh);overflow:hidden;display:none;}
+.dia-panel.open{display:block;}
+.dia-panel-cab{padding:12px 16px;background:var(--nas);border-bottom:1px solid var(--nab);display:flex;align-items:center;justify-content:space-between;}
+.dia-panel-tit{font-size:14px;font-weight:800;color:var(--na);}
+.dia-panel-cerrar{background:none;border:none;cursor:pointer;font-size:18px;color:var(--na);padding:2px 6px;border-radius:4px;}
+.dia-panel-cerrar:hover{background:var(--nab);}
+.dia-pub-item{padding:12px 16px;border-bottom:1px solid var(--bo);display:flex;gap:12px;align-items:flex-start;}
+.dia-pub-item:last-child{border-bottom:none;}
+.dia-hora{font-size:13px;font-weight:800;color:var(--na);width:58px;flex-shrink:0;line-height:1.2;}
+.dia-info{flex:1;min-width:0;}
+.dia-tit{font-size:13px;font-weight:700;}
+.dia-from{font-size:11px;color:var(--tm);margin-top:2px;display:flex;align-items:center;gap:4px;}
+.dia-from .from-tag{background:var(--fo);border:1px solid var(--bo);border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;color:var(--tm);}
+.dia-link{font-size:11px;color:var(--az);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;}
+.dia-copy{font-size:12px;color:var(--tx);margin-top:6px;background:var(--fo);border-radius:6px;padding:7px 10px;border-left:2px solid var(--bo);font-style:italic;line-height:1.5;}
+.dia-plats{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;}
+.dia-est{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-top:3px;align-self:flex-start;flex-shrink:0;}
+.dia-est.ok{background:var(--ves);color:var(--ve);}
+.dia-est.pend{background:var(--ams);color:var(--am);}
+.dia-vacia{padding:20px 16px;font-size:12px;color:var(--tm);text-align:center;font-style:italic;}
+
+/* ── REPORTE ── */
+.rep-cont{background:var(--su);border:1px solid var(--bo);border-radius:var(--r);padding:20px;box-shadow:var(--sh);}
+.rep-sec{margin-bottom:20px;}
+.rep-sec-tit{font-size:9px;font-weight:700;color:var(--na);letter-spacing:1.5px;text-transform:uppercase;border-bottom:1.5px solid var(--na);padding-bottom:5px;margin-bottom:10px;}
+.rep-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+.rep-stat{background:var(--su2);border-radius:8px;padding:9px 12px;border-left:3px solid var(--bo);}
+.rep-stat.na{border-left-color:var(--na);}.rep-stat.ve{border-left-color:#16a34a;}.rep-stat.am{border-left-color:#d97706;}
+.rep-stat-num{font-size:20px;font-weight:800;letter-spacing:-1px;line-height:1;}
+.rep-stat-lbl{font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.3px;margin-top:1px;}
+.rep-pub-card{border:1px solid var(--bo);border-radius:8px;padding:9px 12px;margin-bottom:6px;display:flex;align-items:flex-start;gap:10px;}
+.rpc-hora{font-size:12px;font-weight:800;color:var(--na);width:54px;flex-shrink:0;line-height:1.3;}
+.rpc-info{flex:1;min-width:0;}
+.rpc-tit{font-size:12px;font-weight:700;}
+.rpc-meta{font-size:10px;color:var(--tm);margin-top:1px;}
+.rpc-plats{display:flex;gap:3px;margin-top:4px;flex-wrap:wrap;}
+.rpc-est{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0;align-self:flex-start;}
+.rpc-est.ok{background:var(--ves);color:var(--ve);}
+.rpc-est.pend{background:var(--ams);color:var(--am);}
+.plat-bar{display:flex;align-items:center;gap:8px;padding:4px 0;}
+.plat-bar-nom{font-size:11px;font-weight:600;width:76px;flex-shrink:0;}
+.plat-bar-bg{flex:1;height:9px;background:var(--su2);border-radius:5px;overflow:hidden;}
+.plat-bar-fill{height:100%;border-radius:5px;}
+.plat-bar-num{font-size:10px;font-weight:700;width:36px;text-align:right;flex-shrink:0;}
+.sem-grid{display:grid;grid-template-columns:64px 1fr;gap:0;border:1px solid var(--bo);border-radius:8px;overflow:hidden;}
+.sem-dia{background:var(--su2);padding:8px 10px;font-size:11px;font-weight:700;border-bottom:1px solid var(--bo);}
+.sem-pubs{padding:7px 10px;border-bottom:1px solid var(--bo);font-size:11px;display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.sem-dia:last-of-type,.sem-pubs:last-of-type{border-bottom:none;}
+
+/* MODAL */
+.mov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center;z-index:500;backdrop-filter:blur(3px);}
+.mov.on{display:flex;}
+@media(min-width:560px){.mov{align-items:center;padding:16px;}}
+.mo{background:var(--su);border-radius:20px 20px 0 0;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;box-shadow:0 -8px 40px rgba(0,0,0,.18);}
+@media(min-width:560px){.mo{border-radius:16px;}}
+.mcab{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 14px;border-bottom:1px solid var(--bo);position:sticky;top:0;background:var(--su);z-index:1;border-radius:20px 20px 0 0;}
+@media(min-width:560px){.mcab{border-radius:16px 16px 0 0;}}
+.mtit{font-size:15px;font-weight:800;}
+.mx{background:none;border:none;font-size:20px;cursor:pointer;color:var(--tm);padding:2px 6px;border-radius:5px;line-height:1;}
+.mbody{padding:14px 20px 4px;}
+.mpie{padding:12px 20px 18px;display:flex;justify-content:flex-end;gap:8px;border-top:1px solid var(--bo);}
+.fg{margin-bottom:14px;}
+.fl{display:block;font-size:11px;font-weight:700;color:var(--tm);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;}
+.fc{width:100%;padding:9px 12px;border:1.5px solid var(--bo);border-radius:var(--rs);font-family:'Inter',sans-serif;font-size:13px;color:var(--tx);background:var(--su);outline:none;transition:border-color .15s;}
+.fc:focus{border-color:var(--na);box-shadow:0 0 0 3px rgba(227,82,5,.12);}
+textarea.fc{resize:none;overflow:hidden;min-height:80px;line-height:1.55;}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.mo-info{background:var(--fo);border-radius:9px;padding:9px 13px;margin-bottom:14px;display:flex;flex-direction:column;gap:4px;}
+.mo-info-row{display:flex;align-items:center;gap:7px;font-size:12px;}
+.mo-info-lbl{font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;width:64px;flex-shrink:0;}
+.mo-info-val{font-weight:600;}
+.mo-info-link{color:var(--az);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mo-sec{background:var(--fo);border-radius:10px;padding:12px;margin-bottom:12px;}
+.mo-sec-tit{font-size:10px;font-weight:800;color:var(--tm);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px;}
+.plat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
+.plat-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:12px 4px;border-radius:9px;border:2px solid var(--bo);background:var(--su);cursor:pointer;transition:all .15s;font-size:11px;font-weight:700;color:var(--tm);user-select:none;min-height:66px;}
+.plat-btn .pico{width:30px;height:30px;border-radius:7px;background:#e8e4e0;display:flex;align-items:center;justify-content:center;transition:background .15s;}
+.plat-btn[data-p="ig"].sel{border-color:#E1306C;background:#fff0f5;color:#C13584;}
+.plat-btn[data-p="ig"].sel .pico{background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);}
+.plat-btn[data-p="fb"].sel{border-color:#1877F2;background:#e8f0fe;color:#1877F2;}
+.plat-btn[data-p="fb"].sel .pico{background:#1877F2;}
+.plat-btn[data-p="tt"].sel{border-color:#000;background:#f5f5f5;color:#000;}
+.plat-btn[data-p="tt"].sel .pico{background:#000;}
+.plat-btn[data-p="rd"].sel{border-color:#FF6B00;background:#fff4ee;color:#FF6B00;}
+.plat-btn[data-p="rd"].sel .pico{background:#FF6B00;}
+.plat-btn[data-p="tv"].sel{border-color:#1b5e20;background:#e8f5e9;color:#1b5e20;}
+.plat-btn[data-p="tv"].sel .pico{background:#1b5e20;}
+.plat-btn[data-p="pr"].sel{border-color:#4527a0;background:#ede7f6;color:#4527a0;}
+.plat-btn[data-p="pr"].sel .pico{background:#4527a0;}
+.plat-hint{font-size:11px;color:var(--tm);margin-top:6px;min-height:14px;}
+.plat-hint strong{color:var(--na);}
+.mo-user-tag{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:var(--ves);border-radius:20px;font-size:11px;font-weight:700;color:var(--ve);}
+.copy-cnt{font-size:11px;margin-top:4px;font-weight:600;}
+.copy-cnt.ok{color:var(--tm);}.copy-cnt.warn{color:#d97706;}.copy-cnt.over{color:#dc2626;}
+
+@media(max-width:860px){.sid{display:none;}.stats-bar{grid-template-columns:1fr 1fr;}.rep-stats{grid-template-columns:1fr 1fr;}.fr2{grid-template-columns:1fr;}}
+@media(max-width:500px){.cont{padding:12px;}.stats-bar{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div><div class="horg">CACCO</div><div class="hdep">Centro de Arte y Cultura de Colón</div></div>
+  <span class="pill">🎨 MOCKUP — calendario integrado</span>
+</header>
+
+<div class="alay">
+<nav class="sid">
+  <div class="nsep">Principal</div>
+  <button class="ni on"><span class="ico">🏠</span>Dashboard</button>
+  <button class="ni"><span class="ico">📋</span>Tareas</button>
+  <button class="ni"><span class="ico">📅</span>Calendario</button>
+  <button class="ni"><span class="ico">⏱️</span>Horas Extras</button>
+  <button class="ni"><span class="ico">👥</span>Equipo</button>
+  <div class="nsep">Coordinación</div>
+  <button class="ni"><span class="ico">📊</span>Reportes</button>
+  <button class="ni"><span class="ico">🗂️</span>Histórico</button>
+  <button class="ni"><span class="ico">📝</span>Bitácora</button>
+  <div class="nsep">Secciones</div>
+  <button class="ni"><span class="ico">🔘</span>Todas</button>
+  <button class="ni"><span class="ico">📹</span>Audiovisual</button>
+  <button class="ni"><span class="ico">🎨</span>Diseño</button>
+  <button class="ni"><span class="ico">📱</span>Redes Sociales</button>
+  <button class="ni"><span class="ico">📡</span>Medios</button>
+  <button class="ni" style="color:#006064;"><span class="ico">✍️</span>Copy</button>
+</nav>
+
+<main class="cont">
+
+  <!-- TABS PRINCIPALES -->
+  <div class="tabs">
+    <button class="tab on" onclick="switchTab('dash',this)">🏠 Dashboard</button>
+    <button class="tab" onclick="switchTab('cal',this)">📅 Calendario</button>
+    <button class="tab" onclick="switchTab('rep',this)">📊 Reporte</button>
+  </div>
+
+  <!-- FLUJO DE DATOS (visible en todos los tabs) -->
+  <div class="flujo" id="flujoBanner">
+    <div class="flujo-paso act" id="fp1">
+      <span class="fp-ico">📋</span>
+      <span style="font-weight:800;font-size:12px;">Tareas</span>
+      <span class="fp-lbl">Generan publicaciones</span>
+    </div>
+    <div class="flujo-arrow">→</div>
+    <div class="flujo-paso" id="fp2">
+      <span class="fp-ico">📅</span>
+      <span style="font-weight:800;font-size:12px;">Calendario</span>
+      <span class="fp-lbl">Organiza por fecha</span>
+    </div>
+    <div class="flujo-arrow">→</div>
+    <div class="flujo-paso" id="fp3">
+      <span class="fp-ico">📊</span>
+      <span style="font-weight:800;font-size:12px;">Reporte</span>
+      <span class="fp-lbl">Consolida métricas</span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       TAB 1: DASHBOARD
+  ══════════════════════════════════════ -->
+  <div id="tabDash">
+
+    <!-- STATS -->
+    <div class="stats-bar">
+      <div class="stat-c na">
+        <div class="stat-num">3</div>
+        <div class="stat-lbl">Tareas activas</div>
+        <div class="stat-sub">1 vence esta semana</div>
+      </div>
+      <div class="stat-c ve">
+        <div class="stat-num">8</div>
+        <div class="stat-lbl">Entregables totales</div>
+        <div class="stat-sub">5 programados</div>
+      </div>
+      <div class="stat-c az">
+        <div class="stat-num">5</div>
+        <div class="stat-lbl">Publicaciones esta semana</div>
+        <div class="stat-sub">2 hoy · 3 próximos días</div>
+      </div>
+      <div class="stat-c am">
+        <div class="stat-num">3</div>
+        <div class="stat-lbl">Sin programar aún</div>
+        <div class="stat-sub">Entregables pendientes</div>
+      </div>
+    </div>
+
+    <!-- GRID: tareas + widget publicaciones -->
+    <div class="g2">
+
+      <!-- TAREAS CON ENTREGABLES -->
+      <div>
+        <div style="font-size:13px;font-weight:800;margin-bottom:10px;">Tareas con entregables</div>
+        <div class="tlist">
+
+          <!-- TAREA 1 -->
+          <div class="tcard">
+            <div class="tc-head" onclick="toggleTarea('t1')">
+              <div class="t-color" style="background:#0F6E56;"></div>
+              <div class="t-info">
+                <div class="t-tit">Festival de Verano 2026</div>
+                <div class="t-meta">📹 Audiovisual · 📱 Redes · vence 28 jun</div>
+              </div>
+              <span class="bg bpro" style="flex-shrink:0;">En progreso</span>
+            </div>
+            <div class="tc-body" id="t1" style="display:none;">
+              <div style="font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;margin-bottom:8px;">🔗 Entregables (3)</div>
+              <!-- Entregable programado -->
+              <div class="ent-item">
+                <div class="ent-ico">🔗</div>
+                <div class="ent-info">
+                  <div class="ent-name">Afiche Festival (Drive)</div>
+                  <a class="ent-url" href="#" onclick="return false">drive.google.com/file/afiche-festival</a>
+                </div>
+                <div class="prog-badge" onclick="abrirDet('afiche')" title="Ver programación">📅 22 jun · 9AM <span style="margin-left:2px;">IG FB</span></div>
+              </div>
+              <!-- Entregable programado -->
+              <div class="ent-item">
+                <div class="ent-ico">🔗</div>
+                <div class="ent-info">
+                  <div class="ent-name">Reel backstage</div>
+                  <a class="ent-url" href="#" onclick="return false">drive.google.com/file/reel-backstage</a>
+                </div>
+                <div class="prog-badge" onclick="abrirDet('reel')" title="Ver programación">📅 23 jun · 12PM <span style="margin-left:2px;">IG TT</span></div>
+              </div>
+              <!-- Entregable SIN programar -->
+              <div class="ent-item">
+                <div class="ent-ico">🔗</div>
+                <div class="ent-info">
+                  <div class="ent-name">Diseño Canva — carrusel</div>
+                  <a class="ent-url" href="#" onclick="return false">canva.com/design/carrusel-festival</a>
+                </div>
+                <button class="btn-prog" onclick="abrirModal('Diseño Canva — carrusel','canva.com/design/carrusel-festival','Festival de Verano 2026')">📅 Programar</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAREA 2 -->
+          <div class="tcard">
+            <div class="tc-head" onclick="toggleTarea('t2')">
+              <div class="t-color" style="background:#5b21b6;"></div>
+              <div class="t-info">
+                <div class="t-tit">Cobertura Prensa — Junio</div>
+                <div class="t-meta">📡 Medios · ✍️ Copy · vence 30 jun</div>
+              </div>
+              <span class="bg bpro" style="flex-shrink:0;">En progreso</span>
+            </div>
+            <div class="tc-body" id="t2" style="display:none;">
+              <div style="font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;margin-bottom:8px;">🔗 Entregables (3)</div>
+              <div class="ent-item">
+                <div class="ent-ico">🔗</div>
+                <div class="ent-info">
+                  <div class="ent-name">Audio cuña Radio</div>
+                  <a class="ent-url" href="#" onclick="return false">drive.google.com/file/cuna-radio</a>
+                </div>
+                <div class="prog-badge" onclick="abrirDet('cuna')" title="Ver programación">📅 22 jun · 11AM <span style="margin-left:2px;">📻</span></div>
+              </div>
+              <div class="ent-item">
+                <div class="ent-ico">🔗</div>
+                <div class="ent-info">
+                  <div class="ent-name">Nota TV — Galería Arte</div>
+                  <a class="ent-url" href="#" onclick="return false">drive.google.com/file/nota-tv</a>
+                </div>
+                <div class="prog-badge" onclick="abrirDet('tv')" title="Ver programación">📅 25 jun · 6PM <span style="margin-left:2px;">📺</span></div>
+              </div>
+              <div class="ent-item">
+                <div class="ent-ico">🔗</div>
+                <div class="ent-info">
+                  <div class="ent-name">Comunicado de prensa</div>
+                  <a class="ent-url" href="#" onclick="return false">docs.google.com/comunicado-junio</a>
+                </div>
+                <button class="btn-prog" onclick="abrirModal('Comunicado de prensa','docs.google.com/comunicado-junio','Cobertura Prensa — Junio')">📅 Programar</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAREA 3 -->
+          <div class="tcard">
+            <div class="tc-head" onclick="toggleTarea('t3')">
+              <div class="t-color" style="background:#993C1D;"></div>
+              <div class="t-info">
+                <div class="t-tit">Galería Arte Nacional</div>
+                <div class="t-meta">📱 Redes · 🎨 Diseño · vence 28 jun</div>
+              </div>
+              <span class="bg bpro" style="flex-shrink:0;">En progreso</span>
+            </div>
+            <div class="tc-body" id="t3" style="display:none;">
+              <div style="font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;margin-bottom:8px;">🔗 Entregables (2)</div>
+              <div class="ent-item">
+                <div class="ent-ico">🔗</div>
+                <div class="ent-info">
+                  <div class="ent-name">Video galería (IG Reel)</div>
+                  <a class="ent-url" href="#" onclick="return false">drive.google.com/file/video-galeria</a>
+                </div>
+                <div class="prog-badge" onclick="abrirDet('galeria')" title="Ver programación">📅 28 jun · 9AM <span style="margin-left:2px;">IG</span></div>
+              </div>
+              <div class="ent-item">
+                <div class="ent-ico">🔗</div>
+                <div class="ent-info">
+                  <div class="ent-name">Carrusel apertura</div>
+                  <a class="ent-url" href="#" onclick="return false">canva.com/design/carrusel-galeria</a>
+                </div>
+                <button class="btn-prog" onclick="abrirModal('Carrusel apertura','canva.com/design/carrusel-galeria','Galería Arte Nacional')">📅 Programar</button>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /tlist -->
+      </div>
+
+      <!-- WIDGET PUBLICACIONES PRÓXIMAS -->
+      <div class="widget">
+        <div class="widget-cab">
+          <span class="widget-tit">📅 Próximas publicaciones</span>
+          <span class="widget-badge">5 esta semana</span>
+        </div>
+
+        <div class="pub-dia">Hoy — Domingo 22 jun</div>
+        <div class="pub-item" onclick="irADia(22)">
+          <div class="pub-hora">9:00<br>AM</div>
+          <div class="pub-info">
+            <div class="pub-tit">Afiche Festival</div>
+            <div class="pub-task">📋 Festival de Verano 2026</div>
+            <div class="pub-plats">
+              <span class="plat-chip ig">Instagram</span>
+              <span class="plat-chip fb">Facebook</span>
+            </div>
+          </div>
+          <div class="pub-est est-ok">✅</div>
+        </div>
+        <div class="pub-item" onclick="irADia(22)">
+          <div class="pub-hora">11:00<br>AM</div>
+          <div class="pub-info">
+            <div class="pub-tit">Cuña de radio</div>
+            <div class="pub-task">📋 Cobertura Prensa — Junio</div>
+            <div class="pub-plats">
+              <span class="plat-chip rd">Radio</span>
+            </div>
+          </div>
+          <div class="pub-est est-pend">⏳</div>
+        </div>
+
+        <div class="pub-dia">Lunes 23 jun</div>
+        <div class="pub-item" onclick="irADia(23)">
+          <div class="pub-hora">12:00<br>PM</div>
+          <div class="pub-info">
+            <div class="pub-tit">Reel backstage</div>
+            <div class="pub-task">📋 Festival de Verano 2026</div>
+            <div class="pub-plats">
+              <span class="plat-chip ig">Instagram</span>
+              <span class="plat-chip tt">TikTok</span>
+            </div>
+          </div>
+          <div class="pub-est est-pend">⏳</div>
+        </div>
+
+        <div class="pub-dia">Miércoles 25 jun</div>
+        <div class="pub-item" onclick="irADia(25)">
+          <div class="pub-hora">6:00<br>PM</div>
+          <div class="pub-info">
+            <div class="pub-tit">Nota TV Galería Arte</div>
+            <div class="pub-task">📋 Cobertura Prensa — Junio</div>
+            <div class="pub-plats">
+              <span class="plat-chip tv">TV</span>
+            </div>
+          </div>
+          <div class="pub-est est-pend">⏳</div>
+        </div>
+
+        <div class="pub-dia">Sábado 28 jun</div>
+        <div class="pub-item" onclick="irADia(28)">
+          <div class="pub-hora">9:00<br>AM</div>
+          <div class="pub-info">
+            <div class="pub-tit">Video galería — IG Reel</div>
+            <div class="pub-task">📋 Galería Arte Nacional</div>
+            <div class="pub-plats">
+              <span class="plat-chip ig">Instagram</span>
+            </div>
+          </div>
+          <div class="pub-est est-pend">⏳</div>
+        </div>
+
+        <div style="padding:10px 16px;border-top:1px solid var(--bo);">
+          <button class="btn bna" style="width:100%;justify-content:center;font-size:12px;" onclick="switchTab('cal',null)">Ver calendario completo →</button>
+        </div>
+      </div>
+
+    </div><!-- /g2 -->
+  </div>
+
+  <!-- ══════════════════════════════════════
+       TAB 2: CALENDARIO
+  ══════════════════════════════════════ -->
+  <div id="tabCal" style="display:none;">
+    <div style="font-size:14px;font-weight:800;margin-bottom:12px;">Calendario de publicaciones — Junio 2026</div>
+
+    <div class="cal-filters">
+      <span style="font-size:12px;font-weight:700;color:var(--tm);">Mostrar:</span>
+      <div class="fchip tarea" id="fTarea" onclick="toggleFiltro('tarea')">📋 Tareas</div>
+      <div class="fchip pub" id="fPub" onclick="toggleFiltro('pub')">📅 Publicaciones</div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+      <button class="btn bbl bsm">← Anterior</button>
+      <span style="font-weight:700;font-size:14px;min-width:130px;text-align:center;">Junio 2026</span>
+      <button class="btn bbl bsm">Siguiente →</button>
+    </div>
+
+    <div class="cgrid" id="calGrid">
+      <div class="cdn">Dom</div><div class="cdn">Lun</div><div class="cdn">Mar</div>
+      <div class="cdn">Mié</div><div class="cdn">Jue</div><div class="cdn">Vie</div><div class="cdn">Sáb</div>
+
+      <div class="cd otro"></div><div class="cd otro"></div><div class="cd otro"></div>
+      <div class="cd" onclick="selDia(4)"><div class="cdnum">4</div></div>
+      <div class="cd" onclick="selDia(5)"><div class="cdnum">5</div></div>
+      <div class="cd" onclick="selDia(6)"><div class="cdnum">6</div></div>
+      <div class="cd" onclick="selDia(7)"><div class="cdnum">7</div></div>
+
+      <div class="cd" onclick="selDia(8)"><div class="cdnum">8</div></div>
+      <div class="cd" onclick="selDia(9)"><div class="cdnum">9</div>
+        <a class="cev-tarea" style="background:#0F6E5620;border-left:3px solid #0F6E56;font-size:9px;padding:2px 4px;border-radius:3px;margin-bottom:2px;display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:600;" onclick="event.stopPropagation()">📹 Apertura</a>
+      </div>
+      <div class="cd" onclick="selDia(10)"><div class="cdnum">10</div></div>
+      <div class="cd" onclick="selDia(11)"><div class="cdnum">11</div></div>
+      <div class="cd" onclick="selDia(12)"><div class="cdnum">12</div>
+        <a class="cev-tarea" style="background:#993C1D20;border-left:3px solid #993C1D;font-size:9px;padding:2px 4px;border-radius:3px;margin-bottom:2px;display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:600;" onclick="event.stopPropagation()">📱 Convocatoria</a>
+      </div>
+      <div class="cd" onclick="selDia(13)"><div class="cdnum">13</div></div>
+
+      <div class="cd" onclick="selDia(14)"><div class="cdnum">14</div></div>
+      <div class="cd" onclick="selDia(15)"><div class="cdnum">15</div></div>
+      <div class="cd" onclick="selDia(16)"><div class="cdnum">16</div></div>
+      <div class="cd" onclick="selDia(17)"><div class="cdnum">17</div></div>
+      <div class="cd" onclick="selDia(18)"><div class="cdnum">18</div></div>
+      <div class="cd" onclick="selDia(19)"><div class="cdnum">19</div></div>
+      <div class="cd" onclick="selDia(20)"><div class="cdnum">20</div></div>
+
+      <div class="cd" onclick="selDia(21)"><div class="cdnum">21</div></div>
+      <div class="cd hoy" id="cd22" onclick="selDia(22)">
+        <div class="cdnum">22</div>
+        <div class="cev-pub ig" onclick="event.stopPropagation();selDia(22)"><span class="ph">9AM</span>📸 Afiche</div>
+        <div class="cev-pub rd" onclick="event.stopPropagation();selDia(22)"><span class="ph">11AM</span>📻 Cuña</div>
+      </div>
+      <div class="cd" id="cd23" onclick="selDia(23)">
+        <div class="cdnum">23</div>
+        <a class="cev-tarea" style="background:#0F6E5620;border-left:3px solid #0F6E56;font-size:9px;padding:2px 4px;border-radius:3px;margin-bottom:2px;display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:600;" onclick="event.stopPropagation()">📹 Festival</a>
+        <div class="cev-pub multi" onclick="event.stopPropagation();selDia(23)"><span class="ph">12PM</span>🎬 Reel</div>
+      </div>
+      <div class="cd" onclick="selDia(24)"><div class="cdnum">24</div></div>
+      <div class="cd" id="cd25" onclick="selDia(25)">
+        <div class="cdnum">25</div>
+        <div class="cev-pub tv" onclick="event.stopPropagation();selDia(25)"><span class="ph">6PM</span>📺 TV</div>
+      </div>
+      <div class="cd" onclick="selDia(26)"><div class="cdnum">26</div></div>
+      <div class="cd" onclick="selDia(27)"><div class="cdnum">27</div></div>
+
+      <div class="cd" id="cd28" onclick="selDia(28)">
+        <div class="cdnum">28</div>
+        <a class="cev-tarea" style="background:#993C1D20;border-left:3px solid #993C1D;font-size:9px;padding:2px 4px;border-radius:3px;margin-bottom:2px;display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:600;" onclick="event.stopPropagation()">📱 Galería</a>
+        <div class="cev-pub ig" onclick="event.stopPropagation();selDia(28)"><span class="ph">9AM</span>📸 Galería</div>
+      </div>
+      <div class="cd" onclick="selDia(29)"><div class="cdnum">29</div></div>
+      <div class="cd" onclick="selDia(30)"><div class="cdnum">30</div></div>
+      <div class="cd otro"></div><div class="cd otro"></div><div class="cd otro"></div><div class="cd otro"></div>
+    </div>
+
+    <div class="cal-legend">
+      <div class="li"><div class="dot" style="background:#0F6E56;"></div>Tarea (vencimiento)</div>
+      <div class="li"><div class="dot" style="background:#C13584;"></div>Instagram</div>
+      <div class="li"><div class="dot" style="background:#1877F2;"></div>Facebook</div>
+      <div class="li"><div class="dot" style="background:#FF6B00;"></div>Radio</div>
+      <div class="li"><div class="dot" style="background:#1b5e20;"></div>TV</div>
+      <div class="li"><div class="dot" style="background:#E35205;"></div>Multi-plataforma</div>
+    </div>
+
+    <!-- PANEL DETALLE DEL DÍA -->
+    <div class="dia-panel" id="diaPanel">
+      <div class="dia-panel-cab">
+        <span class="dia-panel-tit" id="diaTit">—</span>
+        <button class="dia-panel-cerrar" onclick="cerrarDia()">✕</button>
+      </div>
+      <div id="diaContent"></div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════
+       TAB 3: REPORTE
+  ══════════════════════════════════════ -->
+  <div id="tabRep" style="display:none;">
+    <div style="font-size:14px;font-weight:800;margin-bottom:14px;">Reportes — con publicaciones integradas</div>
+
+    <div class="tabs" style="margin-bottom:16px;">
+      <button class="tab on" id="rtDiario" onclick="switchRep('diario')">Diario</button>
+      <button class="tab" id="rtSemanal" onclick="switchRep('semanal')">Semanal</button>
+      <button class="tab" id="rtMensual" onclick="switchRep('mensual')">Mensual</button>
+    </div>
+
+    <!-- DIARIO -->
+    <div id="repDiario" class="rep-cont">
+      <div style="font-size:9px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;">REPORTE DIARIO — Domingo 22 de junio de 2026</div>
+
+      <div class="rep-sec">
+        <div class="rep-sec-tit">Estado de tareas</div>
+        <div class="rep-stats">
+          <div class="rep-stat na"><div class="rep-stat-num">3</div><div class="rep-stat-lbl">Activas</div></div>
+          <div class="rep-stat ve"><div class="rep-stat-num">1</div><div class="rep-stat-lbl">Completadas</div></div>
+          <div class="rep-stat am"><div class="rep-stat-num">0</div><div class="rep-stat-lbl">Vencidas</div></div>
+        </div>
+      </div>
+
+      <div class="rep-sec">
+        <div class="rep-sec-tit">📅 Publicaciones de hoy — generadas desde tareas</div>
+        <div class="rep-pub-card">
+          <div class="rpc-hora">9:00<br>AM</div>
+          <div class="rpc-info">
+            <div class="rpc-tit">Afiche Festival de Verano 2026</div>
+            <div class="rpc-meta">Tarea: Festival de Verano 2026 · Resp: Diana López</div>
+            <div class="rpc-meta" style="color:var(--az);">🔗 drive.google.com/file/afiche-festival</div>
+            <div class="rpc-plats"><span class="plat-chip ig">Instagram</span><span class="plat-chip fb">Facebook</span></div>
+          </div>
+          <div class="rpc-est ok">✅ Publicado</div>
+        </div>
+        <div class="rep-pub-card">
+          <div class="rpc-hora">11:00<br>AM</div>
+          <div class="rpc-info">
+            <div class="rpc-tit">Cuña de radio — Festival</div>
+            <div class="rpc-meta">Tarea: Cobertura Prensa — Junio · Resp: María González</div>
+            <div class="rpc-meta" style="color:var(--az);">🔗 drive.google.com/file/cuna-radio</div>
+            <div class="rpc-plats"><span class="plat-chip rd">Radio</span></div>
+          </div>
+          <div class="rpc-est pend">⏳ Programado</div>
+        </div>
+        <div style="padding:6px 0;font-size:11px;color:var(--tm);border-top:1px solid var(--bo);margin-top:4px;">2 publicaciones hoy · 1 publicada (50%) · 1 pendiente</div>
+      </div>
+
+      <div class="rep-sec" style="margin-bottom:0;">
+        <div class="rep-sec-tit">Avance por sección</div>
+        <div style="font-size:12px;color:var(--tm);">Audiovisual 75% · Redes Sociales 60% · Medios 55% · Copy 40%</div>
+      </div>
+    </div>
+
+    <!-- SEMANAL -->
+    <div id="repSemanal" class="rep-cont" style="display:none;">
+      <div style="font-size:9px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;">REPORTE SEMANAL — 22 al 28 de junio de 2026</div>
+
+      <div class="rep-sec">
+        <div class="rep-sec-tit">Estado de tareas</div>
+        <div class="rep-stats">
+          <div class="rep-stat na"><div class="rep-stat-num">3</div><div class="rep-stat-lbl">Activas</div></div>
+          <div class="rep-stat ve"><div class="rep-stat-num">1</div><div class="rep-stat-lbl">Completadas</div></div>
+          <div class="rep-stat am"><div class="rep-stat-num">1</div><div class="rep-stat-lbl">Vencidas</div></div>
+        </div>
+      </div>
+
+      <div class="rep-sec">
+        <div class="rep-sec-tit">📅 Publicaciones de la semana — por día</div>
+        <div class="rep-stats" style="margin-bottom:14px;">
+          <div class="rep-stat na"><div class="rep-stat-num">5</div><div class="rep-stat-lbl">Programadas</div></div>
+          <div class="rep-stat ve"><div class="rep-stat-num">1</div><div class="rep-stat-lbl">Publicadas</div></div>
+          <div class="rep-stat am"><div class="rep-stat-num">4</div><div class="rep-stat-lbl">Pendientes</div></div>
+        </div>
+        <div class="sem-grid">
+          <div class="sem-dia">Dom 22</div>
+          <div class="sem-pubs">
+            <span class="plat-chip ig">9AM · 📸 Afiche Festival</span>
+            <span class="plat-chip rd">11AM · 📻 Cuña Radio</span>
+          </div>
+          <div class="sem-dia">Lun 23</div>
+          <div class="sem-pubs">
+            <span class="plat-chip ig">12PM · 🎬 Reel backstage</span>
+            <span class="plat-chip tt" style="background:#f0f0f0;color:#111;">12PM · 🎵 TikTok</span>
+          </div>
+          <div class="sem-dia">Mar 24</div>
+          <div class="sem-pubs" style="font-size:11px;color:var(--tm);font-style:italic;">Sin publicaciones</div>
+          <div class="sem-dia">Mié 25</div>
+          <div class="sem-pubs">
+            <span class="plat-chip tv">6PM · 📺 Nota TV Galería</span>
+          </div>
+          <div class="sem-dia">Jue 26</div>
+          <div class="sem-pubs" style="font-size:11px;color:var(--tm);font-style:italic;">Sin publicaciones</div>
+          <div class="sem-dia">Vie 27</div>
+          <div class="sem-pubs" style="font-size:11px;color:var(--tm);font-style:italic;">Sin publicaciones</div>
+          <div class="sem-dia" style="border-bottom:none;">Sáb 28</div>
+          <div class="sem-pubs" style="border-bottom:none;">
+            <span class="plat-chip ig">9AM · 📸 Video Galería</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="rep-sec" style="margin-bottom:0;">
+        <div class="rep-sec-tit">Avance por sección</div>
+        <div style="font-size:12px;color:var(--tm);">Audiovisual 75% · Redes 60% · Medios 55% · Copy 40%</div>
+      </div>
+    </div>
+
+    <!-- MENSUAL -->
+    <div id="repMensual" class="rep-cont" style="display:none;">
+      <div style="font-size:9px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;">REPORTE MENSUAL — Junio 2026</div>
+
+      <div class="rep-sec">
+        <div class="rep-sec-tit">Estado de tareas</div>
+        <div class="rep-stats">
+          <div class="rep-stat na"><div class="rep-stat-num">12</div><div class="rep-stat-lbl">Activas</div></div>
+          <div class="rep-stat ve"><div class="rep-stat-num">7</div><div class="rep-stat-lbl">Completadas</div></div>
+          <div class="rep-stat am"><div class="rep-stat-num">3</div><div class="rep-stat-lbl">Vencidas</div></div>
+        </div>
+      </div>
+
+      <div class="rep-sec">
+        <div class="rep-sec-tit">📅 Resumen publicaciones — Junio 2026</div>
+        <div class="rep-stats" style="margin-bottom:16px;">
+          <div class="rep-stat na"><div class="rep-stat-num">24</div><div class="rep-stat-lbl">Total programadas</div></div>
+          <div class="rep-stat ve"><div class="rep-stat-num">15</div><div class="rep-stat-lbl">Publicadas</div></div>
+          <div class="rep-stat am"><div class="rep-stat-num">9</div><div class="rep-stat-lbl">Pendientes</div></div>
+        </div>
+        <div style="font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;">Por plataforma</div>
+        <div style="border:1px solid var(--bo);border-radius:8px;padding:10px 12px;background:var(--su);">
+          <div class="plat-bar"><span class="plat-bar-nom" style="color:#C13584;">📸 Instagram</span><div class="plat-bar-bg"><div class="plat-bar-fill" style="width:75%;background:#C13584;"></div></div><span class="plat-bar-num" style="color:#C13584;">9/12</span></div>
+          <div class="plat-bar"><span class="plat-bar-nom" style="color:#1877F2;">👥 Facebook</span><div class="plat-bar-bg"><div class="plat-bar-fill" style="width:67%;background:#1877F2;"></div></div><span class="plat-bar-num" style="color:#1877F2;">4/6</span></div>
+          <div class="plat-bar"><span class="plat-bar-nom" style="color:#111;">🎵 TikTok</span><div class="plat-bar-bg"><div class="plat-bar-fill" style="width:50%;background:#333;"></div></div><span class="plat-bar-num" style="color:#333;">1/2</span></div>
+          <div class="plat-bar"><span class="plat-bar-nom" style="color:#FF6B00;">📻 Radio</span><div class="plat-bar-bg"><div class="plat-bar-fill" style="width:100%;background:#FF6B00;"></div></div><span class="plat-bar-num" style="color:#FF6B00;">1/1</span></div>
+          <div class="plat-bar"><span class="plat-bar-nom" style="color:#1b5e20;">📺 TV</span><div class="plat-bar-bg"><div class="plat-bar-fill" style="width:50%;background:#1b5e20;"></div></div><span class="plat-bar-num" style="color:#1b5e20;">1/2</span></div>
+          <div class="plat-bar"><span class="plat-bar-nom" style="color:#4527a0;">📰 Prensa</span><div class="plat-bar-bg"><div class="plat-bar-fill" style="width:100%;background:#4527a0;"></div></div><span class="plat-bar-num" style="color:#4527a0;">1/1</span></div>
+        </div>
+        <div style="margin-top:12px;">
+          <div style="font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px;">Origen de publicaciones por tarea</div>
+          <div style="border:1px solid var(--bo);border-radius:8px;overflow:hidden;">
+            <div style="display:grid;grid-template-columns:1fr auto auto;padding:7px 12px;background:var(--su2);font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;gap:10px;">
+              <span>Tarea</span><span>Programadas</span><span>Publicadas</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr auto auto;padding:8px 12px;border-top:1px solid var(--bo);font-size:12px;gap:10px;align-items:center;">
+              <span style="font-weight:600;">Festival de Verano 2026</span><span style="text-align:right;">8</span><span style="text-align:right;color:#166534;font-weight:700;">6 ✅</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr auto auto;padding:8px 12px;border-top:1px solid var(--bo);font-size:12px;gap:10px;align-items:center;">
+              <span style="font-weight:600;">Cobertura Prensa — Junio</span><span style="text-align:right;">5</span><span style="text-align:right;color:#92400e;font-weight:700;">3 ✅</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr auto auto;padding:8px 12px;border-top:1px solid var(--bo);font-size:12px;gap:10px;align-items:center;">
+              <span style="font-weight:600;">Galería Arte Nacional</span><span style="text-align:right;">4</span><span style="text-align:right;color:#166534;font-weight:700;">4 ✅</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rep-sec" style="margin-bottom:0;">
+        <div class="rep-sec-tit">Avance por sección</div>
+        <div style="font-size:12px;color:var(--tm);">Audiovisual 75% · Redes 60% · Medios 55% · Copy 40%</div>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+</div>
+
+<!-- MODAL PROGRAMAR -->
+<div class="mov" id="modalPub">
+  <div class="mo">
+    <div class="mcab">
+      <div>
+        <div class="mtit">📅 Programar publicación</div>
+        <div style="font-size:11px;color:var(--tm);margin-top:2px;" id="modalTareaLabel">—</div>
+      </div>
+      <button class="mx" onclick="cerrarModal()">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="mo-info">
+        <div class="mo-info-row">
+          <span class="mo-info-lbl">Entregable</span>
+          <span class="mo-info-val" id="modalEntNom">—</span>
+        </div>
+        <div class="mo-info-row">
+          <span class="mo-info-lbl">Enlace</span>
+          <a href="#" onclick="return false" class="mo-info-link" id="modalEntUrl">—</a>
+        </div>
+        <div class="mo-info-row">
+          <span class="mo-info-lbl">Publicará</span>
+          <span class="mo-user-tag">👤 Diana López (tú)</span>
+        </div>
+      </div>
+
+      <div class="mo-sec">
+        <div class="mo-sec-tit">¿Dónde y cuándo?</div>
+        <div class="fg">
+          <label class="fl">Plataforma <span style="font-weight:500;text-transform:none;letter-spacing:0;">(podés elegir varias)</span></label>
+          <div class="plat-grid">
+            <div class="plat-btn" data-p="ig" onclick="togglePlat(this)"><div class="pico"><svg viewBox="0 0 24 24" width="16" height="16" fill="#888"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg></div>Instagram</div>
+            <div class="plat-btn" data-p="fb" onclick="togglePlat(this)"><div class="pico"><svg viewBox="0 0 24 24" width="16" height="16" fill="#888"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></div>Facebook</div>
+            <div class="plat-btn" data-p="tt" onclick="togglePlat(this)"><div class="pico"><svg viewBox="0 0 24 24" width="16" height="16" fill="#888"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg></div>TikTok</div>
+            <div class="plat-btn" data-p="rd" onclick="togglePlat(this)"><div class="pico"><span style="font-size:16px;">📻</span></div>Radio</div>
+            <div class="plat-btn" data-p="tv" onclick="togglePlat(this)"><div class="pico"><span style="font-size:16px;">📺</span></div>TV</div>
+            <div class="plat-btn" data-p="pr" onclick="togglePlat(this)"><div class="pico"><span style="font-size:16px;">📰</span></div>Prensa</div>
+          </div>
+          <div class="plat-hint" id="platHint">Ninguna seleccionada</div>
+        </div>
+        <div class="fr2">
+          <div class="fg" style="margin-bottom:0;"><label class="fl">Fecha</label><input type="date" class="fc" value="2026-06-23"></div>
+          <div class="fg" style="margin-bottom:0;"><label class="fl">Hora</label><input type="time" class="fc" value="09:00"></div>
+        </div>
+      </div>
+
+      <div class="mo-sec">
+        <div class="mo-sec-tit">¿Qué publicás?</div>
+        <div class="fg">
+          <label class="fl">Copy <span style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--tm);">— el texto que acompaña</span></label>
+          <textarea class="fc" id="copyTxt" placeholder="Escribí el caption, el texto para radio, el comunicado..." oninput="onCopyInput(this)"></textarea>
+          <div class="copy-cnt ok" id="copyCount">0 caracteres</div>
+        </div>
+        <div class="fg" style="margin-bottom:0;">
+          <label class="fl">Notas <span style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--tm);">— opcional</span></label>
+          <textarea class="fc" placeholder="Ej: mencionar patrocinadores, hashtags..." rows="2" style="min-height:52px;"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="mpie">
+      <button class="btn bbl" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn bna" onclick="guardarProg()">📅 Programar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATOS de publicaciones por día (para el panel de detalle) ──
+const DIAS = {
+  22: {
+    titulo: 'Domingo 22 de junio',
+    pubs: [
+      { hora:'9:00 AM', tit:'Afiche Festival de Verano 2026', tarea:'Festival de Verano 2026', link:'drive.google.com/file/afiche-festival', plats:['ig','fb'], copy:'¡El Festival de Verano llega a Colón! 🎭✨ Tres días de arte, cultura y música en nuestra ciudad. Entrada libre y gratuita. ¡Te esperamos! #FestivalVerano #CACCO #ColónCultura', est:'ok' },
+      { hora:'11:00 AM', tit:'Cuña de radio — Festival', tarea:'Cobertura Prensa — Junio', link:'drive.google.com/file/cuna-radio', plats:['rd'], copy:'Este fin de semana, el Centro de Arte y Cultura de Colón presenta el Festival de Verano 2026. Tres jornadas de espectáculos al aire libre, con entrada libre. Desde el viernes 27 hasta el domingo 29 de junio en el Parque Central.', est:'pend' }
+    ]
+  },
+  23: {
+    titulo: 'Lunes 23 de junio',
+    pubs: [
+      { hora:'12:00 PM', tit:'Reel backstage del festival', tarea:'Festival de Verano 2026', link:'drive.google.com/file/reel-backstage', plats:['ig','tt'], copy:'Esto es lo que pasa detrás de escena 🎬🎭 Nuestro equipo trabaja sin parar para que el Festival de Verano sea inolvidable. ¡Ya falta poco! #Backstage #FestivalVerano', est:'pend' }
+    ]
+  },
+  24: { titulo: 'Martes 24 de junio', pubs: [] },
+  25: {
+    titulo: 'Miércoles 25 de junio',
+    pubs: [
+      { hora:'6:00 PM', tit:'Nota TV — Galería Arte Nacional', tarea:'Cobertura Prensa — Junio', link:'drive.google.com/file/nota-tv', plats:['tv'], copy:'Esta semana inauguramos la muestra permanente de Arte Nacional en nuestras salas. Una colección de 47 obras de artistas colonenses que recorre tres décadas de creación. Lunes a viernes de 9 a 17 h, sábados de 10 a 14 h.', est:'pend' }
+    ]
+  },
+  26: { titulo: 'Jueves 26 de junio', pubs: [] },
+  27: { titulo: 'Viernes 27 de junio', pubs: [] },
+  28: {
+    titulo: 'Sábado 28 de junio',
+    pubs: [
+      { hora:'9:00 AM', tit:'Video galería — IG Reel', tarea:'Galería Arte Nacional', link:'drive.google.com/file/video-galeria', plats:['ig'], copy:'Arte que habla por sí solo 🎨 Recorré nuestra nueva galería de arte nacional desde donde estés. ¡Caminá por nuestra galería! Abierta todo el año, entrada libre. #ArteNacional #Galería #CACCO', est:'pend' }
+    ]
+  }
+};
+const PLAT_NOM = {ig:'Instagram',fb:'Facebook',tt:'TikTok',rd:'Radio',tv:'TV',pr:'Prensa'};
+const PLAT_CLS = {ig:'ig',fb:'fb',tt:'tt',rd:'rd',tv:'tv',pr:'pr'};
+
+// ── TABS PRINCIPALES ──
+function switchTab(t, el) {
+  ['tabDash','tabCal','tabRep'].forEach(id => document.getElementById(id).style.display = 'none');
+  const map = {dash:'tabDash', cal:'tabCal', rep:'tabRep'};
+  document.getElementById(map[t]).style.display = 'block';
+  document.querySelectorAll('.tabs:first-of-type .tab').forEach(b => b.classList.remove('on'));
+  if (el) el.classList.add('on');
+  // actualizar flujo banner
+  ['fp1','fp2','fp3'].forEach(id => document.getElementById(id).classList.remove('act'));
+  const fpMap = {dash:'fp1', cal:'fp2', rep:'fp3'};
+  if (fpMap[t]) document.getElementById(fpMap[t]).classList.add('act');
+}
+
+// ── TABS REPORTE ──
+function switchRep(t) {
+  ['repDiario','repSemanal','repMensual'].forEach(id => document.getElementById(id).style.display = 'none');
+  const map = {diario:'repDiario', semanal:'repSemanal', mensual:'repMensual'};
+  document.getElementById(map[t]).style.display = 'block';
+  ['rtDiario','rtSemanal','rtMensual'].forEach((id,i) =>
+    document.getElementById(id).classList.toggle('on', ['diario','semanal','mensual'][i] === t));
+}
+
+// ── TAREA TOGGLE ──
+function toggleTarea(id) {
+  const el = document.getElementById(id);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+// ── FILTROS CALENDARIO ──
+const filtros = {tarea: true, pub: true};
+function toggleFiltro(tipo) {
+  filtros[tipo] = !filtros[tipo];
+  document.getElementById(tipo === 'tarea' ? 'fTarea' : 'fPub').classList.toggle('off', !filtros[tipo]);
+  const grid = document.getElementById('calGrid');
+  grid.classList.toggle('hide-tareas', !filtros.tarea);
+  grid.classList.toggle('hide-pub', !filtros.pub);
+}
+
+// ── SELECCIÓN DE DÍA EN CALENDARIO ──
+let diaActual = null;
+function selDia(n) {
+  if (diaActual) {
+    const prevEl = document.getElementById('cd'+diaActual);
+    if (prevEl) prevEl.classList.remove('selday');
+  }
+  const el = document.getElementById('cd'+n);
+  if (el) el.classList.add('selday');
+  diaActual = n;
+  mostrarDia(n);
+}
+function cerrarDia() {
+  document.getElementById('diaPanel').classList.remove('open');
+  if (diaActual) {
+    const el = document.getElementById('cd'+diaActual);
+    if (el) el.classList.remove('selday');
+  }
+  diaActual = null;
+}
+function mostrarDia(n) {
+  const data = DIAS[n];
+  const panel = document.getElementById('diaPanel');
+  const tit = document.getElementById('diaTit');
+  const cont = document.getElementById('diaContent');
+  if (!data) {
+    tit.textContent = `${n} de junio`;
+    cont.innerHTML = '<div class="dia-vacia">Sin publicaciones programadas para este día.</div>';
+    panel.classList.add('open');
+    setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'nearest'}),100);
+    return;
+  }
+  tit.textContent = data.titulo;
+  if (!data.pubs.length) {
+    cont.innerHTML = '<div class="dia-vacia">Sin publicaciones programadas para este día.<br>Los entregables de las tareas aún no tienen fecha asignada.</div>';
+  } else {
+    cont.innerHTML = data.pubs.map(p => `
+      <div class="dia-pub-item">
+        <div class="dia-hora">${p.hora.replace(' ','<br>')}</div>
+        <div class="dia-info">
+          <div class="dia-tit">${p.tit}</div>
+          <div class="dia-from">
+            <span>Desde:</span>
+            <span class="from-tag">📋 ${p.tarea}</span>
+          </div>
+          <a class="dia-link" href="#" onclick="return false">🔗 ${p.link}</a>
+          <div class="dia-copy">"${p.copy}"</div>
+          <div class="dia-plats">${p.plats.map(pl=>`<span class="plat-chip ${PLAT_CLS[pl]}">${PLAT_NOM[pl]}</span>`).join('')}</div>
+        </div>
+        <div class="dia-est ${p.est}">${p.est==='ok'?'✅ Publicado':'⏳ Programado'}</div>
+      </div>
+    `).join('');
+  }
+  panel.classList.add('open');
+  setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'nearest'}),100);
+}
+
+// ── DESDE WIDGET ir a calendario ──
+function irADia(n) {
+  switchTab('cal', document.querySelectorAll('.tabs:first-of-type .tab')[1]);
+  setTimeout(() => selDia(n), 100);
+}
+
+// ── DETALLE PUBLICACIÓN existente (badge programado) ──
+function abrirDet(key) {
+  const info = {
+    afiche: ['Afiche Festival (Drive)','Festival de Verano 2026','22 jun · 9:00 AM','Instagram + Facebook'],
+    reel:   ['Reel backstage','Festival de Verano 2026','23 jun · 12:00 PM','Instagram + TikTok'],
+    cuna:   ['Audio cuña Radio','Cobertura Prensa — Junio','22 jun · 11:00 AM','Radio'],
+    tv:     ['Nota TV Galería','Cobertura Prensa — Junio','25 jun · 6:00 PM','TV'],
+    galeria:['Video galería','Galería Arte Nacional','28 jun · 9:00 AM','Instagram'],
+  };
+  const d = info[key];
+  if (d) alert(`📋 ${d[0]}\nTarea: ${d[1]}\n📅 ${d[2]}\nPlataforma: ${d[3]}\n\n(En el app real: abre el modal para editar la programación)`);
+}
+
+// ── MODAL ──
+function abrirModal(nom, url, tarea) {
+  document.getElementById('modalEntNom').textContent = nom;
+  document.getElementById('modalEntUrl').textContent = url;
+  document.getElementById('modalTareaLabel').textContent = '📋 ' + tarea;
+  document.getElementById('copyTxt').value = '';
+  document.getElementById('copyCount').textContent = '0 caracteres';
+  document.getElementById('platHint').textContent = 'Ninguna seleccionada';
+  document.querySelectorAll('.plat-btn').forEach(b => {
+    b.classList.remove('sel');
+    const svg = b.querySelector('svg'); if (svg) svg.setAttribute('fill','#888');
+  });
+  document.getElementById('modalPub').classList.add('on');
+}
+function cerrarModal() { document.getElementById('modalPub').classList.remove('on'); }
+document.getElementById('modalPub').addEventListener('click', evt => {
+  if (evt.target === evt.currentTarget) cerrarModal();
+});
+function guardarProg() {
+  const plats = [...document.querySelectorAll('.plat-btn.sel')].map(b => b.dataset.p);
+  const copy = document.getElementById('copyTxt').value.trim();
+  if (!plats.length) { alert('Seleccioná al menos una plataforma.'); return; }
+  if (!copy) { alert('Escribí el copy antes de programar.'); return; }
+  cerrarModal();
+  alert('✅ ¡Publicación programada!\n\nEn el app real: aparece en el calendario y en los próximos reportes.');
+}
+
+// ── PLATAFORMAS ──
+const LIMITES = {ig:2200, tt:2200, fb:null, rd:null, tv:null, pr:null};
+function togglePlat(el) {
+  el.classList.toggle('sel');
+  const svg = el.querySelector('svg'); if (svg) svg.setAttribute('fill', el.classList.contains('sel')?'white':'#888');
+  const sels = [...document.querySelectorAll('.plat-btn.sel')].map(b=>b.dataset.p);
+  const hint = document.getElementById('platHint');
+  if (!sels.length) { hint.textContent = 'Ninguna seleccionada'; return; }
+  const noms = sels.map(p=>PLAT_NOM[p]).join(', ');
+  const lim = sels.reduce((acc,p)=> LIMITES[p]&&(acc===null||LIMITES[p]<acc)?LIMITES[p]:acc, null);
+  hint.innerHTML = lim ? `<strong>${noms}</strong> · Límite: ${lim.toLocaleString()} caracteres` : `<strong>${noms}</strong>`;
+  actualizarCopyCount();
+}
+function getLimit() {
+  const sels = [...document.querySelectorAll('.plat-btn.sel')].map(b=>b.dataset.p);
+  return sels.reduce((acc,p)=> LIMITES[p]&&(acc===null||LIMITES[p]<acc)?LIMITES[p]:acc, null);
+}
+function onCopyInput(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.max(80, el.scrollHeight)+'px';
+  actualizarCopyCount();
+}
+function actualizarCopyCount() {
+  const n = document.getElementById('copyTxt').value.length;
+  const lim = getLimit();
+  const cnt = document.getElementById('copyCount');
+  if (lim) {
+    const pct = n/lim;
+    cnt.textContent = `${n.toLocaleString()} / ${lim.toLocaleString()} caracteres`;
+    cnt.className = 'copy-cnt '+(pct>1?'over':pct>.8?'warn':'ok');
+  } else {
+    cnt.textContent = `${n.toLocaleString()} caracteres`;
+    cnt.className = 'copy-cnt ok';
+  }
+}
+</script>
+</body>
+</html>
