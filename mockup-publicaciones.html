@@ -125,6 +125,28 @@ header{background:var(--na);height:60px;display:flex;align-items:center;justify-
 .est-pub{background:var(--ves);color:var(--ve);}
 .est-rev{background:var(--azs);color:var(--az);}
 
+/* ENTREGABLES en agenda/calendario */
+.agenda-card{flex-wrap:wrap;}
+.ent-row{display:flex;flex-wrap:wrap;gap:6px;width:100%;margin-top:4px;padding-top:10px;border-top:1px dashed var(--bo);}
+.ent-link{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:5px 10px;border-radius:7px;text-decoration:none;border:1px solid var(--bo);background:var(--su2);color:var(--tx);transition:all .12s;cursor:pointer;}
+.ent-link:hover{border-color:var(--na);background:var(--nas);color:var(--na);transform:translateY(-1px);}
+.ent-link .efav{font-size:14px;flex-shrink:0;}
+.ent-link.drive{border-color:#c5d8fb;background:#e8f0fe;color:#1a3c8c;}
+.ent-link.canva{border-color:#b39ddb;background:#ede7f6;color:#4527a0;}
+.ent-link.video{border-color:#f8cdcd;background:#fcefef;color:#8b1414;}
+.ent-link.foto{border-color:#a5d6a7;background:#e8f5e9;color:#1b5e20;}
+.ent-empty{font-size:11px;color:var(--tm);font-style:italic;}
+.cev .cev-ent{margin-left:auto;font-size:10px;opacity:.8;}
+
+/* PANEL DE DETALLE de publicación */
+.det-thumb{width:100%;height:160px;border-radius:8px;background:linear-gradient(135deg,#e2ddd8,#f0eeeb);display:flex;align-items:center;justify-content:center;font-size:40px;margin-bottom:14px;border:1px solid var(--bo);position:relative;overflow:hidden;}
+.det-thumb .play{position:absolute;width:50px;height:50px;background:rgba(0,0,0,.55);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;}
+.det-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bo);font-size:13px;}
+.det-row:last-child{border-bottom:none;}
+.det-row .lbl{font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;width:110px;flex-shrink:0;}
+.det-copybox{background:var(--su2);border:1px solid var(--bo);border-radius:8px;padding:12px 14px;font-size:13px;line-height:1.5;white-space:pre-wrap;margin-top:6px;position:relative;}
+.btn-copy{position:absolute;top:8px;right:8px;font-size:11px;padding:4px 10px;border-radius:6px;border:none;background:var(--na);color:#fff;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
+
 /* SECCIÓN COPY — nueva sección en tarea */
 .sec-copy-demo{background:var(--su);border:1px solid var(--bo);border-radius:var(--r);overflow:hidden;margin-bottom:12px;box-shadow:var(--sh);}
 .sec-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;}
@@ -314,6 +336,11 @@ header{background:var(--na);height:60px;display:flex;align-items:center;justify-
         </div>
         <div class="hora-badge">9:00 AM</div>
         <div class="est-badge est-pub">✅ Publicado</div>
+        <div class="ent-row" onclick="event.stopPropagation()">
+          <a class="ent-link foto" href="#" onclick="return false">🖼️ Afiche final.jpg</a>
+          <a class="ent-link drive" href="#" onclick="return false">📁 Carpeta Drive</a>
+          <a class="ent-link canva" href="#" onclick="return false">🎨 Diseño Canva</a>
+        </div>
       </div>
       <div class="agenda-card" onclick="abrirDetalle('fb')">
         <div class="plat-ico">📻</div>
@@ -323,6 +350,10 @@ header{background:var(--na);height:60px;display:flex;align-items:center;justify-
         </div>
         <div class="hora-badge">11:00 AM</div>
         <div class="est-badge est-prog">⏳ Programado</div>
+        <div class="ent-row" onclick="event.stopPropagation()">
+          <a class="ent-link video" href="#" onclick="return false">🎙️ Audio cuña.mp3</a>
+          <a class="ent-link" href="#" onclick="return false">📄 Guion aprobado</a>
+        </div>
       </div>
     </div>
 
@@ -340,6 +371,10 @@ header{background:var(--na);height:60px;display:flex;align-items:center;justify-
         </div>
         <div class="hora-badge">12:00 PM</div>
         <div class="est-badge est-rev">🔍 En revisión</div>
+        <div class="ent-row" onclick="event.stopPropagation()">
+          <a class="ent-link video" href="#" onclick="return false">🎬 Reel_v2.mp4</a>
+          <a class="ent-link drive" href="#" onclick="return false">📁 Material crudo</a>
+        </div>
       </div>
       <div class="agenda-card">
         <div class="plat-ico">👥</div>
@@ -349,6 +384,10 @@ header{background:var(--na);height:60px;display:flex;align-items:center;justify-
         </div>
         <div class="hora-badge">3:00 PM</div>
         <div class="est-badge est-prog">⏳ Programado</div>
+        <div class="ent-row" onclick="event.stopPropagation()">
+          <a class="ent-link canva" href="#" onclick="return false">🎨 Banner Canva</a>
+          <span class="ent-empty">⏳ Falta el copy del texto</span>
+        </div>
       </div>
       <div class="agenda-card">
         <div class="plat-ico">✍️</div>
@@ -358,6 +397,10 @@ header{background:var(--na);height:60px;display:flex;align-items:center;justify-
         </div>
         <div class="hora-badge">5:00 PM</div>
         <div class="est-badge est-prog">⏳ Programado</div>
+        <div class="ent-row" onclick="event.stopPropagation()">
+          <a class="ent-link" href="#" onclick="return false">📄 Comunicado.docx</a>
+          <a class="ent-link drive" href="#" onclick="return false">📁 Fotos prensa</a>
+        </div>
       </div>
     </div>
 
@@ -375,6 +418,10 @@ header{background:var(--na);height:60px;display:flex;align-items:center;justify-
         </div>
         <div class="hora-badge">7:00 PM</div>
         <div class="est-badge est-prog">⏳ Programado</div>
+        <div class="ent-row" onclick="event.stopPropagation()">
+          <a class="ent-link video" href="#" onclick="return false">🎬 Danza_TikTok.mp4</a>
+          <a class="ent-link" href="#" onclick="return false">🎵 Audio tendencia</a>
+        </div>
       </div>
     </div>
 
@@ -392,6 +439,10 @@ header{background:var(--na);height:60px;display:flex;align-items:center;justify-
         </div>
         <div class="hora-badge">6:00 PM</div>
         <div class="est-badge est-prog">⏳ Programado</div>
+        <div class="ent-row" onclick="event.stopPropagation()">
+          <a class="ent-link video" href="#" onclick="return false">📺 Nota_TV.mp4</a>
+          <a class="ent-link" href="#" onclick="return false">📄 Cuestionario</a>
+        </div>
       </div>
       <div class="agenda-card">
         <div class="plat-ico">📸</div>
@@ -401,6 +452,9 @@ header{background:var(--na);height:60px;display:flex;align-items:center;justify-
         </div>
         <div class="hora-badge">8:30 PM</div>
         <div class="est-badge est-prog">⏳ Programado</div>
+        <div class="ent-row" onclick="event.stopPropagation()">
+          <a class="ent-link foto" href="#" onclick="return false">🖼️ Story_1080x1920.jpg</a>
+        </div>
       </div>
     </div>
 
@@ -614,6 +668,25 @@ Entrada completamente libre para toda la comunidad colonense. ¡Te esperamos!</t
       </div>
 
       <div class="fg">
+        <label class="fl">Contenido a publicar (entregables de la tarea)</label>
+        <div style="font-size:11px;color:var(--tm);margin-bottom:8px;">Estos son los enlaces ya cargados en la tarea de origen. Se vincularán a la publicación para que quien publique acceda con un clic.</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--bo);border-radius:7px;cursor:pointer;font-size:13px;">
+            <input type="checkbox" checked style="accent-color:var(--na);width:15px;height:15px;">
+            <span class="ent-link foto" style="pointer-events:none;">🖼️ Afiche final.jpg</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--bo);border-radius:7px;cursor:pointer;font-size:13px;">
+            <input type="checkbox" checked style="accent-color:var(--na);width:15px;height:15px;">
+            <span class="ent-link drive" style="pointer-events:none;">📁 Carpeta Drive</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--bo);border-radius:7px;cursor:pointer;font-size:13px;">
+            <input type="checkbox" style="accent-color:var(--na);width:15px;height:15px;">
+            <span class="ent-link canva" style="pointer-events:none;">🎨 Diseño Canva</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="fg">
         <label class="fl">Notas adicionales</label>
         <textarea class="fc" placeholder="Ej: publicar con hashtags del evento, etiquetar patrocinadores..." rows="3"></textarea>
       </div>
@@ -626,6 +699,53 @@ Entrada completamente libre para toda la comunidad colonense. ¡Te esperamos!</t
     <div class="mpie">
       <button class="btn bbl" onclick="cerrarModal()">Cancelar</button>
       <button class="btn bna" onclick="cerrarModal()">✅ Programar</button>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL DE DETALLE: lo que ve quien publica -->
+<div class="mov" id="modalDet">
+  <div class="mo">
+    <div class="mcab">
+      <div class="mtit">📸 Detalle de publicación</div>
+      <button class="mx" onclick="cerrarDetalle()">✕</button>
+    </div>
+    <div class="mbody">
+
+      <div class="det-thumb">🖼️</div>
+
+      <div style="font-size:16px;font-weight:800;margin-bottom:4px;">Festival de Verano — afiche principal</div>
+      <div style="font-size:12px;color:var(--tm);margin-bottom:16px;">desde la tarea: <strong>Festival de Verano 2026</strong></div>
+
+      <div class="det-row"><span class="lbl">Plataforma</span><span class="bg c-ig">📸 Instagram · Post</span></div>
+      <div class="det-row"><span class="lbl">Fecha y hora</span><strong>Domingo 22 jun · 9:00 AM</strong></div>
+      <div class="det-row"><span class="lbl">Responsable</span>Diana López</div>
+      <div class="det-row"><span class="lbl">Estado</span><span class="est-badge est-pub">✅ Publicado</span></div>
+
+      <div style="margin-top:18px;">
+        <div class="fl">📎 Contenido a publicar</div>
+        <div class="ent-row" style="border:none;padding-top:8px;">
+          <a class="ent-link foto" href="#" onclick="return false">🖼️ Afiche final.jpg</a>
+          <a class="ent-link drive" href="#" onclick="return false">📁 Carpeta Drive</a>
+          <a class="ent-link canva" href="#" onclick="return false">🎨 Diseño Canva</a>
+        </div>
+      </div>
+
+      <div style="margin-top:18px;">
+        <div class="fl">✍️ Copy listo para publicar</div>
+        <div class="det-copybox">✨ ¡El Festival de Verano CACCO regresa con más arte, cultura y talento nacional! 🎭🎨
+
+Del 28 de junio al 5 de julio en el Centro de Arte y Cultura de Colón.
+
+🎟️ Entrada libre · 📍 Calle 4ta, Colón · 🕐 9am - 9pm
+
+#CACCO #FestivalVerano #CulturaColón #PanamaArte<button class="btn-copy" onclick="this.textContent='✓ Copiado'">📋 Copiar</button></div>
+      </div>
+
+    </div>
+    <div class="mpie">
+      <button class="btn bbl" onclick="cerrarDetalle()">Cerrar</button>
+      <button class="btn bna" onclick="cerrarDetalle()">✅ Marcar como publicado</button>
     </div>
   </div>
 </div>
@@ -649,6 +769,11 @@ document.getElementById('modalPub').addEventListener('click',e=>{if(e.target===e
 
 function selPlat(el){ el.closest('.plat-grid').querySelectorAll('.plat-btn').forEach(b=>b.classList.remove('sel')); el.classList.add('sel'); }
 
+// ─── DETALLE ─────────────────────────────────────────────────────────────────
+function abrirDetalle(){ document.getElementById('modalDet').classList.add('on'); }
+function cerrarDetalle(){ document.getElementById('modalDet').classList.remove('on'); }
+document.getElementById('modalDet').addEventListener('click',e=>{if(e.target===e.currentTarget)cerrarDetalle();});
+
 // ─── COPY TOGGLE ─────────────────────────────────────────────────────────────
 let copyOpen=true;
 function toggleCopy(){
@@ -669,21 +794,21 @@ function toggleFiltro(el, key){
 let calYear=2026, calMonth=5; // junio 2026
 
 const PUBS=[
-  {day:22, plat:'ig', txt:'9AM Festival Verano — post'},
-  {day:22, plat:'rd', txt:'11AM Entrevista Director'},
-  {day:23, plat:'ig', txt:'12PM Reel backstage'},
-  {day:23, plat:'fb', txt:'3PM Convocatoria Artistas'},
-  {day:23, plat:'cp', txt:'5PM Nota prensa apertura'},
-  {day:24, plat:'tt', txt:'7PM Video danza'},
-  {day:25, plat:'tv', txt:'6PM Nota TV Galería'},
-  {day:25, plat:'ig', txt:'8:30PM Historia Galería'},
-  {day:26, plat:'ig', txt:'10AM Post comunidad'},
-  {day:27, plat:'rd', txt:'9AM Nota Radio'},
-  {day:28, plat:'ig', txt:'9AM Carrusel arte'},
-  {day:28, plat:'fb', txt:'10AM Post apertura'},
-  {day:28, plat:'pr', txt:'12PM Comunicado prensa'},
-  {day:29, plat:'ig', txt:'6PM Historia evento'},
-  {day:30, plat:'tt', txt:'8PM Resumen mes'},
+  {day:22, plat:'ig', txt:'9AM Festival Verano — post', ent:3},
+  {day:22, plat:'rd', txt:'11AM Entrevista Director', ent:2},
+  {day:23, plat:'ig', txt:'12PM Reel backstage', ent:2},
+  {day:23, plat:'fb', txt:'3PM Convocatoria Artistas', ent:1},
+  {day:23, plat:'cp', txt:'5PM Nota prensa apertura', ent:2},
+  {day:24, plat:'tt', txt:'7PM Video danza', ent:2},
+  {day:25, plat:'tv', txt:'6PM Nota TV Galería', ent:2},
+  {day:25, plat:'ig', txt:'8:30PM Historia Galería', ent:1},
+  {day:26, plat:'ig', txt:'10AM Post comunidad', ent:0},
+  {day:27, plat:'rd', txt:'9AM Nota Radio', ent:1},
+  {day:28, plat:'ig', txt:'9AM Carrusel arte', ent:4},
+  {day:28, plat:'fb', txt:'10AM Post apertura', ent:2},
+  {day:28, plat:'pr', txt:'12PM Comunicado prensa', ent:1},
+  {day:29, plat:'ig', txt:'6PM Historia evento', ent:0},
+  {day:30, plat:'tt', txt:'8PM Resumen mes', ent:1},
 ];
 
 const PLAT_COL={ig:'c-ig',fb:'c-fb',tt:'c-tt',rd:'c-rd',tv:'c-tv',pr:'c-pr',cp:'c-cp'};
@@ -720,8 +845,13 @@ function renderCal(){
     mostrar.forEach(ev=>{
       const e=document.createElement('div');
       e.className=`cev ${PLAT_COL[ev.plat]}`;
-      e.textContent=ev.txt;
-      e.title=ev.txt;
+      e.title=ev.txt+(ev.ent?` · ${ev.ent} archivo(s) adjunto(s)`:'');
+      const t=document.createElement('span');
+      t.style.cssText='overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+      t.textContent=ev.txt;
+      e.appendChild(t);
+      if(ev.ent){const cl=document.createElement('span');cl.className='cev-ent';cl.textContent=`📎${ev.ent}`;e.appendChild(cl);}
+      e.addEventListener('click',(evt)=>{evt.stopPropagation();abrirDetalle();});
       c.appendChild(e);
     });
     if(evs.length>3){const m=document.createElement('div');m.className='mas';m.textContent=`+${evs.length-3} más`;c.appendChild(m);}
