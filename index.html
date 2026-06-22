@@ -723,6 +723,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       </div>
       <button class="btn bgh bsm" onclick="navCalPub(-1)">◀</button>
       <button class="btn bgh bsm" onclick="navCalPub(1)">▶</button>
+      <button class="btn bna bsm" onclick="nuevaPublicacion()">+ Nueva</button>
     </div>
   </div>
   <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px;align-items:center" id="calPubFiltros">
@@ -888,13 +889,17 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 <div class="mo">
   <div class="mcab">
     <div>
-      <div class="mtit">📅 Programar publicación</div>
+      <div class="mtit" id="mProgModalTit">📅 Nueva publicación</div>
       <div style="font-size:12px;color:var(--tm);margin-top:3px" id="mProgSub"></div>
     </div>
     <button class="mx" onclick="cerM('mProg')">×</button>
   </div>
   <div class="mbody">
-    <div style="background:var(--fo);border:1px solid var(--bo);border-radius:8px;padding:10px 14px;margin-bottom:18px;font-size:12px;color:var(--tm)">
+    <div class="fg" id="mProgTituloBlk">
+      <label class="fl">Título *</label>
+      <input type="text" class="fc" id="mProgTitulo" placeholder="Ej: Reel de apertura de temporada...">
+    </div>
+    <div style="background:var(--fo);border:1px solid var(--bo);border-radius:8px;padding:10px 14px;margin-bottom:18px;font-size:12px;color:var(--tm)" id="mProgContexto">
       <div style="display:flex;gap:8px;align-items:baseline;margin-bottom:4px"><span style="font-weight:700;color:var(--tx)">📋 Tarea:</span><span id="mProgTarea"></span></div>
       <div style="display:flex;gap:8px;align-items:baseline;margin-bottom:4px"><span style="font-weight:700;color:var(--tx)">🔗 Entregable:</span><a href="#" class="ent-url" id="mProgLink" style="font-size:12px"></a></div>
       <div style="display:flex;gap:8px;align-items:baseline"><span style="font-weight:700;color:var(--tx)">👤 Publicará:</span><span style="color:var(--na);font-weight:600" id="mProgUser"></span></div>
@@ -980,7 +985,7 @@ const EQ_DEF=[
 // ════════════════════════
 //  ESTADO
 // ════════════════════════
-let E={tareas:[],horasExtra:[],equipo:[],bitacora:[],notifs:[],etiquetas:[...ETIQ_DEF],historico:[]};
+let E={tareas:[],horasExtra:[],equipo:[],bitacora:[],notifs:[],etiquetas:[...ETIQ_DEF],historico:[],publicaciones:[]};
 let uAct=null,niv=null,fCat='todos',nivelTxt=0,repP='semanal';
 let etiqSel=[];
 let expandidas=new Set();
@@ -1860,7 +1865,7 @@ const PLAT_BG={ig:'#fff0f5',fb:'#e8f0fe',tt:'#f0f0f0',rd:'#fff4ee',tv:'#e8f5e9',
 
 let calPubFecha=new Date();
 let calPubVista='mes';
-let mProgTareaId=null,mProgEntId=null;
+let mProgTareaId=null,mProgEntId=null,mProgId=null;
 
 function fmtPubFecha(f){
   if(!f)return'';
@@ -1869,17 +1874,66 @@ function fmtPubFecha(f){
   return`${parseInt(d)} ${meses[parseInt(m)-1]}`;
 }
 
+function nuevaPublicacion(fechaPreset){
+  if(!puede('marcarAvance')){alert('Sin permiso.');return;}
+  mProgId=null;mProgTareaId=null;mProgEntId=null;
+  document.getElementById('mProgModalTit').textContent='📅 Nueva publicación';
+  document.getElementById('mProgSub').textContent='';
+  document.getElementById('mProgTituloBlk').style.display='block';
+  document.getElementById('mProgContexto').style.display='none';
+  document.getElementById('mProgTitulo').value='';
+  document.getElementById('mProgFecha').value=fechaPreset||hoy();
+  document.getElementById('mProgHora').value='09:00';
+  document.getElementById('mProgCopy').value='';
+  document.getElementById('mProgNotas').value='';
+  document.querySelectorAll('#mProgPlats .chip').forEach(c=>c.classList.remove('sel'));
+  cntCopy(document.getElementById('mProgCopy'));
+  document.getElementById('mProg').classList.add('on');
+}
+
+function editarPub(id){
+  if(!puede('marcarAvance')){alert('Sin permiso.');return;}
+  const pub=(E.publicaciones||[]).find(p=>p.id===id);if(!pub)return;
+  mProgId=id;mProgTareaId=null;mProgEntId=null;
+  document.getElementById('mProgModalTit').textContent='📅 Editar publicación';
+  document.getElementById('mProgSub').textContent='';
+  document.getElementById('mProgTituloBlk').style.display='block';
+  document.getElementById('mProgContexto').style.display='none';
+  document.getElementById('mProgTitulo').value=pub.titulo||'';
+  document.getElementById('mProgFecha').value=pub.fecha||hoy();
+  document.getElementById('mProgHora').value=pub.hora||'09:00';
+  document.getElementById('mProgCopy').value=pub.copy||'';
+  document.getElementById('mProgNotas').value=pub.notas||'';
+  document.querySelectorAll('#mProgPlats .chip').forEach(c=>{
+    c.classList.toggle('sel',(pub.plataformas||[]).includes(c.dataset.p));
+  });
+  cntCopy(document.getElementById('mProgCopy'));
+  document.getElementById('mProg').classList.add('on');
+}
+
+function elimPub(id){
+  if(!puede('marcarAvance')){alert('Sin permiso.');return;}
+  const pub=(E.publicaciones||[]).find(p=>p.id===id);
+  if(!pub||!confirm(`¿Eliminar "${pub.titulo}"?`))return;
+  E.publicaciones=E.publicaciones.filter(p=>p.id!==id);
+  reg('Publicación eliminada',`"${pub.titulo}" por ${uAct?.nombre}`);
+  guardar();renderCalPub();
+  document.getElementById('diaPubPanel').style.display='none';
+}
+
 function programarEntregable(tareaId,entId){
   if(!puede('marcarAvance')){alert('Sin permiso.');return;}
   const t=E.tareas.find(t=>t.id===tareaId);if(!t)return;
   const e=(t.entregables||[]).find(e=>e.id===entId);if(!e)return;
-  mProgTareaId=tareaId;mProgEntId=entId;
+  mProgId=null;mProgTareaId=tareaId;mProgEntId=entId;
+  document.getElementById('mProgModalTit').textContent='📅 Programar publicación';
   document.getElementById('mProgSub').textContent=e.nombre;
+  document.getElementById('mProgTituloBlk').style.display='none';
+  document.getElementById('mProgContexto').style.display='block';
   document.getElementById('mProgTarea').textContent=t.titulo;
   document.getElementById('mProgLink').textContent=e.url;
   document.getElementById('mProgLink').href=e.url.startsWith('http')?e.url:'https://'+e.url;
   document.getElementById('mProgUser').textContent=(uAct?.nombre||'—')+' (tú)';
-  // Prellenar si ya tiene publicacion
   const pub=e.publicacion||{};
   document.getElementById('mProgFecha').value=pub.fecha||hoy();
   document.getElementById('mProgHora').value=pub.hora||'09:00';
@@ -1900,11 +1954,28 @@ function guardarProg(){
   const notas=document.getElementById('mProgNotas').value.trim();
   if(!fecha||!hora){alert('Fecha y hora son requeridas.');return;}
   if(!plataformas.length){alert('Seleccioná al menos una plataforma.');return;}
-  const t=E.tareas.find(t=>t.id===mProgTareaId);if(!t)return;
-  const e=(t.entregables||[]).find(e=>e.id===mProgEntId);if(!e)return;
-  e.publicacion={fecha,hora,plataformas,copy,notas,estado:'pendiente',programadoPor:uAct?.nombre,programadoEn:hoy()};
-  reg('Publicación programada',`"${e.nombre}" en "${t.titulo}" para ${fmtPubFecha(fecha)} ${hora}`);
-  guardar();expandidas.add(mProgTareaId);renderTareas();
+  if(mProgTareaId){
+    // Linked to an entregable
+    const t=E.tareas.find(t=>t.id===mProgTareaId);if(!t)return;
+    const e=(t.entregables||[]).find(e=>e.id===mProgEntId);if(!e)return;
+    e.publicacion={fecha,hora,plataformas,copy,notas,estado:'pendiente',programadoPor:uAct?.nombre,programadoEn:hoy()};
+    reg('Publicación programada',`"${e.nombre}" en "${t.titulo}" para ${fmtPubFecha(fecha)} ${hora}`);
+    guardar();expandidas.add(mProgTareaId);renderTareas();
+  }else{
+    // Standalone publication
+    const titulo=document.getElementById('mProgTitulo').value.trim();
+    if(!titulo){alert('El título es requerido.');return;}
+    if(!E.publicaciones)E.publicaciones=[];
+    if(mProgId){
+      const i=E.publicaciones.findIndex(p=>p.id===mProgId);
+      if(i>=0)E.publicaciones[i]={...E.publicaciones[i],titulo,fecha,hora,plataformas,copy,notas};
+      reg('Publicación editada',`"${titulo}" para ${fmtPubFecha(fecha)} ${hora}`);
+    }else{
+      E.publicaciones.push({id:nanoid(),titulo,fecha,hora,plataformas,copy,notas,estado:'pendiente',creadoPor:uAct?.nombre,creadoEn:hoy()});
+      reg('Publicación creada',`"${titulo}" para ${fmtPubFecha(fecha)} ${hora}`);
+    }
+    guardar();renderCalPub();
+  }
   cerM('mProg');
 }
 
@@ -1926,14 +1997,23 @@ function getPlatsActivas(){
 function getPubsDelMes(anio,mes){
   const plats=getPlatsActivas();
   const pubs=[];
+  // Linked publications (from entregables)
   E.tareas.forEach(t=>{
     (t.entregables||[]).forEach(e=>{
       if(!e.publicacion?.fecha)return;
       const [y,m]=e.publicacion.fecha.split('-').map(Number);
       if(y!==anio||m!==mes)return;
       if(!e.publicacion.plataformas.some(p=>plats.includes(p)))return;
-      pubs.push({...e.publicacion,nombre:e.nombre,tarea:t.titulo,tareaId:t.id,entId:e.id});
+      pubs.push({...e.publicacion,nombre:e.nombre,tarea:t.titulo,tareaId:t.id,entId:e.id,standalone:false});
     });
+  });
+  // Standalone publications
+  (E.publicaciones||[]).forEach(p=>{
+    if(!p.fecha)return;
+    const [y,m]=p.fecha.split('-').map(Number);
+    if(y!==anio||m!==mes)return;
+    if(!p.plataformas.some(pl=>plats.includes(pl)))return;
+    pubs.push({...p,nombre:p.titulo,tarea:null,standalone:true});
   });
   return pubs;
 }
@@ -1983,8 +2063,8 @@ function renderCalPubMes(anio,mes,pubs){
       const bg=PLAT_BG[p.plataformas[0]]||'var(--nas)';
       return`<span class="cev-pub" style="background:${bg};color:${c};border-left-color:${c}" onclick="verDiaPub(${d})">${p.hora.replace(':','h').slice(0,5)} ${p.nombre.slice(0,18)}</span>`;
     }).join('');
-    const mas=ps.length>3?`<span class="cev-pub" style="background:var(--su2);color:var(--tm);border-left-color:var(--bo)" onclick="verDiaPub(${d})">+${ps.length-3} más</span>`:'';
-    html+=`<div class="cd${esHoy?' hoy':''}" onclick="verDiaPub(${d})"><div class="cdnum">${d}</div>${chips}${mas}</div>`;
+    const mas=ps.length>3?`<span class="cev-pub" style="background:var(--su2);color:var(--tm);border-left-color:var(--bo)" onclick="event.stopPropagation();verDiaPub(${d})">+${ps.length-3} más</span>`:'';
+    html+=`<div class="cd${esHoy?' hoy':''}" onclick="verDiaPub(${d})" title="Ver / agregar publicaciones"><div class="cdnum">${d}</div>${chips}${mas}</div>`;
   }
   const resto=(7-(primerDia+ultimoDia)%7)%7;
   for(let i=0;i<resto;i++)html+=`<div class="cd otro"></div>`;
@@ -2008,7 +2088,7 @@ function renderCalPubAgenda(pubs){
         <div class="agenda-hora">${p.hora}</div>
         <div class="agenda-info">
           <div class="agenda-nom">${p.nombre}</div>
-          <div class="agenda-from">📋 ${p.tarea} · ${(p.plataformas||[]).map(pl=>`<span class="pc ${pl}">${PLAT_NOM[pl]}</span>`).join(' ')}</div>
+          <div class="agenda-from">${p.tarea?`📋 ${p.tarea} · `:''}${(p.plataformas||[]).map(pl=>`<span class="pc ${pl}">${PLAT_NOM[pl]}</span>`).join(' ')}</div>
         </div>
         <span style="font-size:11px;background:${p.estado==='publicado'?'var(--ves)':'var(--ams)'};color:${p.estado==='publicado'?'var(--ve)':'var(--am)'};padding:2px 8px;border-radius:20px;font-weight:700;flex-shrink:0">${p.estado==='publicado'?'✅ Publicado':'⏳ Pendiente'}</span>
       </div>`).join('')}
@@ -2020,19 +2100,35 @@ function verDiaPub(dia){
   const anio=calPubFecha.getFullYear(),mes=calPubFecha.getMonth()+1;
   const fechaStr=`${anio}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
   const pubs=getPubsDelMes(anio,mes).filter(p=>parseInt(p.fecha.split('-')[2])===dia);
-  if(!pubs.length)return;
   document.getElementById('diaPubPanelTit').textContent=fmtFechaLarga(fechaStr);
-  document.getElementById('diaPubPanelBody').innerHTML=pubs.slice().sort((a,b)=>a.hora.localeCompare(b.hora)).map(p=>`<div class="dia-pub-card">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px">
-      <div>
-        <div class="dia-pub-nom">${p.hora} · ${p.nombre}</div>
-        <div style="font-size:11px;color:var(--tm);margin-top:2px">📋 ${p.tarea} · <a href="${p.url||'#'}" target="_blank" style="color:var(--az);font-size:11px">🔗 Abrir</a></div>
-        <div style="display:flex;gap:4px;margin-top:5px">${(p.plataformas||[]).map(pl=>`<span class="pc ${pl}">${PLAT_NOM[pl]}</span>`).join(' ')}</div>
-      </div>
-      <span style="font-size:11px;background:${p.estado==='publicado'?'var(--ves)':'var(--ams)'};color:${p.estado==='publicado'?'var(--ve)':'var(--am)'};padding:2px 8px;border-radius:20px;font-weight:700;flex-shrink:0">${p.estado==='publicado'?'✅ Publicado':'⏳ Pendiente'}</span>
-    </div>
-    ${p.copy?`<div class="dia-copy">${p.copy}</div>`:''}
-  </div>`).join('');
+  const canEdit=puede('marcarAvance');
+  const addBtn=canEdit?`<button class="btn bna bsm" onclick="nuevaPublicacion('${fechaStr}')">+ Nueva</button>`:'';
+  if(!pubs.length){
+    document.getElementById('diaPubPanelBody').innerHTML=`<div style="padding:20px 0;text-align:center;color:var(--tm);font-size:13px">Sin publicaciones para este día.${canEdit?'<br><br>':''}</div>${addBtn?`<div style="text-align:center">${addBtn}</div>`:''}`;
+  }else{
+    document.getElementById('diaPubPanelBody').innerHTML=pubs.slice().sort((a,b)=>a.hora.localeCompare(b.hora)).map(p=>{
+      const acciones=p.standalone&&canEdit
+        ?`<div style="display:flex;gap:6px;margin-top:8px">
+            <button class="btn bgh bsm" onclick="editarPub('${p.id}')">✏️ Editar</button>
+            <button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--rob)" onclick="elimPub('${p.id}')">🗑 Eliminar</button>
+          </div>`:'';
+      const origenLine=p.tarea
+        ?`<div style="font-size:11px;color:var(--tm);margin-top:2px">📋 ${p.tarea} · <a href="${p.url||'#'}" target="_blank" style="color:var(--az);font-size:11px">🔗 Abrir</a></div>`
+        :'';
+      return`<div class="dia-pub-card">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+          <div style="flex:1;min-width:0">
+            <div class="dia-pub-nom">${p.hora} · ${p.nombre}</div>
+            ${origenLine}
+            <div style="display:flex;gap:4px;margin-top:5px;flex-wrap:wrap">${(p.plataformas||[]).map(pl=>`<span class="pc ${pl}">${PLAT_NOM[pl]}</span>`).join(' ')}</div>
+            ${acciones}
+          </div>
+          <span style="font-size:11px;background:${p.estado==='publicado'?'var(--ves)':'var(--ams)'};color:${p.estado==='publicado'?'var(--ve)':'var(--am)'};padding:2px 8px;border-radius:20px;font-weight:700;flex-shrink:0">${p.estado==='publicado'?'✅ Publicado':'⏳ Pendiente'}</span>
+        </div>
+        ${p.copy?`<div class="dia-copy">${p.copy}</div>`:''}
+      </div>`;
+    }).join('')+`<div style="margin-top:12px;text-align:right">${addBtn}</div>`;
+  }
   const panel=document.getElementById('diaPubPanel');
   panel.style.display='block';
   panel.scrollIntoView({behavior:'smooth',block:'nearest'});
