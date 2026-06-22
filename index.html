@@ -441,6 +441,37 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     #calGrid{max-height:calc(100vh - 130px);overflow-y:auto;}
   }
 }
+/* ═══ CAL. PUBLICACIONES ═══ */
+.btn-prog{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:var(--rs);font-size:11px;font-weight:700;cursor:pointer;border:1.5px dashed var(--bo);background:transparent;color:var(--tm);font-family:'Inter',sans-serif;transition:all .15s;flex-shrink:0;}
+.btn-prog:hover{border-color:var(--na);background:var(--nas);color:var(--na);}
+.prog-badge{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:var(--rs);font-size:11px;font-weight:700;background:var(--nas);border:1.5px solid var(--nab);color:var(--na);flex-shrink:0;cursor:pointer;white-space:nowrap;}
+.pub-sec-tarea{margin-top:12px;background:var(--nas);border:1px solid var(--nab);border-radius:8px;padding:10px 14px;}
+.pub-sec-tit{font-size:10px;font-weight:800;color:var(--na);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.pub-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--nab);font-size:12px;}
+.pub-row:last-child{border-bottom:none;}
+.pub-hora{font-weight:800;color:var(--na);width:58px;flex-shrink:0;}
+.pub-nom{flex:1;font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pub-plat-row{display:flex;gap:3px;flex-wrap:wrap;flex-shrink:0;}
+.pc{font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;}
+.pc.ig{background:#fff0f5;color:#C13584;}.pc.fb{background:#e8f0fe;color:#1877F2;}
+.pc.tt{background:#f0f0f0;color:#111;}.pc.rd{background:#fff4ee;color:#FF6B00;}
+.pc.tv{background:#e8f5e9;color:#1b5e20;}.pc.pr{background:#ede7f6;color:#4527a0;}
+.ni.new-item{border:1.5px dashed var(--nab);}
+.ni .new-tag{font-size:9px;font-weight:800;background:var(--na);color:#fff;padding:1px 5px;border-radius:8px;margin-left:auto;}
+.cev-pub{font-size:10px;padding:2px 6px;border-radius:4px;margin-bottom:2px;line-height:1.4;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer;font-weight:600;display:block;border-left:3px solid;}
+.agenda-dia{background:var(--su);border:1px solid var(--bo);border-radius:var(--r);margin-bottom:14px;box-shadow:var(--sh);overflow:hidden;}
+.agenda-dia-hdr{padding:10px 16px;background:var(--su2);border-bottom:1px solid var(--bo);font-size:13px;font-weight:700;}
+.agenda-pub{display:flex;align-items:flex-start;gap:10px;padding:10px 16px;border-bottom:1px solid var(--bo);}
+.agenda-pub:last-child{border-bottom:none;}
+.agenda-hora{font-size:12px;font-weight:800;color:var(--na);width:60px;flex-shrink:0;padding-top:2px;}
+.agenda-info{flex:1;min-width:0;}
+.agenda-nom{font-size:13px;font-weight:700;}
+.agenda-from{font-size:11px;color:var(--tm);margin-top:1px;}
+.dia-panel{background:var(--su);border:1px solid var(--nab);border-radius:var(--r);padding:18px;margin-top:16px;box-shadow:var(--sh);}
+.dia-pub-card{background:var(--fo);border:1px solid var(--bo);border-radius:8px;padding:12px 14px;margin-bottom:10px;}
+.dia-pub-card:last-child{margin-bottom:0;}
+.dia-pub-nom{font-size:13px;font-weight:700;margin-bottom:4px;}
+.dia-copy{font-size:12px;background:var(--su);border-radius:6px;padding:8px 12px;border-left:3px solid var(--nab);font-style:italic;color:var(--tm);margin-top:8px;line-height:1.6;}
 </style>
 </head>
 <body>
@@ -549,6 +580,8 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <button class="ni" onclick="filtraCat('Diseño',this)"><span class="ico">🎨</span>Diseño</button>
   <button class="ni" onclick="filtraCat('Redes Sociales',this)"><span class="ico">📱</span>Redes Sociales</button>
   <button class="ni" onclick="filtraCat('Medios',this)"><span class="ico">📡</span>Medios</button>
+  <div class="nsep">Publicaciones</div>
+  <button class="ni new-item" onclick="goV('calPub',this)"><span class="ico">📡</span>Cal. Publicaciones<span class="new-tag">NUEVO</span></button>
 </nav>
 
 <main class="cont">
@@ -673,6 +706,41 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <table><thead><tr><th>Fecha / Hora</th><th>Usuario</th><th>Acción</th><th>Detalle</th></tr></thead>
     <tbody id="cBit"></tbody></table>
     <div id="vacBit" style="padding:32px;text-align:center;color:var(--tm);display:none">Sin registros.</div>
+  </div>
+</div>
+
+<!-- CAL. PUBLICACIONES -->
+<div id="vCalPub" class="oculto">
+  <div class="sh2">
+    <div>
+      <div class="stit">📡 Calendario de Publicaciones</div>
+      <div style="font-size:13px;color:var(--tm);margin-top:3px" id="calPubTit"></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <div style="display:flex;gap:2px;background:var(--su2);border:1px solid var(--bo);border-radius:7px;padding:2px">
+        <button class="btn bsm" id="btnCalMes" onclick="setVistaCalPub('mes')" style="border-radius:5px;border:none">Mes</button>
+        <button class="btn bsm" id="btnCalAgenda" onclick="setVistaCalPub('agenda')" style="border:none">Agenda</button>
+      </div>
+      <button class="btn bgh bsm" onclick="navCalPub(-1)">◀</button>
+      <button class="btn bgh bsm" onclick="navCalPub(1)">▶</button>
+    </div>
+  </div>
+  <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px;align-items:center" id="calPubFiltros">
+    <span style="font-size:12px;font-weight:600;color:var(--tm)">Plataformas:</span>
+    <span class="chip sel" data-plat="ig" onclick="this.classList.toggle('sel');renderCalPub()"><span style="color:#C13584">●</span> Instagram</span>
+    <span class="chip sel" data-plat="fb" onclick="this.classList.toggle('sel');renderCalPub()"><span style="color:#1877F2">●</span> Facebook</span>
+    <span class="chip sel" data-plat="tt" onclick="this.classList.toggle('sel');renderCalPub()"><span style="color:#111">●</span> TikTok</span>
+    <span class="chip sel" data-plat="rd" onclick="this.classList.toggle('sel');renderCalPub()"><span style="color:#FF6B00">●</span> Radio</span>
+    <span class="chip sel" data-plat="tv" onclick="this.classList.toggle('sel');renderCalPub()"><span style="color:#1b5e20">●</span> TV</span>
+    <span class="chip sel" data-plat="pr" onclick="this.classList.toggle('sel');renderCalPub()"><span style="color:#4527a0">●</span> Prensa</span>
+  </div>
+  <div id="calPubGrid"></div>
+  <div class="dia-panel" id="diaPubPanel" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:14px;font-weight:800;color:var(--na)" id="diaPubPanelTit"></div>
+      <button class="btn bgh bsm" onclick="document.getElementById('diaPubPanel').style.display='none'">✕ Cerrar</button>
+    </div>
+    <div id="diaPubPanelBody"></div>
   </div>
 </div>
 
@@ -814,6 +882,56 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <button class="btn bna" onclick="guardarEq()">Guardar</button>
   </div>
 </div></div>
+
+<!-- MODAL PROGRAMAR PUBLICACIÓN -->
+<div class="mov" id="mProg">
+<div class="mo">
+  <div class="mcab">
+    <div>
+      <div class="mtit">📅 Programar publicación</div>
+      <div style="font-size:12px;color:var(--tm);margin-top:3px" id="mProgSub"></div>
+    </div>
+    <button class="mx" onclick="cerM('mProg')">×</button>
+  </div>
+  <div class="mbody">
+    <div style="background:var(--fo);border:1px solid var(--bo);border-radius:8px;padding:10px 14px;margin-bottom:18px;font-size:12px;color:var(--tm)">
+      <div style="display:flex;gap:8px;align-items:baseline;margin-bottom:4px"><span style="font-weight:700;color:var(--tx)">📋 Tarea:</span><span id="mProgTarea"></span></div>
+      <div style="display:flex;gap:8px;align-items:baseline;margin-bottom:4px"><span style="font-weight:700;color:var(--tx)">🔗 Entregable:</span><a href="#" class="ent-url" id="mProgLink" style="font-size:12px"></a></div>
+      <div style="display:flex;gap:8px;align-items:baseline"><span style="font-weight:700;color:var(--tx)">👤 Publicará:</span><span style="color:var(--na);font-weight:600" id="mProgUser"></span></div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">¿Dónde y cuándo?</div>
+    <div class="fg">
+      <label class="fl">Plataformas *</label>
+      <div class="chw" id="mProgPlats">
+        <span class="chip" data-p="ig" onclick="this.classList.toggle('sel')"><span style="color:#C13584">●</span> Instagram</span>
+        <span class="chip" data-p="fb" onclick="this.classList.toggle('sel')"><span style="color:#1877F2">●</span> Facebook</span>
+        <span class="chip" data-p="tt" onclick="this.classList.toggle('sel')"><span style="color:#111">●</span> TikTok</span>
+        <span class="chip" data-p="rd" onclick="this.classList.toggle('sel')"><span style="color:#FF6B00">●</span> Radio</span>
+        <span class="chip" data-p="tv" onclick="this.classList.toggle('sel')"><span style="color:#1b5e20">●</span> Televisión</span>
+        <span class="chip" data-p="pr" onclick="this.classList.toggle('sel')"><span style="color:#4527a0">●</span> Prensa</span>
+      </div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Fecha *</label><input type="date" class="fc" id="mProgFecha"></div>
+      <div class="fg"><label class="fl">Hora *</label><input type="time" class="fc" id="mProgHora" value="09:00"></div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;margin-top:4px">¿Qué publicás?</div>
+    <div class="fg">
+      <label class="fl">Copy / texto <span id="mProgCntLbl" style="font-weight:400;text-transform:none;font-size:11px;color:var(--tm)">0 / 2200</span></label>
+      <textarea class="fc" id="mProgCopy" rows="4" placeholder="Escribí el texto que vas a publicar..." oninput="cntCopy(this)"></textarea>
+      <div style="height:3px;border-radius:2px;margin-top:4px;background:var(--bo);overflow:hidden"><div id="mProgCntBar" style="height:100%;width:0%;background:var(--ve);border-radius:2px;transition:width .2s,background .2s"></div></div>
+    </div>
+    <div class="fg">
+      <label class="fl">Notas internas <span style="font-weight:400;text-transform:none;font-size:11px">(opcional)</span></label>
+      <textarea class="fc" id="mProgNotas" rows="2" placeholder="Observaciones para el equipo..."></textarea>
+    </div>
+  </div>
+  <div class="mpie">
+    <button class="btn bbl" onclick="cerM('mProg')">Cancelar</button>
+    <button class="btn bna" onclick="guardarProg()">💾 Guardar</button>
+  </div>
+</div>
+</div>
 
 <!-- MODAL HISTÓRICO -->
 <div class="mov" id="mHist"><div class="mo molg">
@@ -1070,7 +1188,7 @@ function limpNotifs(){E.notifs=[];renderNotifs();document.getElementById('notifP
 // ════════════════════════
 //  NAVEGACIÓN
 // ════════════════════════
-const VISTAS=['Tareas','Calendario','HorasExtra','Equipo','Reportes','Historico','Bitacora','Perfil'];
+const VISTAS=['Tareas','Calendario','HorasExtra','Equipo','Reportes','Historico','Bitacora','Perfil','CalPub'];
 function goV(v,el){
   cerrarSid();
   if(v==='reportes'&&!puede('verReportes')){alert('Sin permiso.');return;}
@@ -1086,6 +1204,7 @@ function goV(v,el){
   if(v==='equipo')renderEquipo();
   if(v==='historico')renderHist();
   if(v==='perfil')renderPerfil();
+  if(v==='calPub')renderCalPub();
 }
 
 function filtraCat(c,el){fCat=c;document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));if(el)el.classList.add('on');goV('tareas',null);renderTareas();}
@@ -1287,12 +1406,32 @@ function renderTareas(){
     const ents=t.entregables||[];
     const canAddEnt=puede('marcarAvance');
     if(abierta){
-      const entItems=ents.map(e=>`<div class="ent-item">
-        <div class="ent-ico">🔗</div>
-        <div class="ent-info"><div class="ent-name">${e.nombre}</div><a href="${e.url}" target="_blank" class="ent-url">${e.url}</a></div>
-        <span class="ent-who">${e.subidoPor||'—'}</span>
-        ${canAddEnt&&(e.subidoPorId===uAct?.id||niv==='lider')?`<button class="btn bpe bsm" onclick="event.stopPropagation();elimEntregable('${t.id}','${e.id}')">🗑</button>`:''}
-      </div>`).join('');
+      const entItems=ents.map(e=>{
+        const pub=e.publicacion;
+        const platBadges=pub?(pub.plataformas||[]).map(p=>`<span class="pc ${p}">${PLAT_NOM[p]||p}</span>`).join(' '):'';
+        const progEl=pub
+          ?`<div class="prog-badge" onclick="event.stopPropagation();programarEntregable('${t.id}','${e.id}')">📅 ${fmtPubFecha(pub.fecha)} · ${pub.hora} ${platBadges}</div>`
+          :(canAddEnt?`<button class="btn-prog" onclick="event.stopPropagation();programarEntregable('${t.id}','${e.id}')">📅 Programar</button>`:'');
+        return`<div class="ent-item">
+          <div class="ent-ico">🔗</div>
+          <div class="ent-info"><div class="ent-name">${e.nombre}</div><a href="${e.url}" target="_blank" class="ent-url">${e.url}</a></div>
+          <span class="ent-who">${e.subidoPor||'—'}</span>
+          ${progEl}
+          ${canAddEnt&&(e.subidoPorId===uAct?.id||niv==='lider')?`<button class="btn bpe bsm" onclick="event.stopPropagation();elimEntregable('${t.id}','${e.id}')">🗑</button>`:''}
+        </div>`;
+      }).join('');
+      // Resumen publicaciones en tareas completadas
+      const esComp=eglobal(t)==='Completada';
+      const entsProg=ents.filter(e=>e.publicacion?.fecha);
+      const pubSecTarea=esComp&&entsProg.length?`<div class="pub-sec-tarea">
+        <div class="pub-sec-tit">📅 Publicaciones de esta tarea</div>
+        ${entsProg.slice().sort((a,b)=>a.publicacion.hora.localeCompare(b.publicacion.hora)).map(e=>`<div class="pub-row">
+          <span class="pub-hora">${e.publicacion.hora}</span>
+          <span class="pub-nom">${e.nombre}</span>
+          <div class="pub-plat-row">${(e.publicacion.plataformas||[]).map(p=>`<span class="pc ${p}">${PLAT_NOM[p]||p}</span>`).join(' ')}</div>
+          <span>${e.publicacion.estado==='publicado'?'✅':'⏳'}</span>
+        </div>`).join('')}
+      </div>`:'';
       const addForm=canAddEnt?`<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
         <input type="text" class="fc" id="ent-nom-${t.id}" placeholder="Nombre del entregable" style="flex:1;min-width:120px;font-size:12px;padding:6px 10px">
         <input type="url" class="fc" id="ent-url-${t.id}" placeholder="https://..." style="flex:2;min-width:180px;font-size:12px;padding:6px 10px">
@@ -1302,7 +1441,7 @@ function renderTareas(){
         <div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🔗 Entregables (${ents.length})</div>
         ${entItems||'<div style="font-size:12px;color:var(--tm);padding:4px 0">Sin entregables aún.</div>'}
         ${addForm}
-      </div>`;
+      </div>${pubSecTarea}`;
     } else if(ents.length){
       entHTML=`<span class="bg bgr" style="font-size:10px">🔗 ${ents.length} entregable${ents.length>1?'s':''}</span>`;
     }
@@ -1710,6 +1849,199 @@ function elimEntregable(tareaId,entId){
   const t=E.tareas.find(t=>t.id===tareaId);if(!t)return;
   t.entregables=(t.entregables||[]).filter(e=>e.id!==entId);
   guardar();expandidas.add(tareaId);renderTareas();
+}
+
+// ════════════════════════
+//  PUBLICACIONES
+// ════════════════════════
+const PLAT_NOM={ig:'IG',fb:'FB',tt:'TK',rd:'RD',tv:'TV',pr:'PR'};
+const PLAT_COLOR={ig:'#C13584',fb:'#1877F2',tt:'#111111',rd:'#FF6B00',tv:'#1b5e20',pr:'#4527a0'};
+const PLAT_BG={ig:'#fff0f5',fb:'#e8f0fe',tt:'#f0f0f0',rd:'#fff4ee',tv:'#e8f5e9',pr:'#ede7f6'};
+
+let calPubFecha=new Date();
+let calPubVista='mes';
+let mProgTareaId=null,mProgEntId=null;
+
+function fmtPubFecha(f){
+  if(!f)return'';
+  const [,m,d]=f.split('-');
+  const meses=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return`${parseInt(d)} ${meses[parseInt(m)-1]}`;
+}
+
+function programarEntregable(tareaId,entId){
+  if(!puede('marcarAvance')){alert('Sin permiso.');return;}
+  const t=E.tareas.find(t=>t.id===tareaId);if(!t)return;
+  const e=(t.entregables||[]).find(e=>e.id===entId);if(!e)return;
+  mProgTareaId=tareaId;mProgEntId=entId;
+  document.getElementById('mProgSub').textContent=e.nombre;
+  document.getElementById('mProgTarea').textContent=t.titulo;
+  document.getElementById('mProgLink').textContent=e.url;
+  document.getElementById('mProgLink').href=e.url.startsWith('http')?e.url:'https://'+e.url;
+  document.getElementById('mProgUser').textContent=(uAct?.nombre||'—')+' (tú)';
+  // Prellenar si ya tiene publicacion
+  const pub=e.publicacion||{};
+  document.getElementById('mProgFecha').value=pub.fecha||hoy();
+  document.getElementById('mProgHora').value=pub.hora||'09:00';
+  document.getElementById('mProgCopy').value=pub.copy||'';
+  document.getElementById('mProgNotas').value=pub.notas||'';
+  document.querySelectorAll('#mProgPlats .chip').forEach(c=>{
+    c.classList.toggle('sel',(pub.plataformas||[]).includes(c.dataset.p));
+  });
+  cntCopy(document.getElementById('mProgCopy'));
+  document.getElementById('mProg').classList.add('on');
+}
+
+function guardarProg(){
+  const fecha=document.getElementById('mProgFecha').value;
+  const hora=document.getElementById('mProgHora').value;
+  const plataformas=[...document.querySelectorAll('#mProgPlats .chip.sel')].map(c=>c.dataset.p);
+  const copy=document.getElementById('mProgCopy').value.trim();
+  const notas=document.getElementById('mProgNotas').value.trim();
+  if(!fecha||!hora){alert('Fecha y hora son requeridas.');return;}
+  if(!plataformas.length){alert('Seleccioná al menos una plataforma.');return;}
+  const t=E.tareas.find(t=>t.id===mProgTareaId);if(!t)return;
+  const e=(t.entregables||[]).find(e=>e.id===mProgEntId);if(!e)return;
+  e.publicacion={fecha,hora,plataformas,copy,notas,estado:'pendiente',programadoPor:uAct?.nombre,programadoEn:hoy()};
+  reg('Publicación programada',`"${e.nombre}" en "${t.titulo}" para ${fmtPubFecha(fecha)} ${hora}`);
+  guardar();expandidas.add(mProgTareaId);renderTareas();
+  cerM('mProg');
+}
+
+function cntCopy(ta){
+  const lim=2200,len=ta.value.length,pct=Math.min(len/lim*100,100);
+  const lbl=document.getElementById('mProgCntLbl'),bar=document.getElementById('mProgCntBar');
+  if(!lbl||!bar)return;
+  lbl.textContent=len+' / '+lim;
+  bar.style.width=pct+'%';
+  const col=len>lim?'#dc2626':len>lim*.8?'#d97706':'#16a34a';
+  bar.style.background=col;lbl.style.color=len>lim?'#dc2626':len>lim*.8?'#d97706':'var(--tm)';
+}
+
+// ── CALENDARIO DE PUBLICACIONES ──
+function getPlatsActivas(){
+  return[...document.querySelectorAll('#calPubFiltros .chip.sel')].map(c=>c.dataset.plat);
+}
+
+function getPubsDelMes(anio,mes){
+  const plats=getPlatsActivas();
+  const pubs=[];
+  E.tareas.forEach(t=>{
+    (t.entregables||[]).forEach(e=>{
+      if(!e.publicacion?.fecha)return;
+      const [y,m]=e.publicacion.fecha.split('-').map(Number);
+      if(y!==anio||m!==mes)return;
+      if(!e.publicacion.plataformas.some(p=>plats.includes(p)))return;
+      pubs.push({...e.publicacion,nombre:e.nombre,tarea:t.titulo,tareaId:t.id,entId:e.id});
+    });
+  });
+  return pubs;
+}
+
+function renderCalPub(){
+  const anio=calPubFecha.getFullYear(),mes=calPubFecha.getMonth()+1;
+  const meses=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('calPubTit').textContent=meses[mes-1]+' '+anio;
+  setVistaCalPub(calPubVista,true);
+}
+
+function setVistaCalPub(v,noToggle){
+  calPubVista=v;
+  const anio=calPubFecha.getFullYear(),mes=calPubFecha.getMonth()+1;
+  const pubs=getPubsDelMes(anio,mes);
+  const btnMes=document.getElementById('btnCalMes'),btnAg=document.getElementById('btnCalAgenda');
+  if(btnMes){btnMes.style.background=v==='mes'?'var(--su)':'transparent';btnMes.style.color=v==='mes'?'var(--tx)':'var(--tm)';btnMes.style.boxShadow=v==='mes'?'var(--sh)':'none';}
+  if(btnAg){btnAg.style.background=v==='agenda'?'var(--su)':'transparent';btnAg.style.color=v==='agenda'?'var(--tx)':'var(--tm)';btnAg.style.boxShadow=v==='agenda'?'var(--sh)':'none';}
+  document.getElementById('calPubGrid').innerHTML=v==='mes'?renderCalPubMes(anio,mes,pubs):renderCalPubAgenda(pubs);
+  document.getElementById('diaPubPanel').style.display='none';
+}
+
+function navCalPub(dir){
+  calPubFecha=new Date(calPubFecha.getFullYear(),calPubFecha.getMonth()+dir,1);
+  renderCalPub();
+}
+
+function renderCalPubMes(anio,mes,pubs){
+  const primerDia=new Date(anio,mes-1,1).getDay();
+  const ultimoDia=new Date(anio,mes,0).getDate();
+  const hoyStr=hoy();
+  const porDia={};
+  pubs.forEach(p=>{
+    const d=parseInt(p.fecha.split('-')[2]);
+    if(!porDia[d])porDia[d]=[];
+    porDia[d].push(p);
+  });
+  const dias=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  let html=`<div class="cgrid">${dias.map(d=>`<div class="cdn">${d}</div>`).join('')}`;
+  for(let i=0;i<primerDia;i++)html+=`<div class="cd otro"></div>`;
+  for(let d=1;d<=ultimoDia;d++){
+    const fechaStr=`${anio}-${String(mes).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const esHoy=fechaStr===hoyStr;
+    const ps=porDia[d]||[];
+    const chips=ps.slice(0,3).map(p=>{
+      const c=PLAT_COLOR[p.plataformas[0]]||'var(--na)';
+      const bg=PLAT_BG[p.plataformas[0]]||'var(--nas)';
+      return`<span class="cev-pub" style="background:${bg};color:${c};border-left-color:${c}" onclick="verDiaPub(${d})">${p.hora.replace(':','h').slice(0,5)} ${p.nombre.slice(0,18)}</span>`;
+    }).join('');
+    const mas=ps.length>3?`<span class="cev-pub" style="background:var(--su2);color:var(--tm);border-left-color:var(--bo)" onclick="verDiaPub(${d})">+${ps.length-3} más</span>`:'';
+    html+=`<div class="cd${esHoy?' hoy':''}" onclick="verDiaPub(${d})"><div class="cdnum">${d}</div>${chips}${mas}</div>`;
+  }
+  const resto=(7-(primerDia+ultimoDia)%7)%7;
+  for(let i=0;i<resto;i++)html+=`<div class="cd otro"></div>`;
+  html+='</div>';
+  return html;
+}
+
+function renderCalPubAgenda(pubs){
+  if(!pubs.length)return'<div style="padding:32px;text-align:center;color:var(--tm);font-size:14px">Sin publicaciones este mes.</div>';
+  const porDia={};
+  pubs.forEach(p=>{
+    const d=p.fecha;
+    if(!porDia[d])porDia[d]=[];
+    porDia[d].push(p);
+  });
+  return Object.keys(porDia).sort().map(f=>{
+    const ps=porDia[f].slice().sort((a,b)=>a.hora.localeCompare(b.hora));
+    return`<div class="agenda-dia">
+      <div class="agenda-dia-hdr">${fmtFechaLarga(f)}</div>
+      ${ps.map(p=>`<div class="agenda-pub">
+        <div class="agenda-hora">${p.hora}</div>
+        <div class="agenda-info">
+          <div class="agenda-nom">${p.nombre}</div>
+          <div class="agenda-from">📋 ${p.tarea} · ${(p.plataformas||[]).map(pl=>`<span class="pc ${pl}">${PLAT_NOM[pl]}</span>`).join(' ')}</div>
+        </div>
+        <span style="font-size:11px;background:${p.estado==='publicado'?'var(--ves)':'var(--ams)'};color:${p.estado==='publicado'?'var(--ve)':'var(--am)'};padding:2px 8px;border-radius:20px;font-weight:700;flex-shrink:0">${p.estado==='publicado'?'✅ Publicado':'⏳ Pendiente'}</span>
+      </div>`).join('')}
+    </div>`;
+  }).join('');
+}
+
+function verDiaPub(dia){
+  const anio=calPubFecha.getFullYear(),mes=calPubFecha.getMonth()+1;
+  const fechaStr=`${anio}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+  const pubs=getPubsDelMes(anio,mes).filter(p=>parseInt(p.fecha.split('-')[2])===dia);
+  if(!pubs.length)return;
+  document.getElementById('diaPubPanelTit').textContent=fmtFechaLarga(fechaStr);
+  document.getElementById('diaPubPanelBody').innerHTML=pubs.slice().sort((a,b)=>a.hora.localeCompare(b.hora)).map(p=>`<div class="dia-pub-card">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+      <div>
+        <div class="dia-pub-nom">${p.hora} · ${p.nombre}</div>
+        <div style="font-size:11px;color:var(--tm);margin-top:2px">📋 ${p.tarea} · <a href="${p.url||'#'}" target="_blank" style="color:var(--az);font-size:11px">🔗 Abrir</a></div>
+        <div style="display:flex;gap:4px;margin-top:5px">${(p.plataformas||[]).map(pl=>`<span class="pc ${pl}">${PLAT_NOM[pl]}</span>`).join(' ')}</div>
+      </div>
+      <span style="font-size:11px;background:${p.estado==='publicado'?'var(--ves)':'var(--ams)'};color:${p.estado==='publicado'?'var(--ve)':'var(--am)'};padding:2px 8px;border-radius:20px;font-weight:700;flex-shrink:0">${p.estado==='publicado'?'✅ Publicado':'⏳ Pendiente'}</span>
+    </div>
+    ${p.copy?`<div class="dia-copy">${p.copy}</div>`:''}
+  </div>`).join('');
+  const panel=document.getElementById('diaPubPanel');
+  panel.style.display='block';
+  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function fmtFechaLarga(f){
+  if(!f)return'';
+  const d=new Date(f+'T12:00:00');
+  return d.toLocaleDateString('es-PA',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 }
 
 function elimT(id){
@@ -2143,7 +2475,25 @@ function generarRep(){
         </div>`;
       }).join('')||'<p style="color:var(--tm);font-size:13px">Sin tareas registradas aún.</p>'}
     </div>
-    <div class="rblk"><div class="rbtit">Reporte completo</div><div class="rtxt" id="repTxt">${texto}</div></div>`;
+    <div class="rblk"><div class="rbtit">Reporte completo</div><div class="rtxt" id="repTxt">${texto}</div></div>
+    ${(()=>{
+      const hoyD=hoy();
+      const allPubs=[];
+      E.tareas.forEach(t=>(t.entregables||[]).forEach(e=>{if(e.publicacion?.fecha)allPubs.push({...e.publicacion,nombre:e.nombre,tarea:t.titulo});}));
+      if(!allPubs.length)return'';
+      const pubsHoy=allPubs.filter(p=>p.fecha===hoyD).sort((a,b)=>a.hora.localeCompare(b.hora));
+      if(!pubsHoy.length)return'';
+      const cards=pubsHoy.map(p=>`<div style="padding:12px;background:var(--fo);border:1px solid var(--bo);border-radius:8px;display:flex;align-items:flex-start;gap:12px;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:800;color:var(--na);width:62px;flex-shrink:0;padding-top:2px">${p.hora}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700">${p.nombre}</div>
+          <div style="font-size:11px;color:var(--tm);margin-top:2px">📋 ${p.tarea} · ${(p.plataformas||[]).map(pl=>`<span class="pc ${pl}">${PLAT_NOM[pl]}</span>`).join(' ')}</div>
+          ${p.copy?`<div style="font-size:12px;color:var(--tm);margin-top:6px;font-style:italic;background:var(--su);padding:7px 10px;border-radius:5px;border-left:3px solid var(--nab)">${p.copy.slice(0,120)}${p.copy.length>120?'…':''}</div>`:''}
+        </div>
+        <span style="font-size:11px;background:${p.estado==='publicado'?'var(--ves)':'var(--ams)'};color:${p.estado==='publicado'?'var(--ve)':'var(--am)'};padding:2px 8px;border-radius:20px;font-weight:700;flex-shrink:0">${p.estado==='publicado'?'✅ Publicado':'⏳ Pendiente'}</span>
+      </div>`).join('');
+      return`<div class="rblk" style="border-color:var(--nab)"><div class="rbtit" style="color:var(--na)">📅 Publicaciones del día (${pubsHoy.length})</div>${cards}</div>`;
+    })()}`;
 }
 
 function copiarRep(){if(!puede('verReportes')){alert('Sin permiso.');return;}navigator.clipboard.writeText(repTxtActivo).then(()=>alert('✅ Reporte copiado.'));}
