@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CACCO — Mockup: Calendario de Publicaciones</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+:root{
+  --na:#E35205;--na2:#c44604;--nas:#fff4ee;--nab:#fcd9c4;
+  --fo:#f5f4f2;--su:#ffffff;--su2:#f0eeeb;--bo:#e2ddd8;
+  --tx:#1a1816;--tm:#6b6258;
+  --ve:#166534;--ves:#dcfce7;
+  --az:#1e40af;--azs:#dbeafe;
+  --ro:#991b1b;--ros:#fee2e2;
+  --am:#92400e;--ams:#fef3c7;
+  --mo:#5b21b6;--mos:#ede9fe;
+  --r:10px;--rs:6px;
+  --sh:0 1px 3px rgba(0,0,0,.07),0 4px 12px rgba(0,0,0,.05);
+  --shm:0 4px 16px rgba(0,0,0,.10),0 1px 4px rgba(0,0,0,.06);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{font-size:15px;}
+body{font-family:'Inter',sans-serif;background:var(--fo);color:var(--tx);min-height:100vh;line-height:1.6;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--rs);border:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.bna{background:var(--na);color:#fff;}.bna:hover{background:var(--na2);}
+.bbl{background:var(--su);color:var(--tx);border:1px solid var(--bo);}.bbl:hover{background:var(--su2);}
+.bgh{background:transparent;color:var(--tm);border:1px solid var(--bo);}.bgh:hover{background:var(--su2);color:var(--tx);}
+.bsm{padding:6px 12px;font-size:11px;}
+.bg{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;}
+
+/* HEADER */
+header{background:var(--na);height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(227,82,5,.25);}
+.horg{font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdep{font-size:11px;color:rgba(255,255,255,.82);}
+.acb{background:rgba(255,255,255,.15);border:none;border-radius:6px;padding:5px 9px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
+.pill{background:rgba(255,255,255,.2);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;}
+
+/* LAYOUT */
+.alay{display:flex;min-height:calc(100vh - 60px);}
+.sid{width:228px;background:var(--su);border-right:1px solid var(--bo);padding:18px 12px;display:flex;flex-direction:column;gap:2px;position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto;flex-shrink:0;}
+.nsep{font-size:10px;font-weight:700;color:var(--tm);letter-spacing:1px;text-transform:uppercase;padding:14px 8px 5px;}
+.ni{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:7px;font-size:13px;font-weight:500;color:var(--tm);cursor:pointer;transition:all .12s;border:none;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif;}
+.ni:hover{background:var(--nas);color:var(--na);}
+.ni.on{background:var(--nas);color:var(--na);font-weight:700;}
+.ni .ico{font-size:14px;width:18px;text-align:center;flex-shrink:0;}
+.cont{flex:1;padding:28px;overflow-x:hidden;min-width:0;}
+.sh2{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px;}
+.stit{font-size:18px;font-weight:800;letter-spacing:-.3px;}
+
+/* CALENDARIO PUBLICACIONES */
+.cal-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
+.cal-nav{display:flex;align-items:center;gap:8px;}
+.cal-mes{font-size:16px;font-weight:700;min-width:180px;}
+.cal-filtros{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto;}
+.fchip{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--bo);background:var(--su);color:var(--tm);transition:all .12s;user-select:none;}
+.fchip:hover{border-color:var(--na);}
+.fchip.on{color:#fff;border-color:transparent;}
+
+/* GRID */
+.cgrid{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--bo);border-radius:var(--r);overflow:hidden;background:var(--su);box-shadow:var(--sh);}
+.cdn{background:var(--su2);padding:10px 6px;text-align:center;font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;border-bottom:1px solid var(--bo);}
+.cd{background:var(--su);padding:8px 7px;min-height:110px;border-right:1px solid var(--bo);border-bottom:1px solid var(--bo);vertical-align:top;cursor:pointer;transition:background .1s;}
+.cd:nth-child(7n){border-right:none;}
+.cd.otro{background:var(--fo);}
+.cd.hoy{background:var(--nas);}
+.cd:hover:not(.otro){background:#fef8f5;}
+.cdnum{font-size:13px;font-weight:700;margin-bottom:5px;color:var(--tx);}
+.cd.hoy .cdnum{color:var(--na);font-weight:800;background:var(--na);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;}
+.cev{font-size:11px;padding:3px 7px;border-radius:4px;margin-bottom:3px;line-height:1.35;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:4px;transition:all .12s;}
+.cev:hover{filter:brightness(.9);}
+.cev-hora{font-size:10px;font-weight:500;opacity:.85;flex-shrink:0;}
+.mas{font-size:10px;color:var(--tm);padding:2px 6px;font-weight:600;}
+
+/* COLORES POR PLATAFORMA */
+.c-ig{background:#fcefef;color:#8b1414;border:1px solid #f8cdcd;}
+.c-fb{background:#e8f0fe;color:#1a3c8c;border:1px solid #c5d8fb;}
+.c-tt{background:#f0f0f0;color:#111;border:1px solid #d9d9d9;}
+.c-rd{background:#fff0e0;color:#7c3d00;border:1px solid #ffd7a0;}
+.c-tv{background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;}
+.c-pr{background:#ede7f6;color:#4527a0;border:1px solid #b39ddb;}
+.c-cp{background:#e0f7fa;color:#006064;border:1px solid #80deea;}
+
+/* LEYENDA */
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;}
+.leg-dot{width:10px;height:10px;border-radius:3px;}
+
+/* MODAL */
+.mov{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:500;padding:20px;backdrop-filter:blur(2px);}
+.mov.on{display:flex;}
+.mo{background:var(--su);border-radius:14px;border:1px solid var(--bo);width:100%;max-width:540px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.22);}
+.mcab{display:flex;align-items:center;justify-content:space-between;padding:22px 26px 18px;border-bottom:1px solid var(--bo);position:sticky;top:0;background:var(--su);z-index:1;border-radius:14px 14px 0 0;}
+.mtit{font-size:17px;font-weight:800;}
+.mx{background:none;border:none;font-size:22px;cursor:pointer;color:var(--tm);line-height:1;padding:4px 6px;border-radius:5px;}
+.mx:hover{background:var(--su2);}
+.mbody{padding:22px 26px;}
+.mpie{padding:18px 26px;border-top:1px solid var(--bo);display:flex;justify-content:flex-end;gap:10px;}
+.fg{margin-bottom:16px;}
+.fl{display:block;font-size:12px;font-weight:700;color:var(--tm);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;}
+.fc{width:100%;padding:10px 14px;border:1.5px solid var(--bo);border-radius:var(--rs);font-family:'Inter',sans-serif;font-size:14px;color:var(--tx);background:var(--su);transition:border-color .15s;outline:none;}
+.fc:focus{border-color:var(--na);box-shadow:0 0 0 3px rgba(227,82,5,.12);}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+
+/* PLATAFORMAS GRID */
+.plat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.plat-btn{display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 8px;border-radius:8px;border:1.5px solid var(--bo);background:var(--su);cursor:pointer;transition:all .15s;font-size:12px;font-weight:600;color:var(--tm);}
+.plat-btn:hover{border-color:var(--na);background:var(--nas);}
+.plat-btn.sel{border-color:var(--na);background:var(--nas);color:var(--na);}
+.plat-btn .pico{font-size:22px;}
+
+/* VISTA AGENDA */
+.agenda-day{margin-bottom:20px;}
+.agenda-date{font-size:13px;font-weight:700;color:var(--tm);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.agenda-date .dia-num{background:var(--na);color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;}
+.agenda-card{background:var(--su);border:1px solid var(--bo);border-radius:8px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:14px;box-shadow:var(--sh);transition:all .12s;}
+.agenda-card:hover{box-shadow:var(--shm);transform:translateY(-1px);}
+.agenda-card .plat-ico{font-size:20px;flex-shrink:0;}
+.agenda-card .info{flex:1;min-width:0;}
+.agenda-card .titulo{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.agenda-card .meta{font-size:11px;color:var(--tm);margin-top:2px;}
+.agenda-card .hora-badge{font-size:12px;font-weight:700;color:var(--na);background:var(--nas);padding:4px 10px;border-radius:6px;flex-shrink:0;}
+.agenda-card .est-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;flex-shrink:0;}
+.est-prog{background:var(--ams);color:var(--am);}
+.est-pub{background:var(--ves);color:var(--ve);}
+.est-rev{background:var(--azs);color:var(--az);}
+
+/* SECCIÓN COPY — nueva sección en tarea */
+.sec-copy-demo{background:var(--su);border:1px solid var(--bo);border-radius:var(--r);overflow:hidden;margin-bottom:12px;box-shadow:var(--sh);}
+.sec-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;}
+.sec-header:hover{background:var(--su2);}
+.sec-titulo{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;}
+.sec-body{padding:14px 16px;border-top:1px solid var(--bo);background:var(--su);}
+.copy-tipos{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px;}
+.copy-chip{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--bo);background:var(--su);color:var(--tm);transition:all .12s;}
+.copy-chip.sel{background:#e0f7fa;color:#006064;border-color:#80deea;}
+.copy-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.copy-field{display:flex;flex-direction:column;gap:5px;}
+.copy-field label{font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;}
+.copy-field input,.copy-field select,.copy-field textarea{padding:8px 12px;border:1.5px solid var(--bo);border-radius:6px;font-family:'Inter',sans-serif;font-size:13px;color:var(--tx);background:var(--su);outline:none;}
+.copy-field input:focus,.copy-field select:focus,.copy-field textarea:focus{border-color:#00acc1;}
+.copy-field textarea{resize:vertical;min-height:60px;}
+
+/* VISTA TABS */
+.tabs{display:flex;gap:2px;background:var(--su2);border:1px solid var(--bo);border-radius:8px;padding:3px;margin-bottom:20px;width:fit-content;}
+.tab{padding:7px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;color:var(--tm);transition:all .15s;border:none;background:none;font-family:'Inter',sans-serif;}
+.tab.on{background:var(--su);color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,.1);}
+
+/* STATS PEQUEÑOS */
+.mini-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.mini-stat{background:var(--su);border:1px solid var(--bo);border-radius:var(--r);padding:14px 16px;border-top:3px solid var(--na);}
+.mini-stat.az{border-top-color:#2563eb;}.mini-stat.ve{border-top-color:#16a34a;}.mini-stat.am{border-top-color:#d97706;}
+.ms-lbl{font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.ms-num{font-size:24px;font-weight:800;letter-spacing:-1px;line-height:1;}
+.ms-sub{font-size:11px;color:var(--tm);margin-top:2px;}
+
+/* BANNER DEMO */
+.demo-banner{background:linear-gradient(135deg,var(--na),#c44604);color:#fff;padding:12px 20px;border-radius:var(--r);margin-bottom:24px;display:flex;align-items:center;gap:12px;font-size:13px;font-weight:600;}
+
+/* NOTIF COPY — en tarea card */
+.copy-tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:#e0f7fa;color:#006064;border:1px solid #80deea;}
+
+/* Responsive */
+@media(max-width:900px){
+  .sid{display:none;}
+  .mini-stats{grid-template-columns:repeat(2,1fr);}
+  .plat-grid{grid-template-columns:repeat(4,1fr);}
+}
+@media(max-width:600px){
+  .cgrid{grid-template-columns:repeat(7,1fr);}
+  .cd{min-height:70px;padding:5px 4px;}
+  .cev{font-size:10px;padding:2px 4px;}
+  .fr{grid-template-columns:1fr;}
+  .mini-stats{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div style="display:flex;flex-direction:column;">
+      <span class="horg">CACCO</span>
+      <span class="hdep">Centro de Arte y Cultura de Colón</span>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span class="pill">✨ MOCKUP — Vista previa</span>
+    <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:6px 12px;color:#fff;font-size:12px;font-weight:600;">👤 Coordinadora</div>
+  </div>
+</header>
+
+<div class="alay">
+
+<!-- SIDEBAR -->
+<nav class="sid">
+  <div class="nsep">Principal</div>
+  <button class="ni" onclick=""><span class="ico">📋</span>Tareas</button>
+  <button class="ni on" onclick=""><span class="ico">📅</span>Calendario</button>
+  <button class="ni" onclick=""><span class="ico">🗓️</span>Publicaciones</button>
+  <button class="ni" onclick=""><span class="ico">⏱️</span>Horas Extras</button>
+  <button class="ni" onclick=""><span class="ico">👥</span>Equipo</button>
+  <div class="nsep">Coordinación</div>
+  <button class="ni" onclick=""><span class="ico">📊</span>Reportes</button>
+  <button class="ni" onclick=""><span class="ico">🗂️</span>Histórico</button>
+  <button class="ni" onclick=""><span class="ico">📝</span>Bitácora</button>
+  <div class="nsep">Secciones</div>
+  <button class="ni" onclick=""><span class="ico">🔘</span>Todas</button>
+  <button class="ni" onclick=""><span class="ico">📹</span>Audiovisual</button>
+  <button class="ni" onclick=""><span class="ico">🎯</span>Protocolo</button>
+  <button class="ni" onclick=""><span class="ico">🎨</span>Diseño</button>
+  <button class="ni" onclick=""><span class="ico">📱</span>Redes Sociales</button>
+  <button class="ni" onclick=""><span class="ico">📡</span>Medios</button>
+  <button class="ni" style="color:#006064;background:#e0f7fa;" onclick=""><span class="ico">✍️</span>Copy</button>
+</nav>
+
+<!-- CONTENIDO -->
+<main class="cont">
+
+  <div class="demo-banner">
+    🎨 Este es el mockup visual — muestra cómo quedarían las nuevas funcionalidades en la app real
+  </div>
+
+  <!-- TABS NAVEGACIÓN -->
+  <div class="tabs">
+    <button class="tab" onclick="switchTab('cal')">📅 Calendario mensual</button>
+    <button class="tab on" onclick="switchTab('agenda')">📋 Vista agenda</button>
+    <button class="tab" onclick="switchTab('copy')">✍️ Sección Copy</button>
+  </div>
+
+  <!-- ==================== VISTA CALENDARIO ==================== -->
+  <div id="tabCal" style="display:none;">
+    <div class="sh2">
+      <div>
+        <div class="stit">Calendario de Publicaciones</div>
+        <div style="font-size:13px;color:var(--tm);margin-top:3px;">Programa y gestiona todo el contenido a publicar</div>
+      </div>
+      <button class="btn bna" onclick="abrirModal()">+ Programar publicación</button>
+    </div>
+
+    <div class="mini-stats">
+      <div class="mini-stat"><div class="ms-lbl">Este mes</div><div class="ms-num">24</div><div class="ms-sub">publicaciones</div></div>
+      <div class="mini-stat am"><div class="ms-lbl">Pendientes</div><div class="ms-num">9</div><div class="ms-sub">por publicar</div></div>
+      <div class="mini-stat ve"><div class="ms-lbl">Publicadas</div><div class="ms-num">12</div><div class="ms-sub">este mes</div></div>
+      <div class="mini-stat az"><div class="ms-lbl">En revisión</div><div class="ms-num">3</div><div class="ms-sub">esperando OK</div></div>
+    </div>
+
+    <div class="cal-toolbar">
+      <div class="cal-nav">
+        <button class="btn bbl bsm" onclick="cambiarMes(-1)">‹</button>
+        <span class="cal-mes" id="calMes">Junio 2026</span>
+        <button class="btn bbl bsm" onclick="cambiarMes(1)">›</button>
+      </div>
+      <div class="cal-filtros">
+        <div class="fchip on" style="background:#8b1414;border-color:#8b1414;" onclick="toggleFiltro(this,'ig')">📸 Instagram</div>
+        <div class="fchip on" style="background:#1a3c8c;border-color:#1a3c8c;" onclick="toggleFiltro(this,'fb')">👥 Facebook</div>
+        <div class="fchip on" style="background:#111;border-color:#111;" onclick="toggleFiltro(this,'tt')">🎵 TikTok</div>
+        <div class="fchip on" style="background:#7c3d00;border-color:#7c3d00;" onclick="toggleFiltro(this,'rd')">📻 Radio</div>
+        <div class="fchip on" style="background:#1b5e20;border-color:#1b5e20;" onclick="toggleFiltro(this,'tv')">📺 TV</div>
+        <div class="fchip on" style="background:#4527a0;border-color:#4527a0;" onclick="toggleFiltro(this,'pr')">📰 Prensa</div>
+        <div class="fchip on" style="background:#006064;border-color:#006064;" onclick="toggleFiltro(this,'cp')">✍️ Copy</div>
+      </div>
+    </div>
+
+    <div class="cgrid" id="calGrid">
+      <!-- días de la semana -->
+      <div class="cdn">Dom</div><div class="cdn">Lun</div><div class="cdn">Mar</div>
+      <div class="cdn">Mié</div><div class="cdn">Jue</div><div class="cdn">Vie</div><div class="cdn">Sáb</div>
+    </div>
+
+    <div class="legend">
+      <div class="leg-item"><div class="leg-dot" style="background:#8b1414;"></div> Instagram</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#1a3c8c;"></div> Facebook</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#333;"></div> TikTok</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#7c3d00;"></div> Radio</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#1b5e20;"></div> TV</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#4527a0;"></div> Prensa</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#006064;"></div> Copy</div>
+    </div>
+  </div>
+
+  <!-- ==================== VISTA AGENDA ==================== -->
+  <div id="tabAgenda">
+    <div class="sh2">
+      <div>
+        <div class="stit">Publicaciones programadas</div>
+        <div style="font-size:13px;color:var(--tm);margin-top:3px;">Vista de agenda — próximas 2 semanas</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn bbl bsm" onclick="switchTab('cal')">📅 Ver calendario</button>
+        <button class="btn bna" onclick="abrirModal()">+ Programar publicación</button>
+      </div>
+    </div>
+
+    <div class="mini-stats">
+      <div class="mini-stat"><div class="ms-lbl">Esta semana</div><div class="ms-num">7</div><div class="ms-sub">programadas</div></div>
+      <div class="mini-stat am"><div class="ms-lbl">Pendientes</div><div class="ms-num">4</div><div class="ms-sub">por publicar</div></div>
+      <div class="mini-stat ve"><div class="ms-lbl">Publicadas</div><div class="ms-num">2</div><div class="ms-sub">esta semana</div></div>
+      <div class="mini-stat az"><div class="ms-lbl">En revisión</div><div class="ms-num">1</div><div class="ms-sub">esperando OK</div></div>
+    </div>
+
+    <!-- Hoy -->
+    <div class="agenda-day">
+      <div class="agenda-date">
+        <div class="dia-num">22</div>
+        <span style="font-size:14px;font-weight:700;">Domingo, 22 de junio <span style="background:var(--na);color:#fff;font-size:10px;padding:2px 8px;border-radius:20px;margin-left:4px;">HOY</span></span>
+      </div>
+      <div class="agenda-card" onclick="abrirDetalle('ig')">
+        <div class="plat-ico">📸</div>
+        <div class="info">
+          <div class="titulo">Festival de Verano — afiche principal</div>
+          <div class="meta">📱 Instagram · Post · desde: "Festival de Verano 2026" · <span class="copy-tag">✍️ Copy listo</span></div>
+        </div>
+        <div class="hora-badge">9:00 AM</div>
+        <div class="est-badge est-pub">✅ Publicado</div>
+      </div>
+      <div class="agenda-card" onclick="abrirDetalle('fb')">
+        <div class="plat-ico">📻</div>
+        <div class="info">
+          <div class="titulo">Entrevista Director CACCO — cuña radial</div>
+          <div class="meta">📡 Radio · desde: "Cobertura Prensa — Junio" · Asignado: María González</div>
+        </div>
+        <div class="hora-badge">11:00 AM</div>
+        <div class="est-badge est-prog">⏳ Programado</div>
+      </div>
+    </div>
+
+    <!-- Lunes -->
+    <div class="agenda-day">
+      <div class="agenda-date">
+        <div class="dia-num" style="background:var(--tm);">23</div>
+        <span style="font-size:14px;font-weight:700;">Lunes, 23 de junio</span>
+      </div>
+      <div class="agenda-card">
+        <div class="plat-ico">📸</div>
+        <div class="info">
+          <div class="titulo">Festival de Verano — reel backstage</div>
+          <div class="meta">📱 Instagram · Reel · desde: "Festival de Verano 2026" · Asignado: Carlos Ramos</div>
+        </div>
+        <div class="hora-badge">12:00 PM</div>
+        <div class="est-badge est-rev">🔍 En revisión</div>
+      </div>
+      <div class="agenda-card">
+        <div class="plat-ico">👥</div>
+        <div class="info">
+          <div class="titulo">Convocatoria artistas — publicación web</div>
+          <div class="meta">👥 Facebook · desde: "Convocatoria Artistas" · <span class="copy-tag">✍️ Copy pendiente</span></div>
+        </div>
+        <div class="hora-badge">3:00 PM</div>
+        <div class="est-badge est-prog">⏳ Programado</div>
+      </div>
+      <div class="agenda-card">
+        <div class="plat-ico">✍️</div>
+        <div class="info">
+          <div class="titulo">Nota de prensa — apertura temporada</div>
+          <div class="meta">✍️ Copy · Comunicado de prensa · desde: "Apertura Temporada" · Asignado: Diana López</div>
+        </div>
+        <div class="hora-badge">5:00 PM</div>
+        <div class="est-badge est-prog">⏳ Programado</div>
+      </div>
+    </div>
+
+    <!-- Martes -->
+    <div class="agenda-day">
+      <div class="agenda-date">
+        <div class="dia-num" style="background:var(--tm);">24</div>
+        <span style="font-size:14px;font-weight:700;">Martes, 24 de junio</span>
+      </div>
+      <div class="agenda-card">
+        <div class="plat-ico">🎵</div>
+        <div class="info">
+          <div class="titulo">Video danza contemporánea</div>
+          <div class="meta">🎵 TikTok · Video · desde: "Temporada Danza 2026"</div>
+        </div>
+        <div class="hora-badge">7:00 PM</div>
+        <div class="est-badge est-prog">⏳ Programado</div>
+      </div>
+    </div>
+
+    <!-- Miércoles -->
+    <div class="agenda-day">
+      <div class="agenda-date">
+        <div class="dia-num" style="background:var(--tm);">25</div>
+        <span style="font-size:14px;font-weight:700;">Miércoles, 25 de junio</span>
+      </div>
+      <div class="agenda-card">
+        <div class="plat-ico">📺</div>
+        <div class="info">
+          <div class="titulo">Nota TV — cobertura inauguración galería</div>
+          <div class="meta">📡 Medios · TV · desde: "Galería Arte Nacional" · Asignado: María González</div>
+        </div>
+        <div class="hora-badge">6:00 PM</div>
+        <div class="est-badge est-prog">⏳ Programado</div>
+      </div>
+      <div class="agenda-card">
+        <div class="plat-ico">📸</div>
+        <div class="info">
+          <div class="titulo">Historia cierre del día — galería</div>
+          <div class="meta">📱 Instagram · Historia · desde: "Galería Arte Nacional"</div>
+        </div>
+        <div class="hora-badge">8:30 PM</div>
+        <div class="est-badge est-prog">⏳ Programado</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ==================== SECCIÓN COPY ==================== -->
+  <div id="tabCopy" style="display:none;">
+    <div class="sh2">
+      <div>
+        <div class="stit">✍️ Sección Copy — vista previa</div>
+        <div style="font-size:13px;color:var(--tm);margin-top:3px;">Así aparecería el bloque Copy dentro de una tarea</div>
+      </div>
+    </div>
+
+    <!-- Tarjeta de tarea simulada -->
+    <div style="background:var(--su);border:1px solid var(--bo);border-radius:var(--r);padding:18px 22px;margin-bottom:20px;box-shadow:var(--sh);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <div style="font-size:16px;font-weight:800;">Festival de Verano 2026</div>
+        <span class="bg" style="background:var(--azs);color:var(--az);">En Progreso</span>
+        <span class="bg" style="background:var(--ams);color:var(--am);">Alta prioridad</span>
+        <span class="copy-tag">✍️ Copy</span>
+      </div>
+      <div style="font-size:12px;color:var(--tm);margin-bottom:16px;">Vence: 28 jun 2026 · Secciones: Audiovisual, Redes Sociales, <strong style="color:#006064;">Copy</strong></div>
+
+      <!-- Bloque sección Copy expandido -->
+      <div class="sec-copy-demo">
+        <div class="sec-header" onclick="toggleCopy()">
+          <div class="sec-titulo">
+            <span style="background:#e0f7fa;color:#006064;padding:3px 8px;border-radius:6px;font-size:12px;">✍️ Copy</span>
+            <span style="font-size:13px;">Contenido de texto</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="bg" style="background:var(--azs);color:var(--az);">2/4 listos</span>
+            <span id="copyArrow" style="color:var(--tm);font-size:18px;transition:transform .2s;">▼</span>
+          </div>
+        </div>
+        <div class="sec-body" id="copyBody">
+          <!-- Tipos de copy -->
+          <div style="margin-bottom:14px;">
+            <div class="fl">Tipos de contenido asignados</div>
+            <div class="copy-tipos">
+              <div class="copy-chip sel" onclick="this.classList.toggle('sel')">📷 Caption Instagram</div>
+              <div class="copy-chip sel" onclick="this.classList.toggle('sel')">👥 Caption Facebook</div>
+              <div class="copy-chip" onclick="this.classList.toggle('sel')">📰 Comunicado de Prensa</div>
+              <div class="copy-chip" onclick="this.classList.toggle('sel')">📻 Guion Radio</div>
+              <div class="copy-chip" onclick="this.classList.toggle('sel')">📺 Guion TV</div>
+              <div class="copy-chip" onclick="this.classList.toggle('sel')">📝 Artículo Web</div>
+              <div class="copy-chip" onclick="this.classList.toggle('sel')">📧 Newsletter</div>
+              <div class="copy-chip" onclick="this.classList.toggle('sel')">🗒️ Otro</div>
+            </div>
+          </div>
+
+          <!-- Campos del copy -->
+          <div style="display:flex;flex-direction:column;gap:10px;">
+
+            <!-- Caption Instagram -->
+            <div style="border:1px solid #80deea;border-radius:8px;padding:12px 14px;background:#f0fdff;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-size:12px;font-weight:700;color:#006064;">📷 Caption Instagram</div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="font-size:11px;color:var(--tm);">Responsable:</span>
+                  <select style="padding:3px 8px;border-radius:6px;border:1px solid var(--bo);font-size:12px;font-family:'Inter',sans-serif;background:var(--su);color:var(--tx);">
+                    <option>Diana López</option>
+                    <option>María González</option>
+                  </select>
+                  <span class="bg est-pub">✅ Listo</span>
+                </div>
+              </div>
+              <textarea style="width:100%;padding:8px 10px;border:1px solid #80deea;border-radius:6px;font-family:'Inter',sans-serif;font-size:12px;min-height:70px;background:#fff;resize:vertical;color:var(--tx);">✨ ¡El Festival de Verano CACCO regresa con más arte, cultura y talento nacional! 🎭🎨
+
+Del 28 de junio al 5 de julio en el Centro de Arte y Cultura de Colón.
+
+🎟️ Entrada libre
+📍 Calle 4ta, Colón
+🕐 9am - 9pm
+
+#CACCO #FestivalVerano #CulturaColón #PanamaArte #CentroArte</textarea>
+              <div style="font-size:11px;color:var(--tm);margin-top:6px;">256 caracteres · <span style="color:#006064;font-weight:600;">Fecha publicación: 22 jun · 9:00 AM</span></div>
+            </div>
+
+            <!-- Caption Facebook -->
+            <div style="border:1px solid #80deea;border-radius:8px;padding:12px 14px;background:#f0fdff;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-size:12px;font-weight:700;color:#006064;">👥 Caption Facebook</div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="font-size:11px;color:var(--tm);">Responsable:</span>
+                  <select style="padding:3px 8px;border-radius:6px;border:1px solid var(--bo);font-size:12px;font-family:'Inter',sans-serif;background:var(--su);color:var(--tx);">
+                    <option>Diana López</option>
+                    <option>María González</option>
+                  </select>
+                  <span class="bg est-pub">✅ Listo</span>
+                </div>
+              </div>
+              <textarea style="width:100%;padding:8px 10px;border:1px solid #80deea;border-radius:6px;font-family:'Inter',sans-serif;font-size:12px;min-height:70px;background:#fff;resize:vertical;color:var(--tx);">🎉 ¡Celebramos el verano con arte y cultura! El Festival de Verano CACCO 2026 abre sus puertas el próximo 28 de junio.
+
+Una semana llena de exposiciones, presentaciones en vivo y talleres para toda la familia.
+
+Entrada completamente libre para toda la comunidad colonense. ¡Te esperamos!</textarea>
+              <div style="font-size:11px;color:var(--tm);margin-top:6px;">312 caracteres · <span style="color:var(--am);font-weight:600;">Fecha publicación: 23 jun · 3:00 PM (pendiente)</span></div>
+            </div>
+
+            <!-- Comunicado — pendiente -->
+            <div style="border:1px solid var(--bo);border-radius:8px;padding:12px 14px;background:var(--su2);opacity:.7;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="font-size:12px;font-weight:700;color:var(--tm);">📰 Comunicado de Prensa</div>
+                <span class="bg" style="background:var(--ams);color:var(--am);">⏳ Pendiente</span>
+              </div>
+              <div style="font-size:12px;color:var(--tm);margin-top:6px;">Sin asignar · Click para empezar</div>
+            </div>
+
+          </div>
+
+          <!-- Footer copy -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--bo);">
+            <div style="font-size:12px;color:var(--tm);">Responsable de sección: <strong>Diana López</strong></div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn bbl bsm">+ Agregar tipo</button>
+              <button class="btn bsm" style="background:#e0f7fa;color:#006064;border:none;">✅ Marcar sección lista</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Otras secciones (comprimidas para contexto) -->
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+        <div style="padding:8px 14px;border-radius:8px;border:1px solid var(--bo);font-size:12px;background:var(--ves);color:var(--ve);font-weight:600;">📹 Audiovisual ✅ Completada</div>
+        <div style="padding:8px 14px;border-radius:8px;border:1px solid var(--bo);font-size:12px;background:var(--azs);color:var(--az);font-weight:600;">📱 Redes Sociales — En Progreso</div>
+        <div style="padding:8px 14px;border-radius:8px;border:1px solid var(--bo);font-size:12px;background:var(--ams);color:var(--am);font-weight:600;">✍️ Copy — En Progreso</div>
+      </div>
+    </div>
+
+    <!-- Nota informativa -->
+    <div style="background:var(--azs);color:var(--az);border:1px solid #bfdbfe;border-radius:var(--r);padding:16px 20px;font-size:13px;line-height:1.6;">
+      <div style="font-weight:700;margin-bottom:8px;">📌 ¿Cómo funciona la sección Copy?</div>
+      <ul style="margin-left:18px;display:flex;flex-direction:column;gap:4px;">
+        <li>Al crear una tarea, se puede incluir la sección <strong>Copy</strong> como cualquier otra (Audiovisual, Redes, etc.)</li>
+        <li>Dentro de Copy se eligen los tipos de contenido: caption, comunicado, guion, artículo, etc.</li>
+        <li>Cada tipo tiene su propio texto, responsable, y estado (pendiente/listo)</li>
+        <li>Los copys listos aparecen automáticamente en el <strong>Calendario de Publicaciones</strong> como entregables programables</li>
+        <li>Usuarios de Redes Sociales y Medios asignan fecha y hora de publicación a cada copy</li>
+      </ul>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<!-- MODAL: PROGRAMAR PUBLICACIÓN -->
+<div class="mov" id="modalPub">
+  <div class="mo">
+    <div class="mcab">
+      <div class="mtit">🗓️ Programar publicación</div>
+      <button class="mx" onclick="cerrarModal()">✕</button>
+    </div>
+    <div class="mbody">
+
+      <div class="fg">
+        <label class="fl">Tarea de origen</label>
+        <select class="fc">
+          <option>Festival de Verano 2026</option>
+          <option>Cobertura Prensa — Junio</option>
+          <option>Galería Arte Nacional</option>
+          <option>Convocatoria Artistas</option>
+        </select>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Entregable / contenido</label>
+        <select class="fc">
+          <option>Redes Sociales → Post Instagram</option>
+          <option>Redes Sociales → Reel</option>
+          <option>Redes Sociales → Historia</option>
+          <option>Medios → Nota Radio</option>
+          <option>Copy → Caption Instagram</option>
+          <option>Copy → Comunicado de Prensa</option>
+        </select>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Plataforma de publicación</label>
+        <div class="plat-grid">
+          <div class="plat-btn sel" onclick="selPlat(this)"><span class="pico">📸</span>Instagram</div>
+          <div class="plat-btn" onclick="selPlat(this)"><span class="pico">👥</span>Facebook</div>
+          <div class="plat-btn" onclick="selPlat(this)"><span class="pico">🎵</span>TikTok</div>
+          <div class="plat-btn" onclick="selPlat(this)"><span class="pico">📻</span>Radio</div>
+          <div class="plat-btn" onclick="selPlat(this)"><span class="pico">📺</span>TV</div>
+          <div class="plat-btn" onclick="selPlat(this)"><span class="pico">📰</span>Prensa</div>
+          <div class="plat-btn" onclick="selPlat(this)"><span class="pico">✍️</span>Copy</div>
+          <div class="plat-btn" onclick="selPlat(this)"><span class="pico">🌐</span>Web</div>
+        </div>
+      </div>
+
+      <div class="fr">
+        <div class="fg">
+          <label class="fl">Fecha de publicación</label>
+          <input type="date" class="fc" value="2026-06-23">
+        </div>
+        <div class="fg">
+          <label class="fl">Hora</label>
+          <input type="time" class="fc" value="09:00">
+        </div>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Responsable de publicar</label>
+        <select class="fc">
+          <option>Diana López (Redes Sociales)</option>
+          <option>María González (Medios)</option>
+          <option>Carlos Ramos (Audiovisual)</option>
+        </select>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Notas adicionales</label>
+        <textarea class="fc" placeholder="Ej: publicar con hashtags del evento, etiquetar patrocinadores..." rows="3"></textarea>
+      </div>
+
+      <div style="background:var(--nas);border:1px solid var(--nab);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--na);display:flex;align-items:center;gap:8px;">
+        📱 <strong>Instagram:</strong> Una vez publicado, podrás conectar tu cuenta Business para publicación automática
+      </div>
+
+    </div>
+    <div class="mpie">
+      <button class="btn bbl" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn bna" onclick="cerrarModal()">✅ Programar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── TABS ───────────────────────────────────────────────────────────────────
+function switchTab(t){
+  ['tabCal','tabAgenda','tabCopy'].forEach(id=>document.getElementById(id).style.display='none');
+  const map={cal:'tabCal',agenda:'tabAgenda',copy:'tabCopy'};
+  document.getElementById(map[t]).style.display='block';
+  document.querySelectorAll('.tab').forEach((el,i)=>{
+    el.classList.toggle('on',['cal','agenda','copy'][i]===t);
+  });
+  if(t==='cal') renderCal();
+}
+
+// ─── MODAL ──────────────────────────────────────────────────────────────────
+function abrirModal(){ document.getElementById('modalPub').classList.add('on'); }
+function cerrarModal(){ document.getElementById('modalPub').classList.remove('on'); }
+document.getElementById('modalPub').addEventListener('click',e=>{if(e.target===e.currentTarget)cerrarModal();});
+
+function selPlat(el){ el.closest('.plat-grid').querySelectorAll('.plat-btn').forEach(b=>b.classList.remove('sel')); el.classList.add('sel'); }
+
+// ─── COPY TOGGLE ─────────────────────────────────────────────────────────────
+let copyOpen=true;
+function toggleCopy(){
+  copyOpen=!copyOpen;
+  document.getElementById('copyBody').style.display=copyOpen?'block':'none';
+  document.getElementById('copyArrow').style.transform=copyOpen?'rotate(0deg)':'rotate(-90deg)';
+}
+
+// ─── FILTROS ─────────────────────────────────────────────────────────────────
+let filtros=new Set(['ig','fb','tt','rd','tv','pr','cp']);
+function toggleFiltro(el, key){
+  if(filtros.has(key)){ filtros.delete(key); el.classList.remove('on'); el.style.background=''; el.style.borderColor=''; el.style.color=''; }
+  else{ filtros.add(key); el.classList.add('on'); }
+  renderCal();
+}
+
+// ─── CALENDARIO ──────────────────────────────────────────────────────────────
+let calYear=2026, calMonth=5; // junio 2026
+
+const PUBS=[
+  {day:22, plat:'ig', txt:'9AM Festival Verano — post'},
+  {day:22, plat:'rd', txt:'11AM Entrevista Director'},
+  {day:23, plat:'ig', txt:'12PM Reel backstage'},
+  {day:23, plat:'fb', txt:'3PM Convocatoria Artistas'},
+  {day:23, plat:'cp', txt:'5PM Nota prensa apertura'},
+  {day:24, plat:'tt', txt:'7PM Video danza'},
+  {day:25, plat:'tv', txt:'6PM Nota TV Galería'},
+  {day:25, plat:'ig', txt:'8:30PM Historia Galería'},
+  {day:26, plat:'ig', txt:'10AM Post comunidad'},
+  {day:27, plat:'rd', txt:'9AM Nota Radio'},
+  {day:28, plat:'ig', txt:'9AM Carrusel arte'},
+  {day:28, plat:'fb', txt:'10AM Post apertura'},
+  {day:28, plat:'pr', txt:'12PM Comunicado prensa'},
+  {day:29, plat:'ig', txt:'6PM Historia evento'},
+  {day:30, plat:'tt', txt:'8PM Resumen mes'},
+];
+
+const PLAT_COL={ig:'c-ig',fb:'c-fb',tt:'c-tt',rd:'c-rd',tv:'c-tv',pr:'c-pr',cp:'c-cp'};
+const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function renderCal(){
+  const grid=document.getElementById('calGrid');
+  // Limpiar días anteriores
+  [...grid.children].slice(7).forEach(n=>n.remove());
+
+  document.getElementById('calMes').textContent=`${MESES[calMonth]} ${calYear}`;
+
+  const primerDia=new Date(calYear,calMonth,1).getDay();
+  const diasMes=new Date(calYear,calMonth+1,0).getDate();
+  const hoy=new Date();
+  const esHoy=(d)=>d===hoy.getDate()&&calMonth===hoy.getMonth()&&calYear===hoy.getFullYear();
+
+  // Días vacíos iniciales
+  for(let i=0;i<primerDia;i++){
+    const c=document.createElement('div');c.className='cd otro';grid.appendChild(c);
+  }
+
+  for(let d=1;d<=diasMes;d++){
+    const c=document.createElement('div');
+    c.className='cd'+(esHoy(d)?' hoy':'');
+    const n=document.createElement('div');
+    n.className='cdnum';
+    if(esHoy(d)){n.style.cssText='background:var(--na);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;';}
+    n.textContent=d;
+    c.appendChild(n);
+
+    const evs=PUBS.filter(p=>p.day===d&&filtros.has(p.plat));
+    const mostrar=evs.slice(0,3);
+    mostrar.forEach(ev=>{
+      const e=document.createElement('div');
+      e.className=`cev ${PLAT_COL[ev.plat]}`;
+      e.textContent=ev.txt;
+      e.title=ev.txt;
+      c.appendChild(e);
+    });
+    if(evs.length>3){const m=document.createElement('div');m.className='mas';m.textContent=`+${evs.length-3} más`;c.appendChild(m);}
+
+    c.addEventListener('click',()=>abrirModal());
+    grid.appendChild(c);
+  }
+
+  // Rellenar final
+  const total=primerDia+diasMes;
+  const rest=(7-total%7)%7;
+  for(let i=0;i<rest;i++){const c=document.createElement('div');c.className='cd otro';grid.appendChild(c);}
+}
+
+function cambiarMes(d){
+  calMonth+=d;
+  if(calMonth>11){calMonth=0;calYear++;}
+  if(calMonth<0){calMonth=11;calYear--;}
+  renderCal();
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+switchTab('agenda');
+</script>
+</body>
+</html>
