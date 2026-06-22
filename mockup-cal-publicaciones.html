@@ -163,6 +163,9 @@ textarea.fc{resize:none;min-height:80px;}
 .mock-tab.on{background:var(--su);color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,.1);}
 @media(max-width:768px){
   .sid{position:fixed;top:60px;left:0;height:calc(100vh - 60px);z-index:300;transform:translateX(-100%);transition:transform .25s ease;box-shadow:4px 0 16px rgba(0,0,0,.25);}
+  .sid.open{transform:translateX(0);}
+  .sid-overlay{display:none;position:fixed;inset:0;top:60px;background:rgba(0,0,0,.4);z-index:299;}
+  .sid-overlay.open{display:block;}
   .hmb{display:flex!important;}
   header{padding:0 10px;}
   .hdep{display:none;}.unom{display:none;}.horg{display:none;}
@@ -212,6 +215,7 @@ textarea.fc{resize:none;min-height:80px;}
 <div class="alay">
 
 <!-- SIDEBAR — idéntico al real + nuevo item -->
+<div class="sid-overlay" id="sidOverlay" onclick="togSid()"></div>
 <nav class="sid" id="sidNav">
   <div class="nsep">Principal</div>
   <button class="ni" onclick="switchMockTab('tareas',this)"><span class="ico">📋</span>Tareas<span class="ct">5</span></button>
@@ -948,6 +952,7 @@ function switchRTab(tab, el) {
 
 function togSid() {
   document.getElementById('sidNav').classList.toggle('open');
+  document.getElementById('sidOverlay').classList.toggle('open');
 }
 
 // Iniciar en la pestaña del calendario
