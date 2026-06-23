@@ -455,7 +455,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 .pc{font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;}
 .pc.ig{background:#fff0f5;color:#C13584;}.pc.fb{background:#e8f0fe;color:#1877F2;}
 .pc.tt{background:#f0f0f0;color:#111;}.pc.rd{background:#fff4ee;color:#FF6B00;}
-.pc.tv{background:#e8f5e9;color:#1b5e20;}.pc.pr{background:#ede7f6;color:#4527a0;}
+.pc.tv{background:#e8f5e9;color:#1b5e20;}.pc.pr{background:#ede7f6;color:#4527a0;}.pc.yt{background:#fff0f0;color:#FF0000;}
 .ni.new-item{border:1.5px dashed var(--nab);}
 .ni .new-tag{font-size:9px;font-weight:800;background:var(--na);color:#fff;padding:1px 5px;border-radius:8px;margin-left:auto;}
 .cev-pub{font-size:10px;padding:2px 6px;border-radius:4px;margin-bottom:2px;line-height:1.4;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer;font-weight:600;display:block;border-left:3px solid;}
@@ -734,7 +734,9 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <span class="chip sel" data-plat="rd" onclick="this.classList.toggle('sel');renderCalPub()"><span style="color:#FF6B00">●</span> Radio</span>
     <span class="chip sel" data-plat="tv" onclick="this.classList.toggle('sel');renderCalPub()"><span style="color:#1b5e20">●</span> TV</span>
     <span class="chip sel" data-plat="pr" onclick="this.classList.toggle('sel');renderCalPub()"><span style="color:#4527a0">●</span> Prensa</span>
+    <span class="chip sel" data-plat="yt" onclick="this.classList.toggle('sel');renderCalPub()"><span style="color:#FF0000">●</span> YouTube</span>
   </div>
+  <div id="calPubCnt" style="font-size:12px;margin-bottom:12px;display:flex;gap:12px;flex-wrap:wrap"></div>
   <div id="calPubGrid"></div>
   <div class="dia-panel" id="diaPubPanel" style="display:none">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
@@ -817,6 +819,11 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       <div id="mediosGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
     </div>
 
+    <div id="audiovisualDetalleBlk" class="fg" style="display:none">
+      <label class="fl" style="margin-bottom:10px">Audiovisual — detalle de producción</label>
+      <div id="audiovisualGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
+    </div>
+
     <div class="fg" style="border-top:1px solid var(--bo);padding-top:14px;margin-top:4px">
       <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:0" onclick="togPubBlk()">
         <label class="fl" style="cursor:pointer;margin-bottom:0">📅 Publicación programada</label>
@@ -832,6 +839,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
             <span class="chip" data-p="rd" onclick="this.classList.toggle('sel')"><span style="color:#FF6B00">●</span> Radio</span>
             <span class="chip" data-p="tv" onclick="this.classList.toggle('sel')"><span style="color:#1b5e20">●</span> Televisión</span>
             <span class="chip" data-p="pr" onclick="this.classList.toggle('sel')"><span style="color:#4527a0">●</span> Prensa</span>
+            <span class="chip" data-p="yt" onclick="this.classList.toggle('sel')"><span style="color:#FF0000">●</span> YouTube</span>
           </div>
         </div>
         <div class="fr">
@@ -949,6 +957,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
         <span class="chip" data-p="rd" onclick="this.classList.toggle('sel')"><span style="color:#FF6B00">●</span> Radio</span>
         <span class="chip" data-p="tv" onclick="this.classList.toggle('sel')"><span style="color:#1b5e20">●</span> Televisión</span>
         <span class="chip" data-p="pr" onclick="this.classList.toggle('sel')"><span style="color:#4527a0">●</span> Prensa</span>
+        <span class="chip" data-p="yt" onclick="this.classList.toggle('sel')"><span style="color:#FF0000">●</span> YouTube</span>
       </div>
     </div>
     <div class="fr">
@@ -964,6 +973,14 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <div class="fg">
       <label class="fl">Notas internas <span style="font-weight:400;text-transform:none;font-size:11px">(opcional)</span></label>
       <textarea class="fc" id="mProgNotas" rows="2" placeholder="Observaciones para el equipo..."></textarea>
+    </div>
+    <div class="fg" id="mProgLinksBlk">
+      <label class="fl">🔗 Links / Archivos adjuntos <span style="font-weight:400;text-transform:none;font-size:11px">(opcional)</span></label>
+      <div id="mProgLinksList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
+      <div style="display:flex;gap:8px">
+        <input type="url" class="fc" id="mProgLinkInput" placeholder="https://drive.google.com/..." style="flex:1">
+        <button class="btn bgh bsm" onclick="addProgLink()">+ Agregar</button>
+      </div>
     </div>
   </div>
   <div class="mpie">
@@ -1443,6 +1460,33 @@ function renderTareas(){
       if(medRows.length)mediosHTML=`<div style="margin-top:10px"><div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">📡 Contenido Medios</div>${medRows.join('')}</div>`;
     }
 
+    // Audiovisual detail
+    let audiovisualHTML='';
+    if(t.secciones?.['Audiovisual']&&t.audiovisualData){
+      const av=t.audiovisualData;
+      const subs=[{key:'foto',ico:'📷',nom:'Foto'},{key:'video',ico:'🎬',nom:'Video'}];
+      const tipos=['COBERTURA','REEL','INSTITUCIONAL','PROMOCIONAL'];
+      const mkAvBtn=(sub,tipo)=>{
+        const asig=av[sub]?.[tipo]||0;if(!asig)return'';
+        const comp=av[sub]?.[tipo+'_comp']||0;
+        const pct=Math.round(comp/asig*100);
+        const col=pct>=100?'#0F6E56':pct>0?'#854F0B':'#0F6E56';
+        const canMark=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||mySec.includes('Audiovisual'));
+        const subInfo=subs.find(s=>s.key===sub);
+        return`<div class="grow" style="padding:6px 10px">
+          <div class="ginfo"><div class="gnom">${subInfo.ico} ${subInfo.nom} — ${tipo}</div>
+          <div class="gsub" style="color:${col};font-weight:600">Asignados: ${asig} · Completados: ${comp} (${pct}%)</div></div>
+          ${canMark?`<div style="display:flex;gap:4px;align-items:center">
+            <button class="btn bgh bsm" style="padding:2px 7px" onclick="event.stopPropagation();cambCompAV('${t.id}','${sub}','${tipo}',-1)">−</button>
+            <span style="font-size:13px;font-weight:700;min-width:18px;text-align:center">${comp}</span>
+            <button class="btn bgh bsm" style="padding:2px 7px" onclick="event.stopPropagation();cambCompAV('${t.id}','${sub}','${tipo}',1)">+</button>
+          </div>`:`<span class="bg ${pct>=100?'bapr':pct>0?'bmed':'bpen'}">${pct}%</span>`}
+        </div>`;
+      };
+      const avRows=subs.flatMap(s=>tipos.map(tp=>mkAvBtn(s.key,tp))).filter(Boolean);
+      if(avRows.length) audiovisualHTML=`<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">📹 Audiovisual</div>${avRows.join('')}</div>`;
+    }
+
     // Entregables
     let entHTML='';
     const ents=t.entregables||[];
@@ -1489,7 +1533,7 @@ function renderTareas(){
     }
 
     const etiqH=(t.etiquetas||[]).map(e=>`<span class="bg bmor">${e}</span>`).join('');
-    const notaPreview=t.notas?`<div style="font-size:12px;color:var(--tm);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px">📝 ${t.notas}</div>`:'';
+    const notaPreview=t.notas?`<div style="font-size:12px;color:var(--tm);margin-top:3px;word-break:break-word">📝 ${t.notas}</div>`:'';
     const acciones=abierta&&(puede('editarTarea')||puede('eliminarTarea'))?`<div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
       ${puede('editarTarea')?`<button class="btn bna bsm" onclick="event.stopPropagation();editT('${t.id}')">✏️ Editar</button>`:''}
       ${puede('eliminarTarea')?`<button class="btn bpe bsm" onclick="event.stopPropagation();elimT('${t.id}')">🗑 Eliminar</button>`:''}
@@ -1507,8 +1551,8 @@ function renderTareas(){
         <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">
           <span style="font-size:17px;flex-shrink:0">${secIco}</span>
           <div style="min-width:0">
-            <div class="t-tit" style="font-size:14px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.titulo}${t.recurrencia&&t.recurrencia!=='ninguna'?' 🔁':''}</div>
-            ${t.notas?`<div style="font-size:11px;color:rgba(255,255,255,.82);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:380px">📝 ${t.notas}</div>`:''}
+            <div class="t-tit" style="font-size:14px;font-weight:700;color:#fff;white-space:normal;word-break:break-word">${t.titulo}${t.recurrencia&&t.recurrencia!=='ninguna'?' 🔁':''}</div>
+            ${t.notas&&abierta?`<div style="font-size:11px;color:rgba(255,255,255,.82);margin-top:1px;word-break:break-word">📝 ${t.notas}</div>`:''}
           </div>
         </div>
         <div class="t-badges" style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:10px">
@@ -1534,6 +1578,7 @@ function renderTareas(){
         ${gruposHTML}
         ${redesHTML}
         ${mediosHTML}
+        ${audiovisualHTML}
         ${abierta?entHTML:''}
         ${acciones}
       </div>
@@ -1643,6 +1688,8 @@ function renderSeccionesModal(t){
     </div>`;
   }).join('');
   actualizarRedesBlk(t?.redesSociales);
+  actualizarMediosBlk(t?.mediosData);
+  actualizarAudiovisualBlk(t?.audiovisualData);
 }
 
 function togSeccionModal(sec){
@@ -1656,9 +1703,19 @@ function togSeccionModal(sec){
   tog.textContent=activa?'+ Incluir':'✅ Activa';
   if(sec==='Redes Sociales')actualizarRedesBlk(null);
   if(sec==='Medios')actualizarMediosBlk(null);
+  if(sec==='Audiovisual')actualizarAudiovisualBlk(null);
 }
 
-function togRespModal(sec,uid,el){el.classList.toggle('sel');}
+function togRespModal(sec,uid,el){
+  el.classList.toggle('sel');
+  clearTimeout(window._autoColTimer);
+  window._autoColTimer=setTimeout(()=>{
+    const key=sec.replace(/\s/g,'_');
+    const body=document.getElementById(`scb-${key}`);
+    const card=document.getElementById(`sc-${key}`);
+    if(card?.classList.contains('activa')&&body) body.style.display='none';
+  },800);
+}
 
 function actualizarRedesBlk(rsData){
   const redesActiva=document.getElementById('sc-Redes_Sociales')?.classList.contains('activa');
@@ -1687,14 +1744,6 @@ function actualizarRedesBlk(rsData){
               <button onclick="adjRed('${r.key}','${c.k}',-1)">−</button>
               <span class="redes-qty" id="rq-${r.key}-${c.k}">${asig}</span>
               <button onclick="adjRed('${r.key}','${c.k}',1)">+</button>
-            </div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:2px;align-items:center">
-            <span style="font-size:10px;color:var(--tm);font-weight:600">COMPLETADOS</span>
-            <div class="redes-ctrl">
-              <button onclick="adjRedComp('${r.key}','${c.k}',-1)">−</button>
-              <span class="redes-qty" id="rqc-${r.key}-${c.k}">${comp}</span>
-              <button onclick="adjRedComp('${r.key}','${c.k}',1)">+</button>
             </div>
           </div>
         </div>
@@ -1734,19 +1783,47 @@ function actualizarMediosBlk(mdData){
               <button onclick="adjMed('${m.key}','${c.k}',1)">+</button>
             </div>
           </div>
-          <div style="display:flex;flex-direction:column;gap:2px;align-items:center">
-            <span style="font-size:10px;color:var(--tm);font-weight:600">COMPLETADOS</span>
-            <div class="redes-ctrl">
-              <button onclick="adjMedComp('${m.key}','${c.k}',-1)">−</button>
-              <span class="redes-qty" id="mqc-${m.key}-${c.k}">${comp}</span>
-              <button onclick="adjMedComp('${m.key}','${c.k}',1)">+</button>
-            </div>
-          </div>
         </div>
       </div>`;
     }).join('');
     return`<div class="redes-card"><div style="font-size:13px;font-weight:600;padding:8px 12px;background:var(--su2);border-bottom:1px solid var(--bo)">${m.ico} ${m.nom}</div>${camposHTML}</div>`;
   }).join('');
+}
+
+function actualizarAudiovisualBlk(avData){
+  const avActiva=document.getElementById('sc-Audiovisual')?.classList.contains('activa');
+  const blk=document.getElementById('audiovisualDetalleBlk');
+  if(!blk)return;
+  blk.style.display=avActiva?'block':'none';
+  if(!avActiva)return;
+  const av=avData||{};
+  const subs=[
+    {key:'foto',ico:'📷',nom:'Foto',tipos:['COBERTURA','REEL','INSTITUCIONAL','PROMOCIONAL']},
+    {key:'video',ico:'🎬',nom:'Video',tipos:['COBERTURA','REEL','INSTITUCIONAL','PROMOCIONAL']},
+  ];
+  document.getElementById('audiovisualGrid').innerHTML=subs.map(s=>{
+    const d=av[s.key]||{};
+    const tiposHTML=s.tipos.map(tp=>{
+      const asig=d[tp]||0;
+      return`<div class="redes-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+        <span class="redes-nm">${tp}</span>
+        <div style="display:flex;flex-direction:column;gap:2px;align-items:center">
+          <span style="font-size:10px;color:var(--tm);font-weight:600">ASIGNADOS</span>
+          <div class="redes-ctrl">
+            <button onclick="adjAV('${s.key}','${tp}',-1)">−</button>
+            <span class="redes-qty" id="avq-${s.key}-${tp.toLowerCase()}">${asig}</span>
+            <button onclick="adjAV('${s.key}','${tp}',1)">+</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    return`<div class="redes-card"><div style="font-size:13px;font-weight:600;padding:8px 12px;background:var(--su2);border-bottom:1px solid var(--bo)">${s.ico} ${s.nom}</div>${tiposHTML}</div>`;
+  }).join('');
+}
+function adjAV(sub,tipo,delta){
+  const el=document.getElementById(`avq-${sub}-${tipo.toLowerCase()}`);
+  if(!el)return;
+  el.textContent=Math.max(0,(parseInt(el.textContent)||0)+delta);
 }
 
 function adjMed(mKey,campo,delta){
@@ -1775,7 +1852,19 @@ function selTipoRed(rKey,campo,tipo,el){
   el.classList.add('sel');
 }
 
-function renderChEtiq(){document.getElementById('chEtiq').innerHTML=E.etiquetas.map(e=>`<div class="chip ${etiqSel.includes(e)?'sel':''}" onclick="tgEtiq(this,'${e}')">${e}</div>`).join('');}
+function renderChEtiq(){
+  document.getElementById('chEtiq').innerHTML=E.etiquetas.map(e=>`
+    <div class="chip ${etiqSel.includes(e)?'sel':''}" style="display:inline-flex;align-items:center;gap:4px">
+      <span onclick="tgEtiq(this.parentElement,'${e}')">${e}</span>
+      <span onclick="event.stopPropagation();elimEtiq('${e}')" style="cursor:pointer;opacity:.6;font-size:10px;line-height:1;padding:0 1px" title="Eliminar etiqueta">✕</span>
+    </div>`).join('');
+}
+function elimEtiq(e){
+  if(!confirm(`¿Eliminar la etiqueta "${e}"?`))return;
+  E.etiquetas=E.etiquetas.filter(x=>x!==e);
+  etiqSel=etiqSel.filter(x=>x!==e);
+  guardar();renderChEtiq();
+}
 function tgEtiq(el,e){el.classList.toggle('sel');etiqSel.includes(e)?etiqSel=etiqSel.filter(x=>x!==e):etiqSel.push(e);}
 function addEtiq(){const v=document.getElementById('nEtiq').value.trim();if(!v||E.etiquetas.includes(v))return;E.etiquetas.push(v);etiqSel.push(v);guardar();renderChEtiq();document.getElementById('nEtiq').value='';}
 
@@ -1842,6 +1931,19 @@ function guardarT(){
     });
   }
 
+  // Build audiovisualData
+  let audiovisualData=orig?.audiovisualData||null;
+  if(secciones['Audiovisual']){
+    audiovisualData={};
+    ['foto','video'].forEach(sub=>{
+      audiovisualData[sub]={};
+      ['COBERTURA','REEL','INSTITUCIONAL','PROMOCIONAL'].forEach(tp=>{
+        const el=document.getElementById(`avq-${sub}-${tp.toLowerCase()}`);
+        audiovisualData[sub][tp]=el?parseInt(el.textContent)||0:orig?.audiovisualData?.[sub]?.[tp]||0;
+      });
+    });
+  }
+
   // Build publicacion field
   let publicacion=orig?.publicacion||null;
   if(document.getElementById('tPubActiva').value==='1'){
@@ -1877,6 +1979,7 @@ function guardarT(){
     secciones,
     redesSociales,
     mediosData,
+    audiovisualData,
     entregables:orig?.entregables||[],
     publicacion
   };
@@ -1926,14 +2029,33 @@ function cambCompMed(tareaId,mKey,campo,delta){
   expandidas.add(tareaId);guardar();renderTareas();
 }
 
+function cambCompAV(tareaId,sub,tipo,delta){
+  const t=E.tareas.find(t=>t.id===tareaId);if(!t||!t.audiovisualData)return;
+  if(!t.audiovisualData[sub])t.audiovisualData[sub]={};
+  const asig=t.audiovisualData[sub][tipo]||0;
+  const cur=t.audiovisualData[sub][tipo+'_comp']||0;
+  t.audiovisualData[sub][tipo+'_comp']=Math.max(0,Math.min(asig,cur+delta));
+  guardar();renderTareas();
+}
+
 function agregarEntregable(tareaId){
+  if(!puede('marcarAvance')){alert('Sin permiso.');return;}
   const t=E.tareas.find(t=>t.id===tareaId);if(!t)return;
-  const nom=document.getElementById(`ent-nom-${tareaId}`)?.value.trim();
-  const url=document.getElementById(`ent-url-${tareaId}`)?.value.trim();
-  if(!nom||!url){alert('Nombre y URL requeridos.');return;}
+  const nom=prompt('Nombre del entregable:');if(!nom?.trim())return;
+  const url=prompt('URL / Link:');if(!url?.trim())return;
+  const secNames=Object.keys(t.secciones||{});
+  let seccion='General';
+  if(secNames.length>1){
+    const opts=secNames.map((s,i)=>`${i+1}. ${s}`).join('\n');
+    const resp=prompt(`¿A qué sección pertenece?\n${opts}\n(número o Enter para General):`);
+    const idx=parseInt(resp)-1;
+    if(idx>=0&&idx<secNames.length)seccion=secNames[idx];
+  }else if(secNames.length===1){
+    seccion=secNames[0];
+  }
   if(!t.entregables)t.entregables=[];
-  t.entregables.push({id:gId(),nombre:nom,url,subidoPor:uAct?.nombre,subidoPorId:uAct?.id,subidoEn:hoy()});
-  reg('Entregable agregado',`"${nom}" en "${t.titulo}"`);
+  t.entregables.push({id:gId(),nombre:nom.trim(),url:url.trim(),seccion,subidoPor:uAct?.nombre,subidoPorId:uAct?.id,subidoEn:hoy()});
+  reg('Entregable subido',`"${nom.trim()}" en "${t.titulo}" [${seccion}]`);
   guardar();expandidas.add(tareaId);renderTareas();
 }
 
@@ -1943,12 +2065,41 @@ function elimEntregable(tareaId,entId){
   guardar();expandidas.add(tareaId);renderTareas();
 }
 
+function agregarEntregableSec(tareaId, seccion){
+  if(!puede('marcarAvance')){alert('Sin permiso.');return;}
+  const t=E.tareas.find(t=>t.id===tareaId);if(!t)return;
+  const nom=prompt('Nombre del entregable:');if(!nom?.trim())return;
+  const url=prompt('URL / Link:');if(!url?.trim())return;
+  if(!t.entregables)t.entregables=[];
+  t.entregables.push({id:gId(),nombre:nom.trim(),url:url.trim(),seccion,subidoPor:uAct?.nombre,subidoPorId:uAct?.id,subidoEn:hoy()});
+  reg('Entregable subido',`"${nom.trim()}" en "${t.titulo}" [${seccion}]`);
+  guardar();expandidas.add(tareaId);renderTareas();
+}
+
 // ════════════════════════
 //  PUBLICACIONES
 // ════════════════════════
-const PLAT_NOM={ig:'IG',fb:'FB',tt:'TK',rd:'RD',tv:'TV',pr:'PR'};
-const PLAT_COLOR={ig:'#C13584',fb:'#1877F2',tt:'#111111',rd:'#FF6B00',tv:'#1b5e20',pr:'#4527a0'};
-const PLAT_BG={ig:'#fff0f5',fb:'#e8f0fe',tt:'#f0f0f0',rd:'#fff4ee',tv:'#e8f5e9',pr:'#ede7f6'};
+const PLAT_NOM={ig:'IG',fb:'FB',tt:'TK',rd:'RD',tv:'TV',pr:'PR',yt:'YT'};
+const PLAT_COLOR={ig:'#C13584',fb:'#1877F2',tt:'#111111',rd:'#FF6B00',tv:'#1b5e20',pr:'#4527a0',yt:'#FF0000'};
+const PLAT_BG={ig:'#fff0f5',fb:'#e8f0fe',tt:'#f0f0f0',rd:'#fff4ee',tv:'#e8f5e9',pr:'#ede7f6',yt:'#fff0f0'};
+
+let mProgLinks=[];
+function addProgLink(){
+  const val=document.getElementById('mProgLinkInput').value.trim();
+  if(!val)return;
+  mProgLinks.push(val);
+  document.getElementById('mProgLinkInput').value='';
+  renderProgLinks();
+}
+function renderProgLinks(){
+  const el=document.getElementById('mProgLinksList');
+  if(!el)return;
+  el.innerHTML=mProgLinks.map((l,i)=>
+    `<div style="display:flex;align-items:center;gap:6px;font-size:12px;padding:4px 8px;background:var(--su);border:1px solid var(--bo);border-radius:var(--rs)">
+      <a href="${l}" target="_blank" style="flex:1;color:var(--az);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l}</a>
+      <span onclick="mProgLinks.splice(${i},1);renderProgLinks()" style="cursor:pointer;color:var(--ro);font-size:13px">✕</span>
+    </div>`).join('');
+}
 
 let calPubFecha=new Date();
 let calPubVista='mes';
@@ -1974,6 +2125,7 @@ function nuevaPublicacion(fechaPreset){
   document.getElementById('mProgCopy').value='';
   document.getElementById('mProgNotas').value='';
   document.querySelectorAll('#mProgPlats .chip').forEach(c=>c.classList.remove('sel'));
+  mProgLinks=[];renderProgLinks();
   cntCopy(document.getElementById('mProgCopy'));
   document.getElementById('mProg').classList.add('on');
 }
@@ -1994,6 +2146,7 @@ function editarPub(id){
   document.querySelectorAll('#mProgPlats .chip').forEach(c=>{
     c.classList.toggle('sel',(pub.plataformas||[]).includes(c.dataset.p));
   });
+  mProgLinks=[...(pub.links||[])];renderProgLinks();
   cntCopy(document.getElementById('mProgCopy'));
   document.getElementById('mProg').classList.add('on');
 }
@@ -2029,6 +2182,7 @@ function programarEntregable(tareaId,entId){
   document.querySelectorAll('#mProgPlats .chip').forEach(c=>{
     c.classList.toggle('sel',(pub.plataformas||[]).includes(c.dataset.p));
   });
+  mProgLinks=[...(pub?.links||[])];renderProgLinks();
   cntCopy(document.getElementById('mProgCopy'));
   document.getElementById('mProg').classList.add('on');
 }
@@ -2045,7 +2199,7 @@ function guardarProg(){
     // Linked to an entregable
     const t=E.tareas.find(t=>t.id===mProgTareaId);if(!t)return;
     const e=(t.entregables||[]).find(e=>e.id===mProgEntId);if(!e)return;
-    e.publicacion={fecha,hora,plataformas,copy,notas,estado:'pendiente',programadoPor:uAct?.nombre,programadoEn:hoy()};
+    e.publicacion={fecha,hora,plataformas,copy,notas,links:[...mProgLinks],estado:'pendiente',programadoPor:uAct?.nombre,programadoEn:hoy()};
     reg('Publicación programada',`"${e.nombre}" en "${t.titulo}" para ${fmtPubFecha(fecha)} ${hora}`);
     guardar();expandidas.add(mProgTareaId);renderTareas();renderCalPub();
   }else{
@@ -2055,10 +2209,10 @@ function guardarProg(){
     if(!E.publicaciones)E.publicaciones=[];
     if(mProgId){
       const i=E.publicaciones.findIndex(p=>p.id===mProgId);
-      if(i>=0)E.publicaciones[i]={...E.publicaciones[i],titulo,fecha,hora,plataformas,copy,notas};
+      if(i>=0)E.publicaciones[i]={...E.publicaciones[i],titulo,fecha,hora,plataformas,copy,notas,links:[...mProgLinks]};
       reg('Publicación editada',`"${titulo}" para ${fmtPubFecha(fecha)} ${hora}`);
     }else{
-      E.publicaciones.push({id:nanoid(),titulo,fecha,hora,plataformas,copy,notas,estado:'pendiente',creadoPor:uAct?.nombre,creadoEn:hoy()});
+      E.publicaciones.push({id:nanoid(),titulo,fecha,hora,plataformas,copy,notas,links:[...mProgLinks],estado:'pendiente',creadoPor:uAct?.nombre,creadoEn:hoy()});
       reg('Publicación creada',`"${titulo}" para ${fmtPubFecha(fecha)} ${hora}`);
     }
     guardar();renderCalPub();
@@ -2117,6 +2271,12 @@ function renderCalPub(){
   const anio=calPubFecha.getFullYear(),mes=calPubFecha.getMonth()+1;
   const meses=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   document.getElementById('calPubTit').textContent=meses[mes-1]+' '+anio;
+  // Status counters
+  const allPubs=getPubsDelMes(anio,mes);
+  const pubProg=allPubs.filter(p=>p.estado!=='publicado').length;
+  const pubDone=allPubs.filter(p=>p.estado==='publicado').length;
+  const cntEl=document.getElementById('calPubCnt');
+  if(cntEl)cntEl.innerHTML=`<span style="color:var(--am)">🟠 ${pubProg} programadas</span> · <span style="color:var(--ve)">✅ ${pubDone} publicadas</span>`;
   setVistaCalPub(calPubVista,true);
   renderPendientesPub();
 }
@@ -2181,8 +2341,9 @@ function renderCalPubMes(anio,mes,pubs){
     const esHoy=fechaStr===hoyStr;
     const ps=porDia[d]||[];
     const chips=ps.slice(0,3).map(p=>{
-      const c=PLAT_COLOR[p.plataformas[0]]||'var(--na)';
-      const bg=PLAT_BG[p.plataformas[0]]||'var(--nas)';
+      const isPublicado=p.estado==='publicado';
+      const c=isPublicado?'#0F6E56':PLAT_COLOR[p.plataformas[0]]||'var(--na)';
+      const bg=isPublicado?'#E1F5EE':PLAT_BG[p.plataformas[0]]||'var(--nas)';
       return`<span class="cev-pub" style="background:${bg};color:${c};border-left-color:${c}" onclick="verDiaPub(${d})">${p.hora.replace(':','h').slice(0,5)} ${p.nombre.slice(0,18)}</span>`;
     }).join('');
     const mas=ps.length>3?`<span class="cev-pub" style="background:var(--su2);color:var(--tm);border-left-color:var(--bo)" onclick="event.stopPropagation();verDiaPub(${d})">+${ps.length-3} más</span>`:'';
@@ -2212,15 +2373,19 @@ function renderCalPubAgenda(pubs){
         const estadoTxt=p.estado==='publicado'?'✅ Publicado':'⏳ Pendiente';
         return`<div class="agenda-pub" onclick="togAgendaPub('apub-${p._idx}')" style="cursor:pointer">
           <div class="agenda-hora">${p.hora}</div>
-          <div class="agenda-info">
-            <div class="agenda-nom">${p.nombre} <span style="font-size:11px;color:var(--tm);font-weight:400">▾</span></div>
-            <div class="agenda-from">${p.tarea?`📋 ${p.tarea} · `:''}${(p.plataformas||[]).map(pl=>`<span class="pc ${pl}">${PLAT_NOM[pl]}</span>`).join(' ')}</div>
+          <div class="agenda-info" style="flex:1">
+            <div class="agenda-nom" style="font-size:14px;font-weight:700">${p.nombre} <span style="font-size:11px;color:var(--tm);font-weight:400">▾</span></div>
+            <div class="agenda-from" style="margin-top:3px">
+              ${p.tarea?`<span style="font-size:11px;color:var(--tm)">📋 ${p.tarea}</span> · `:''}
+              ${(p.plataformas||[]).map(pl=>`<span class="pc ${pl}">${PLAT_NOM[pl]}</span>`).join(' ')}
+            </div>
           </div>
-          <span style="font-size:11px;background:${estadoBg};color:${estadoCol};padding:2px 8px;border-radius:20px;font-weight:700;flex-shrink:0">${estadoTxt}</span>
+          <span style="font-size:11px;background:${estadoBg};color:${estadoCol};padding:2px 8px;border-radius:20px;font-weight:700;flex-shrink:0;cursor:default" onclick="event.stopPropagation()">${estadoTxt}</span>
         </div>
         <div id="apub-${p._idx}" style="display:none;margin:-6px 0 6px 0;padding:12px 14px 14px;background:var(--fo);border:1px solid var(--bo);border-top:none;border-radius:0 0 var(--rs) var(--rs)">
           ${p.copy?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">📝 Copy</div><div style="font-size:13px;color:var(--tx);white-space:pre-wrap;line-height:1.5">${p.copy}</div></div>`:''}
           ${p.notas?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">💬 Notas</div><div style="font-size:12px;color:var(--tm)">${p.notas}</div></div>`:''}
+          ${p.links?.length?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">🔗 Links</div>${p.links.map(l=>`<a href="${l}" target="_blank" style="display:block;font-size:12px;color:var(--az);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l}</a>`).join('')}</div>`:''}
           <div id="apub-ents-${p._idx}"></div>
           ${puede('marcarAvance')&&p.standalone?`<div style="display:flex;gap:6px;margin-top:10px"><button class="btn bgh bsm" onclick="event.stopPropagation();editarPub('${p.id}')">✏️ Editar</button><button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--rob)" onclick="event.stopPropagation();elimPub('${p.id}')">🗑 Eliminar</button></div>`:''}
           ${puede('marcarAvance')&&p.esTaskPub?`<div style="margin-top:10px"><button class="btn bgh bsm" onclick="event.stopPropagation();abrirMT('${p.tareaId}')">✏️ Editar tarea</button></div>`:''}
@@ -2294,12 +2459,20 @@ function verDiaPub(dia){
       const origenLine=p.tarea
         ?`<div style="font-size:11px;color:var(--tm);margin-top:2px">📋 ${p.tarea} · <a href="${p.url||'#'}" target="_blank" style="color:var(--az);font-size:11px">🔗 Abrir</a></div>`
         :'';
+      const pubTipo=p.standalone?'standalone':p.esTaskPub?'task':'ent';
+      const pubRef=p.standalone?p.id:p.esTaskPub?p.tareaId:`${p.tareaId}|${p.entId}`;
+      const estadoBtn=puede('marcarAvance')
+        ?(p.estado==='publicado'
+          ?`<button class="btn bsm" style="background:var(--ves);color:var(--ve);border:1px solid var(--ve);margin-top:6px" onclick="marcarPublicado('${pubTipo}','${pubRef}','pendiente');document.getElementById('diaPubPanel').style.display='none'">✅ Publicado · Revertir</button>`
+          :`<button class="btn bna bsm" style="margin-top:6px" onclick="marcarPublicado('${pubTipo}','${pubRef}','publicado');document.getElementById('diaPubPanel').style.display='none'">✅ Marcar publicado</button>`)
+        :'';
       return`<div class="dia-pub-card">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px">
           <div style="flex:1;min-width:0">
             <div class="dia-pub-nom">${p.hora} · ${p.nombre}</div>
             ${origenLine}
             <div style="display:flex;gap:4px;margin-top:5px;flex-wrap:wrap">${(p.plataformas||[]).map(pl=>`<span class="pc ${pl}">${PLAT_NOM[pl]}</span>`).join(' ')}</div>
+            ${estadoBtn}
             ${acciones}
           </div>
           <span style="font-size:11px;background:${p.estado==='publicado'?'var(--ves)':'var(--ams)'};color:${p.estado==='publicado'?'var(--ve)':'var(--am)'};padding:2px 8px;border-radius:20px;font-weight:700;flex-shrink:0">${p.estado==='publicado'?'✅ Publicado':'⏳ Pendiente'}</span>
@@ -2311,6 +2484,22 @@ function verDiaPub(dia){
   const panel=document.getElementById('diaPubPanel');
   panel.style.display='block';
   panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function marcarPublicado(tipo,ref,estado){
+  if(tipo==='standalone'){
+    const p=(E.publicaciones||[]).find(p=>p.id===ref);
+    if(p){p.estado=estado;guardar();renderCalPub();}
+  }else if(tipo==='ent'){
+    const parts=ref.split('|');
+    const tareaId=parts[0],entId=parts[1];
+    const t=E.tareas.find(t=>t.id===tareaId);
+    const e=(t?.entregables||[]).find(e=>e.id===entId);
+    if(e?.publicacion){e.publicacion.estado=estado;guardar();renderCalPub();}
+  }else if(tipo==='task'){
+    const t=E.tareas.find(t=>t.id===ref);
+    if(t?.publicacion){t.publicacion.estado=estado;guardar();renderCalPub();}
+  }
 }
 
 function fmtFechaLarga(f){
@@ -2695,6 +2884,19 @@ function generarRep(){
       tc.forEach(t=>{if(!t.redesSociales)return;const rs=t.redesSociales;if(rs.instagram?.publicaciones)rsItems.push(`IG:${rs.instagram.publicaciones}pub`);if(rs.instagram?.reels)rsItems.push(`${rs.instagram.reels}reel${rs.instagram.reels>1?'s':''}`);if(rs.facebook?.publicaciones)rsItems.push(`FB:${rs.facebook.publicaciones}pub`);if(rs.tiktok?.videos)rsItems.push(`TT:${rs.tiktok.videos}vid`);});
       if(rsItems.length)pCat+=`\n    → ${rsItems.join(' · ')}`;
     }
+    tc.forEach(t=>{
+      const descLine=t.notas?`\n      📝 ${t.notas.slice(0,150)}${t.notas.length>150?'...':''}`:'';
+      pCat+=`\n      - "${t.titulo}" [${t.secciones[sec].estado||'Pendiente'}]${descLine}`;
+      if(t.audiovisualData&&t.secciones?.['Audiovisual']&&sec==='Audiovisual'){
+        const av=t.audiovisualData;
+        ['foto','video'].forEach(sub=>{
+          ['COBERTURA','REEL','INSTITUCIONAL','PROMOCIONAL'].forEach(tp=>{
+            const asig=av[sub]?.[tp]||0;
+            if(asig) pCat+=`\n        → ${sub.toUpperCase()}-${tp}: ${asig} asignados`;
+          });
+        });
+      }
+    });
   });
 
   let pMiem='';
@@ -2717,7 +2919,31 @@ function generarRep(){
   });
 
   const svenc=venc.length?'\n\n⚠️  VENCIDAS:\n'+venc.map(t=>`  • "${t.titulo}" (${fmt(t.fecha)}) — ${pctT(t)}%`).join('\n'):'';
-  const texto=`REPORTE ${pl.toUpperCase()} — EQUIPO DE COMUNICACIONES\nCACCO — Centro de Arte y Cultura de Colón\n${'═'.repeat(54)}\nFecha: ${fd}\nGenerado por: ${uAct?.nombre||'—'}\n\n${sem}\n\n📈  RESUMEN\n  Total tareas:    ${total}\n  ✅ Completadas:  ${comp} (${pct}%)\n  🔄 En progreso:  ${prog}\n  ⏳ Pendientes:   ${pend}\n  ⚠️  Vencidas:    ${venc.length}\n\n📦  AVANCE POR CATEGORÍA${pCat||'\n  Sin tareas.'}\n\n👥  AVANCE POR PERSONA${pMiem||'\n  Sin asignaciones.'}\n\n⏱️  HORAS EXTRAS\n  Aprobadas: ${hapr.length} registros · ${thrs.toFixed(1)} horas\n${E.equipo.map(p=>{const mh=hapr.filter(h=>h.miembro===p.nombre).reduce((s,h)=>s+parseFloat(h.horas||0),0);return mh>0?`  • ${p.nombre}: ${mh.toFixed(1)} hrs`:''}).filter(Boolean).join('\n')||'  Sin horas aprobadas.'}${svenc}\n\n${'═'.repeat(54)}\nCACCO — Reporte interno · Histórico: ${E.historico.length} reportes archivados`;
+
+  // Publications section
+  const allRepPubs=[];
+  E.tareas.forEach(t=>{
+    (t.entregables||[]).forEach(e=>{
+      if(e.publicacion?.fecha)allRepPubs.push({...e.publicacion,nombre:e.nombre,tarea:t.titulo});
+    });
+    if(t.publicacion?.fecha)allRepPubs.push({...t.publicacion,nombre:t.titulo,tarea:null});
+  });
+  (E.publicaciones||[]).forEach(p=>{if(p.fecha)allRepPubs.push({...p,nombre:p.titulo||p.nombre||'—'});});
+  const pubProg2=allRepPubs.filter(p=>p.estado!=='publicado');
+  const pubDone2=allRepPubs.filter(p=>p.estado==='publicado');
+  let pubRptSection='';
+  if(allRepPubs.length){
+    pubRptSection='\n\n📡  PUBLICACIONES\n';
+    pubRptSection+=`  Programadas: ${pubProg2.length} · Publicadas: ${pubDone2.length}\n`;
+    pubProg2.slice(0,10).forEach(p=>{
+      pubRptSection+=`  🟠 ${p.fecha||'—'} ${p.hora||''} · ${(p.plataformas||[]).join('/')} · ${p.nombre}\n`;
+    });
+    pubDone2.slice(0,5).forEach(p=>{
+      pubRptSection+=`  ✅ ${p.fecha||'—'} · ${(p.plataformas||[]).join('/')} · ${p.nombre}\n`;
+    });
+  }
+
+  const texto=`REPORTE ${pl.toUpperCase()} — EQUIPO DE COMUNICACIONES\nCACCO — Centro de Arte y Cultura de Colón\n${'═'.repeat(54)}\nFecha: ${fd}\nGenerado por: ${uAct?.nombre||'—'}\n\n${sem}\n\n📈  RESUMEN\n  Total tareas:    ${total}\n  ✅ Completadas:  ${comp} (${pct}%)\n  🔄 En progreso:  ${prog}\n  ⏳ Pendientes:   ${pend}\n  ⚠️  Vencidas:    ${venc.length}\n\n📦  AVANCE POR CATEGORÍA${pCat||'\n  Sin tareas.'}\n\n👥  AVANCE POR PERSONA${pMiem||'\n  Sin asignaciones.'}\n\n⏱️  HORAS EXTRAS\n  Aprobadas: ${hapr.length} registros · ${thrs.toFixed(1)} horas\n${E.equipo.map(p=>{const mh=hapr.filter(h=>h.miembro===p.nombre).reduce((s,h)=>s+parseFloat(h.horas||0),0);return mh>0?`  • ${p.nombre}: ${mh.toFixed(1)} hrs`:''}).filter(Boolean).join('\n')||'  Sin horas aprobadas.'}${svenc}${pubRptSection}\n\n${'═'.repeat(54)}\nCACCO — Reporte interno · Histórico: ${E.historico.length} reportes archivados`;
 
   repTxtActivo=texto;
   document.getElementById('repCont').innerHTML=`
