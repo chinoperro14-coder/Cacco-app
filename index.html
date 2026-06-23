@@ -2197,7 +2197,7 @@ function renderCalPubMes(anio,mes,pubs){
 function renderCalPubAgenda(pubs){
   if(!pubs.length)return'<div style="padding:32px;text-align:center;color:var(--tm);font-size:14px">Sin publicaciones este mes.</div>';
   const porDia={};
-  pubs.forEach(p=>{
+  pubs.forEach((p,i)=>{p._idx=i;
     const d=p.fecha;
     if(!porDia[d])porDia[d]=[];
     porDia[d].push(p);
@@ -2206,16 +2206,70 @@ function renderCalPubAgenda(pubs){
     const ps=porDia[f].slice().sort((a,b)=>a.hora.localeCompare(b.hora));
     return`<div class="agenda-dia">
       <div class="agenda-dia-hdr">${fmtFechaLarga(f)}</div>
-      ${ps.map(p=>`<div class="agenda-pub">
-        <div class="agenda-hora">${p.hora}</div>
-        <div class="agenda-info">
-          <div class="agenda-nom">${p.nombre}</div>
-          <div class="agenda-from">${p.tarea?`📋 ${p.tarea} · `:''}${(p.plataformas||[]).map(pl=>`<span class="pc ${pl}">${PLAT_NOM[pl]}</span>`).join(' ')}</div>
+      ${ps.map(p=>{
+        const estadoBg=p.estado==='publicado'?'var(--ves)':'var(--ams)';
+        const estadoCol=p.estado==='publicado'?'var(--ve)':'var(--am)';
+        const estadoTxt=p.estado==='publicado'?'✅ Publicado':'⏳ Pendiente';
+        return`<div class="agenda-pub" onclick="togAgendaPub('apub-${p._idx}')" style="cursor:pointer">
+          <div class="agenda-hora">${p.hora}</div>
+          <div class="agenda-info">
+            <div class="agenda-nom">${p.nombre} <span style="font-size:11px;color:var(--tm);font-weight:400">▾</span></div>
+            <div class="agenda-from">${p.tarea?`📋 ${p.tarea} · `:''}${(p.plataformas||[]).map(pl=>`<span class="pc ${pl}">${PLAT_NOM[pl]}</span>`).join(' ')}</div>
+          </div>
+          <span style="font-size:11px;background:${estadoBg};color:${estadoCol};padding:2px 8px;border-radius:20px;font-weight:700;flex-shrink:0">${estadoTxt}</span>
         </div>
-        <span style="font-size:11px;background:${p.estado==='publicado'?'var(--ves)':'var(--ams)'};color:${p.estado==='publicado'?'var(--ve)':'var(--am)'};padding:2px 8px;border-radius:20px;font-weight:700;flex-shrink:0">${p.estado==='publicado'?'✅ Publicado':'⏳ Pendiente'}</span>
-      </div>`).join('')}
+        <div id="apub-${p._idx}" style="display:none;margin:-6px 0 6px 0;padding:12px 14px 14px;background:var(--fo);border:1px solid var(--bo);border-top:none;border-radius:0 0 var(--rs) var(--rs)">
+          ${p.copy?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">📝 Copy</div><div style="font-size:13px;color:var(--tx);white-space:pre-wrap;line-height:1.5">${p.copy}</div></div>`:''}
+          ${p.notas?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">💬 Notas</div><div style="font-size:12px;color:var(--tm)">${p.notas}</div></div>`:''}
+          <div id="apub-ents-${p._idx}"></div>
+          ${puede('marcarAvance')&&p.standalone?`<div style="display:flex;gap:6px;margin-top:10px"><button class="btn bgh bsm" onclick="event.stopPropagation();editarPub('${p.id}')">✏️ Editar</button><button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--rob)" onclick="event.stopPropagation();elimPub('${p.id}')">🗑 Eliminar</button></div>`:''}
+          ${puede('marcarAvance')&&p.esTaskPub?`<div style="margin-top:10px"><button class="btn bgh bsm" onclick="event.stopPropagation();abrirMT('${p.tareaId}')">✏️ Editar tarea</button></div>`:''}
+        </div>`;
+      }).join('')}
     </div>`;
   }).join('');
+}
+
+function togAgendaPub(id){
+  const det=document.getElementById(id);
+  if(!det)return;
+  const opening=det.style.display==='none';
+  det.style.display=opening?'block':'none';
+  if(opening){
+    // Lazy-load entregables into the detail panel
+    const idx=id.replace('apub-','');
+    const entsEl=document.getElementById('apub-ents-'+idx);
+    if(entsEl&&!entsEl.dataset.loaded){
+      entsEl.dataset.loaded='1';
+      // Find the pub by scanning current pubs
+      const anio=calPubFecha.getFullYear(),mes=calPubFecha.getMonth()+1;
+      const allPubs=getPubsDelMes(anio,mes);
+      allPubs.forEach((p,i)=>{p._idx=i;});
+      const p=allPubs.find((_,i)=>String(i)===String(idx));
+      if(!p){return;}
+      let entsHTML='';
+      if(p.esTaskPub){
+        const t=E.tareas.find(t=>t.id===p.tareaId);
+        const ents=t?.entregables||[];
+        if(ents.length){
+          entsHTML=`<div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">🔗 Entregables (${ents.length})</div>`
+            +ents.map(e=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--su);border:1px solid var(--bo);border-radius:var(--rs);margin-bottom:4px;font-size:12px">
+              <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--tx)">${e.nombre}</span>
+              <a href="${e.url.startsWith('http')?e.url:'https://'+e.url}" target="_blank" class="btn bgh bsm" onclick="event.stopPropagation()">🔗 Abrir</a>
+            </div>`).join('');
+        }
+      }else if(!p.standalone&&p.entId){
+        const t=E.tareas.find(t=>t.id===p.tareaId);
+        const e=(t?.entregables||[]).find(e=>e.id===p.entId);
+        if(e) entsHTML=`<div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">🔗 Entregable</div>
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--su);border:1px solid var(--bo);border-radius:var(--rs);font-size:12px">
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--tx)">${e.nombre}</span>
+            <a href="${e.url.startsWith('http')?e.url:'https://'+e.url}" target="_blank" class="btn bgh bsm" onclick="event.stopPropagation()">🔗 Abrir</a>
+          </div>`;
+      }
+      entsEl.innerHTML=entsHTML;
+    }
+  }
 }
 
 function verDiaPub(dia){
