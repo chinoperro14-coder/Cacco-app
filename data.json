@@ -580,6 +580,14 @@
   ],
   "bitacora": [
     {
+      "id": "mqpwyshhecuvb6a7lj9",
+      "fecha": "23 jun 2026",
+      "hora": "12:36 a. m.",
+      "usuario": "Verificación Test",
+      "accion": "Tarea creada",
+      "detalle": "\"Tarea Test Pub Cal\" — secciones: Audiovisual"
+    },
+    {
       "id": "mqlhnxkwenf8ol3pqxl",
       "fecha": "19 jun 2026",
       "hora": "05:16 p. m.",
@@ -589,6 +597,13 @@
     }
   ],
   "notifs": [
+    {
+      "id": "mqpwyshkjxesu57ivu",
+      "ico": "📋",
+      "txt": "Nueva tarea: \"Tarea Test Pub Cal\"",
+      "sub": "Secciones: Audiovisual",
+      "ts": "12:36 a. m."
+    },
     {
       "id": "mqlhlxmdogyq43fbv4f",
       "ico": "📋",
@@ -931,13 +946,6 @@
       "txt": "Horas aprobadas: Asistente Comunicaciones",
       "sub": "3 hrs",
       "ts": "09:25 a. m."
-    },
-    {
-      "id": "mql0qww75hoppav0jl9",
-      "ico": "✅",
-      "txt": "Fotografía completado: \"COBERTURA ORQUESTA SINFONICA\"",
-      "sub": "Por Coordinadora CACCO",
-      "ts": "09:23 a. m."
     }
   ],
   "etiquetas": [
@@ -1004,5 +1012,6 @@
       "reporte": "REPORTE SEMANAL — EQUIPO DE COMUNICACIONES\nCACCO — Centro de Arte y Cultura de Colón\n══════════════════════════════════════════════════════\nFecha: viernes, 19 de junio de 2026\nGenerado por: SOPORTE\n\n🔴 ROJO — Requiere atención\n\n📈  RESUMEN\n  Total tareas:    4\n  ✅ Completadas:  1 (25%)\n  🔄 En progreso:  1\n  ⏳ Pendientes:   2\n  ⚠️  Vencidas:    0\n\n📦  AVANCE POR CATEGORÍA\n  • 📹 Audiovisual: 0/1 (0%)\n  • 🎯 Protocolo: 0/1 (0%)\n  • 📱 Redes Sociales: 1/2 (50%)\n    → IG:1pub · 2reels · FB:1pub · IG:5pub · FB:2pub · TT:2vid\n  • 📡 Medios: 1/1 (100%)\n\n👥  AVANCE POR PERSONA\n\n  👤 YESAULI GUTIERREZ (Colaborador)\n    ✅ [Medios] \"AGENDA DE RADIOS\" — Completada\n\n  👤 MIGUEL ANTONIO · Audiovisual (Editor)\n    ⏳ [Audiovisual] \"PRUEBA DE TAREA 3\" — Pendiente\n\n  👤 FELIPE ANAYA · Audiovisual (Colaborador)\n    ⏳ [Audiovisual] \"PRUEBA DE TAREA 3\" — Pendiente\n\n  👤 DIONICIO SEGURA · Redes Sociales (Colaborador)\n    ✅ [Redes Sociales] \"COBERTURA USA\" — Completada\n\n  👤 NAYRETH PRESTAN · Protocolo (Colaborador)\n    ⏳ [Protocolo] \"COBERTURA USA\" — Pendiente\n\n  👤 TEST · Audiovisual (Colaborador)\n    ⏳ [Audiovisual] \"PRUEBA DE TAREA 3\" — Pendiente\n\n⏱️  HORAS EXTRAS\n  Aprobadas: 3 registros · 11.0 horas\n  • FELIPE ANAYA: 4.0 hrs\n  • HENRY GONZALEZ: 3.0 hrs\n  • DIONICIO SEGURA: 4.0 hrs\n\n══════════════════════════════════════════════════════\nCACCO — Reporte interno · Histórico: 4 reportes archivados",
       "archivadoPor": "SOPORTE"
     }
-  ]
+  ],
+  "publicaciones": []
 }
