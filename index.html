@@ -743,6 +743,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     </div>
     <div id="diaPubPanelBody"></div>
   </div>
+  <div id="calPubPendientes" style="margin-top:24px"></div>
 </div>
 
 <!-- PERFIL -->
@@ -2046,7 +2047,7 @@ function guardarProg(){
     const e=(t.entregables||[]).find(e=>e.id===mProgEntId);if(!e)return;
     e.publicacion={fecha,hora,plataformas,copy,notas,estado:'pendiente',programadoPor:uAct?.nombre,programadoEn:hoy()};
     reg('Publicación programada',`"${e.nombre}" en "${t.titulo}" para ${fmtPubFecha(fecha)} ${hora}`);
-    guardar();expandidas.add(mProgTareaId);renderTareas();
+    guardar();expandidas.add(mProgTareaId);renderTareas();renderCalPub();
   }else{
     // Standalone publication
     const titulo=document.getElementById('mProgTitulo').value.trim();
@@ -2117,6 +2118,33 @@ function renderCalPub(){
   const meses=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   document.getElementById('calPubTit').textContent=meses[mes-1]+' '+anio;
   setVistaCalPub(calPubVista,true);
+  renderPendientesPub();
+}
+
+function renderPendientesPub(){
+  const canProg=puede('marcarAvance');
+  const pend=[];
+  E.tareas.forEach(t=>{
+    (t.entregables||[]).forEach(e=>{
+      if(!e.publicacion?.fecha) pend.push({tareaId:t.id,tareaTit:t.titulo,entId:e.id,nombre:e.nombre,url:e.url});
+    });
+  });
+  const el=document.getElementById('calPubPendientes');
+  if(!pend.length){el.innerHTML='';return;}
+  const rows=pend.map(p=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--rs);border:1px solid var(--bo);background:var(--su);flex-wrap:wrap">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🔗 ${p.nombre}</div>
+        <div style="font-size:11px;color:var(--tm);margin-top:2px">📋 ${p.tareaTit}</div>
+      </div>
+      <a href="${p.url.startsWith('http')?p.url:'https://'+p.url}" target="_blank" class="btn bgh bsm" style="flex-shrink:0">Ver</a>
+      ${canProg?`<button class="btn-prog" onclick="programarEntregable('${p.tareaId}','${p.entId}')">📅 Programar</button>`:''}
+    </div>`).join('');
+  el.innerHTML=`
+    <div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">
+      📋 Entregables sin programar (${pend.length})
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">${rows}</div>`;
 }
 
 function setVistaCalPub(v,noToggle){
