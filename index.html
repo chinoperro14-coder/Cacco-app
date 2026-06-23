@@ -1041,6 +1041,8 @@ let E={tareas:[],horasExtra:[],equipo:[],bitacora:[],notifs:[],etiquetas:[...ETI
 let uAct=null,niv=null,fCat='todos',nivelTxt=0,repP='semanal';
 let etiqSel=[];
 let expandidas=new Set();
+let avWiz={userId:null,medio:null};
+let avAsignaciones=[];
 
 // ════════════════════════
 //  PERMISOS
@@ -1463,27 +1465,21 @@ function renderTareas(){
     // Audiovisual detail
     let audiovisualHTML='';
     if(t.secciones?.['Audiovisual']&&t.audiovisualData){
-      const av=t.audiovisualData;
-      const subs=[{key:'foto',ico:'📷',nom:'Foto'},{key:'video',ico:'🎬',nom:'Video'}];
-      const tipos=['COBERTURA','REEL','INSTITUCIONAL','PROMOCIONAL'];
-      const mkAvBtn=(sub,tipo)=>{
-        const asig=av[sub]?.[tipo]||0;if(!asig)return'';
-        const comp=av[sub]?.[tipo+'_comp']||0;
-        const pct=Math.round(comp/asig*100);
-        const col=pct>=100?'#0F6E56':pct>0?'#854F0B':'#0F6E56';
-        const canMark=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||mySec.includes('Audiovisual'));
-        const subInfo=subs.find(s=>s.key===sub);
+      const asigs=t.audiovisualData.asignaciones||[];
+      const canMark=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||mySec.includes('Audiovisual'));
+      const avRows=asigs.map((a,i)=>{
+        const u=E.equipo.find(u=>u.id===a.userId);
+        const nom=u?.nombre.split(' ')[0]||a.nombre||'?';
+        const medIco=a.medio==='foto'?'📷':'🎬';
+        const col=a.comp?'#0F6E56':'#185FA5';
         return`<div class="grow" style="padding:6px 10px">
-          <div class="ginfo"><div class="gnom">${subInfo.ico} ${subInfo.nom} — ${tipo}</div>
-          <div class="gsub" style="color:${col};font-weight:600">Asignados: ${asig} · Completados: ${comp} (${pct}%)</div></div>
-          ${canMark?`<div style="display:flex;gap:4px;align-items:center">
-            <button class="btn bgh bsm" style="padding:2px 7px" onclick="event.stopPropagation();cambCompAV('${t.id}','${sub}','${tipo}',-1)">−</button>
-            <span style="font-size:13px;font-weight:700;min-width:18px;text-align:center">${comp}</span>
-            <button class="btn bgh bsm" style="padding:2px 7px" onclick="event.stopPropagation();cambCompAV('${t.id}','${sub}','${tipo}',1)">+</button>
-          </div>`:`<span class="bg ${pct>=100?'bapr':pct>0?'bmed':'bpen'}">${pct}%</span>`}
+          <div class="ginfo">
+            <div class="gnom">${medIco} ${nom} — ${a.tipo}</div>
+            <div class="gsub" style="color:${col};font-weight:600">${a.comp?'✅ Completado':'⏳ Pendiente'}</div>
+          </div>
+          ${canMark?`<button class="btn bgh bsm" style="padding:2px 8px;font-size:11px" onclick="event.stopPropagation();togCompAV('${t.id}',${i})">${a.comp?'Revertir':'Marcar listo'}</button>`:''}
         </div>`;
-      };
-      const avRows=subs.flatMap(s=>tipos.map(tp=>mkAvBtn(s.key,tp))).filter(Boolean);
+      });
       if(avRows.length) audiovisualHTML=`<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">📹 Audiovisual</div>${avRows.join('')}</div>`;
     }
 
@@ -1673,23 +1669,35 @@ function renderSeccionesModal(t){
     const sInfo=SECCIONES[sec];
     const respActuales=sv?.responsables||[];
     const assignableUsers=niv==='lider'?E.equipo:E.equipo.filter(u=>(u.secciones||[]).includes(sec));
-    const userChips=assignableUsers.filter(u=>u.nivel!=='lector').map(u=>`<div class="uchip ${respActuales.includes(u.id)?'sel':''}" onclick="togRespModal('${sec}','${u.id}',this)">${rAv(u.nombre,u.foto||'',18,7)} ${u.nombre.split(' ')[0]}</div>`).join('');
     const key=sec.replace(/\s/g,'_');
+    const togLabel=activa
+      ?`✅ Activa <span onclick="event.stopPropagation();quitarSeccion('${sec}')" style="margin-left:4px;opacity:.6;font-size:11px;cursor:pointer">✕</span>`
+      :'+ Incluir';
+    // Para Audiovisual: el body se llena via actualizarAudiovisualBlk, no con userChips directos
+    const bodyContent= sec==='Audiovisual'
+      ?`<div id="audiovisualWizBlk"></div>`
+      :`<div style="font-size:11px;color:var(--tm);margin-bottom:6px">Responsable(s)</div>
+        <div class="usr-chips" id="uch-${key}">${
+          assignableUsers.filter(u=>u.nivel!=='lector').map(u=>`<div class="uchip ${respActuales.includes(u.id)?'sel':''}" onclick="togRespModal('${sec}','${u.id}',this)">${rAv(u.nombre,u.foto||'',18,7)} ${u.nombre.split(' ')[0]}</div>`).join('')
+          ||'<span style="font-size:12px;color:var(--tm)">Sin miembros en esta sección</span>'
+        }</div>`;
     return`<div class="secc-card ${activa?'activa':''}" id="sc-${key}">
       <div class="secc-hdr" onclick="togSeccionModal('${sec}')">
         <div class="sico" style="background:${sInfo.bg}">${sInfo.ico}</div>
         <span class="snom">${sec}</span>
-        <span class="secc-toggle" id="sct-${key}">${activa?'✅ Activa':'+ Incluir'}</span>
+        <span class="secc-toggle" id="sct-${key}">${togLabel}</span>
       </div>
       <div class="secc-body" id="scb-${key}" style="display:${activa?'block':'none'}">
-        <div style="font-size:11px;color:var(--tm);margin-bottom:6px">Responsable(s)</div>
-        <div class="usr-chips" id="uch-${key}">${userChips||'<span style="font-size:12px;color:var(--tm)">Sin miembros en esta sección</span>'}</div>
+        ${bodyContent}
       </div>
     </div>`;
   }).join('');
   actualizarRedesBlk(t?.redesSociales);
   actualizarMediosBlk(t?.mediosData);
-  actualizarAudiovisualBlk(t?.audiovisualData);
+  // Inicializar avAsignaciones desde la tarea actual
+  avWiz={userId:null,medio:null};
+  avAsignaciones=(t?.audiovisualData?.asignaciones||[]).map(a=>({...a}));
+  actualizarAudiovisualBlk();
 }
 
 function togSeccionModal(sec){
@@ -1698,12 +1706,43 @@ function togSeccionModal(sec){
   const body=document.getElementById(`scb-${key}`);
   const tog=document.getElementById(`sct-${key}`);
   const activa=card.classList.contains('activa');
-  card.classList.toggle('activa');
-  body.style.display=activa?'none':'block';
-  tog.textContent=activa?'+ Incluir':'✅ Activa';
+  const bodyVisible=body.style.display!=='none';
+
+  if(!activa){
+    // Primera vez: activar + accordion collapse de las demás
+    SECC_NAMES.forEach(s=>{
+      if(s===sec)return;
+      const b=document.getElementById(`scb-${s.replace(/\s/g,'_')}`);
+      if(b)b.style.display='none';
+    });
+    card.classList.add('activa');
+    body.style.display='block';
+    tog.innerHTML='✅ Activa <span onclick="event.stopPropagation();quitarSeccion(\''+sec+'\')" style="margin-left:4px;opacity:.6;font-size:11px;cursor:pointer">✕</span>';
+  } else {
+    // Ya activa: accordion toggle (solo colapsa/expande)
+    if(!bodyVisible){
+      SECC_NAMES.forEach(s=>{
+        if(s===sec)return;
+        const b=document.getElementById(`scb-${s.replace(/\s/g,'_')}`);
+        if(b)b.style.display='none';
+      });
+    }
+    body.style.display=bodyVisible?'none':'block';
+  }
   if(sec==='Redes Sociales')actualizarRedesBlk(null);
   if(sec==='Medios')actualizarMediosBlk(null);
-  if(sec==='Audiovisual')actualizarAudiovisualBlk(null);
+  if(sec==='Audiovisual')actualizarAudiovisualBlk();
+}
+
+function quitarSeccion(sec){
+  const key=sec.replace(/\s/g,'_');
+  const card=document.getElementById(`sc-${key}`);
+  const body=document.getElementById(`scb-${key}`);
+  const tog=document.getElementById(`sct-${key}`);
+  card.classList.remove('activa');
+  body.style.display='none';
+  tog.textContent='+ Incluir';
+  if(sec==='Audiovisual'){avWiz={userId:null,medio:null};avAsignaciones=[];}
 }
 
 function togRespModal(sec,uid,el){
@@ -1790,40 +1829,70 @@ function actualizarMediosBlk(mdData){
   }).join('');
 }
 
-function actualizarAudiovisualBlk(avData){
+function actualizarAudiovisualBlk(){
   const avActiva=document.getElementById('sc-Audiovisual')?.classList.contains('activa');
-  const blk=document.getElementById('audiovisualDetalleBlk');
-  if(!blk)return;
-  blk.style.display=avActiva?'block':'none';
-  if(!avActiva)return;
-  const av=avData||{};
-  const subs=[
-    {key:'foto',ico:'📷',nom:'Foto',tipos:['COBERTURA','REEL','INSTITUCIONAL','PROMOCIONAL']},
-    {key:'video',ico:'🎬',nom:'Video',tipos:['COBERTURA','REEL','INSTITUCIONAL','PROMOCIONAL']},
-  ];
-  document.getElementById('audiovisualGrid').innerHTML=subs.map(s=>{
-    const d=av[s.key]||{};
-    const tiposHTML=s.tipos.map(tp=>{
-      const asig=d[tp]||0;
-      return`<div class="redes-row" style="flex-direction:column;align-items:flex-start;gap:6px">
-        <span class="redes-nm">${tp}</span>
-        <div style="display:flex;flex-direction:column;gap:2px;align-items:center">
-          <span style="font-size:10px;color:var(--tm);font-weight:600">ASIGNADOS</span>
-          <div class="redes-ctrl">
-            <button onclick="adjAV('${s.key}','${tp}',-1)">−</button>
-            <span class="redes-qty" id="avq-${s.key}-${tp.toLowerCase()}">${asig}</span>
-            <button onclick="adjAV('${s.key}','${tp}',1)">+</button>
-          </div>
-        </div>
+  const wiz=document.getElementById('audiovisualWizBlk');
+  if(!avActiva||!wiz)return;
+
+  const avUsers=(E.equipo||[]).filter(u=>(u.secciones||[]).includes('Audiovisual')&&u.nivel!=='lector');
+  const tipos=['REEL','INSTITUCIONAL','PROMOCIONAL'];
+
+  // Paso 1: seleccionar usuario
+  const paso1=`<div style="margin-bottom:10px">
+    <div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;margin-bottom:5px">1. Fotógrafo / Camarógrafo</div>
+    <div class="usr-chips">${avUsers.map(u=>`<div class="uchip ${avWiz.userId===u.id?'sel':''}" onclick="avSelUser('${u.id}')">${rAv(u.nombre,u.foto||'',18,7)} ${u.nombre.split(' ')[0]}</div>`).join('')||'<span style="font-size:12px;color:var(--tm)">Sin miembros en Audiovisual</span>'}</div>
+  </div>`;
+
+  // Paso 2: Foto o Video (visible solo si hay usuario seleccionado)
+  const paso2=avWiz.userId?`<div style="margin-bottom:10px">
+    <div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;margin-bottom:5px">2. Tipo de trabajo</div>
+    <div style="display:flex;gap:8px">
+      <div class="uchip ${avWiz.medio==='foto'?'sel':''}" onclick="avSelMedio('foto')">📷 Foto</div>
+      <div class="uchip ${avWiz.medio==='video'?'sel':''}" onclick="avSelMedio('video')">🎬 Video</div>
+    </div>
+  </div>`:'';
+
+  // Paso 3: tipo de producto (visible solo si hay medio)
+  const paso3=(avWiz.userId&&avWiz.medio)?`<div style="margin-bottom:10px">
+    <div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;margin-bottom:5px">3. Producto</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${tipos.map(tp=>`<div class="uchip" onclick="avSelTipo('${tp}')">${tp}</div>`).join('')}</div>
+  </div>`:'';
+
+  // Lista de asignaciones actuales
+  const listaAsigs=avAsignaciones.length?`<div style="margin-top:4px;border-top:1px solid var(--bo);padding-top:8px">
+    <div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;margin-bottom:5px">Asignaciones</div>
+    ${avAsignaciones.map((a,i)=>{
+      const u=E.equipo.find(u=>u.id===a.userId);
+      return`<div style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13px">
+        <span>${a.medio==='foto'?'📷':'🎬'}</span>
+        <span style="flex:1">${u?.nombre.split(' ')[0]||a.nombre||'?'} — <b>${a.tipo}</b></span>
+        <span onclick="avQuitarAsig(${i})" style="cursor:pointer;color:var(--er);font-size:11px;padding:2px 5px;border:1px solid var(--er);border-radius:4px">✕</span>
       </div>`;
-    }).join('');
-    return`<div class="redes-card"><div style="font-size:13px;font-weight:600;padding:8px 12px;background:var(--su2);border-bottom:1px solid var(--bo)">${s.ico} ${s.nom}</div>${tiposHTML}</div>`;
-  }).join('');
+    }).join('')}
+  </div>`:'';
+
+  wiz.innerHTML=paso1+paso2+paso3+listaAsigs;
 }
-function adjAV(sub,tipo,delta){
-  const el=document.getElementById(`avq-${sub}-${tipo.toLowerCase()}`);
-  if(!el)return;
-  el.textContent=Math.max(0,(parseInt(el.textContent)||0)+delta);
+
+function avSelUser(uid){
+  avWiz.userId=avWiz.userId===uid?null:uid;
+  avWiz.medio=null;
+  actualizarAudiovisualBlk();
+}
+function avSelMedio(medio){
+  avWiz.medio=avWiz.medio===medio?null:medio;
+  actualizarAudiovisualBlk();
+}
+function avSelTipo(tipo){
+  if(!avWiz.userId||!avWiz.medio)return;
+  const u=E.equipo.find(u=>u.id===avWiz.userId);
+  avAsignaciones.push({userId:avWiz.userId,nombre:u?.nombre||'',medio:avWiz.medio,tipo,comp:false});
+  avWiz={userId:null,medio:null};
+  actualizarAudiovisualBlk();
+}
+function avQuitarAsig(idx){
+  avAsignaciones.splice(idx,1);
+  actualizarAudiovisualBlk();
 }
 
 function adjMed(mKey,campo,delta){
@@ -1934,14 +2003,10 @@ function guardarT(){
   // Build audiovisualData
   let audiovisualData=orig?.audiovisualData||null;
   if(secciones['Audiovisual']){
-    audiovisualData={};
-    ['foto','video'].forEach(sub=>{
-      audiovisualData[sub]={};
-      ['COBERTURA','REEL','INSTITUCIONAL','PROMOCIONAL'].forEach(tp=>{
-        const el=document.getElementById(`avq-${sub}-${tp.toLowerCase()}`);
-        audiovisualData[sub][tp]=el?parseInt(el.textContent)||0:orig?.audiovisualData?.[sub]?.[tp]||0;
-      });
-    });
+    audiovisualData={asignaciones:[...avAsignaciones]};
+    // Actualizar responsables de la sección con los userIds de las asignaciones (sin duplicados)
+    const respAV=[...new Set(avAsignaciones.map(a=>a.userId))];
+    if(respAV.length)secciones['Audiovisual'].responsables=respAV;
   }
 
   // Build publicacion field
@@ -2029,13 +2094,11 @@ function cambCompMed(tareaId,mKey,campo,delta){
   expandidas.add(tareaId);guardar();renderTareas();
 }
 
-function cambCompAV(tareaId,sub,tipo,delta){
-  const t=E.tareas.find(t=>t.id===tareaId);if(!t||!t.audiovisualData)return;
-  if(!t.audiovisualData[sub])t.audiovisualData[sub]={};
-  const asig=t.audiovisualData[sub][tipo]||0;
-  const cur=t.audiovisualData[sub][tipo+'_comp']||0;
-  t.audiovisualData[sub][tipo+'_comp']=Math.max(0,Math.min(asig,cur+delta));
-  guardar();renderTareas();
+function togCompAV(tareaId,idx){
+  const t=E.tareas.find(t=>t.id===tareaId);
+  if(!t?.audiovisualData?.asignaciones?.[idx])return;
+  t.audiovisualData.asignaciones[idx].comp=!t.audiovisualData.asignaciones[idx].comp;
+  expandidas.add(tareaId);guardar();renderTareas();
 }
 
 function agregarEntregable(tareaId){
@@ -2887,13 +2950,11 @@ function generarRep(){
     tc.forEach(t=>{
       const descLine=t.notas?`\n      📝 ${t.notas.slice(0,150)}${t.notas.length>150?'...':''}`:'';
       pCat+=`\n      - "${t.titulo}" [${t.secciones[sec].estado||'Pendiente'}]${descLine}`;
-      if(t.audiovisualData&&t.secciones?.['Audiovisual']&&sec==='Audiovisual'){
-        const av=t.audiovisualData;
-        ['foto','video'].forEach(sub=>{
-          ['COBERTURA','REEL','INSTITUCIONAL','PROMOCIONAL'].forEach(tp=>{
-            const asig=av[sub]?.[tp]||0;
-            if(asig) pCat+=`\n        → ${sub.toUpperCase()}-${tp}: ${asig} asignados`;
-          });
+      if(t.audiovisualData?.asignaciones?.length&&t.secciones?.['Audiovisual']&&sec==='Audiovisual'){
+        t.audiovisualData.asignaciones.forEach(a=>{
+          const u=E.equipo.find(u=>u.id===a.userId);
+          const nom=u?.nombre||a.nombre||'?';
+          pCat+=`\n        → ${a.medio==='foto'?'📷':'🎬'} ${nom} — ${a.tipo}${a.comp?' ✅':''}`;
         });
       }
     });
