@@ -1079,6 +1079,7 @@ async function cargar(){
           if(!E.notifs)E.notifs=[];
           if(!E.historico)E.historico=[];
           if(!E.equipo)E.equipo=[];
+          if(!E.publicaciones)E.publicaciones=[];
           // Migrar seccion (string) → secciones (array)
           E.equipo.forEach(u=>{
             if(!u.secciones){u.secciones=u.seccion?[u.seccion]:[];}
@@ -1170,6 +1171,7 @@ async function entrarLect(){
         if(!E.notifs)E.notifs=[];
         if(!E.historico)E.historico=[];
         if(!E.equipo)E.equipo=[];
+        if(!E.publicaciones)E.publicaciones=[];
         E.equipo.forEach(u=>{if(!u.secciones){u.secciones=u.seccion?[u.seccion]:[];}delete u.seccion;});
       }
     }
@@ -3009,6 +3011,7 @@ async function sincronizar(){
         if(!E.etiquetas)E.etiquetas=[...ETIQ_DEF];
         if(!E.notifs)E.notifs=[];
         if(!E.historico)E.historico=[];
+        if(!E.publicaciones)E.publicaciones=[];
         if(!E.equipo||!E.equipo.length)E.equipo=EQ_DEF.map(u=>({...u}));
       }
       renderTodo();
