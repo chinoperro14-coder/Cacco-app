@@ -791,6 +791,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       <div class="fg"><label class="fl">Fecha límite</label><input type="date" class="fc" id="tFecha"></div>
       <div class="fg"><label class="fl">Hora</label><input type="time" class="fc" id="tHora"></div>
     </div>
+    <div class="fg"><label class="fl">📍 Lugar</label><input type="text" class="fc" id="tLugar" placeholder="Ej: Salón principal, Teatro Municipal..."></div>
     <div class="fg">
       <label class="fl">Recurrencia</label>
       <select class="fc" id="tRec"><option value="ninguna">Sin recurrencia</option><option value="diaria">Diaria</option><option value="semanal">Semanal</option><option value="mensual">Mensual</option></select>
@@ -1456,16 +1457,21 @@ function renderTareas(){
     if(t.secciones?.['Audiovisual']&&t.audiovisualData){
       const asigs=t.audiovisualData.asignaciones||[];
       const canMark=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||mySec.includes('Audiovisual'));
+      const AV_MED={foto:{bg:'#E1F5EE',col:'#0F6E56',lbl:'📷 FOTO'},video:{bg:'#E3F2FD',col:'#185FA5',lbl:'🎬 VIDEO'}};
+      const AV_TIPO={REEL:{bg:'#E3F2FD',col:'#185FA5'},INSTITUCIONAL:{bg:'#E8F5E9',col:'#2E7D32'},PROMOCIONAL:{bg:'#EDE7F6',col:'#6A1B9A'},COBERTURA:{bg:'#FFF8E1',col:'#F57F17'}};
       const avRows=asigs.map((a,i)=>{
         const u=E.equipo.find(u=>u.id===a.userId);
-        const nom=u?.nombre.split(' ')[0]||a.nombre||'?';
-        const medIco=a.medio==='foto'?'📷':'🎬';
-        const col=a.comp?'#0F6E56':'#185FA5';
-        return`<div class="grow" style="padding:6px 10px">
-          <div class="ginfo">
-            <div class="gnom">${medIco} ${nom} — ${a.tipo}</div>
-            <div class="gsub" style="color:${col};font-weight:600">${a.comp?'✅ Completado':'⏳ Pendiente'}</div>
-          </div>
+        const nom=u?.nombre||a.nombre||'?';
+        const med=AV_MED[a.medio]||AV_MED.foto;
+        const tip=AV_TIPO[a.tipo]||{bg:'#f5f5f5',col:'#555'};
+        const medBadge=`<span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;background:${med.bg};color:${med.col};white-space:nowrap">${med.lbl}</span>`;
+        const tipBadge=`<span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;background:${tip.bg};color:${tip.col};white-space:nowrap">${a.tipo}</span>`;
+        const estBadge=a.comp?`<span style="font-size:12px;color:#0F6E56;font-weight:700">✅</span>`:`<span style="font-size:12px;color:#888">⏳</span>`;
+        return`<div class="grow" style="padding:6px 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          ${medBadge}
+          <span style="flex:1;font-size:13px;font-weight:600;min-width:80px">${nom}</span>
+          ${tipBadge}
+          ${estBadge}
           ${canMark?`<button class="btn bgh bsm" style="padding:2px 8px;font-size:11px" onclick="event.stopPropagation();togCompAV('${t.id}',${i})">${a.comp?'Revertir':'Marcar listo'}</button>`:''}
         </div>`;
       });
@@ -1550,6 +1556,7 @@ function renderTareas(){
           <span class="bg ${bEst[eg]||'bgr'}">${eg}</span>
           <span class="bg ${bPri[t.prioridad]||'bgr'}">${t.prioridad}</span>
           ${t.fecha?`<span class="bg bgr" style="${vencida?'color:var(--ro);font-weight:700':''}">${vencida?'⚠️ ':'📅 '}${fmt(t.fecha)}</span>`:''}
+          ${t.lugar?`<span class="bg bgr">📍 ${t.lugar}</span>`:''}
           ${etiqH}
           ${!abierta&&ents.length?entHTML:''}
         </div>
@@ -1616,6 +1623,7 @@ function abrirMT(id){
   document.getElementById('tPri').value=t?.prioridad||'Media';
   document.getElementById('tFecha').value=t?.fecha||'';
   document.getElementById('tHora').value=t?.hora||'';
+  document.getElementById('tLugar').value=t?.lugar||'';
   document.getElementById('tNotas').value=t?.notas||'';
   document.getElementById('tRec').value=t?.recurrencia||'ninguna';
   etiqSel=[...(t?.etiquetas||[])];renderChEtiq();
@@ -2013,6 +2021,7 @@ function guardarT(){
     prioridad:document.getElementById('tPri').value,
     fecha:document.getElementById('tFecha').value,
     hora:document.getElementById('tHora').value,
+    lugar:document.getElementById('tLugar').value.trim(),
     notas:document.getElementById('tNotas').value.trim(),
     recurrencia:document.getElementById('tRec').value,
     creadaEn:orig?.creadaEn||hoy(),
