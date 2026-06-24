@@ -514,6 +514,11 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
         </div>
       </div>
 
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <input type="checkbox" id="loginRecordar" style="accent-color:var(--na);width:15px;height:15px;cursor:pointer">
+        <label for="loginRecordar" style="font-size:13px;color:var(--tm);cursor:pointer">Recordarme</label>
+      </div>
+
       <div id="loginErr" class="login-err oculto">Usuario o contraseña incorrectos.</div>
 
       <button class="btn login-btn" onclick="tryLogin()">Entrar</button>
@@ -602,7 +607,11 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <div class="stat saz"><div class="slbl">En Progreso</div><div class="snum" id="stPro">0</div></div>
     <div class="stat sve"><div class="slbl">Completadas</div><div class="snum" id="stLis">0</div></div>
   </div>
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+    <div style="position:relative;flex:1;min-width:180px;max-width:320px">
+      <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;opacity:.5;pointer-events:none">🔍</span>
+      <input type="search" class="fc" id="busqTarea" placeholder="Buscar tarea..." style="padding:7px 10px 7px 32px;font-size:13px" oninput="renderTareas()">
+    </div>
     <select class="fc" style="width:auto;padding:7px 12px;font-size:12px" id="filtEst" onchange="renderTareas()">
       <option value="todos">Todos los estados</option>
       <option value="Pendiente">Pendiente</option>
@@ -613,6 +622,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       <input type="checkbox" id="soloMias" onchange="renderTareas()" style="accent-color:var(--na);width:15px;height:15px"> Solo mis secciones
     </label>
   </div>
+  <div id="filtActivo" style="display:none;margin-bottom:12px;align-items:center;gap:8px;flex-wrap:wrap"></div>
   <div id="listaTareas"></div>
   <div id="vacTareas" class="vac oculto" style="padding:48px 20px;text-align:center;color:var(--tm)">
     <div style="font-size:36px;margin-bottom:10px">📭</div>
@@ -646,6 +656,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <div class="stat sve"><div class="slbl">Horas aprobadas</div><div class="snum" id="heApr">0</div><div class="ssub">acumuladas</div></div>
     <div class="stat sam"><div class="slbl">Pendientes</div><div class="snum" id="hePen">0</div></div>
   </div>
+  <div id="heResumen" style="display:none;margin-bottom:18px"></div>
   <div class="hegrid" id="gridHE"></div>
   <div id="vacHE" style="padding:48px 20px;text-align:center;color:var(--tm);display:none">
     <div style="font-size:36px;margin-bottom:10px">⏱️</div><div style="font-size:14px;font-weight:500">Sin horas extras registradas.</div>
@@ -702,10 +713,31 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <div class="stit">Bitácora de Cambios</div>
     <button class="btn bpe bsm" onclick="limpBit()">🗑 Limpiar</button>
   </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+    <div style="position:relative;flex:1;min-width:160px;max-width:260px">
+      <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;opacity:.5;pointer-events:none">🔍</span>
+      <input type="search" class="fc" id="bitBusq" placeholder="Buscar en bitácora..." style="padding:6px 10px 6px 30px;font-size:12px" oninput="bitPagina=0;renderBit()">
+    </div>
+    <select class="fc" id="bitFiltU" style="width:auto;padding:6px 10px;font-size:12px" onchange="bitPagina=0;renderBit()">
+      <option value="">Todos los usuarios</option>
+    </select>
+    <select class="fc" id="bitFiltA" style="width:auto;padding:6px 10px;font-size:12px" onchange="bitPagina=0;renderBit()">
+      <option value="">Todas las acciones</option>
+      <option value="Tarea creada">Tarea creada</option>
+      <option value="Tarea editada">Tarea editada</option>
+      <option value="Tarea eliminada">Tarea eliminada</option>
+      <option value="Avance completado">Avance completado</option>
+      <option value="Hora registrada">Hora registrada</option>
+      <option value="Hora aprobada">Hora aprobada</option>
+      <option value="Persona creada">Persona creada</option>
+      <option value="Mes cerrado">Mes cerrado</option>
+    </select>
+  </div>
   <div class="tc">
     <table><thead><tr><th>Fecha / Hora</th><th>Usuario</th><th>Acción</th><th>Detalle</th></tr></thead>
     <tbody id="cBit"></tbody></table>
     <div id="vacBit" style="padding:32px;text-align:center;color:var(--tm);display:none">Sin registros.</div>
+    <div id="bitPag" style="display:flex;justify-content:center;gap:8px;padding:12px 0;flex-wrap:wrap"></div>
   </div>
 </div>
 
@@ -926,13 +958,13 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <div class="fg">
       <label class="fl">Plataformas *</label>
       <div class="chw" id="mProgPlats">
-        <span class="chip" data-p="ig" onclick="this.classList.toggle('sel')"><span style="color:#C13584">●</span> Instagram</span>
-        <span class="chip" data-p="fb" onclick="this.classList.toggle('sel')"><span style="color:#1877F2">●</span> Facebook</span>
-        <span class="chip" data-p="tt" onclick="this.classList.toggle('sel')"><span style="color:#111">●</span> TikTok</span>
-        <span class="chip" data-p="rd" onclick="this.classList.toggle('sel')"><span style="color:#FF6B00">●</span> Radio</span>
-        <span class="chip" data-p="tv" onclick="this.classList.toggle('sel')"><span style="color:#1b5e20">●</span> Televisión</span>
-        <span class="chip" data-p="pr" onclick="this.classList.toggle('sel')"><span style="color:#4527a0">●</span> Prensa</span>
-        <span class="chip" data-p="yt" onclick="this.classList.toggle('sel')"><span style="color:#FF0000">●</span> YouTube</span>
+        <span class="chip" data-p="ig" onclick="this.classList.toggle('sel');cntCopy(document.getElementById('mProgCopy'))"><span style="color:#C13584">●</span> Instagram</span>
+        <span class="chip" data-p="fb" onclick="this.classList.toggle('sel');cntCopy(document.getElementById('mProgCopy'))"><span style="color:#1877F2">●</span> Facebook</span>
+        <span class="chip" data-p="tt" onclick="this.classList.toggle('sel');cntCopy(document.getElementById('mProgCopy'))"><span style="color:#111">●</span> TikTok</span>
+        <span class="chip" data-p="rd" onclick="this.classList.toggle('sel');cntCopy(document.getElementById('mProgCopy'))"><span style="color:#FF6B00">●</span> Radio</span>
+        <span class="chip" data-p="tv" onclick="this.classList.toggle('sel');cntCopy(document.getElementById('mProgCopy'))"><span style="color:#1b5e20">●</span> Televisión</span>
+        <span class="chip" data-p="pr" onclick="this.classList.toggle('sel');cntCopy(document.getElementById('mProgCopy'))"><span style="color:#4527a0">●</span> Prensa</span>
+        <span class="chip" data-p="yt" onclick="this.classList.toggle('sel');cntCopy(document.getElementById('mProgCopy'))"><span style="color:#FF0000">●</span> YouTube</span>
       </div>
     </div>
     <div class="fr">
@@ -970,6 +1002,16 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <div class="mcab"><div class="mtit" id="mHistTit">Reporte archivado</div><button class="mx" onclick="cerM('mHist')">×</button></div>
   <div class="mbody"><div class="rtxt" id="mHistBody" style="max-height:60vh"></div></div>
   <div class="mpie"><button class="btn bgh bsm" onclick="copHistRep()">📋 Copiar</button><button class="btn bna" onclick="cerM('mHist')">Cerrar</button></div>
+</div></div>
+
+<!-- SESIÓN EXPIRADA -->
+<div class="mov" id="mSesExp"><div class="mo" style="max-width:380px;text-align:center">
+  <div class="mbody" style="padding:32px 28px">
+    <div style="font-size:40px;margin-bottom:14px">🔐</div>
+    <div style="font-size:17px;font-weight:800;color:var(--tx);margin-bottom:8px">Sesión expirada</div>
+    <div style="font-size:13px;color:var(--tm);margin-bottom:24px">Tu sesión ha caducado por seguridad. Debes volver a iniciar sesión para continuar.</div>
+    <button class="btn bna" style="width:100%" onclick="cerM('mSesExp');cerrarSes()">Volver al inicio de sesión</button>
+  </div>
 </div></div>
 
 <script>
@@ -1023,6 +1065,11 @@ let avAsignaciones=[];
 //  PERMISOS
 // ════════════════════════
 // puede(accion): verifica si el usuario actual puede hacer algo
+function puedeEditarT(t){
+  if(['lider','editor'].includes(niv))return true;
+  if(niv==='colaborador'&&t&&(t.creadaPor===uAct?.nombre||t.creadoPorId===uAct?.id))return true;
+  return false;
+}
 function puede(accion){
   switch(accion){
     case 'crearTarea':    return ['lider','editor','colaborador'].includes(niv);
@@ -1055,10 +1102,17 @@ function rAv(n,f,s=28,fs=10){const st=`width:${s}px;height:${s}px;font-size:${fs
 // ════════════════════════
 function getToken(){return localStorage.getItem('cacco_token')||'';}
 
+function sesionExpirada(){
+  if(document.getElementById('mSesExp')?.classList.contains('on'))return;
+  abrirM('mSesExp');
+}
+
 function guardar(){
   const token=getToken();
   if(!token)return;
-  fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(E)}).catch(()=>{});
+  fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(E)})
+    .then(r=>{if(r.status===401)sesionExpirada();})
+    .catch(()=>{});
 }
 
 async function cargar(){
@@ -1147,11 +1201,12 @@ async function tryLogin() {
     return;
   }
 
+  const recordar=document.getElementById('loginRecordar')?.checked||false;
   try {
     const res = await fetch("/api/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password, recordar })
     });
 
     const data = await res.json();
@@ -1214,6 +1269,7 @@ function iniciarApp(){
   document.querySelectorAll('.nhe').forEach(el=>puede('registrarHora')?el.classList.remove('oculto'):el.classList.add('oculto'));
 
   if(niv==='lector')document.body.classList.add('slr');else document.body.classList.remove('slr');
+  if(localStorage.getItem('cacco_calPubVisto'))document.querySelectorAll('.new-tag').forEach(el=>el.style.display='none');
 
   const av=document.getElementById('hdrAv');
   av.style.background=cAv(uAct.nombre);av.textContent=ini(uAct.nombre);
@@ -1262,7 +1318,7 @@ function goV(v,el){
   if(v==='equipo')renderEquipo();
   if(v==='historico')renderHist();
   if(v==='perfil')renderPerfil();
-  if(v==='calPub')renderCalPub();
+  if(v==='calPub'){renderCalPub();localStorage.setItem('cacco_calPubVisto','1');document.querySelectorAll('.new-tag').forEach(el=>el.style.display='none');}
 }
 
 function filtraCat(c,el){fCat=c;document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));if(el)el.classList.add('on');goV('tareas',null);renderTareas();}
@@ -1306,19 +1362,18 @@ function misCats(){
 function getTareas(){
   const fe=document.getElementById('filtEst')?.value||'todos';
   const solo=document.getElementById('soloMias')?.checked||false;
+  const busq=(document.getElementById('busqTarea')?.value||'').toLowerCase().trim();
   return E.tareas.filter(t=>{
     if(t.borrador)return false;
     let catOk;
     if(fCat==='todos')catOk=true;
-    else{
-      catOk=t.secciones?.[fCat]||((t.categorias||[]).includes(fCat));
-    }
+    else{catOk=t.secciones?.[fCat]||((t.categorias||[]).includes(fCat));}
     const estOk=fe==='todos'||eglobal(t)===fe;
     const mySec=misCats();
     const mOk=!solo||mySec.some(s=>t.secciones?.[s]||(t.categorias||[]).includes(s));
-    return catOk&&estOk&&mOk;
+    const bOk=!busq||(t.titulo||'').toLowerCase().includes(busq)||(t.notas||'').toLowerCase().includes(busq);
+    return catOk&&estOk&&mOk&&bOk;
   }).sort((a,b)=>{
-    // Sin fecha va al final
     if(!a.fecha&&!b.fecha)return 0;
     if(!a.fecha)return 1;
     if(!b.fecha)return -1;
@@ -1327,6 +1382,14 @@ function getTareas(){
 }
 
 function renderTareas(){
+  // Chip de filtro activo
+  const fa=document.getElementById('filtActivo');
+  if(fa){
+    const chips=[];
+    if(fCat&&fCat!=='todos')chips.push(`<span style="display:inline-flex;align-items:center;gap:5px;background:var(--na);color:#fff;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600">${fCat} <button onclick="filtraCat('todos',null);document.querySelector('.ni[onclick*=\\\"todos\\\"]')?.classList.add('on')" style="background:none;border:none;color:#fff;cursor:pointer;font-size:13px;line-height:1;padding:0 0 0 3px" title="Limpiar filtro">✕</button></span>`);
+    fa.style.display=chips.length?'flex':'none';
+    fa.innerHTML=chips.length?`<span style="font-size:12px;color:var(--tm);font-weight:500">Filtro activo:</span>${chips.join('')}`:'';
+  }
   const ts=getTareas();
   document.getElementById('stTot').textContent=E.tareas.length;
   document.getElementById('stPen').textContent=E.tareas.filter(t=>eglobal(t)==='Pendiente').length;
@@ -1483,9 +1546,11 @@ function renderTareas(){
             ?`<button class="btn bna bsm" style="font-size:11px;padding:3px 10px" onclick="event.stopPropagation();avanzarEtapaDis('${t.id}')">Avanzar → ${DIS_ETAPAS[etapaIdx+1]}</button>`:'';
           const btnRevertir=canAvanzar&&etapaIdx>0
             ?`<button class="btn bgh bsm" style="font-size:11px;padding:3px 10px" onclick="event.stopPropagation();revertirEtapaDis('${t.id}')">← Revertir</button>`:'';
+          const notaEtapa=sv?.notaEtapa?`<div style="font-size:11px;color:var(--tm);margin-top:6px;padding:4px 8px;background:var(--ams);border-radius:4px;border-left:3px solid var(--am)">📝 ${sv.notaEtapa}</div>`:'';
           detalle=`<div style="padding:10px;background:var(--su);border:1px solid var(--bo);border-radius:var(--rs);margin-bottom:8px">
             <div style="display:flex;align-items:center;gap:4px;margin-bottom:10px">${stepper}</div>
             <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">${btnAvanzar}${btnRevertir}</div>
+            ${notaEtapa}
           </div>`;
         }else if(sec==='Audiovisual'&&t.audiovisualData?.asignaciones?.length){
           const AV_MED={foto:{bg:'#E1F5EE',col:'#0F6E56',lbl:'📷 FOTO'},video:{bg:'#E3F2FD',col:'#185FA5',lbl:'🎬 VIDEO'}};
@@ -1567,8 +1632,9 @@ function renderTareas(){
 
     const etiqH=(t.etiquetas||[]).map(e=>`<span class="bg bmor">${e}</span>`).join('');
     const notaPreview=t.notas?`<div style="font-size:12px;color:var(--tm);margin-top:3px;word-break:break-word">📝 ${t.notas}</div>`:'';
-    const acciones=abierta&&(puede('editarTarea')||puede('eliminarTarea'))?`<div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
-      ${puede('editarTarea')?`<button class="btn bna bsm" onclick="event.stopPropagation();editT('${t.id}')">✏️ Editar</button>`:''}
+    const acciones=abierta&&(puedeEditarT(t)||puede('eliminarTarea')||puede('crearTarea'))?`<div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+      ${puedeEditarT(t)?`<button class="btn bna bsm" onclick="event.stopPropagation();editT('${t.id}')">✏️ Editar</button>`:''}
+      ${puede('crearTarea')?`<button class="btn bgh bsm" onclick="event.stopPropagation();duplT('${t.id}')">📋 Duplicar</button>`:''}
       ${puede('eliminarTarea')?`<button class="btn bpe bsm" onclick="event.stopPropagation();elimT('${t.id}')">🗑 Eliminar</button>`:''}
     </div>`:'';
 
@@ -1587,9 +1653,11 @@ function renderTareas(){
           :`<button class="btn bna bsm" style="font-size:11px;padding:2px 8px" onclick="event.stopPropagation();marcarPublicadoById('${p.id}','publicado');renderTareas()">Marcar publicado</button>`)
           :'';
         const editBtn=canProg?`<button class="btn bgh bsm" style="font-size:11px;padding:2px 8px" onclick="event.stopPropagation();editarPublicacion('${p.id}')">✏️</button>`:'';
+        const linkHTML=p.linkPublicado?`<a href="${p.linkPublicado}" target="_blank" rel="noopener noreferrer" style="font-size:11px;color:var(--na);white-space:nowrap" onclick="event.stopPropagation()">🔗 Ver</a>`:'';
         return`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--bo);flex-wrap:wrap">
           <div style="display:flex;gap:4px;flex-wrap:wrap;flex-shrink:0">${platDots}</div>
           <div style="flex:1;min-width:0;font-size:12px;font-weight:600;color:var(--tx)">${fmtPubFecha(p.fecha)} · ${p.hora}  ${p.titulo}</div>
+          ${linkHTML}
           <span style="font-size:13px;flex-shrink:0">${estadoIco}</span>
           ${accionBtn}
           ${editBtn}
@@ -1707,10 +1775,11 @@ function togCat(tareaId,cat){
 }
 
 function abrirMT(id){
-  if(!puede('crearTarea')){alert('Sin permiso para crear o editar tareas.');return;}
+  const t=id?E.tareas.find(t=>t.id===id):null;
+  if(id&&!puedeEditarT(t)){alert('Sin permiso para editar esta tarea.');return;}
+  if(!id&&!puede('crearTarea')){alert('Sin permiso para crear tareas.');return;}
   document.getElementById('mTTit').textContent=id?'Editar Tarea':'Nueva Tarea';
   document.getElementById('tId').value=id||'';
-  const t=id?E.tareas.find(t=>t.id===id):null;
   document.getElementById('tTit').value=t?.titulo||'';
   document.getElementById('tPri').value=t?.prioridad||'Media';
   document.getElementById('tFecha').value=t?.fecha||'';
@@ -2072,6 +2141,7 @@ function guardarT(){
     recurrencia:document.getElementById('tRec').value,
     creadaEn:orig?.creadaEn||hoy(),
     creadaPor:orig?.creadaPor||uAct?.nombre,
+    creadoPorId:orig?.creadoPorId||uAct?.id,
     secciones,
     redesSociales,
     mediosData,
@@ -2107,6 +2177,7 @@ function guardarBorrador(){
     recurrencia:document.getElementById('tRec').value,
     creadaEn:orig?.creadaEn||hoy(),
     creadaPor:orig?.creadaPor||uAct?.nombre,
+    creadoPorId:orig?.creadoPorId||uAct?.id,
     secciones:orig?.secciones||{},
     entregables:orig?.entregables||[]
   };
@@ -2156,15 +2227,17 @@ function avanzarEtapaDis(tareaId){
   const idx=DIS_ETAPAS.indexOf(sv.etapa||'Maquetación');
   if(idx>=DIS_ETAPAS.length-1)return;
   const nuevaEtapa=DIS_ETAPAS[idx+1];
+  const nota=prompt(`Nota para avanzar a "${nuevaEtapa}" (opcional — presiona Enter para omitir):`,'')||'';
   t.secciones['Diseño']={...sv,etapa:nuevaEtapa};
+  if(nota)t.secciones['Diseño'].notaEtapa=nota;
   if(nuevaEtapa==='Completado'){
     t.secciones['Diseño']={...t.secciones['Diseño'],estado:'Completada',completadoPor:uAct?.nombre,completadoEn:hoy()};
-    reg('Diseño completado',`"${t.titulo}" — etapa Completado`);
+    reg('Diseño completado',`"${t.titulo}" — etapa Completado${nota?' · '+nota:''}`);
     addNotif('✅',`Diseño completado: "${t.titulo}"`,`Por ${uAct?.nombre}`);
     if(pctT(t)===100)addNotif('🎉',`Tarea completada: "${t.titulo}"`,'100% — todas las secciones listas');
   } else {
     if(sv.estado==='Completada')t.secciones['Diseño']={...t.secciones['Diseño'],estado:'Pendiente',completadoPor:null,completadoEn:null};
-    reg('Diseño avanzó',`"${t.titulo}" — etapa ${nuevaEtapa}`);
+    reg('Diseño avanzó',`"${t.titulo}" — etapa ${nuevaEtapa}${nota?' · '+nota:''}`);
   }
   expandidas.add(tareaId);guardar();renderTareas();
 }
@@ -2493,11 +2566,20 @@ function guardarProg(){
   cerM('mProg');
 }
 
+function getLimCopy(){
+  const LIMS={tw:280,x:280,ig:2200,fb:63206,tt:2200,yt:5000,rd:500,tv:500,pr:800};
+  const plats=[...document.querySelectorAll('#mProgPlats .chip.sel')].map(c=>c.dataset.p||c.dataset.plat);
+  if(!plats.length)return{lim:2200,nom:'Instagram'};
+  const sorted=plats.map(p=>({p,l:LIMS[p]||2200})).sort((a,b)=>a.l-b.l);
+  const nom={tw:'Twitter/X',x:'Twitter/X',ig:'Instagram',fb:'Facebook',tt:'TikTok',yt:'YouTube',rd:'Radio',tv:'TV',pr:'Prensa'}[sorted[0].p]||sorted[0].p;
+  return{lim:sorted[0].l,nom};
+}
 function cntCopy(ta){
-  const lim=2200,len=ta.value.length,pct=Math.min(len/lim*100,100);
+  const{lim,nom}=getLimCopy();
+  const len=ta.value.length,pct=Math.min(len/lim*100,100);
   const lbl=document.getElementById('mProgCntLbl'),bar=document.getElementById('mProgCntBar');
   if(!lbl||!bar)return;
-  lbl.textContent=len+' / '+lim;
+  lbl.textContent=`${len} / ${lim} (${nom})`;
   bar.style.width=pct+'%';
   const col=len>lim?'#dc2626':len>lim*.8?'#d97706':'#16a34a';
   bar.style.background=col;lbl.style.color=len>lim?'#dc2626':len>lim*.8?'#d97706':'var(--tm)';
@@ -2659,6 +2741,7 @@ function renderCalPubAgenda(pubs){
           ${p.notas?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">💬 Notas</div><div style="font-size:12px;color:var(--tm)">${p.notas}</div></div>`:''}
           ${p.responsableNombre?`<div style="margin-bottom:10px;font-size:12px;color:var(--tm)">👤 Responsable: <strong>${p.responsableNombre}</strong></div>`:''}
           ${p.links?.length?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">🔗 Links</div>${p.links.map(l=>`<a href="${l}" target="_blank" style="display:block;font-size:12px;color:var(--az);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l}</a>`).join('')}</div>`:''}
+          ${p.linkPublicado?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--ve);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">✅ Link publicado</div><a href="${p.linkPublicado}" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:var(--na)">${p.linkPublicado}</a></div>`:''}
           <div id="apub-ents-${p._idx}"></div>
           ${puede('marcarAvance')?`<div style="display:flex;gap:6px;margin-top:10px"><button class="btn bgh bsm" onclick="event.stopPropagation();editarPub('${p.id}')">✏️ Editar</button>${!p.tareaId&&!p.entId||niv==='lider'?`<button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro)" onclick="event.stopPropagation();elimPub('${p.id}')">🗑 Eliminar</button>`:''}</div>`:''}
         </div>`;
@@ -2746,7 +2829,19 @@ function verDiaPub(dia){
 
 function marcarPublicadoById(id,estado){
   const p=(E.publicaciones||[]).find(p=>p.id===id);
-  if(p){p.estado=estado;guardar();renderCalPub();}
+  if(!p)return;
+  if(estado==='publicado'){
+    const link=prompt('¿Link donde quedó publicado? (opcional — presiona Cancelar o deja vacío para omitir)','');
+    if(link===null){/* usuario canceló completamente */}else{p.linkPublicado=link.trim()||'';}
+    p.estado='publicado';
+    p.publicadoPor=uAct?.nombre;
+    p.publicadoEn=hoy();
+    reg('Publicación marcada',`"${p.titulo||'—'}" publicada${p.linkPublicado?' · '+p.linkPublicado:''}`);
+  }else{
+    p.estado=estado;
+    delete p.linkPublicado;delete p.publicadoPor;delete p.publicadoEn;
+  }
+  guardar();renderCalPub();renderTareas();
 }
 
 function revertirPublicado(pubId){
@@ -2818,6 +2913,25 @@ function elimT(id){
   guardar();renderTareas();
 }
 
+function duplT(id){
+  if(!puede('crearTarea')){alert('Sin permiso para crear tareas.');return;}
+  const t=E.tareas.find(t=>t.id===id);if(!t)return;
+  const copia=JSON.parse(JSON.stringify(t));
+  copia.id=gId();
+  copia.titulo=copia.titulo+' (copia)';
+  copia.creadaPor=uAct?.nombre;
+  copia.creadaEn=hoy();
+  // Reiniciar estados de secciones
+  if(copia.secciones)Object.keys(copia.secciones).forEach(sec=>{
+    if(copia.secciones[sec]){copia.secciones[sec].estado='Pendiente';delete copia.secciones[sec].completadoPor;delete copia.secciones[sec].completadoEn;}
+  });
+  copia.entregables=(copia.entregables||[]).map(e=>({...e,id:gId(),completado:false,completadoPor:'',completadoEn:''}));
+  E.tareas.push(copia);
+  reg('Tarea duplicada',`"${t.titulo}" → "${copia.titulo}" por ${uAct?.nombre}`);
+  guardar();renderTareas();
+  alert(`✅ Tarea duplicada: "${copia.titulo}"`);
+}
+
 // ════════════════════════
 //  HORAS EXTRAS
 // ════════════════════════
@@ -2829,6 +2943,15 @@ function renderHoras(){
   const alHE=document.getElementById('alHE');
   if(puede('aprobarHora')&&pen.length){alHE.classList.remove('oculto');document.getElementById('txHE').textContent=`${pen.length} hora(s) pendiente(s) de aprobación.`;}
   else alHE.classList.add('oculto');
+
+  // Resumen por persona (solo para editor/líder)
+  const resDiv=document.getElementById('heResumen');
+  if(resDiv&&niv!=='colaborador'&&niv!=='lector'&&apr.length){
+    const porP={};apr.forEach(h=>{if(!porP[h.miembro])porP[h.miembro]=0;porP[h.miembro]+=parseFloat(h.horas||0);});
+    const items=Object.entries(porP).sort((a,b)=>b[1]-a[1]).map(([nom,hrs])=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--su);border:1px solid var(--bo);border-radius:8px"><div style="flex:1;font-size:13px;font-weight:600">${rAv(nom,'',22,8)} ${nom}</div><div style="font-size:14px;font-weight:800;color:var(--na)">${hrs.toFixed(1)} hrs</div></div>`).join('');
+    resDiv.style.display='block';
+    resDiv.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Horas aprobadas por persona</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px">${items}</div>`;
+  } else if(resDiv){resDiv.style.display='none';}
 
   // Colaboradores solo ven las suyas
   const vis=niv==='colaborador'?hs.filter(h=>h.miembro===uAct?.nombre):niv==='lector'?[]:hs;
@@ -3533,6 +3656,7 @@ function renderHist(){
       <div style="display:flex;gap:8px;align-items:center">
         <span class="bg ${h.pct>=80?'blis':h.pct>=50?'bmed':'balt'}">${h.pct}%</span>
         <button class="btn bgh bsm" onclick="verHistRep('${h.id}')">Ver reporte</button>
+        ${puede('cerrarMes')?`<button class="btn bpe bsm" onclick="elimHist('${h.id}')" title="Eliminar reporte">🗑</button>`:''}
       </div>
     </div>`).join('');
 }
@@ -3545,6 +3669,15 @@ function verHistRep(id){
 }
 function copHistRep(){navigator.clipboard.writeText(document.getElementById('mHistBody')?.textContent||'').then(()=>alert('✅ Copiado.'));}
 
+function elimHist(id){
+  if(!puede('cerrarMes')){alert('Sin permiso.');return;}
+  const h=E.historico.find(h=>h.id===id);
+  if(!h||!confirm(`¿Eliminar el reporte "${h.mes}"? Esta acción no se puede deshacer.`))return;
+  E.historico=E.historico.filter(h=>h.id!==id);
+  reg('Reporte eliminado',`"${h.mes}" eliminado por ${uAct?.nombre}`);
+  guardar();renderHist();
+}
+
 // ════════════════════════
 //  BITÁCORA
 // ════════════════════════
@@ -3555,21 +3688,62 @@ function reg(accion,detalle){
   guardar();
 }
 
+let bitPagina=0;
+const BIT_POR_PAG=25;
+
 function renderBit(){
   const tbody=document.getElementById('cBit'),vac=document.getElementById('vacBit');
-  if(!E.bitacora.length){tbody.innerHTML='';vac.style.display='block';return;}
-  vac.style.display='none';
   const cls={'Tarea creada':'bpro','Tarea editada':'bmed','Tarea eliminada':'balt','Avance completado':'blis','Avance revertido':'bmed','Hora registrada':'bnar','Hora aprobada':'blis','Hora rechazada':'balt','Hora editada':'bmed','Hora eliminada':'balt','Persona creada':'blis','Persona editada':'bmor','Persona eliminada':'balt','Perfil actualizado':'bgr','Mes cerrado':'bnar','Bitácora limpiada':'bgr'};
-  tbody.innerHTML=E.bitacora.map(r=>`<tr>
+
+  // Actualizar opciones de usuarios
+  const selU=document.getElementById('bitFiltU');
+  if(selU&&selU.options.length<=1){
+    const users=[...new Set(E.bitacora.map(r=>r.usuario||'—').filter(Boolean))].sort();
+    users.forEach(u=>{const o=document.createElement('option');o.value=u;o.textContent=u;selU.appendChild(o);});
+  }
+
+  const busq=(document.getElementById('bitBusq')?.value||'').toLowerCase();
+  const filtU=document.getElementById('bitFiltU')?.value||'';
+  const filtA=document.getElementById('bitFiltA')?.value||'';
+
+  const filtrados=E.bitacora.filter(r=>{
+    const uOk=!filtU||(r.usuario||'')=== filtU;
+    const aOk=!filtA||r.accion===filtA;
+    const bOk=!busq||(r.detalle||'').toLowerCase().includes(busq)||(r.accion||'').toLowerCase().includes(busq)||(r.usuario||'').toLowerCase().includes(busq);
+    return uOk&&aOk&&bOk;
+  });
+
+  if(!filtrados.length){tbody.innerHTML='';vac.style.display='block';document.getElementById('bitPag').innerHTML='';return;}
+  vac.style.display='none';
+
+  const totalPags=Math.ceil(filtrados.length/BIT_POR_PAG);
+  if(bitPagina>=totalPags)bitPagina=totalPags-1;
+  const inicio=bitPagina*BIT_POR_PAG;
+  const pag=filtrados.slice(inicio,inicio+BIT_POR_PAG);
+
+  tbody.innerHTML=pag.map(r=>`<tr>
     <td style="font-size:12px;color:var(--tm);white-space:nowrap">${r.fecha} ${r.hora}</td>
     <td><div style="display:flex;align-items:center;gap:7px">${rAv(r.usuario||'?','',24,9)}<span style="font-size:13px">${r.usuario||'—'}</span></div></td>
     <td><span class="bg ${cls[r.accion]||'bgr'}">${r.accion}</span></td>
     <td style="font-size:13px">${r.detalle}</td>
   </tr>`).join('');
+
+  // Paginación
+  const pagDiv=document.getElementById('bitPag');
+  if(totalPags<=1){pagDiv.innerHTML='';return;}
+  let pgH=`<span style="font-size:12px;color:var(--tm)">Página ${bitPagina+1} / ${totalPags} · ${filtrados.length} registros</span>`;
+  pgH+=`<button class="btn bgh bsm" onclick="bitPagina=Math.max(0,bitPagina-1);renderBit()" ${bitPagina===0?'disabled':''}>◀</button>`;
+  for(let i=0;i<totalPags;i++){if(Math.abs(i-bitPagina)<=2||i===0||i===totalPags-1){pgH+=`<button class="btn bsm ${i===bitPagina?'bna':'bgh'}" onclick="bitPagina=${i};renderBit()">${i+1}</button>`;}}
+  pgH+=`<button class="btn bgh bsm" onclick="bitPagina=Math.min(totalPags-1,bitPagina+1);renderBit()" ${bitPagina===totalPags-1?'disabled':''}>▶</button>`;
+  pagDiv.innerHTML=pgH;
 }
 
 function limpBit(){
   if(!confirm('¿Eliminar todo el historial de cambios?'))return;
+  // Reset selector de usuarios
+  const selU=document.getElementById('bitFiltU');
+  if(selU)while(selU.options.length>1)selU.remove(1);
+  bitPagina=0;
   E.bitacora=[];reg('Bitácora limpiada','Por '+uAct?.nombre);guardar();renderBit();
 }
 
@@ -3579,7 +3753,12 @@ function limpBit(){
 function abrirM(id){document.getElementById(id).classList.add('on');}
 function cerM(id){document.getElementById(id).classList.remove('on');}
 document.querySelectorAll('.mov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('on');}));
-document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.mov.on').forEach(o=>o.classList.remove('on'));});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    document.querySelectorAll('.mov.on').forEach(o=>o.classList.remove('on'));
+    cerrarSid();
+  }
+});
 document.addEventListener('click',e=>{if(!e.target.closest('#notifPanel')&&!e.target.closest('.nb'))document.getElementById('notifPanel').classList.remove('on');});
 
 // ════════════════════════
@@ -3592,6 +3771,7 @@ async function sincronizar(){
   if(!token){if(btn){btn.textContent='🔄';btn.disabled=false;}return;}
   try{
     const res=await fetch('/api/data',{headers:{'Authorization':'Bearer '+token}});
+    if(res.status===401){sesionExpirada();if(btn){btn.textContent='🔄';btn.disabled=false;}return;}
     if(res.ok){
       const s=await res.json();
       if(s&&Object.keys(s).length){
