@@ -90,7 +90,8 @@
           "responsables": [],
           "estado": "Pendiente",
           "completadoPor": null,
-          "completadoEn": null
+          "completadoEn": null,
+          "etapa": "Maquetación"
         },
         "Redes Sociales": {
           "responsables": [

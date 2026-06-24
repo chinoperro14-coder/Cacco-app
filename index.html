@@ -1099,6 +1099,12 @@ async function cargar(){
             if(!u.secciones){u.secciones=u.seccion?[u.seccion]:[];}
             delete u.seccion;
           });
+          // Inicializar etapa en sección Diseño
+          E.tareas.forEach(t=>{
+            if(t.secciones?.['Diseño']&&!t.secciones['Diseño'].etapa){
+              t.secciones['Diseño'].etapa='Maquetación';
+            }
+          });
         }
       }
     }catch(e){}
@@ -1269,7 +1275,8 @@ function actuCts(){document.getElementById('ctT').textContent=E.tareas.length;do
 function eglobal(t){
   // New model: secciones
   if(t.secciones&&Object.keys(t.secciones).length){
-    const avs=Object.values(t.secciones);
+    const avs=Object.values(t.secciones).filter(Boolean);
+    if(!avs.length)return'Pendiente';
     if(avs.every(s=>s.estado==='Completada'))return'Completada';
     if(avs.some(s=>s.estado==='Completada'))return'En Progreso';
     return'Pendiente';
@@ -1283,7 +1290,8 @@ function eglobal(t){
 }
 function pctT(t){
   if(t.secciones&&Object.keys(t.secciones).length){
-    const avs=Object.values(t.secciones);
+    const avs=Object.values(t.secciones).filter(Boolean);
+    if(!avs.length)return 0;
     return Math.round(avs.filter(s=>s.estado==='Completada').length/avs.length*100);
   }
   const avs=Object.values(t.avances||{});
@@ -1369,6 +1377,7 @@ function renderTareas(){
       });
 
       seccionesHTML=Object.entries(t.secciones).map(([sec,sv])=>{
+        if(!sv)return'';
         const comp=sv.estado==='Completada';
         const canMark=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||mySec.includes(sec));
         const sInfo=SECCIONES[sec]||{ico:'📌',color:'#888',bg:'#eee'};
@@ -1454,6 +1463,30 @@ function renderTareas(){
             mkM('redaccion','notas','Nota Redacción'),
           ].filter(Boolean);
           if(medRows.length)detalle=`<div style="margin-bottom:8px">${medRows.join('')}</div>`;
+        }else if(sec==='Diseño'){
+          const DIS_ETAPAS=['Maquetación','Diseño','Reemplazo','Revisión','Completado'];
+          const etapaActual=sv.etapa||'Maquetación';
+          const etapaIdx=DIS_ETAPAS.indexOf(etapaActual);
+          const canAvanzar=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||mySec.includes('Diseño'));
+          const stepper=DIS_ETAPAS.map((e,i)=>{
+            const done=i<etapaIdx;
+            const cur=i===etapaIdx;
+            const bg=done?'#854F0B':cur?'#FAEEDA':'var(--su)';
+            const col=done?'#fff':cur?'#854F0B':'var(--tm)';
+            const bor=cur?'2px solid #854F0B':'1px solid var(--bo)';
+            return`<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:60px">
+              <div style="width:28px;height:28px;border-radius:50%;background:${bg};border:${bor};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:${col};margin-bottom:3px">${done?'✓':i+1}</div>
+              <div style="font-size:10px;text-align:center;color:${cur?'#854F0B':'var(--tm)'};font-weight:${cur?'700':'400'};line-height:1.2">${e}</div>
+            </div>`;
+          }).join('<div style="flex:1;height:2px;background:var(--bo);margin-top:13px;min-width:8px"></div>');
+          const btnAvanzar=canAvanzar&&etapaIdx<DIS_ETAPAS.length-1
+            ?`<button class="btn bna bsm" style="font-size:11px;padding:3px 10px" onclick="event.stopPropagation();avanzarEtapaDis('${t.id}')">Avanzar → ${DIS_ETAPAS[etapaIdx+1]}</button>`:'';
+          const btnRevertir=canAvanzar&&etapaIdx>0
+            ?`<button class="btn bgh bsm" style="font-size:11px;padding:3px 10px" onclick="event.stopPropagation();revertirEtapaDis('${t.id}')">← Revertir</button>`:'';
+          detalle=`<div style="padding:10px;background:var(--su);border:1px solid var(--bo);border-radius:var(--rs);margin-bottom:8px">
+            <div style="display:flex;align-items:center;gap:4px;margin-bottom:10px">${stepper}</div>
+            <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">${btnAvanzar}${btnRevertir}</div>
+          </div>`;
         }else if(sec==='Audiovisual'&&t.audiovisualData?.asignaciones?.length){
           const AV_MED={foto:{bg:'#E1F5EE',col:'#0F6E56',lbl:'📷 FOTO'},video:{bg:'#E3F2FD',col:'#185FA5',lbl:'🎬 VIDEO'}};
           const AV_TIPO={REEL:{bg:'#E3F2FD',col:'#185FA5'},INSTITUCIONAL:{bg:'#E8F5E9',col:'#2E7D32'},PROMOCIONAL:{bg:'#EDE7F6',col:'#6A1B9A'},COBERTURA:{bg:'#FFF8E1',col:'#F57F17'}};
@@ -1480,7 +1513,7 @@ function renderTareas(){
             ?`<div class="prog-badge" onclick="event.stopPropagation();programarEntregable('${t.id}','${e.id}')">📅 ${fmtPubFecha(pub.fecha)} · ${pub.hora}</div>`
             :(canAddEnt?`<button class="btn-prog" onclick="event.stopPropagation();programarEntregable('${t.id}','${e.id}')">📅 Programar</button>`:'');
           return`<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--fo);border:1px solid var(--bo);border-radius:var(--rs);margin-bottom:4px;font-size:12px;flex-wrap:wrap">
-            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🔗 <a href="${e.url.startsWith('http')?e.url:'https://'+e.url}" target="_blank" style="color:var(--az)" onclick="event.stopPropagation()">${e.nombre}</a></span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🔗 <a href="${(e.url||'').startsWith('http')?e.url:'https://'+(e.url||'')}" target="_blank" style="color:var(--az)" onclick="event.stopPropagation()">${e.nombre}</a></span>
             <span style="color:var(--tm);font-size:11px;white-space:nowrap">${e.subidoPor||''}</span>
             ${progEl}
             ${canAddEnt&&(e.subidoPorId===uAct?.id||niv==='lider')?`<button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro);padding:1px 6px;font-size:10px" onclick="event.stopPropagation();elimEntregable('${t.id}','${e.id}')">✕</button>`:''}
@@ -1977,7 +2010,8 @@ function guardarT(){
         responsables,
         estado:prev.estado||'Pendiente',
         completadoPor:prev.completadoPor||null,
-        completadoEn:prev.completadoEn||null
+        completadoEn:prev.completadoEn||null,
+        ...(sec==='Diseño'?{etapa:prev.etapa||'Maquetación'}:{})
       };
       seccionesCount++;
     }
@@ -2111,6 +2145,40 @@ function togSeccion(tareaId,sec){
   }
   expandidas.add(tareaId);
   guardar();renderTareas();
+}
+
+const DIS_ETAPAS=['Maquetación','Diseño','Reemplazo','Revisión','Completado'];
+
+function avanzarEtapaDis(tareaId){
+  if(!puede('marcarAvance')){alert('Sin permiso.');return;}
+  const t=E.tareas.find(t=>t.id===tareaId);if(!t||!t.secciones?.['Diseño'])return;
+  const sv=t.secciones['Diseño'];
+  const idx=DIS_ETAPAS.indexOf(sv.etapa||'Maquetación');
+  if(idx>=DIS_ETAPAS.length-1)return;
+  const nuevaEtapa=DIS_ETAPAS[idx+1];
+  t.secciones['Diseño']={...sv,etapa:nuevaEtapa};
+  if(nuevaEtapa==='Completado'){
+    t.secciones['Diseño']={...t.secciones['Diseño'],estado:'Completada',completadoPor:uAct?.nombre,completadoEn:hoy()};
+    reg('Diseño completado',`"${t.titulo}" — etapa Completado`);
+    addNotif('✅',`Diseño completado: "${t.titulo}"`,`Por ${uAct?.nombre}`);
+    if(pctT(t)===100)addNotif('🎉',`Tarea completada: "${t.titulo}"`,'100% — todas las secciones listas');
+  } else {
+    if(sv.estado==='Completada')t.secciones['Diseño']={...t.secciones['Diseño'],estado:'Pendiente',completadoPor:null,completadoEn:null};
+    reg('Diseño avanzó',`"${t.titulo}" — etapa ${nuevaEtapa}`);
+  }
+  expandidas.add(tareaId);guardar();renderTareas();
+}
+
+function revertirEtapaDis(tareaId){
+  if(!puede('marcarAvance')){alert('Sin permiso.');return;}
+  const t=E.tareas.find(t=>t.id===tareaId);if(!t||!t.secciones?.['Diseño'])return;
+  const sv=t.secciones['Diseño'];
+  const idx=DIS_ETAPAS.indexOf(sv.etapa||'Maquetación');
+  if(idx<=0)return;
+  const nuevaEtapa=DIS_ETAPAS[idx-1];
+  t.secciones['Diseño']={...sv,etapa:nuevaEtapa,estado:'Pendiente',completadoPor:null,completadoEn:null};
+  reg('Diseño revertido',`"${t.titulo}" — etapa ${nuevaEtapa}`);
+  expandidas.add(tareaId);guardar();renderTareas();
 }
 
 function cambCompRed(tareaId,rKey,campo,delta){
