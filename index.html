@@ -1463,11 +1463,18 @@ function renderTareas(){
         }
 
         const secEnts=seccEntregables[sec]||[];
-        const entItems=secEnts.map(e=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--fo);border:1px solid var(--bo);border-radius:var(--rs);margin-bottom:4px;font-size:12px">
-          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🔗 <a href="${e.url.startsWith('http')?e.url:'https://'+e.url}" target="_blank" style="color:var(--az)" onclick="event.stopPropagation()">${e.nombre}</a></span>
-          <span style="color:var(--tm);font-size:11px;white-space:nowrap">${e.subidoPor||''}</span>
-          ${canAddEnt?`<button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro);padding:1px 6px;font-size:10px" onclick="event.stopPropagation();elimEntregable('${t.id}','${e.id}')">✕</button>`:''}
-        </div>`).join('');
+        const entItems=secEnts.map(e=>{
+          const pub=(E.publicaciones||[]).find(p=>p.entId===e.id&&p.tareaId===t.id);
+          const progEl=pub
+            ?`<div class="prog-badge" onclick="event.stopPropagation();programarEntregable('${t.id}','${e.id}')">📅 ${fmtPubFecha(pub.fecha)} · ${pub.hora}</div>`
+            :(canAddEnt?`<button class="btn-prog" onclick="event.stopPropagation();programarEntregable('${t.id}','${e.id}')">📅 Programar</button>`:'');
+          return`<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--fo);border:1px solid var(--bo);border-radius:var(--rs);margin-bottom:4px;font-size:12px;flex-wrap:wrap">
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🔗 <a href="${e.url.startsWith('http')?e.url:'https://'+e.url}" target="_blank" style="color:var(--az)" onclick="event.stopPropagation()">${e.nombre}</a></span>
+            <span style="color:var(--tm);font-size:11px;white-space:nowrap">${e.subidoPor||''}</span>
+            ${progEl}
+            ${canAddEnt&&(e.subidoPorId===uAct?.id||niv==='lider')?`<button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro);padding:1px 6px;font-size:10px" onclick="event.stopPropagation();elimEntregable('${t.id}','${e.id}')">✕</button>`:''}
+          </div>`;
+        }).join('');
 
         const secKey=sec.replace(/\s/g,'_');
         const addEntForm=canAddEnt?`<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
@@ -2067,6 +2074,20 @@ function cambCompRed(tareaId,rKey,campo,delta){
   const asig=t.redesSociales[rKey][campo]||0;
   const cur=t.redesSociales[rKey][campo+'_comp']||0;
   t.redesSociales[rKey][campo+'_comp']=Math.min(asig,Math.max(0,cur+delta));
+  // Auto-complete Redes section when all assigned items reach 100%
+  if(t.secciones?.['Redes Sociales']){
+    const rs=t.redesSociales||{};
+    const allDone=Object.values(rs).every(r=>
+      Object.keys(r).filter(k=>!k.startsWith('tipo_')&&!k.endsWith('_comp')).every(k=>{
+        const a=r[k]||0;return a===0||(r[k+'_comp']||0)>=a;
+      })
+    );
+    if(allDone&&t.secciones['Redes Sociales'].estado!=='Completada'){
+      t.secciones['Redes Sociales']={...t.secciones['Redes Sociales'],estado:'Completada',completadoPor:uAct?.nombre,completadoEn:hoy()};
+      reg('Avance completado',`"${t.titulo}" — Redes Sociales completado automáticamente`);
+      if(pctT(t)===100)addNotif('🎉',`Tarea completada: "${t.titulo}"`,'100% — todas las secciones listas');
+    }
+  }
   expandidas.add(tareaId);guardar();renderTareas();
 }
 
@@ -2076,6 +2097,20 @@ function cambCompMed(tareaId,mKey,campo,delta){
   const asig=t.mediosData[mKey][campo]||0;
   const cur=t.mediosData[mKey][campo+'_comp']||0;
   t.mediosData[mKey][campo+'_comp']=Math.min(asig,Math.max(0,cur+delta));
+  // Auto-complete Medios section when all assigned items reach 100%
+  if(t.secciones?.['Medios']){
+    const md=t.mediosData||{};
+    const allDone=Object.values(md).every(m=>
+      Object.keys(m).filter(k=>!k.endsWith('_comp')).every(k=>{
+        const a=m[k]||0;return a===0||(m[k+'_comp']||0)>=a;
+      })
+    );
+    if(allDone&&t.secciones['Medios'].estado!=='Completada'){
+      t.secciones['Medios']={...t.secciones['Medios'],estado:'Completada',completadoPor:uAct?.nombre,completadoEn:hoy()};
+      reg('Avance completado',`"${t.titulo}" — Medios completado automáticamente`);
+      if(pctT(t)===100)addNotif('🎉',`Tarea completada: "${t.titulo}"`,'100% — todas las secciones listas');
+    }
+  }
   expandidas.add(tareaId);guardar();renderTareas();
 }
 
@@ -2083,6 +2118,19 @@ function togCompAV(tareaId,idx){
   const t=E.tareas.find(t=>t.id===tareaId);
   if(!t?.audiovisualData?.asignaciones?.[idx])return;
   t.audiovisualData.asignaciones[idx].comp=!t.audiovisualData.asignaciones[idx].comp;
+  // Auto-complete Audiovisual section when all assignments are marked done
+  if(t.secciones?.['Audiovisual']){
+    const asigs=t.audiovisualData.asignaciones;
+    const allDone=asigs.length>0&&asigs.every(a=>a.comp);
+    if(allDone&&t.secciones['Audiovisual'].estado!=='Completada'){
+      t.secciones['Audiovisual']={...t.secciones['Audiovisual'],estado:'Completada',completadoPor:uAct?.nombre,completadoEn:hoy()};
+      reg('Avance completado',`"${t.titulo}" — Audiovisual completado automáticamente`);
+      if(pctT(t)===100)addNotif('🎉',`Tarea completada: "${t.titulo}"`,'100% — todas las secciones listas');
+    } else if(!allDone&&t.secciones['Audiovisual'].estado==='Completada'){
+      // Revert if one is un-checked
+      t.secciones['Audiovisual']={...t.secciones['Audiovisual'],estado:'Pendiente',completadoPor:null,completadoEn:null};
+    }
+  }
   expandidas.add(tareaId);guardar();renderTareas();
 }
 
