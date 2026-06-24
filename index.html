@@ -622,7 +622,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       <input type="checkbox" id="soloMias" onchange="renderTareas()" style="accent-color:var(--na);width:15px;height:15px"> Solo mis secciones
     </label>
   </div>
-  <div id="filtActivo" style="display:none;margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap"></div>
+  <div id="filtActivo" style="display:none;margin-bottom:12px;align-items:center;gap:8px;flex-wrap:wrap"></div>
   <div id="listaTareas"></div>
   <div id="vacTareas" class="vac oculto" style="padding:48px 20px;text-align:center;color:var(--tm)">
     <div style="font-size:36px;margin-bottom:10px">📭</div>
@@ -716,12 +716,12 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
     <div style="position:relative;flex:1;min-width:160px;max-width:260px">
       <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;opacity:.5;pointer-events:none">🔍</span>
-      <input type="search" class="fc" id="bitBusq" placeholder="Buscar en bitácora..." style="padding:6px 10px 6px 30px;font-size:12px" oninput="renderBit()">
+      <input type="search" class="fc" id="bitBusq" placeholder="Buscar en bitácora..." style="padding:6px 10px 6px 30px;font-size:12px" oninput="bitPagina=0;renderBit()">
     </div>
-    <select class="fc" id="bitFiltU" style="width:auto;padding:6px 10px;font-size:12px" onchange="renderBit()">
+    <select class="fc" id="bitFiltU" style="width:auto;padding:6px 10px;font-size:12px" onchange="bitPagina=0;renderBit()">
       <option value="">Todos los usuarios</option>
     </select>
-    <select class="fc" id="bitFiltA" style="width:auto;padding:6px 10px;font-size:12px" onchange="renderBit()">
+    <select class="fc" id="bitFiltA" style="width:auto;padding:6px 10px;font-size:12px" onchange="bitPagina=0;renderBit()">
       <option value="">Todas las acciones</option>
       <option value="Tarea creada">Tarea creada</option>
       <option value="Tarea editada">Tarea editada</option>
@@ -1065,6 +1065,11 @@ let avAsignaciones=[];
 //  PERMISOS
 // ════════════════════════
 // puede(accion): verifica si el usuario actual puede hacer algo
+function puedeEditarT(t){
+  if(['lider','editor'].includes(niv))return true;
+  if(niv==='colaborador'&&t&&(t.creadaPor===uAct?.nombre||t.creadoPorId===uAct?.id))return true;
+  return false;
+}
 function puede(accion){
   switch(accion){
     case 'crearTarea':    return ['lider','editor','colaborador'].includes(niv);
@@ -1627,8 +1632,8 @@ function renderTareas(){
 
     const etiqH=(t.etiquetas||[]).map(e=>`<span class="bg bmor">${e}</span>`).join('');
     const notaPreview=t.notas?`<div style="font-size:12px;color:var(--tm);margin-top:3px;word-break:break-word">📝 ${t.notas}</div>`:'';
-    const acciones=abierta&&(puede('editarTarea')||puede('eliminarTarea')||puede('crearTarea'))?`<div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
-      ${puede('editarTarea')?`<button class="btn bna bsm" onclick="event.stopPropagation();editT('${t.id}')">✏️ Editar</button>`:''}
+    const acciones=abierta&&(puedeEditarT(t)||puede('eliminarTarea')||puede('crearTarea'))?`<div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+      ${puedeEditarT(t)?`<button class="btn bna bsm" onclick="event.stopPropagation();editT('${t.id}')">✏️ Editar</button>`:''}
       ${puede('crearTarea')?`<button class="btn bgh bsm" onclick="event.stopPropagation();duplT('${t.id}')">📋 Duplicar</button>`:''}
       ${puede('eliminarTarea')?`<button class="btn bpe bsm" onclick="event.stopPropagation();elimT('${t.id}')">🗑 Eliminar</button>`:''}
     </div>`:'';
@@ -1648,9 +1653,11 @@ function renderTareas(){
           :`<button class="btn bna bsm" style="font-size:11px;padding:2px 8px" onclick="event.stopPropagation();marcarPublicadoById('${p.id}','publicado');renderTareas()">Marcar publicado</button>`)
           :'';
         const editBtn=canProg?`<button class="btn bgh bsm" style="font-size:11px;padding:2px 8px" onclick="event.stopPropagation();editarPublicacion('${p.id}')">✏️</button>`:'';
+        const linkHTML=p.linkPublicado?`<a href="${p.linkPublicado}" target="_blank" rel="noopener noreferrer" style="font-size:11px;color:var(--na);white-space:nowrap" onclick="event.stopPropagation()">🔗 Ver</a>`:'';
         return`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--bo);flex-wrap:wrap">
           <div style="display:flex;gap:4px;flex-wrap:wrap;flex-shrink:0">${platDots}</div>
           <div style="flex:1;min-width:0;font-size:12px;font-weight:600;color:var(--tx)">${fmtPubFecha(p.fecha)} · ${p.hora}  ${p.titulo}</div>
+          ${linkHTML}
           <span style="font-size:13px;flex-shrink:0">${estadoIco}</span>
           ${accionBtn}
           ${editBtn}
@@ -1768,10 +1775,11 @@ function togCat(tareaId,cat){
 }
 
 function abrirMT(id){
-  if(!puede('crearTarea')){alert('Sin permiso para crear o editar tareas.');return;}
+  const t=id?E.tareas.find(t=>t.id===id):null;
+  if(id&&!puedeEditarT(t)){alert('Sin permiso para editar esta tarea.');return;}
+  if(!id&&!puede('crearTarea')){alert('Sin permiso para crear tareas.');return;}
   document.getElementById('mTTit').textContent=id?'Editar Tarea':'Nueva Tarea';
   document.getElementById('tId').value=id||'';
-  const t=id?E.tareas.find(t=>t.id===id):null;
   document.getElementById('tTit').value=t?.titulo||'';
   document.getElementById('tPri').value=t?.prioridad||'Media';
   document.getElementById('tFecha').value=t?.fecha||'';
@@ -2133,6 +2141,7 @@ function guardarT(){
     recurrencia:document.getElementById('tRec').value,
     creadaEn:orig?.creadaEn||hoy(),
     creadaPor:orig?.creadaPor||uAct?.nombre,
+    creadoPorId:orig?.creadoPorId||uAct?.id,
     secciones,
     redesSociales,
     mediosData,
@@ -2168,6 +2177,7 @@ function guardarBorrador(){
     recurrencia:document.getElementById('tRec').value,
     creadaEn:orig?.creadaEn||hoy(),
     creadaPor:orig?.creadaPor||uAct?.nombre,
+    creadoPorId:orig?.creadoPorId||uAct?.id,
     secciones:orig?.secciones||{},
     entregables:orig?.entregables||[]
   };
@@ -2731,6 +2741,7 @@ function renderCalPubAgenda(pubs){
           ${p.notas?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">💬 Notas</div><div style="font-size:12px;color:var(--tm)">${p.notas}</div></div>`:''}
           ${p.responsableNombre?`<div style="margin-bottom:10px;font-size:12px;color:var(--tm)">👤 Responsable: <strong>${p.responsableNombre}</strong></div>`:''}
           ${p.links?.length?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">🔗 Links</div>${p.links.map(l=>`<a href="${l}" target="_blank" style="display:block;font-size:12px;color:var(--az);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l}</a>`).join('')}</div>`:''}
+          ${p.linkPublicado?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--ve);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">✅ Link publicado</div><a href="${p.linkPublicado}" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:var(--na)">${p.linkPublicado}</a></div>`:''}
           <div id="apub-ents-${p._idx}"></div>
           ${puede('marcarAvance')?`<div style="display:flex;gap:6px;margin-top:10px"><button class="btn bgh bsm" onclick="event.stopPropagation();editarPub('${p.id}')">✏️ Editar</button>${!p.tareaId&&!p.entId||niv==='lider'?`<button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro)" onclick="event.stopPropagation();elimPub('${p.id}')">🗑 Eliminar</button>`:''}</div>`:''}
         </div>`;
@@ -3729,6 +3740,10 @@ function renderBit(){
 
 function limpBit(){
   if(!confirm('¿Eliminar todo el historial de cambios?'))return;
+  // Reset selector de usuarios
+  const selU=document.getElementById('bitFiltU');
+  if(selU)while(selU.options.length>1)selU.remove(1);
+  bitPagina=0;
   E.bitacora=[];reg('Bitácora limpiada','Por '+uAct?.nombre);guardar();renderBit();
 }
 
