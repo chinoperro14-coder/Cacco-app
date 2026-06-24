@@ -1564,6 +1564,25 @@ function renderTareas(){
       </div>
     </div>`;
   }).join('');
+  // Drafts section
+  const borradores=E.tareas.filter(t=>t.borrador&&(niv==='lider'||t.creadaPor===uAct?.nombre||Object.values(t.secciones||{}).some(sv=>(sv.responsables||[]).includes(uAct?.id))));
+  if(borradores.length){
+    const borHtml=borradores.map(t=>`
+      <div style="padding:10px 14px;border:1px dashed var(--na);border-radius:var(--r);background:var(--su);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700;color:var(--tx)">${t.titulo||'(Sin título)'}</div>
+          <div style="font-size:11px;color:var(--tm);margin-top:2px">📝 Borrador · ${t.creadaPor||'?'} · ${fmt(t.creadaEn)||''}</div>
+        </div>
+        ${puede('editarTarea')?`<button class="btn bna bsm" onclick="abrirMT('${t.id}')">✏️ Completar</button>`:''}
+        ${puede('eliminarTarea')?`<button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro)" onclick="elimT('${t.id}')">🗑</button>`:''}
+      </div>`).join('');
+    lista.innerHTML+=`<div style="margin-top:20px">
+      <div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+        📝 Borradores <span style="background:var(--ams);color:var(--am);padding:1px 7px;border-radius:10px">${borradores.length}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">${borHtml}</div>
+    </div>`;
+  }
 }
 
 function togT(id){
