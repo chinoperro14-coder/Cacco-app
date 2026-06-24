@@ -99,7 +99,7 @@ app.get("/", (req, res) => res.sendFile(path.join(__dirname, "index.html")));
 //  LOGIN
 // ════════════════════════
 app.post("/api/login", async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, recordar } = req.body;
   if (!email || !password)
     return res.status(400).json({ error: "Email y contraseña requeridos" });
   try {
@@ -108,7 +108,8 @@ app.post("/api/login", async (req, res) => {
     if (!user) return res.status(401).json({ error: "Usuario no encontrado" });
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(401).json({ error: "Contraseña incorrecta" });
-    const token = jwt.sign({ id: user.id, email: user.email, nivel: user.nivel }, JWT_SECRET, { expiresIn: "8h" });
+    const expira = recordar ? "30d" : "8h";
+    const token = jwt.sign({ id: user.id, email: user.email, nivel: user.nivel }, JWT_SECRET, { expiresIn: expira });
     res.json({ token, userId: user.id });
   } catch (e) { res.status(500).json({ error: "Error interno" }); }
 });
