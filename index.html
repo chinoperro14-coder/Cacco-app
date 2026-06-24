@@ -2104,21 +2104,19 @@ function togCompAV(tareaId,idx){
 function agregarEntregable(tareaId){
   if(!puede('marcarAvance')){alert('Sin permiso.');return;}
   const t=E.tareas.find(t=>t.id===tareaId);if(!t)return;
-  const nom=prompt('Nombre del entregable:');if(!nom?.trim())return;
-  const url=prompt('URL / Link:');if(!url?.trim())return;
+  const nomEl=document.getElementById(`ent-nom-${tareaId}`);
+  const urlEl=document.getElementById(`ent-url-${tareaId}`);
+  const nom=(nomEl?.value||'').trim();
+  const url=(urlEl?.value||'').trim();
+  if(!nom){nomEl?.focus();return;}
+  if(!url){urlEl?.focus();return;}
   const secNames=Object.keys(t.secciones||{});
-  let seccion='General';
-  if(secNames.length>1){
-    const opts=secNames.map((s,i)=>`${i+1}. ${s}`).join('\n');
-    const resp=prompt(`¿A qué sección pertenece?\n${opts}\n(número o Enter para General):`);
-    const idx=parseInt(resp)-1;
-    if(idx>=0&&idx<secNames.length)seccion=secNames[idx];
-  }else if(secNames.length===1){
-    seccion=secNames[0];
-  }
+  const seccion=secNames.length===1?secNames[0]:'General';
   if(!t.entregables)t.entregables=[];
-  t.entregables.push({id:gId(),nombre:nom.trim(),url:url.trim(),seccion,subidoPor:uAct?.nombre,subidoPorId:uAct?.id,subidoEn:hoy()});
-  reg('Entregable subido',`"${nom.trim()}" en "${t.titulo}" [${seccion}]`);
+  t.entregables.push({id:gId(),nombre:nom,url,seccion,subidoPor:uAct?.nombre,subidoPorId:uAct?.id,subidoEn:hoy()});
+  if(nomEl)nomEl.value='';
+  if(urlEl)urlEl.value='';
+  reg('Entregable subido',`"${nom}" en "${t.titulo}" [${seccion}]`);
   guardar();expandidas.add(tareaId);renderTareas();
 }
 
@@ -2131,11 +2129,17 @@ function elimEntregable(tareaId,entId){
 function agregarEntregableSec(tareaId, seccion){
   if(!puede('marcarAvance')){alert('Sin permiso.');return;}
   const t=E.tareas.find(t=>t.id===tareaId);if(!t)return;
-  const nom=prompt('Nombre del entregable:');if(!nom?.trim())return;
-  const url=prompt('URL / Link:');if(!url?.trim())return;
+  const nomEl=document.getElementById(`ent-nom-${tareaId}`);
+  const urlEl=document.getElementById(`ent-url-${tareaId}`);
+  const nom=(nomEl?.value||'').trim();
+  const url=(urlEl?.value||'').trim();
+  if(!nom){nomEl?.focus();return;}
+  if(!url){urlEl?.focus();return;}
   if(!t.entregables)t.entregables=[];
-  t.entregables.push({id:gId(),nombre:nom.trim(),url:url.trim(),seccion,subidoPor:uAct?.nombre,subidoPorId:uAct?.id,subidoEn:hoy()});
-  reg('Entregable subido',`"${nom.trim()}" en "${t.titulo}" [${seccion}]`);
+  t.entregables.push({id:gId(),nombre:nom,url,seccion,subidoPor:uAct?.nombre,subidoPorId:uAct?.id,subidoEn:hoy()});
+  if(nomEl)nomEl.value='';
+  if(urlEl)urlEl.value='';
+  reg('Entregable subido',`"${nom}" en "${t.titulo}" [${seccion}]`);
   guardar();expandidas.add(tareaId);renderTareas();
 }
 
