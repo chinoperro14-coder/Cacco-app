@@ -819,11 +819,6 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       <div id="mediosGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
     </div>
 
-    <div id="audiovisualDetalleBlk" class="fg" style="display:none">
-      <label class="fl" style="margin-bottom:10px">Audiovisual — detalle de producción</label>
-      <div id="audiovisualGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
-    </div>
-
     <div class="fg" style="border-top:1px solid var(--bo);padding-top:14px;margin-top:4px">
       <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:0" onclick="togPubBlk()">
         <label class="fl" style="cursor:pointer;margin-bottom:0">📅 Publicación programada</label>
@@ -854,7 +849,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
           <label class="fl">Notas internas <span style="font-weight:400;font-size:11px;text-transform:none">(opcional)</span></label>
           <textarea class="fc" id="tPubNotas" rows="2" placeholder="Observaciones para el equipo..."></textarea>
         </div>
-        <button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--rob);margin-top:4px" onclick="quitarPubBlk()">✕ Quitar publicación</button>
+        <button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro);margin-top:4px" onclick="quitarPubBlk()">✕ Quitar publicación</button>
       </div>
       <input type="hidden" id="tPubActiva" value="0">
     </div>
@@ -1123,7 +1118,6 @@ function ajTxt(d){nivelTxt=Math.max(-1,Math.min(2,nivelTxt+d));document.body.cla
 // ════════════════════════
 //  LOGIN
 // ════════════════════════
-let rolSel=null;
 function renderLogin(){
   // Limpiar campos al regresar al login
   const lu=document.getElementById('loginUser'),lp=document.getElementById('loginPass'),le=document.getElementById('loginErr');
@@ -1134,8 +1128,6 @@ function togglePass(){
   const i=document.getElementById('loginPass');
   i.type=i.type==='password'?'text':'password';
 }
-function selRol(uid){}// legacy no-op
-
 async function tryLogin() {
   const emailInput = document.getElementById('loginUser');
   const passInput  = document.getElementById('loginPass');
@@ -1233,7 +1225,7 @@ function cerrarSes(){
   localStorage.removeItem('cacco_token');
   document.getElementById('appMain').classList.add('oculto');
   document.getElementById('pLog').style.display='flex';
-  rolSel=null;renderLogin();
+  renderLogin();
 }
 
 // ════════════════════════
@@ -1340,9 +1332,6 @@ function renderTareas(){
   const lista=document.getElementById('listaTareas'),vac=document.getElementById('vacTareas');
   if(!ts.length){lista.innerHTML='';vac.classList.remove('oculto');return;}
   vac.classList.add('oculto');
-  const bPri={Alta:'balt',Media:'bmed',Baja:'bbaj'};
-  const bEst={Pendiente:'bpen','En Progreso':'bpro',Completada:'blis'};
-
   lista.innerHTML=ts.map(t=>{
     const eg=eglobal(t),pct=pctT(t);
     const d=dH(t.fecha),vencida=d!==null&&d<0&&eg!=='Completada';
@@ -1866,7 +1855,7 @@ function actualizarAudiovisualBlk(){
       return`<div style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13px">
         <span>${a.medio==='foto'?'📷':'🎬'}</span>
         <span style="flex:1">${u?.nombre.split(' ')[0]||a.nombre||'?'} — <b>${a.tipo}</b></span>
-        <span onclick="avQuitarAsig(${i})" style="cursor:pointer;color:var(--er);font-size:11px;padding:2px 5px;border:1px solid var(--er);border-radius:4px">✕</span>
+        <span onclick="avQuitarAsig(${i})" style="cursor:pointer;color:var(--ro);font-size:11px;padding:2px 5px;border:1px solid var(--ro);border-radius:4px">✕</span>
       </div>`;
     }).join('')}
   </div>`:'';
@@ -1899,23 +1888,10 @@ function adjMed(mKey,campo,delta){
   const el=document.getElementById(`mq-${mKey}-${campo}`);
   if(el)el.textContent=Math.max(0,(parseInt(el.textContent)||0)+delta);
 }
-function adjMedComp(mKey,campo,delta){
-  const asigEl=document.getElementById(`mq-${mKey}-${campo}`);
-  const el=document.getElementById(`mqc-${mKey}-${campo}`);
-  const max=asigEl?parseInt(asigEl.textContent)||0:999;
-  if(el)el.textContent=Math.min(max,Math.max(0,(parseInt(el.textContent)||0)+delta));
-}
 function adjRed(rKey,campo,delta){
   const el=document.getElementById(`rq-${rKey}-${campo}`);
   if(el)el.textContent=Math.max(0,(parseInt(el.textContent)||0)+delta);
 }
-function adjRedComp(rKey,campo,delta){
-  const asigEl=document.getElementById(`rq-${rKey}-${campo}`);
-  const el=document.getElementById(`rqc-${rKey}-${campo}`);
-  const max=asigEl?parseInt(asigEl.textContent)||0:999;
-  if(el)el.textContent=Math.min(max,Math.max(0,(parseInt(el.textContent)||0)+delta));
-}
-
 function selTipoRed(rKey,campo,tipo,el){
   el.closest('.redes-tipo').querySelectorAll('.redes-chip').forEach(c=>c.classList.remove('sel'));
   el.classList.add('sel');
@@ -2123,23 +2099,6 @@ function agregarEntregable(tareaId){
 function elimEntregable(tareaId,entId){
   const t=E.tareas.find(t=>t.id===tareaId);if(!t)return;
   t.entregables=(t.entregables||[]).filter(e=>e.id!==entId);
-  guardar();expandidas.add(tareaId);renderTareas();
-}
-
-function agregarEntregableSec(tareaId, seccion){
-  if(!puede('marcarAvance')){alert('Sin permiso.');return;}
-  const t=E.tareas.find(t=>t.id===tareaId);if(!t)return;
-  const nomEl=document.getElementById(`ent-nom-${tareaId}`);
-  const urlEl=document.getElementById(`ent-url-${tareaId}`);
-  const nom=(nomEl?.value||'').trim();
-  const url=(urlEl?.value||'').trim();
-  if(!nom){nomEl?.focus();return;}
-  if(!url){urlEl?.focus();return;}
-  if(!t.entregables)t.entregables=[];
-  t.entregables.push({id:gId(),nombre:nom,url,seccion,subidoPor:uAct?.nombre,subidoPorId:uAct?.id,subidoEn:hoy()});
-  if(nomEl)nomEl.value='';
-  if(urlEl)urlEl.value='';
-  reg('Entregable subido',`"${nom}" en "${t.titulo}" [${seccion}]`);
   guardar();expandidas.add(tareaId);renderTareas();
 }
 
@@ -2454,7 +2413,7 @@ function renderCalPubAgenda(pubs){
           ${p.notas?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">💬 Notas</div><div style="font-size:12px;color:var(--tm)">${p.notas}</div></div>`:''}
           ${p.links?.length?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">🔗 Links</div>${p.links.map(l=>`<a href="${l}" target="_blank" style="display:block;font-size:12px;color:var(--az);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l}</a>`).join('')}</div>`:''}
           <div id="apub-ents-${p._idx}"></div>
-          ${puede('marcarAvance')&&p.standalone?`<div style="display:flex;gap:6px;margin-top:10px"><button class="btn bgh bsm" onclick="event.stopPropagation();editarPub('${p.id}')">✏️ Editar</button><button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--rob)" onclick="event.stopPropagation();elimPub('${p.id}')">🗑 Eliminar</button></div>`:''}
+          ${puede('marcarAvance')&&p.standalone?`<div style="display:flex;gap:6px;margin-top:10px"><button class="btn bgh bsm" onclick="event.stopPropagation();editarPub('${p.id}')">✏️ Editar</button><button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro)" onclick="event.stopPropagation();elimPub('${p.id}')">🗑 Eliminar</button></div>`:''}
           ${puede('marcarAvance')&&p.esTaskPub?`<div style="margin-top:10px"><button class="btn bgh bsm" onclick="event.stopPropagation();abrirMT('${p.tareaId}')">✏️ Editar tarea</button></div>`:''}
         </div>`;
       }).join('')}
@@ -2518,7 +2477,7 @@ function verDiaPub(dia){
       const acciones=p.standalone&&canEdit
         ?`<div style="display:flex;gap:6px;margin-top:8px">
             <button class="btn bgh bsm" onclick="editarPub('${p.id}')">✏️ Editar</button>
-            <button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--rob)" onclick="elimPub('${p.id}')">🗑 Eliminar</button>
+            <button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro)" onclick="elimPub('${p.id}')">🗑 Eliminar</button>
           </div>`
         :p.esTaskPub&&canEdit
         ?`<div style="margin-top:8px"><button class="btn bgh bsm" onclick="cerM('mProg');document.getElementById('diaPubPanel').style.display='none';abrirMT('${p.tareaId}')">✏️ Editar tarea</button></div>`
@@ -3041,7 +3000,7 @@ function generarRep(){
         </div>`;
       }).join('')||'<p style="color:var(--tm);font-size:13px">Sin tareas registradas aún.</p>'}
     </div>
-    <div class="rblk"><div class="rbtit">Reporte completo</div><div class="rtxt" id="repTxt">${texto}</div></div>
+    <div class="rblk"><div class="rbtit">Reporte completo</div><div class="rtxt">${texto}</div></div>
     ${(()=>{
       const hoyD=hoy();
       const allPubs=[];
@@ -3063,25 +3022,6 @@ function generarRep(){
 }
 
 function copiarRep(){if(!puede('verReportes')){alert('Sin permiso.');return;}navigator.clipboard.writeText(repTxtActivo).then(()=>alert('✅ Reporte copiado.'));}
-
-async function descargarPDF(){
-  if(!puede('verReportes')){alert('Sin permiso.');return;}
-  const btn=document.querySelector('[onclick="descargarPDF()"]');
-  if(btn){btn.textContent='⏳ Generando...';btn.disabled=true;}
-  try{
-    const res=await fetch('/api/reporte-pdf',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()},
-      body:JSON.stringify({tipo:repP,generadoPor:uAct?.nombre||'—'})
-    });
-    if(!res.ok)throw new Error('Error al generar PDF');
-    const blob=await res.blob();
-    const url=URL.createObjectURL(blob);
-    window.open(url,'_blank');
-    setTimeout(()=>URL.revokeObjectURL(url),10000);
-  }catch(e){alert('No se pudo generar el PDF: '+e.message);}
-  finally{if(btn){btn.textContent='📄 Descargar PDF';btn.disabled=false;}}
-}
 
 function imprimirReporte(){
   if(!puede('verReportes')){alert('Sin permiso.');return;}
