@@ -911,6 +911,17 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       <div style="display:flex;gap:8px;align-items:baseline;margin-bottom:4px"><span style="font-weight:700;color:var(--tx)">🔗 Entregable:</span><a href="#" class="ent-url" id="mProgLink" style="font-size:12px"></a></div>
       <div style="display:flex;gap:8px;align-items:baseline"><span style="font-weight:700;color:var(--tx)">👤 Publicará:</span><span style="color:var(--na);font-weight:600" id="mProgUser"></span></div>
     </div>
+    <div class="fg" id="mProgTareaBlk">
+      <label class="fl">📋 Tarea vinculada <span style="font-weight:400;font-size:11px">(opcional)</span></label>
+      <select class="fc" id="mProgTareaId">
+        <option value="">— Sin vincular —</option>
+      </select>
+    </div>
+    <div class="fg" id="mProgRespBlk">
+      <label class="fl">👤 Responsable de publicar</label>
+      <select class="fc" id="mProgResp">
+      </select>
+    </div>
     <div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">¿Dónde y cuándo?</div>
     <div class="fg">
       <label class="fl">Plataformas *</label>
@@ -1528,6 +1539,38 @@ function renderTareas(){
       ${puede('eliminarTarea')?`<button class="btn bpe bsm" onclick="event.stopPropagation();elimT('${t.id}')">🗑 Eliminar</button>`:''}
     </div>`:'';
 
+    // Publications block
+    const taskPubs=(E.publicaciones||[]).filter(p=>p.tareaId===t.id);
+    const pubsBadge=(!abierta&&taskPubs.length)?`<span class="bg bgr" style="font-size:10px">📅 ${taskPubs.length} ${taskPubs.some(p=>p.estado==='publicado')?'pubs':'programadas'}</span>`:'';
+    let pubsBlockHTML='';
+    if(abierta){
+      const canProg=puede('marcarAvance');
+      const pubRows=taskPubs.slice().sort((a,b)=>(a.fecha+a.hora).localeCompare(b.fecha+b.hora)).map(p=>{
+        const isPublicado=p.estado==='publicado';
+        const platDots=(p.plataformas||[]).map(pl=>`<span class="pc ${pl}">${PLAT_NOM[pl]}</span>`).join(' ');
+        const estadoIco=isPublicado?'✅':'⏳';
+        const accionBtn=canProg?(isPublicado
+          ?`<button class="btn bgh bsm" style="font-size:11px;padding:2px 8px" onclick="event.stopPropagation();revertirPublicado('${p.id}')">Revertir</button>`
+          :`<button class="btn bna bsm" style="font-size:11px;padding:2px 8px" onclick="event.stopPropagation();marcarPublicadoById('${p.id}','publicado');renderTareas()">Marcar publicado</button>`)
+          :'';
+        const editBtn=canProg?`<button class="btn bgh bsm" style="font-size:11px;padding:2px 8px" onclick="event.stopPropagation();editarPublicacion('${p.id}')">✏️</button>`:'';
+        return`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--bo);flex-wrap:wrap">
+          <div style="display:flex;gap:4px;flex-wrap:wrap;flex-shrink:0">${platDots}</div>
+          <div style="flex:1;min-width:0;font-size:12px;font-weight:600;color:var(--tx)">${fmtPubFecha(p.fecha)} · ${p.hora}  ${p.titulo}</div>
+          <span style="font-size:13px;flex-shrink:0">${estadoIco}</span>
+          ${accionBtn}
+          ${editBtn}
+        </div>`;
+      }).join('');
+      pubsBlockHTML=`<div style="margin-top:12px;border:1px solid var(--bo);border-radius:var(--r);overflow:hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--su);border-bottom:1px solid var(--bo)">
+          <span style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px">📅 Publicaciones (${taskPubs.length})</span>
+          ${canProg?`<button class="btn bna bsm" style="font-size:11px;padding:2px 8px" onclick="event.stopPropagation();nuevaPublicacion(null,'${t.id}')">+ Programar</button>`:''}
+        </div>
+        ${taskPubs.length?pubRows:`<div style="padding:10px 12px;font-size:12px;color:var(--tm)">Sin publicaciones aún.</div>`}
+      </div>`;
+    }
+
     // Color de la sección principal
     const primSec=t.secciones?Object.keys(t.secciones)[0]:null;
     const cardColor=primSec&&SECCIONES[primSec]?SECCIONES[primSec].color:'#888';
@@ -1557,6 +1600,7 @@ function renderTareas(){
           ${t.lugar?`<span class="bg bgr">📍 ${t.lugar}</span>`:''}
           ${etiqH}
           ${!abierta&&ents.length?entHTML:''}
+          ${pubsBadge}
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <div class="tprog" style="width:100px"><div class="tpfill" style="width:${pct}%;background:${cardColor}"></div></div>
@@ -1567,6 +1611,7 @@ function renderTareas(){
         ${gruposHTML?`<div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Avance por sección</div>${gruposHTML}`:''}
         ${seccionesHTML}
         ${abierta?entHTML:''}
+        ${pubsBlockHTML}
         ${acciones}
       </div>
     </div>`;
@@ -2212,9 +2257,9 @@ function fmtPubFecha(f){
   return`${parseInt(d)} ${meses[parseInt(m)-1]}`;
 }
 
-function nuevaPublicacion(fechaPreset){
+function nuevaPublicacion(fechaPreset,tareaId){
   if(!puede('marcarAvance')){alert('Sin permiso.');return;}
-  mProgId=null;mProgTareaId=null;mProgEntId=null;
+  mProgId=null;mProgTareaId=tareaId||null;mProgEntId=null;
   document.getElementById('mProgModalTit').textContent='📅 Nueva publicación';
   document.getElementById('mProgSub').textContent='';
   document.getElementById('mProgTituloBlk').style.display='block';
@@ -2227,13 +2272,28 @@ function nuevaPublicacion(fechaPreset){
   document.querySelectorAll('#mProgPlats .chip').forEach(c=>c.classList.remove('sel'));
   mProgLinks=[];renderProgLinks();
   cntCopy(document.getElementById('mProgCopy'));
+  // Populate tarea dropdown
+  const tareaSelEl=document.getElementById('mProgTareaId');
+  if(tareaSelEl){
+    tareaSelEl.innerHTML='<option value="">— Sin vincular —</option>'+(E.tareas||[]).map(t=>`<option value="${t.id}"${t.id===tareaId?' selected':''}>${t.titulo}</option>`).join('');
+  }
+  // Show/hide tarea block
+  const tareaBlk=document.getElementById('mProgTareaBlk');
+  if(tareaBlk)tareaBlk.style.display=tareaId?'none':'block';
+  // Populate responsable dropdown
+  const respEl=document.getElementById('mProgResp');
+  if(respEl){
+    respEl.innerHTML=(E.equipo||[]).map(u=>`<option value="${u.id}"${u.id===uAct?.id?' selected':''}>${u.nombre}</option>`).join('');
+  }
+  const respBlk=document.getElementById('mProgRespBlk');
+  if(respBlk)respBlk.style.display='block';
   document.getElementById('mProg').classList.add('on');
 }
 
 function editarPub(id){
   if(!puede('marcarAvance')){alert('Sin permiso.');return;}
   const pub=(E.publicaciones||[]).find(p=>p.id===id);if(!pub)return;
-  mProgId=id;mProgTareaId=null;mProgEntId=null;
+  mProgId=id;mProgTareaId=pub.tareaId||null;mProgEntId=pub.entId||null;
   document.getElementById('mProgModalTit').textContent='📅 Editar publicación';
   document.getElementById('mProgSub').textContent='';
   document.getElementById('mProgTituloBlk').style.display='block';
@@ -2248,6 +2308,21 @@ function editarPub(id){
   });
   mProgLinks=[...(pub.links||[])];renderProgLinks();
   cntCopy(document.getElementById('mProgCopy'));
+  // Populate tarea dropdown
+  const tareaSelEl=document.getElementById('mProgTareaId');
+  if(tareaSelEl){
+    tareaSelEl.innerHTML='<option value="">— Sin vincular —</option>'+(E.tareas||[]).map(t=>`<option value="${t.id}"${t.id===pub.tareaId?' selected':''}>${t.titulo}</option>`).join('');
+  }
+  const tareaBlk=document.getElementById('mProgTareaBlk');
+  if(tareaBlk)tareaBlk.style.display=pub.tareaId?'none':'block';
+  // Populate responsable dropdown
+  const respEl=document.getElementById('mProgResp');
+  if(respEl){
+    const selId=pub.responsableId||uAct?.id;
+    respEl.innerHTML=(E.equipo||[]).map(u=>`<option value="${u.id}"${u.id===selId?' selected':''}>${u.nombre}</option>`).join('');
+  }
+  const respBlk=document.getElementById('mProgRespBlk');
+  if(respBlk)respBlk.style.display=pub.entId?'none':'block';
   document.getElementById('mProg').classList.add('on');
 }
 
@@ -2270,6 +2345,7 @@ function programarEntregable(tareaId,entId){
   document.getElementById('mProgSub').textContent=e.nombre;
   document.getElementById('mProgTituloBlk').style.display='none';
   document.getElementById('mProgContexto').style.display='block';
+  document.getElementById('mProgTareaBlk').style.display='none';
   document.getElementById('mProgTarea').textContent=t.titulo;
   document.getElementById('mProgLink').textContent=e.url;
   document.getElementById('mProgLink').href=e.url.startsWith('http')?e.url:'https://'+e.url;
@@ -2284,6 +2360,13 @@ function programarEntregable(tareaId,entId){
   });
   mProgLinks=[...(pub?.links||[])];renderProgLinks();
   cntCopy(document.getElementById('mProgCopy'));
+  // Populate and hide responsable field (entregable has its own context)
+  const respEl=document.getElementById('mProgResp');
+  if(respEl){
+    respEl.innerHTML=(E.equipo||[]).map(u=>`<option value="${u.id}"${u.id===uAct?.id?' selected':''}>${u.nombre}</option>`).join('');
+  }
+  const respBlk=document.getElementById('mProgRespBlk');
+  if(respBlk)respBlk.style.display='none';
   document.getElementById('mProg').classList.add('on');
 }
 
@@ -2297,38 +2380,44 @@ function guardarProg(){
   if(!plataformas.length){alert('Seleccioná al menos una plataforma.');return;}
   if(!E.publicaciones)E.publicaciones=[];
   const titulo=document.getElementById('mProgTitulo')?.value.trim()||'';
-  if(mProgTareaId){
-    // Linked to an entregable or task
-    const t=E.tareas.find(t=>t.id===mProgTareaId);if(!t)return;
+  // Read tarea from dropdown if visible, else use global
+  const tareaIdFromSel=document.getElementById('mProgTareaId')?.value||'';
+  const efectiveTareaId=mProgTareaId||(tareaIdFromSel||null);
+  const responsableId=document.getElementById('mProgResp')?.value||'';
+  const responsableNombre=(E.equipo||[]).find(u=>u.id===responsableId)?.nombre||uAct?.nombre||'';
+  if(efectiveTareaId){
+    // Linked to a task (possibly also to an entregable)
+    const t=E.tareas.find(t=>t.id===efectiveTareaId);if(!t)return;
     if(mProgEntId){
       const e=(t.entregables||[]).find(e=>e.id===mProgEntId);if(!e)return;
       if(mProgId){
         const i=E.publicaciones.findIndex(p=>p.id===mProgId);
-        if(i>=0)E.publicaciones[i]={...E.publicaciones[i],titulo:e.nombre,fecha,hora,plataformas,copy,notas,links:[...mProgLinks]};
+        if(i>=0)E.publicaciones[i]={...E.publicaciones[i],titulo:e.nombre,fecha,hora,plataformas,copy,notas,links:[...mProgLinks],responsableId,responsableNombre};
       }else{
-        E.publicaciones.push({id:gId(),titulo:e.nombre,plataformas,fecha,hora,copy,notas,links:[...mProgLinks],estado:'pendiente',tareaId:t.id,entId:e.id,creadoPor:uAct?.nombre,creadoEn:hoy()});
+        E.publicaciones.push({id:gId(),titulo:e.nombre,plataformas,fecha,hora,copy,notas,links:[...mProgLinks],estado:'pendiente',tareaId:t.id,entId:e.id,creadoPor:uAct?.nombre,creadoEn:hoy(),responsableId,responsableNombre});
       }
       reg('Publicación programada',`"${e.nombre}" en "${t.titulo}" para ${fmtPubFecha(fecha)} ${hora}`);
-      guardar();expandidas.add(mProgTareaId);renderTareas();renderCalPub();
+      guardar();expandidas.add(efectiveTareaId);renderTareas();renderCalPub();
     }else{
+      const tituloFinal=titulo||t.titulo;
       if(mProgId){
         const i=E.publicaciones.findIndex(p=>p.id===mProgId);
-        if(i>=0)E.publicaciones[i]={...E.publicaciones[i],titulo:titulo||t.titulo,fecha,hora,plataformas,copy,notas,links:[...mProgLinks]};
+        if(i>=0)E.publicaciones[i]={...E.publicaciones[i],titulo:tituloFinal,fecha,hora,plataformas,copy,notas,links:[...mProgLinks],responsableId,responsableNombre};
       }else{
-        E.publicaciones.push({id:gId(),titulo:titulo||t.titulo,plataformas,fecha,hora,copy,notas,links:[...mProgLinks],estado:'pendiente',tareaId:t.id,entId:null,creadoPor:uAct?.nombre,creadoEn:hoy()});
+        E.publicaciones.push({id:gId(),titulo:tituloFinal,plataformas,fecha,hora,copy,notas,links:[...mProgLinks],estado:'pendiente',tareaId:t.id,entId:null,creadoPor:uAct?.nombre,creadoEn:hoy(),responsableId,responsableNombre});
       }
       reg('Publicación programada',`"${t.titulo}" para ${fmtPubFecha(fecha)} ${hora}`);
-      guardar();renderCalPub();
+      guardar();renderTareas();renderCalPub();
     }
   }else{
     // Standalone publication
     if(!titulo){alert('El título es requerido.');return;}
     if(mProgId){
       const i=E.publicaciones.findIndex(p=>p.id===mProgId);
-      if(i>=0)E.publicaciones[i]={...E.publicaciones[i],titulo,fecha,hora,plataformas,copy,notas,links:[...mProgLinks]};
+      if(i>=0)E.publicaciones[i]={...E.publicaciones[i],titulo,fecha,hora,plataformas,copy,notas,links:[...mProgLinks],responsableId,responsableNombre};
       reg('Publicación editada',`"${titulo}" para ${fmtPubFecha(fecha)} ${hora}`);
     }else{
-      E.publicaciones.push({id:gId(),titulo,fecha,hora,plataformas,copy,notas,links:[...mProgLinks],estado:'pendiente',tareaId:null,entId:null,creadoPor:uAct?.nombre,creadoEn:hoy()});
+      E.publicaciones.push({id:gId(),titulo,fecha,hora,plataformas,copy,notas,links:[...mProgLinks],estado:'pendiente',tareaId:null,entId:null,creadoPor:uAct?.nombre,creadoEn:hoy(),responsableId,responsableNombre});
       reg('Publicación creada',`"${titulo}" para ${fmtPubFecha(fecha)} ${hora}`);
     }
     guardar();renderCalPub();
@@ -2436,6 +2525,7 @@ function renderCalPubMes(anio,mes,pubs){
   const dias=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
   let html=`<div class="cgrid">${dias.map(d=>`<div class="cdn">${d}</div>`).join('')}`;
   for(let i=0;i<primerDia;i++)html+=`<div class="cd otro"></div>`;
+  const PLAT_COL={ig:'#C13584',fb:'#1877F2',tt:'#111111',rd:'#FF6B00',tv:'#1b5e20',pr:'#4527a0',yt:'#FF0000'};
   for(let d=1;d<=ultimoDia;d++){
     const fechaStr=`${anio}-${String(mes).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const esHoy=fechaStr===hoyStr;
@@ -2447,7 +2537,8 @@ function renderCalPubMes(anio,mes,pubs){
       return`<span class="cev-pub" style="background:${bg};color:${c};border-left-color:${c}" onclick="verDiaPub(${d})">${p.hora.replace(':','h').slice(0,5)} ${p.nombre.slice(0,18)}</span>`;
     }).join('');
     const mas=ps.length>3?`<span class="cev-pub" style="background:var(--su2);color:var(--tm);border-left-color:var(--bo)" onclick="event.stopPropagation();verDiaPub(${d})">+${ps.length-3} más</span>`:'';
-    html+=`<div class="cd${esHoy?' hoy':''}" onclick="verDiaPub(${d})" title="Ver / agregar publicaciones"><div class="cdnum">${d}</div>${chips}${mas}</div>`;
+    const dots=ps.length?`<div style="display:flex;gap:2px;justify-content:center;flex-wrap:wrap;margin-top:2px">${[...new Set(ps.flatMap(p=>p.plataformas||[]))].map(pl=>`<span style="width:6px;height:6px;border-radius:50%;background:${PLAT_COL[pl]||'#888'};display:inline-block"></span>`).join('')}</div>`:'';
+    html+=`<div class="cd${esHoy?' hoy':''}" onclick="verDiaPub(${d})" title="Ver / agregar publicaciones"><div class="cdnum">${d}</div>${dots}${chips}${mas}</div>`;
   }
   const resto=(7-(primerDia+ultimoDia)%7)%7;
   for(let i=0;i<resto;i++)html+=`<div class="cd otro"></div>`;
@@ -2457,6 +2548,7 @@ function renderCalPubMes(anio,mes,pubs){
 
 function renderCalPubAgenda(pubs){
   if(!pubs.length)return'<div style="padding:32px;text-align:center;color:var(--tm);font-size:14px">Sin publicaciones este mes.</div>';
+  const PLAT_DOT_COL={ig:'#C13584',fb:'#1877F2',tt:'#111111',rd:'#FF6B00',tv:'#1b5e20',pr:'#4527a0',yt:'#FF0000'};
   const porDia={};
   pubs.forEach((p,i)=>{p._idx=i;
     const d=p.fecha;
@@ -2466,25 +2558,38 @@ function renderCalPubAgenda(pubs){
   return Object.keys(porDia).sort().map(f=>{
     const ps=porDia[f].slice().sort((a,b)=>a.hora.localeCompare(b.hora));
     return`<div class="agenda-dia">
-      <div class="agenda-dia-hdr">${fmtFechaLarga(f)}</div>
+      <div class="agenda-dia-hdr">${fmtFechaLarga(f).toUpperCase()}</div>
       ${ps.map(p=>{
-        const estadoBg=p.estado==='publicado'?'var(--ves)':'var(--ams)';
-        const estadoCol=p.estado==='publicado'?'var(--ve)':'var(--am)';
-        const estadoTxt=p.estado==='publicado'?'✅ Publicado':'⏳ Pendiente';
+        const isPublicado=p.estado==='publicado';
+        const estadoBg=isPublicado?'var(--ves)':'var(--ams)';
+        const estadoCol=isPublicado?'var(--ve)':'var(--am)';
+        const estadoTxt=isPublicado?'✅ publicado':'⏳ pendiente';
+        const platDots=(p.plataformas||[]).map(pl=>`<span style="display:inline-flex;align-items:center;gap:2px;font-size:11px;font-weight:700;padding:1px 5px;border-radius:10px;background:${PLAT_DOT_COL[pl]||'#888'}20;color:${PLAT_DOT_COL[pl]||'#888'}"><span style="width:7px;height:7px;border-radius:50%;background:${PLAT_DOT_COL[pl]||'#888'};display:inline-block"></span>${PLAT_NOM[pl]||pl}</span>`).join(' ');
+        const canProg=puede('marcarAvance');
+        const accionBtn=canProg?(isPublicado
+          ?`<button class="btn bgh bsm" style="font-size:11px;padding:2px 8px;flex-shrink:0" onclick="event.stopPropagation();marcarPublicadoById('${p.id}','pendiente');renderCalPub()">Revertir</button>`
+          :`<button class="btn bna bsm" style="font-size:11px;padding:2px 8px;flex-shrink:0" onclick="event.stopPropagation();marcarPublicadoById('${p.id}','publicado');renderCalPub()">Marcar publicado</button>`)
+          :'';
         return`<div class="agenda-pub" onclick="togAgendaPub('apub-${p._idx}')" style="cursor:pointer">
           <div class="agenda-hora">${p.hora}</div>
-          <div class="agenda-info" style="flex:1">
-            <div class="agenda-nom" style="font-size:14px;font-weight:700">${p.nombre} <span style="font-size:11px;color:var(--tm);font-weight:400">▾</span></div>
-            <div class="agenda-from" style="margin-top:3px">
-              ${p.tarea?`<span style="font-size:11px;color:var(--tm)">📋 ${p.tarea}</span> · `:''}
-              ${(p.plataformas||[]).map(pl=>`<span class="pc ${pl}">${PLAT_NOM[pl]}</span>`).join(' ')}
+          <div class="agenda-info" style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
+              ${platDots}
+              <span style="font-size:14px;font-weight:700;color:var(--tx)">${p.nombre}</span>
+              <span style="font-size:11px;color:var(--tm);font-weight:400">▾</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <span style="font-size:11px;background:${estadoBg};color:${estadoCol};padding:1px 7px;border-radius:20px;font-weight:700">${estadoTxt}</span>
+              ${p.tarea?`<span style="font-size:11px;color:var(--tm)">📋 ${p.tarea}</span>`:'<span style="font-size:11px;color:var(--tm)">—</span>'}
+              ${p.responsableNombre?`<span style="font-size:11px;color:var(--tm)">👤 ${p.responsableNombre}</span>`:''}
             </div>
           </div>
-          <span style="font-size:11px;background:${estadoBg};color:${estadoCol};padding:2px 8px;border-radius:20px;font-weight:700;flex-shrink:0;cursor:default" onclick="event.stopPropagation()">${estadoTxt}</span>
+          ${accionBtn}
         </div>
         <div id="apub-${p._idx}" style="display:none;margin:-6px 0 6px 0;padding:12px 14px 14px;background:var(--fo);border:1px solid var(--bo);border-top:none;border-radius:0 0 var(--rs) var(--rs)">
           ${p.copy?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">📝 Copy</div><div style="font-size:13px;color:var(--tx);white-space:pre-wrap;line-height:1.5">${p.copy}</div></div>`:''}
           ${p.notas?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">💬 Notas</div><div style="font-size:12px;color:var(--tm)">${p.notas}</div></div>`:''}
+          ${p.responsableNombre?`<div style="margin-bottom:10px;font-size:12px;color:var(--tm)">👤 Responsable: <strong>${p.responsableNombre}</strong></div>`:''}
           ${p.links?.length?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">🔗 Links</div>${p.links.map(l=>`<a href="${l}" target="_blank" style="display:block;font-size:12px;color:var(--az);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l}</a>`).join('')}</div>`:''}
           <div id="apub-ents-${p._idx}"></div>
           ${puede('marcarAvance')?`<div style="display:flex;gap:6px;margin-top:10px"><button class="btn bgh bsm" onclick="event.stopPropagation();editarPub('${p.id}')">✏️ Editar</button>${!p.tareaId&&!p.entId||niv==='lider'?`<button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro)" onclick="event.stopPropagation();elimPub('${p.id}')">🗑 Eliminar</button>`:''}</div>`:''}
@@ -2575,6 +2680,51 @@ function marcarPublicadoById(id,estado){
   const p=(E.publicaciones||[]).find(p=>p.id===id);
   if(p){p.estado=estado;guardar();renderCalPub();}
 }
+
+function revertirPublicado(pubId){
+  const p=(E.publicaciones||[]).find(p=>p.id===pubId);
+  if(!p)return;
+  p.estado='pendiente';
+  guardar();renderTareas();renderCalPub();
+}
+
+function editarPublicacion(pubId){
+  if(!puede('marcarAvance')){alert('Sin permiso.');return;}
+  const p=(E.publicaciones||[]).find(pub=>pub.id===pubId);
+  if(!p)return;
+  mProgId=pubId;mProgTareaId=p.tareaId||null;mProgEntId=p.entId||null;
+  document.getElementById('mProgModalTit').textContent='✏️ Editar publicación';
+  document.getElementById('mProgSub').textContent='';
+  document.getElementById('mProgTituloBlk').style.display='block';
+  document.getElementById('mProgContexto').style.display='none';
+  document.getElementById('mProgTitulo').value=p.titulo||'';
+  document.getElementById('mProgFecha').value=p.fecha||hoy();
+  document.getElementById('mProgHora').value=p.hora||'09:00';
+  document.getElementById('mProgCopy').value=p.copy||'';
+  document.getElementById('mProgNotas').value=p.notas||'';
+  document.querySelectorAll('#mProgPlats .chip').forEach(c=>{
+    c.classList.toggle('sel',(p.plataformas||[]).includes(c.dataset.p));
+  });
+  mProgLinks=[...(p.links||[])];renderProgLinks();
+  cntCopy(document.getElementById('mProgCopy'));
+  // Populate tarea dropdown
+  const tareaSelEl=document.getElementById('mProgTareaId');
+  if(tareaSelEl){
+    tareaSelEl.innerHTML='<option value="">— Sin vincular —</option>'+(E.tareas||[]).map(t=>`<option value="${t.id}"${t.id===p.tareaId?' selected':''}>${t.titulo}</option>`).join('');
+  }
+  const tareaBlk=document.getElementById('mProgTareaBlk');
+  if(tareaBlk)tareaBlk.style.display=p.tareaId?'none':'block';
+  // Populate responsable dropdown
+  const respEl=document.getElementById('mProgResp');
+  if(respEl){
+    const selId=p.responsableId||uAct?.id;
+    respEl.innerHTML=(E.equipo||[]).map(u=>`<option value="${u.id}"${u.id===selId?' selected':''}>${u.nombre}</option>`).join('');
+  }
+  const respBlk=document.getElementById('mProgRespBlk');
+  if(respBlk)respBlk.style.display=p.entId?'none':'block';
+  abrM('mProg');
+}
+
 function marcarPublicado(tipo,ref,estado){
   if(tipo==='standalone'||tipo==='ent'||tipo==='task'){
     let p;
