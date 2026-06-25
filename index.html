@@ -3807,7 +3807,7 @@ function getAsigPersona(uid,nombre,fecha){
       const estado=sv.estado||'Pendiente';
       const etapaStr=(sec==='Diseño'&&sv.etapa)?` [${sv.etapa}]`:'';
       const ico=SECCIONES[sec]?.ico||'📌';
-      tareaLines.push({ico,sec,tarea:t.titulo,estado,etapaStr,fecha:t.fecha||''});
+      tareaLines.push({ico,sec,tarea:t.titulo,estado,etapaStr,fecha:t.fecha||'',hora:t.hora||'',lugar:t.lugar||''});
     });
   });
 
@@ -3871,10 +3871,12 @@ function renderAsig(){
       ?tareaLines.map(l=>{
         const bg=ESTADO_BG[l.estado]||'var(--su2)';
         const col=ESTADO_COL[l.estado]||'var(--tm)';
+        const metaStr=[l.hora?`🕐 ${l.hora}`:'',l.lugar?`📍 ${l.lugar}`:''].filter(Boolean).join(' · ');
         return`<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-radius:6px;background:var(--fo);margin-bottom:4px">
           <span style="font-size:15px;flex-shrink:0">${l.ico}</span>
           <div style="flex:1;min-width:0">
             <div style="font-size:12px;font-weight:700;color:var(--tx);margin-bottom:2px">${l.tarea}</div>
+            ${metaStr?`<div style="font-size:11px;color:var(--na);margin-bottom:2px">${metaStr}</div>`:''}
             <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
               <span style="font-size:11px;padding:1px 7px;border-radius:20px;background:${bg};color:${col};font-weight:700">${l.estado}</span>
               <span style="font-size:11px;color:var(--tm)">${l.sec}${l.etapaStr}</span>
@@ -3937,64 +3939,103 @@ function renderAsig(){
 
 function copiarInformeWA(){
   const fecha=document.getElementById('asigFecha')?.value||hoy();
-  const[y,m,d]=fecha.split('-').map(Number);
   const fechaLarga=fmtFechaWA(fecha).charAt(0).toUpperCase()+fmtFechaWA(fecha).slice(1);
 
-  const personas=niv==='colaborador'
-    ?E.equipo.filter(u=>u.id===uAct?.id)
-    :E.equipo.filter(u=>u.nivel!=='lector').sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  const SEQ_SECC=['Audiovisual','Redes Sociales','Diseño','Protocolo','Medios'];
+  const SEC_ICO={Audiovisual:'🎬','Redes Sociales':'📱',Diseño:'🎨',Protocolo:'📋',Medios:'📰'};
 
-  let txt=`📌 ASIGNACIONES DIARIAS\n`;
+  // Extrae descripción de tipo de contenido según sección
+  function tipoContenido(t,sec){
+    if(sec==='Audiovisual'&&t.audiovisualData?.asignaciones?.length){
+      const AV_MED={foto:'Foto',video:'Video'};
+      return t.audiovisualData.asignaciones.map(a=>{
+        const med=AV_MED[a.medio]||a.medio||'';
+        return med+(a.tipo?` ${a.tipo}`:'');
+      }).filter(Boolean).join(' · ')||null;
+    }
+    if(sec==='Redes Sociales'&&t.redesSociales){
+      const rs=t.redesSociales;
+      const parts=[];
+      if(rs.instagram?.publicaciones)parts.push(`${rs.instagram.publicaciones} pub IG`);
+      if(rs.instagram?.reels)parts.push(`${rs.instagram.reels} Reel IG`);
+      if(rs.instagram?.historias)parts.push(`${rs.instagram.historias} Historia IG`);
+      if(rs.facebook?.publicaciones)parts.push(`${rs.facebook.publicaciones} pub FB`);
+      if(rs.facebook?.historias)parts.push(`${rs.facebook.historias} Historia FB`);
+      if(rs.tiktok?.videos)parts.push(`${rs.tiktok.videos} Video TT`);
+      if(rs.tiktok?.lives)parts.push(`${rs.tiktok.lives} Live TT`);
+      return parts.join(' · ')||null;
+    }
+    if(sec==='Medios'&&t.mediosData){
+      const md=t.mediosData;
+      const parts=[];
+      if(md.radio?.notas)parts.push(`${md.radio.notas} Nota Radio`);
+      if(md.radio?.entrevistas)parts.push(`${md.radio.entrevistas} Entrevista Radio`);
+      if(md.prensa?.notas)parts.push(`${md.prensa.notas} Nota Prensa`);
+      if(md.prensa?.entrevistas)parts.push(`${md.prensa.entrevistas} Entrevista Prensa`);
+      if(md.tv?.notas)parts.push(`${md.tv.notas} Nota TV`);
+      if(md.tv?.entrevistas)parts.push(`${md.tv.entrevistas} Entrevista TV`);
+      return parts.join(' · ')||null;
+    }
+    if(sec==='Diseño'){
+      const etapa=t.secciones?.['Diseño']?.etapa;
+      return etapa?`Etapa: ${etapa}`:null;
+    }
+    return null;
+  }
+
+  let txt=`📌 ASIGNACIONES CACCO\n`;
   txt+=`📅 ${fechaLarga}\n`;
-  txt+=`🏛 CACCO — Comunicaciones\n`;
   txt+=`${'─'.repeat(32)}\n\n`;
 
-  let hayAlgo=false;
+  let totalTareas=0;
+  let haySecciones=false;
 
-  personas.forEach(u=>{
-    const{tareaLines,pubLines}=getAsigPersona(u.id,u.nombre,fecha);
-    if(!tareaLines.length&&!pubLines.length)return;
-    hayAlgo=true;
-
-    txt+=`👤 ${u.nombre.toUpperCase()}`;
-    if(u.cargo)txt+=` · ${u.cargo}`;
-    txt+='\n';
-
-    tareaLines.forEach(l=>{
-      const est=l.estado==='Completada'?'✅':l.estado==='En Progreso'?'🔄':'⏳';
-      txt+=`  ${l.ico} [${l.sec}${l.etapaStr}] ${l.tarea} — ${est} ${l.estado}\n`;
+  SEQ_SECC.forEach(sec=>{
+    const tareas=E.tareas.filter(t=>{
+      if(t.borrador)return false;
+      const sv=t.secciones?.[sec];
+      return sv&&sv.estado!=='Completada';
     });
-
-    if(pubLines.length){
-      txt+=`  📅 Publicaciones:\n`;
-      pubLines.forEach(p=>{
-        const est=p.estado==='publicado'?'✅ publicado':'⏳ pendiente';
-        txt+=`    ${p.hora} · ${p.plats} · ${p.nombre} (${est})\n`;
-      });
-    }
-    txt+='\n';
+    if(!tareas.length)return;
+    haySecciones=true;
+    const ico=SEC_ICO[sec]||'📌';
+    txt+=`${ico} ${sec.toUpperCase()}\n`;
+    txt+=`${'─'.repeat(20)}\n`;
+    tareas.forEach(t=>{
+      totalTareas++;
+      const sv=t.secciones[sec];
+      txt+=`  ▶ ${t.titulo}\n`;
+      const horaStr=t.hora?`🕐 ${t.hora}`:'';
+      const lugarStr=t.lugar?`📍 ${t.lugar}`:'';
+      if(horaStr||lugarStr)txt+=`    ${[horaStr,lugarStr].filter(Boolean).join('  |  ')}\n`;
+      const tipo=tipoContenido(t,sec);
+      if(tipo)txt+=`    📌 ${tipo}\n`;
+      const est=sv.estado||'Pendiente';
+      txt+=`    ${est==='En Progreso'?'🔄':est==='Completada'?'✅':'⏳'} ${est}\n`;
+      const resps=(sv.responsables||[]).map(id=>E.equipo.find(u=>u.id===id)?.nombre).filter(Boolean);
+      if(resps.length)txt+=`    👥 ${resps.join(', ')}\n`;
+      txt+='\n';
+    });
   });
 
-  // Publicaciones sin responsable
-  const pubsSinResp=(E.publicaciones||[]).filter(p=>p.fecha===fecha&&!p.responsableId);
-  if(pubsSinResp.length){
-    txt+=`⚠️ SIN RESPONSABLE ASIGNADO:\n`;
-    pubsSinResp.forEach(p=>{
-      txt+=`  ${p.hora||'—'} · ${(p.plataformas||[]).map(pl=>PLAT_WA[pl]||pl).join('/')} · ${p.titulo||'—'}\n`;
+  if(!haySecciones)txt+='Sin asignaciones activas.\n\n';
+
+  // Publicaciones del día
+  const pubs=(E.publicaciones||[]).filter(p=>p.fecha===fecha).sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
+  if(pubs.length){
+    txt+=`📅 PUBLICACIONES HOY\n`;
+    txt+=`${'─'.repeat(20)}\n`;
+    pubs.forEach(p=>{
+      const plats=(p.plataformas||[]).map(pl=>PLAT_WA[pl]||pl).join('/');
+      txt+=`  ${p.hora||'—'} · ${plats} — ${p.titulo||p.nombre||'—'} ${p.estado==='publicado'?'✅':'⏳'}\n`;
     });
     txt+='\n';
   }
 
-  if(!hayAlgo)txt+='Sin asignaciones para este día.\n\n';
-
-  // Totales
-  const totalTareas=personas.reduce((s,u)=>s+getAsigPersona(u.id,u.nombre,fecha).tareaLines.length,0);
-  const totalPubs=(E.publicaciones||[]).filter(p=>p.fecha===fecha).length;
   txt+=`${'─'.repeat(32)}\n`;
-  txt+=`📊 Total asignaciones: ${totalTareas} · Publicaciones: ${totalPubs}\n`;
-  txt+=`🤖 CACCO · ${new Date().toLocaleString('es-PA',{hour:'2-digit',minute:'2-digit'})}`;
+  txt+=`📊 Tareas: ${totalTareas} · Publicaciones: ${pubs.length}\n`;
+  txt+=`🤖 CACCO · ${new Date().toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit'})}`;
 
-  // Copiar al portapapeles
   if(navigator.clipboard&&navigator.clipboard.writeText){
     navigator.clipboard.writeText(txt).then(()=>{
       const btn=document.querySelector('[onclick="copiarInformeWA()"]');
