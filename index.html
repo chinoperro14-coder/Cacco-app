@@ -756,7 +756,11 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     </div>
   </div>
   <div id="asigCont"></div>
-  <!-- Informe WhatsApp (oculto) -->
+  <!-- Preview informe WhatsApp -->
+  <div style="margin-top:24px;border-top:1px solid var(--bo);padding-top:16px">
+    <div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Vista previa · Informe WhatsApp</div>
+    <pre id="asigPreview" style="font-family:monospace;font-size:13px;line-height:1.6;background:var(--fo);border:1px solid var(--bo);border-radius:var(--r);padding:14px 16px;white-space:pre-wrap;word-break:break-word;color:var(--tx);margin:0"></pre>
+  </div>
   <textarea id="asigWA" style="position:absolute;left:-9999px;top:0;opacity:0" aria-hidden="true"></textarea>
 </div>
 
@@ -3798,7 +3802,7 @@ function fmtFechaWA(fechaStr){
 function getAsigPersona(uid,nombre,fecha){
   // Tareas donde el usuario es responsable de alguna sección
   const tareaLines=[];
-  E.tareas.filter(t=>!t.borrador).forEach(t=>{
+  E.tareas.filter(t=>!t.borrador&&t.fecha===fecha).forEach(t=>{
     if(!t.secciones)return;
     Object.entries(t.secciones).forEach(([sec,sv])=>{
       if(!sv)return;
@@ -3935,16 +3939,17 @@ function renderAsig(){
   </div>`;
 
   cont.innerHTML=html;
+
+  // Actualizar preview del informe
+  const prev=document.getElementById('asigPreview');
+  if(prev)prev.textContent=generarTxtInforme(fecha);
 }
 
-function copiarInformeWA(){
-  const fecha=document.getElementById('asigFecha')?.value||hoy();
+function generarTxtInforme(fecha){
   const fechaLarga=fmtFechaWA(fecha).charAt(0).toUpperCase()+fmtFechaWA(fecha).slice(1);
-
   const SEQ_SECC=['Audiovisual','Redes Sociales','Diseño','Protocolo','Medios'];
   const SEC_ICO={Audiovisual:'🎬','Redes Sociales':'📱',Diseño:'🎨',Protocolo:'📋',Medios:'📰'};
 
-  // Extrae descripción de tipo de contenido según sección
   function tipoContenido(t,sec){
     if(sec==='Audiovisual'&&t.audiovisualData?.asignaciones?.length){
       const AV_MED={foto:'Foto',video:'Video'};
@@ -3983,59 +3988,52 @@ function copiarInformeWA(){
     return null;
   }
 
-  let txt=`📌 ASIGNACIONES CACCO\n`;
-  txt+=`📅 ${fechaLarga}\n`;
-  txt+=`${'─'.repeat(32)}\n\n`;
-
+  let txt=`CACCO · ${fechaLarga}\n\n`;
   let totalTareas=0;
   let haySecciones=false;
 
   SEQ_SECC.forEach(sec=>{
     const tareas=E.tareas.filter(t=>{
-      if(t.borrador)return false;
+      if(t.borrador||t.fecha!==fecha)return false;
       const sv=t.secciones?.[sec];
       return sv&&sv.estado!=='Completada';
     });
     if(!tareas.length)return;
     haySecciones=true;
-    const ico=SEC_ICO[sec]||'📌';
-    txt+=`${ico} ${sec.toUpperCase()}\n`;
-    txt+=`${'─'.repeat(20)}\n`;
+    txt+=`${SEC_ICO[sec]||'📌'} ${sec.toUpperCase()}\n`;
     tareas.forEach(t=>{
       totalTareas++;
       const sv=t.secciones[sec];
-      txt+=`  ▶ ${t.titulo}\n`;
-      const horaStr=t.hora?`🕐 ${t.hora}`:'';
-      const lugarStr=t.lugar?`📍 ${t.lugar}`:'';
-      if(horaStr||lugarStr)txt+=`    ${[horaStr,lugarStr].filter(Boolean).join('  |  ')}\n`;
-      const tipo=tipoContenido(t,sec);
-      if(tipo)txt+=`    📌 ${tipo}\n`;
-      const est=sv.estado||'Pendiente';
-      txt+=`    ${est==='En Progreso'?'🔄':est==='Completada'?'✅':'⏳'} ${est}\n`;
+      txt+=`${t.titulo}\n`;
+      const meta=[t.hora||'',t.lugar||''].filter(Boolean).join(' · ');
+      if(meta)txt+=`  ${meta}\n`;
+      const tipo=tipoContenido(t,sec)||(t.notas?t.notas.slice(0,70)+(t.notas.length>70?'…':''):null);
+      if(tipo)txt+=`  ${tipo}\n`;
       const resps=(sv.responsables||[]).map(id=>E.equipo.find(u=>u.id===id)?.nombre).filter(Boolean);
-      if(resps.length)txt+=`    👥 ${resps.join(', ')}\n`;
+      if(resps.length)txt+=`  ${resps.join(', ')}\n`;
       txt+='\n';
     });
   });
 
-  if(!haySecciones)txt+='Sin asignaciones activas.\n\n';
+  if(!haySecciones)txt+='Sin asignaciones para este día.\n\n';
 
-  // Publicaciones del día
   const pubs=(E.publicaciones||[]).filter(p=>p.fecha===fecha).sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
   if(pubs.length){
-    txt+=`📅 PUBLICACIONES HOY\n`;
-    txt+=`${'─'.repeat(20)}\n`;
+    txt+=`📅 Publicaciones\n`;
     pubs.forEach(p=>{
       const plats=(p.plataformas||[]).map(pl=>PLAT_WA[pl]||pl).join('/');
-      txt+=`  ${p.hora||'—'} · ${plats} — ${p.titulo||p.nombre||'—'} ${p.estado==='publicado'?'✅':'⏳'}\n`;
+      txt+=`${p.hora||'—'} ${plats} — ${p.titulo||p.nombre||'—'} ${p.estado==='publicado'?'✅':'⏳'}\n`;
     });
     txt+='\n';
   }
 
-  txt+=`${'─'.repeat(32)}\n`;
-  txt+=`📊 Tareas: ${totalTareas} · Publicaciones: ${pubs.length}\n`;
-  txt+=`🤖 CACCO · ${new Date().toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit'})}`;
+  txt+=`─\n${totalTareas} asignaciones · ${pubs.length} publicaciones`;
+  return txt;
+}
 
+function copiarInformeWA(){
+  const fecha=document.getElementById('asigFecha')?.value||hoy();
+  const txt=generarTxtInforme(fecha);
   if(navigator.clipboard&&navigator.clipboard.writeText){
     navigator.clipboard.writeText(txt).then(()=>{
       const btn=document.querySelector('[onclick="copiarInformeWA()"]');
