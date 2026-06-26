@@ -3364,14 +3364,21 @@ function renderCal(){
       return false;
     });
     const esHoy=fs===hh;
-    const eventos=td.slice(0,3).map(t=>{
+    const avDia=(E.asigVarias||[]).filter(a=>a.fechaLimite===fs);
+    const totalEv=td.length+avDia.length;
+    const eventosT=td.slice(0,3).map(t=>{
       const sec=t.secciones?Object.keys(t.secciones)[0]:null;
       const col=sec&&SECCIONES[sec]?SECCIONES[sec].color:'#888';
       const ico=sec?SECCIONES[sec].ico:'📌';
       const recIco=t.recurrencia&&t.recurrencia!=='ninguna'&&t.fecha!==fs?' 🔁':'';
       return`<a class="cev" onclick="irATarea('${t.id}')" title="${t.titulo}" style="background:${col}20;border-left:3px solid ${col}">${ico} ${t.titulo}${recIco}</a>`;
-    }).join('');
-    const mas=td.length>3?`<div style="font-size:10px;color:var(--tm);padding:2px 4px">+${td.length-3} más</div>`:'';
+    });
+    const slots=Math.max(0,3-td.length);
+    const eventosAV=avDia.slice(0,slots).map(a=>
+      `<a class="cev" onclick="goV('asigVarias',document.querySelector('[onclick*=asigVarias]'))" title="${a.titulo}" style="background:var(--mos);border-left:3px solid var(--mo);color:var(--mo)">📋 ${a.titulo}</a>`
+    );
+    const eventos=[...eventosT,...eventosAV].join('');
+    const mas=totalEv>3?`<div style="font-size:10px;color:var(--tm);padding:2px 4px">+${totalEv-3} más</div>`:'';
     celdas+=`<div class="cd ${esHoy?'hoy':''}"><div class="cdnum">${d}</div>${eventos}${mas}</div>`;
   }
 
