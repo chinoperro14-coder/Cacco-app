@@ -785,21 +785,22 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 </div>
 
 <!-- MODAL NUEVA ASIGNACIÓN VARIA -->
-<div id="mAsigVar" class="mod oculto">
-  <div class="mc" style="max-width:480px">
-    <div class="mh"><div class="mhtit">Nueva Asignación Varia</div><button class="cls" onclick="cerM('mAsigVar')">✕</button></div>
-    <div style="padding:20px;display:flex;flex-direction:column;gap:12px">
+<div id="mAsigVar" class="mov">
+  <div class="mo" style="max-width:480px">
+    <div class="mcab"><div class="mtit">Nueva Asignación Varia</div><button class="mx" onclick="cerM('mAsigVar')">×</button></div>
+    <div class="mbody" style="display:flex;flex-direction:column;gap:14px">
       <div class="fg"><label class="fl">Título *</label><input class="fc" id="avTit" placeholder="Ej. Preparar presentación reunión..."></div>
       <div class="fg"><label class="fl">Descripción</label><textarea class="fc" id="avDesc" rows="2" placeholder="Detalles opcionales..."></textarea></div>
       <div class="fg"><label class="fl">Fecha límite</label><input type="date" class="fc" id="avFl"></div>
       <div class="fg">
         <label class="fl">Asignar a</label>
-        <div id="avAsigs" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
-          ${''/* Se llena dinámicamente */}
-        </div>
+        <div id="avAsigs" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"></div>
       </div>
     </div>
-    <div class="mf"><button class="btn bpe" onclick="guardarAsigVar()">Guardar</button><button class="btn bgh" onclick="cerM('mAsigVar')">Cancelar</button></div>
+    <div style="display:flex;gap:8px;padding:16px 26px;border-top:1px solid var(--bo)">
+      <button class="btn bna" onclick="guardarAsigVar()">Guardar</button>
+      <button class="btn bgh" onclick="cerM('mAsigVar')">Cancelar</button>
+    </div>
   </div>
 </div>
 
