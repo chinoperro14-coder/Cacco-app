@@ -4074,7 +4074,7 @@ function getAsigPersona(uid,nombre,fecha){
       const estado=sv.estado||'Pendiente';
       const etapaStr=(sec==='Diseño'&&sv.etapa)?` [${sv.etapa}]`:'';
       const ico=SECCIONES[sec]?.ico||'📌';
-      tareaLines.push({ico,sec,tarea:t.titulo,estado,etapaStr,fecha:t.fecha||'',hora:t.hora||'',lugar:t.lugar||''});
+      tareaLines.push({id:t.id,ico,sec,tarea:t.titulo,estado,etapaStr,fecha:t.fecha||'',hora:t.hora||'',lugar:t.lugar||''});
     });
   });
 
@@ -4139,7 +4139,7 @@ function renderAsig(){
         const bg=ESTADO_BG[l.estado]||'var(--su2)';
         const col=ESTADO_COL[l.estado]||'var(--tm)';
         const metaStr=[l.hora?`🕐 ${l.hora}`:'',l.lugar?`📍 ${l.lugar}`:''].filter(Boolean).join(' · ');
-        return`<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-radius:6px;background:var(--fo);margin-bottom:4px">
+        return`<div onclick="abrirMT('${l.id}')" style="display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-radius:6px;background:var(--fo);margin-bottom:4px;cursor:pointer;transition:background .15s" onmouseover="this.style.background='var(--su2)'" onmouseout="this.style.background='var(--fo)'">
           <span style="font-size:15px;flex-shrink:0">${l.ico}</span>
           <div style="flex:1;min-width:0">
             <div style="font-size:12px;font-weight:700;color:var(--tx);margin-bottom:2px">${l.tarea}</div>
@@ -4149,6 +4149,7 @@ function renderAsig(){
               <span style="font-size:11px;color:var(--tm)">${l.sec}${l.etapaStr}</span>
             </div>
           </div>
+          <span style="font-size:14px;color:var(--tm);flex-shrink:0;margin-top:2px">›</span>
         </div>`;
       }).join('')
       :`<div style="font-size:12px;color:var(--tm);padding:6px 0">Sin tareas asignadas en esta sección.</div>`;
