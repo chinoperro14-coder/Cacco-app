@@ -133,7 +133,7 @@ textarea.fc{resize:vertical;min-height:80px;}
 /* CALENDARIO — FIX */
 .cgrid{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--bo);border-radius:var(--r);overflow:hidden;}
 .cdn{background:var(--su2);padding:10px 6px;text-align:center;font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;border-bottom:1px solid var(--bo);}
-.cd{background:var(--su);padding:8px 7px;min-height:96px;border-right:1px solid var(--bo);border-bottom:1px solid var(--bo);vertical-align:top;}
+.cd{background:var(--su);padding:8px 7px;height:110px;overflow:hidden;border-right:1px solid var(--bo);border-bottom:1px solid var(--bo);vertical-align:top;}
 .cd:nth-child(7n){border-right:none;}
 .cd.otro{background:var(--fo);}
 .cd.hoy{background:var(--nas);}
@@ -379,7 +379,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   /* Calendar — compact */
   .cgrid{font-size:10px;}
   .cdn{padding:6px 2px;font-size:9px;}
-  .cd{padding:4px 3px;min-height:52px;}
+  .cd{padding:4px 3px;height:72px;overflow:hidden;}
   .cdnum{font-size:11px;margin-bottom:2px;}
   .cev{font-size:9px;padding:2px 4px;margin-bottom:2px;}
   /* Modals */
@@ -3344,27 +3344,13 @@ let calMes=new Date().getMonth(), calAnio=new Date().getFullYear();
 function renderCal(){
   const ms=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   document.getElementById('calTit').textContent=`${ms[calMes]} ${calAnio}`;
-  const mob=window.innerWidth<=768;
-  const ds=mob?['D','L','M','M','J','V','S']:['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-
-  // Construir la grilla con tabla HTML para evitar problemas de layout
-  let filas='';
-  const p1=new Date(calAnio,calMes,1).getDay();
-  const dm=new Date(calAnio,calMes+1,0).getDate();
   const hh=hoy();
+  const dm=new Date(calAnio,calMes+1,0).getDate();
 
-  // Headers de días
-  const encab=ds.map(d=>`<div class="cdn">${d}</div>`).join('');
-
-  // Celdas
-  let celdas='';
-  // Días vacíos antes del primer día
-  for(let i=0;i<p1;i++)celdas+=`<div class="cd otro"></div>`;
-
-  for(let d=1;d<=dm;d++){
-    const fs=`${calAnio}-${String(calMes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  // ── Función auxiliar: eventos de un día ──
+  function evsDia(fs){
     const diaSem=new Date(fs+'T00:00:00').getDay();
-    const diaNum=d;
+    const diaNum=parseInt(fs.slice(8));
     const td=E.tareas.filter(t=>{
       if(t.fecha===fs)return true;
       if(!t.fecha||!t.recurrencia||t.recurrencia==='ninguna')return false;
@@ -3376,9 +3362,59 @@ function renderCal(){
       if(t.recurrencia==='mensual')return ini.getDate()===diaNum;
       return false;
     });
+    const av=(E.asigVarias||[]).filter(a=>avOcurreEnFecha(a,fs));
+    return{td,av};
+  }
+
+  // ── Vista agenda (móvil < 600px) ──
+  if(window.innerWidth<600){
+    const DIAS_S=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    let rows='';
+    for(let d=1;d<=dm;d++){
+      const fs=`${calAnio}-${String(calMes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const {td,av}=evsDia(fs);
+      if(!td.length&&!av.length)continue;
+      const esHoy=fs===hh;
+      const diaSemNom=DIAS_S[new Date(fs+'T00:00:00').getDay()];
+      const evHtml=[
+        ...td.map(t=>{
+          const sec=t.secciones?Object.keys(t.secciones)[0]:null;
+          const col=sec&&SECCIONES[sec]?SECCIONES[sec].color:'#888';
+          const ico=sec?SECCIONES[sec].ico:'📌';
+          return`<div onclick="irATarea('${t.id}')" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;background:${col}15;border-left:3px solid ${col};margin-bottom:4px">
+            <span style="font-size:13px;flex-shrink:0">${ico}</span>
+            <span style="font-size:13px;font-weight:600;color:var(--tx);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.titulo}</span>
+            ${t.hora?`<span style="font-size:11px;color:var(--tm);flex-shrink:0">${t.hora}</span>`:''}
+          </div>`;
+        }),
+        ...av.map(a=>`<div onclick="goV('asigVarias',document.querySelector('[onclick*=asigVarias]'))" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;background:var(--mos);border-left:3px solid var(--mo);margin-bottom:4px">
+            <span style="font-size:13px;flex-shrink:0">📋</span>
+            <span style="font-size:13px;font-weight:600;color:var(--mo);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.titulo}</span>
+            ${a.recurrencia&&a.recurrencia!=='ninguna'?`<span style="font-size:10px;color:var(--mo);flex-shrink:0">🔁</span>`:''}
+          </div>`)
+      ].join('');
+      rows+=`<div style="margin-bottom:16px">
+        <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid ${esHoy?'var(--na)':'var(--bo)'}">
+          <span style="font-size:22px;font-weight:800;color:${esHoy?'var(--na)':'var(--tx)'};line-height:1">${d}</span>
+          <span style="font-size:12px;font-weight:700;color:${esHoy?'var(--na)':'var(--tm)'};text-transform:uppercase;letter-spacing:.5px">${diaSemNom}${esHoy?' · Hoy':''}</span>
+        </div>
+        ${evHtml}
+      </div>`;
+    }
+    document.getElementById('calGrid').innerHTML=rows||`<div style="padding:40px;text-align:center;color:var(--tm);font-size:14px">Sin eventos este mes</div>`;
+    return;
+  }
+
+  // ── Vista grilla (desktop / tablet) ──
+  const p1=new Date(calAnio,calMes,1).getDay();
+  const encab=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map(d=>`<div class="cdn">${d}</div>`).join('');
+  let celdas='';
+  for(let i=0;i<p1;i++)celdas+=`<div class="cd otro"></div>`;
+  for(let d=1;d<=dm;d++){
+    const fs=`${calAnio}-${String(calMes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const esHoy=fs===hh;
-    const avDia=(E.asigVarias||[]).filter(a=>avOcurreEnFecha(a,fs));
-    const totalEv=td.length+avDia.length;
+    const {td,av}=evsDia(fs);
+    const totalEv=td.length+av.length;
     const eventosT=td.slice(0,3).map(t=>{
       const sec=t.secciones?Object.keys(t.secciones)[0]:null;
       const col=sec&&SECCIONES[sec]?SECCIONES[sec].color:'#888';
@@ -3387,19 +3423,15 @@ function renderCal(){
       return`<a class="cev" onclick="irATarea('${t.id}')" title="${t.titulo}" style="background:${col}20;border-left:3px solid ${col}">${ico} ${t.titulo}${recIco}</a>`;
     });
     const slots=Math.max(0,3-td.length);
-    const eventosAV=avDia.slice(0,slots).map(a=>
+    const eventosAV=av.slice(0,slots).map(a=>
       `<a class="cev" onclick="goV('asigVarias',document.querySelector('[onclick*=asigVarias]'))" title="${a.titulo}" style="background:var(--mos);border-left:3px solid var(--mo);color:var(--mo)">📋 ${a.titulo}</a>`
     );
-    const eventos=[...eventosT,...eventosAV].join('');
-    const mas=totalEv>3?`<div style="font-size:10px;color:var(--tm);padding:2px 4px">+${totalEv-3} más</div>`:'';
-    celdas+=`<div class="cd ${esHoy?'hoy':''}"><div class="cdnum">${d}</div>${eventos}${mas}</div>`;
+    const mas=totalEv>3?`<div style="font-size:10px;color:var(--tm);padding:2px 4px;white-space:nowrap">+${totalEv-3} más</div>`:'';
+    celdas+=`<div class="cd ${esHoy?'hoy':''}"><div class="cdnum">${d}</div>${[...eventosT,...eventosAV].join('')}${mas}</div>`;
   }
-
-  // Rellenar hasta completar la última fila
   const total=p1+dm;
   const resto=total%7===0?0:7-(total%7);
   for(let i=0;i<resto;i++)celdas+=`<div class="cd otro"></div>`;
-
   document.getElementById('calGrid').innerHTML=`<div class="cgrid">${encab}${celdas}</div>`;
 }
 
@@ -4261,58 +4293,112 @@ function elimApar(tareaId,apId){
 }
 
 // ══ ASIGNACIONES VARIAS ══
+const avExpandidas=new Set();
+function togAV(id){avExpandidas.has(id)?avExpandidas.delete(id):avExpandidas.add(id);renderAsigVarias();}
+function avProximaFecha(av){
+  if(!av.fechaLimite)return null;
+  const rec=av.recurrencia||'ninguna';
+  const hh=hoy();
+  if(rec==='ninguna')return av.fechaLimite;
+  if(av.fechaFin&&hh>av.fechaFin)return null;
+  if(hh<=av.fechaLimite)return av.fechaLimite;
+  const toS=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const ini=new Date(av.fechaLimite+'T00:00:00');
+  const cur=new Date(hh+'T00:00:00');
+  if(rec==='diaria')return hh;
+  if(rec==='semanal'){const n=new Date(cur);while(n.getDay()!==ini.getDay())n.setDate(n.getDate()+1);return toS(n);}
+  if(rec==='bisemanal'){const diff=Math.round((cur-ini)/864e5);const rem=diff%14;if(rem===0)return hh;const n=new Date(cur);n.setDate(cur.getDate()+(14-rem));return toS(n);}
+  if(rec==='mensual'){const n=new Date(cur.getFullYear(),cur.getMonth(),ini.getDate());if(n<=cur)n.setMonth(n.getMonth()+1);return toS(n);}
+  if(rec==='anual'){const n=new Date(cur.getFullYear(),ini.getMonth(),ini.getDate());if(n<=cur)n.setFullYear(n.getFullYear()+1);return toS(n);}
+  return av.fechaLimite;
+}
 function renderAsigVarias(){
   const cont=document.getElementById('asigVCont');if(!cont)return;
-  const avList=(E.asigVarias||[]).sort((a,b)=>(a.fechaLimite||'9').localeCompare(b.fechaLimite||'9'));
+  const avList=(E.asigVarias||[]);
   if(!avList.length){
     cont.innerHTML=`<div style="padding:40px;text-align:center;color:var(--tm)"><div style="font-size:32px;margin-bottom:10px">📋</div><div style="font-size:14px;font-weight:500">Sin asignaciones varias.</div><div style="font-size:12px;margin-top:6px">Estas tareas son internas y no aparecen en los reportes.</div></div>`;
     return;
   }
-  cont.innerHTML=avList.map(av=>{
+  const hh=hoy();
+  // Calcular próxima fecha y agrupar
+  const conFecha=avList.map(av=>({av,prox:avProximaFecha(av)})).sort((a,b)=>{
+    const fa=a.prox||'9999';const fb=b.prox||'9999';return fa.localeCompare(fb)||a.av.titulo.localeCompare(b.av.titulo);
+  });
+  const grupos={};
+  conFecha.forEach(({av,prox})=>{
+    const k=prox||'__sin_fecha__';
+    if(!grupos[k])grupos[k]=[];
+    grupos[k].push({av,prox});
+  });
+
+  function tarjeta(av,venc){
     const total=av.pasos?.length||0;
     const comp=(av.pasos||[]).filter(p=>p.comp).length;
     const pct=total?Math.round(comp/total*100):0;
     const colPct=pct>=80?'var(--ve)':pct>=50?'var(--na)':'var(--ro)';
-    const venc=av.fechaLimite&&av.fechaLimite<hoy()&&pct<100;
     const resp=(av.asignadoA||[]).map(id=>E.equipo.find(u=>u.id===id)?.nombre?.split(' ')[0]).filter(Boolean).join(', ');
+    const recLbl=av.recurrencia&&av.recurrencia!=='ninguna'?REC_LBL[av.recurrencia]||av.recurrencia:null;
+    const fechaFinLbl=av.fechaFin&&recLbl?` · hasta ${fmt(av.fechaFin)}`:'';
+    const canEdit=niv==='lider'||niv==='editor'||(av.creadoPorId===uAct?.id);
+    const exp=avExpandidas.has(av.id);
     const pasosHtml=(av.pasos||[]).map(p=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 0">
       <input type="checkbox" ${p.comp?'checked':''} onchange="togPasoAV('${av.id}','${p.id}')" style="width:15px;height:15px;cursor:pointer;flex-shrink:0">
       <span style="font-size:13px;color:var(--tx);${p.comp?'text-decoration:line-through;color:var(--tm)':''}">${p.texto}</span>
     </div>`).join('');
-    const canEdit=niv==='lider'||niv==='editor'||(av.creadoPorId===uAct?.id);
-    const recLbl=av.recurrencia&&av.recurrencia!=='ninguna'?REC_LBL[av.recurrencia]||av.recurrencia:null;
-    const fechaLbl=av.fechaLimite?(recLbl?`📅 Desde: ${fmt(av.fechaLimite)}`:`${venc?'⚠️ ':'📅 '}Límite: ${fmt(av.fechaLimite)}`):null;
-    const fechaFinLbl=av.fechaFin&&recLbl?`hasta ${fmt(av.fechaFin)}`:'';
-    return`<div style="background:var(--su);border:1px solid ${venc?'var(--ro)':'var(--bo)'};border-radius:var(--r);padding:16px;margin-bottom:12px">
-      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">
+    return`<div style="background:var(--su);border:1.5px solid ${venc?'var(--ro)':'var(--bo)'};border-radius:var(--r);margin-bottom:8px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer" onclick="togAV('${av.id}')">
         <div style="flex:1;min-width:0">
-          <div style="font-size:15px;font-weight:800;color:var(--tx)">${av.titulo}</div>
-          ${av.descripcion?`<div style="font-size:12px;color:var(--tm);margin-top:3px">${av.descripcion}</div>`:''}
-          ${av.notas?`<div style="font-size:12px;color:var(--az);margin-top:3px;padding:5px 8px;background:var(--azs);border-radius:5px;border-left:2px solid var(--az)">📝 ${av.notas}</div>`:''}
-          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center">
-            ${recLbl?`<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:var(--mos);color:var(--mo);font-weight:700">🔁 ${recLbl}${fechaFinLbl?' · '+fechaFinLbl:''}</span>`:''}
-            ${fechaLbl?`<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:${venc?'var(--ros)':'var(--su2)'};color:${venc?'var(--ro)':'var(--tm)'};font-weight:700">${fechaLbl}</span>`:''}
-            ${resp?`<span style="font-size:11px;color:var(--na)">👤 ${resp}</span>`:''}
-            <span style="font-size:11px;padding:2px 8px;border-radius:20px;background:var(--fo);color:${colPct};font-weight:700">${pct}% completado</span>
+          <div style="font-size:14px;font-weight:800;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${av.titulo}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;align-items:center">
+            ${recLbl?`<span style="font-size:10px;padding:1px 7px;border-radius:20px;background:var(--mos);color:var(--mo);font-weight:700">🔁 ${recLbl}${fechaFinLbl}</span>`:''}
+            ${resp?`<span style="font-size:11px;color:var(--na);font-weight:600">👤 ${resp}</span>`:''}
+            ${total?`<span style="font-size:10px;padding:1px 7px;border-radius:20px;background:var(--fo);color:${colPct};font-weight:700">${pct}%</span>`:''}
+            ${venc?`<span style="font-size:10px;padding:1px 7px;border-radius:20px;background:var(--ros);color:var(--ro);font-weight:700">⚠️ Vencida</span>`:''}
           </div>
         </div>
-        ${canEdit?`<div style="display:flex;gap:4px;flex-shrink:0">
-          <button class="btn bgh bsm" style="font-size:11px" onclick="abrirMAsigVar('${av.id}')">✏️</button>
-          <button class="btn bna bsm" style="font-size:11px" onclick="abrirFmPasoAV('${av.id}')">+ Paso</button>
-          <button class="btn bgh bsm" style="font-size:11px;background:var(--ros);color:var(--ro)" onclick="elimAV('${av.id}')">✕</button>
-        </div>`:''}
-      </div>
-      <div class="pbar" style="margin-bottom:10px"><div class="pfill" style="width:${pct}%;background:${colPct}"></div></div>
-      <div style="border-top:1px solid var(--bo);padding-top:8px">${pasosHtml||'<div style="font-size:12px;color:var(--tm)">Sin pasos definidos.</div>'}</div>
-      <div id="fmPasoAV-${av.id}" style="display:none;margin-top:8px;padding:8px;background:var(--fo);border:1px solid var(--bo);border-radius:6px">
-        <input class="fc" id="inPasoAV-${av.id}" placeholder="Descripción del paso..." style="font-size:12px;padding:5px 8px;width:100%;margin-bottom:6px;box-sizing:border-box" onkeydown="if(event.key==='Enter'){event.preventDefault();agregarPasoAV('${av.id}');}">
-        <div style="display:flex;gap:6px">
-          <button class="btn bna bsm" onclick="agregarPasoAV('${av.id}')">Agregar</button>
-          <button class="btn bgh bsm" onclick="document.getElementById('fmPasoAV-${av.id}').style.display='none'">Cancelar</button>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+          ${canEdit?`<button class="btn bgh bsm" style="font-size:11px;padding:4px 8px" onclick="event.stopPropagation();abrirMAsigVar('${av.id}')">✏️</button>`:''}
+          ${canEdit?`<button class="btn bgh bsm" style="font-size:11px;padding:4px 8px;background:var(--ros);color:var(--ro)" onclick="event.stopPropagation();elimAV('${av.id}')">✕</button>`:''}
+          <span style="font-size:16px;color:var(--tm);transition:transform .2s;${exp?'transform:rotate(180deg)':''}">⌄</span>
         </div>
       </div>
+      ${total?`<div style="height:3px;background:var(--fo)"><div style="height:100%;width:${pct}%;background:${colPct};transition:width .3s"></div></div>`:''}
+      ${exp?`<div style="padding:12px 14px;border-top:1px solid var(--bo)">
+        ${av.descripcion?`<div style="font-size:13px;color:var(--tm);margin-bottom:8px">${av.descripcion}</div>`:''}
+        ${av.notas?`<div style="font-size:12px;color:var(--az);margin-bottom:10px;padding:6px 10px;background:var(--azs);border-radius:5px;border-left:2px solid var(--az)">📝 ${av.notas}</div>`:''}
+        <div style="margin-bottom:8px">${pasosHtml||'<div style="font-size:12px;color:var(--tm)">Sin pasos. Usa + Paso para agregar.</div>'}</div>
+        ${canEdit?`<button class="btn bna bsm" style="font-size:12px" onclick="abrirFmPasoAV('${av.id}')">+ Paso</button>`:''}
+        <div id="fmPasoAV-${av.id}" style="display:none;margin-top:8px;padding:8px;background:var(--fo);border:1px solid var(--bo);border-radius:6px">
+          <input class="fc" id="inPasoAV-${av.id}" placeholder="Descripción del paso..." style="font-size:12px;padding:5px 8px;width:100%;margin-bottom:6px;box-sizing:border-box" onkeydown="if(event.key==='Enter'){event.preventDefault();agregarPasoAV('${av.id}');}">
+          <div style="display:flex;gap:6px">
+            <button class="btn bna bsm" onclick="agregarPasoAV('${av.id}')">Agregar</button>
+            <button class="btn bgh bsm" onclick="document.getElementById('fmPasoAV-${av.id}').style.display='none'">Cancelar</button>
+          </div>
+        </div>
+      </div>`:''}
     </div>`;
-  }).join('');
+  }
+
+  let html='';
+  Object.keys(grupos).sort().forEach(k=>{
+    const esSinFecha=k==='__sin_fecha__';
+    const esHoy=k===hh;
+    const esPasada=!esSinFecha&&k<hh;
+    let tituloBloque;
+    if(esSinFecha) tituloBloque='Sin fecha';
+    else if(esHoy) tituloBloque=`Hoy · ${fmt(k)}`;
+    else tituloBloque=fmt(k);
+    const colorBloque=esHoy?'var(--na)':esPasada?'var(--ro)':'var(--tm)';
+    const bgBloque=esHoy?'var(--nas)':esPasada?'var(--ros)':'var(--su2)';
+    html+=`<div style="margin-bottom:18px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:${colorBloque};background:${bgBloque};padding:5px 10px;border-radius:6px;margin-bottom:8px">${tituloBloque}</div>
+      ${grupos[k].map(({av})=>{
+        const venc=av.fechaLimite&&av.fechaLimite<hh&&(av.recurrencia||'ninguna')==='ninguna'&&(av.pasos||[]).filter(p=>p.comp).length<(av.pasos||[]).length;
+        return tarjeta(av,venc);
+      }).join('')}
+    </div>`;
+  });
+  cont.innerHTML=html;
 }
 function togChipAV(el){el.classList.toggle('chip-sel');}
 function togAvFechaFin(){
