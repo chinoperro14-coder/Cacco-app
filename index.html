@@ -1482,7 +1482,7 @@ function renderTareas(){
   const lista=document.getElementById('listaTareas'),vac=document.getElementById('vacTareas');
   if(!ts.length){lista.innerHTML='';vac.classList.remove('oculto');return;}
   vac.classList.add('oculto');
-  lista.innerHTML=ts.map(t=>{
+  const renderTCard=t=>{
     const eg=eglobal(t),pct=pctT(t);
     const d=dH(t.fecha),vencida=d!==null&&d<0&&eg!=='Completada';
     const abierta=expandidas.has(t.id);
@@ -1837,7 +1837,25 @@ function renderTareas(){
         ${acciones}
       </div>
     </div>`;
-  }).join('');
+  };
+  // Agrupar por fecha
+  const hh=hoy();
+  const isComp=t=>eglobal(t)==='Completada';
+  const pendts=ts.filter(t=>!isComp(t));
+  const compts=ts.filter(isComp);
+  const vencidts=pendts.filter(t=>t.fecha&&t.fecha<hh);
+  const dehoyts=pendts.filter(t=>t.fecha===hh);
+  const futurts=pendts.filter(t=>t.fecha&&t.fecha>hh);
+  const sfechts=pendts.filter(t=>!t.fecha);
+  const byFch={};futurts.forEach(t=>{if(!byFch[t.fecha])byFch[t.fecha]=[];byFch[t.fecha].push(t);});
+  const mkHdrT=(lbl,col,bg,n)=>`<div style="display:flex;align-items:center;gap:8px;margin:16px 0 8px;padding:7px 12px;background:${bg};border-left:4px solid ${col};border-radius:0 var(--rs) var(--rs) 0"><span style="font-size:13px;font-weight:700;color:${col}">${lbl}</span><span style="font-size:11px;background:${col};color:#fff;padding:1px 7px;border-radius:10px;font-weight:700">${n}</span></div>`;
+  let htmlOut='';
+  if(vencidts.length){htmlOut+=mkHdrT('⚠️ Vencidas','#dc2626','#fee2e2',vencidts.length);htmlOut+=vencidts.map(renderTCard).join('');}
+  if(dehoyts.length){htmlOut+=mkHdrT('📅 Hoy — '+fmt(hh),'#E35205','#FFF0E8',dehoyts.length);htmlOut+=dehoyts.map(renderTCard).join('');}
+  Object.keys(byFch).sort().forEach(f=>{htmlOut+=mkHdrT('📅 '+fmt(f),'#2563eb','#EFF6FF',byFch[f].length);htmlOut+=byFch[f].map(renderTCard).join('');});
+  if(sfechts.length){htmlOut+=mkHdrT('📌 Sin fecha','#888','#f5f5f5',sfechts.length);htmlOut+=sfechts.map(renderTCard).join('');}
+  if(compts.length){htmlOut+=mkHdrT('✅ Completadas','#16a34a','#DCFCE7',compts.length);htmlOut+=compts.map(renderTCard).join('');}
+  lista.innerHTML=htmlOut;
   // Drafts section
   const borradores=E.tareas.filter(t=>t.borrador&&(niv==='lider'||t.creadaPor===uAct?.nombre||Object.values(t.secciones||{}).some(sv=>(sv.responsables||[]).includes(uAct?.id))));
   if(borradores.length){
