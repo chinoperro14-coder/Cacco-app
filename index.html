@@ -787,11 +787,24 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 <!-- MODAL NUEVA ASIGNACIÓN VARIA -->
 <div id="mAsigVar" class="mov">
   <div class="mo" style="max-width:480px">
-    <div class="mcab"><div class="mtit">Nueva Asignación Varia</div><button class="mx" onclick="cerM('mAsigVar')">×</button></div>
+    <div class="mcab"><div class="mtit" id="avModalTit">Nueva Asignación Varia</div><button class="mx" onclick="cerM('mAsigVar')">×</button></div>
     <div class="mbody" style="display:flex;flex-direction:column;gap:14px">
       <div class="fg"><label class="fl">Título *</label><input class="fc" id="avTit" placeholder="Ej. Preparar presentación reunión..."></div>
-      <div class="fg"><label class="fl">Descripción</label><textarea class="fc" id="avDesc" rows="2" placeholder="Detalles opcionales..."></textarea></div>
-      <div class="fg"><label class="fl">Fecha límite</label><input type="date" class="fc" id="avFl"></div>
+      <div class="fg"><label class="fl">Descripción</label><textarea class="fc" id="avDesc" rows="2" placeholder="Qué hay que hacer..."></textarea></div>
+      <div class="fg"><label class="fl">Notas</label><textarea class="fc" id="avNotas" rows="2" placeholder="Observaciones, recordatorios, contexto..."></textarea></div>
+      <div class="fg">
+        <label class="fl">Recurrencia</label>
+        <select class="fc" id="avRec" onchange="togAvFechaFin()">
+          <option value="ninguna">Sin recurrencia</option>
+          <option value="diaria">Diaria</option>
+          <option value="semanal">Semanal</option>
+          <option value="bisemanal">Bisemanal (cada 2 semanas)</option>
+          <option value="mensual">Mensual</option>
+          <option value="anual">Anual</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl" id="avFlLbl">Fecha de inicio</label><input type="date" class="fc" id="avFl"></div>
+      <div class="fg" id="avFinBlk" style="display:none"><label class="fl">Fecha de fin (opcional)</label><input type="date" class="fc" id="avFin"></div>
       <div class="fg">
         <label class="fl">Asignar a</label>
         <div id="avAsigs" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"></div>
@@ -3364,7 +3377,7 @@ function renderCal(){
       return false;
     });
     const esHoy=fs===hh;
-    const avDia=(E.asigVarias||[]).filter(a=>a.fechaLimite===fs);
+    const avDia=(E.asigVarias||[]).filter(a=>avOcurreEnFecha(a,fs));
     const totalEv=td.length+avDia.length;
     const eventosT=td.slice(0,3).map(t=>{
       const sec=t.secciones?Object.keys(t.secciones)[0]:null;
@@ -4267,18 +4280,24 @@ function renderAsigVarias(){
       <span style="font-size:13px;color:var(--tx);${p.comp?'text-decoration:line-through;color:var(--tm)':''}">${p.texto}</span>
     </div>`).join('');
     const canEdit=niv==='lider'||niv==='editor'||(av.creadoPorId===uAct?.id);
+    const recLbl=av.recurrencia&&av.recurrencia!=='ninguna'?REC_LBL[av.recurrencia]||av.recurrencia:null;
+    const fechaLbl=av.fechaLimite?(recLbl?`📅 Desde: ${fmt(av.fechaLimite)}`:`${venc?'⚠️ ':'📅 '}Límite: ${fmt(av.fechaLimite)}`):null;
+    const fechaFinLbl=av.fechaFin&&recLbl?`hasta ${fmt(av.fechaFin)}`:'';
     return`<div style="background:var(--su);border:1px solid ${venc?'var(--ro)':'var(--bo)'};border-radius:var(--r);padding:16px;margin-bottom:12px">
       <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">
         <div style="flex:1;min-width:0">
           <div style="font-size:15px;font-weight:800;color:var(--tx)">${av.titulo}</div>
-          ${av.descripcion?`<div style="font-size:12px;color:var(--tm);margin-top:2px">${av.descripcion}</div>`:''}
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;align-items:center">
-            ${av.fechaLimite?`<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:${venc?'var(--ros)':'var(--su2)'};color:${venc?'var(--ro)':'var(--tm)'};font-weight:700">${venc?'⚠️ ':'📅 '}Límite: ${fmt(av.fechaLimite)}</span>`:''}
+          ${av.descripcion?`<div style="font-size:12px;color:var(--tm);margin-top:3px">${av.descripcion}</div>`:''}
+          ${av.notas?`<div style="font-size:12px;color:var(--az);margin-top:3px;padding:5px 8px;background:var(--azs);border-radius:5px;border-left:2px solid var(--az)">📝 ${av.notas}</div>`:''}
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center">
+            ${recLbl?`<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:var(--mos);color:var(--mo);font-weight:700">🔁 ${recLbl}${fechaFinLbl?' · '+fechaFinLbl:''}</span>`:''}
+            ${fechaLbl?`<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:${venc?'var(--ros)':'var(--su2)'};color:${venc?'var(--ro)':'var(--tm)'};font-weight:700">${fechaLbl}</span>`:''}
             ${resp?`<span style="font-size:11px;color:var(--na)">👤 ${resp}</span>`:''}
             <span style="font-size:11px;padding:2px 8px;border-radius:20px;background:var(--fo);color:${colPct};font-weight:700">${pct}% completado</span>
           </div>
         </div>
         ${canEdit?`<div style="display:flex;gap:4px;flex-shrink:0">
+          <button class="btn bgh bsm" style="font-size:11px" onclick="abrirMAsigVar('${av.id}')">✏️</button>
           <button class="btn bna bsm" style="font-size:11px" onclick="abrirFmPasoAV('${av.id}')">+ Paso</button>
           <button class="btn bgh bsm" style="font-size:11px;background:var(--ros);color:var(--ro)" onclick="elimAV('${av.id}')">✕</button>
         </div>`:''}
@@ -4296,15 +4315,47 @@ function renderAsigVarias(){
   }).join('');
 }
 function togChipAV(el){el.classList.toggle('chip-sel');}
-function abrirMAsigVar(){
-  document.getElementById('avTit').value='';
-  document.getElementById('avDesc').value='';
-  document.getElementById('avFl').value='';
+function togAvFechaFin(){
+  const rec=document.getElementById('avRec')?.value;
+  const finBlk=document.getElementById('avFinBlk');
+  const flLbl=document.getElementById('avFlLbl');
+  if(!finBlk||!flLbl)return;
+  const tieneRec=rec&&rec!=='ninguna';
+  finBlk.style.display=tieneRec?'':'none';
+  flLbl.textContent=tieneRec?'Fecha de inicio':'Fecha límite';
+}
+function avOcurreEnFecha(av,fs){
+  if(!av.fechaLimite)return false;
+  if(av.fechaFin&&fs>av.fechaFin)return false;
+  const rec=av.recurrencia||'ninguna';
+  if(rec==='ninguna')return av.fechaLimite===fs;
+  if(fs<av.fechaLimite)return false;
+  const ini=new Date(av.fechaLimite+'T00:00:00');
+  const cur=new Date(fs+'T00:00:00');
+  if(rec==='diaria')return true;
+  if(rec==='semanal')return ini.getDay()===cur.getDay();
+  if(rec==='bisemanal'){const diff=Math.round((cur-ini)/(864e5));return diff%14===0;}
+  if(rec==='mensual')return ini.getDate()===cur.getDate();
+  if(rec==='anual')return ini.getDate()===cur.getDate()&&ini.getMonth()===cur.getMonth();
+  return false;
+}
+const REC_LBL={diaria:'Diaria',semanal:'Semanal',bisemanal:'Bisemanal',mensual:'Mensual',anual:'Anual'};
+function abrirMAsigVar(avId){
+  const av=avId?(E.asigVarias||[]).find(a=>a.id===avId):null;
+  document.getElementById('avModalTit').textContent=av?'Editar Asignación Varia':'Nueva Asignación Varia';
+  document.getElementById('avTit').value=av?.titulo||'';
+  document.getElementById('avDesc').value=av?.descripcion||'';
+  document.getElementById('avNotas').value=av?.notas||'';
+  document.getElementById('avRec').value=av?.recurrencia||'ninguna';
+  document.getElementById('avFl').value=av?.fechaLimite||'';
+  document.getElementById('avFin').value=av?.fechaFin||'';
+  document.getElementById('avTit').dataset.editId=avId||'';
+  togAvFechaFin();
   const asigsCont=document.getElementById('avAsigs');
   if(asigsCont){
     const miembros=E.equipo.filter(u=>u.nivel!=='lector');
     asigsCont.innerHTML=miembros.length
-      ? miembros.map(u=>`<button type="button" class="btn bsm chip-av" data-id="${u.id}" onclick="togChipAV(this)">${u.nombre.split(' ')[0]}</button>`).join('')
+      ? miembros.map(u=>`<button type="button" class="btn bsm chip-av${(av?.asignadoA||[]).includes(u.id)?' chip-sel':''}" data-id="${u.id}" onclick="togChipAV(this)">${u.nombre.split(' ')[0]}</button>`).join('')
       : `<span style="font-size:13px;color:var(--tm)">No hay miembros disponibles</span>`;
   }
   abrirM('mAsigVar');
@@ -4313,12 +4364,21 @@ function guardarAsigVar(){
   const tit=document.getElementById('avTit')?.value?.trim();
   if(!tit){alert('El título es obligatorio.');return;}
   const desc=document.getElementById('avDesc')?.value?.trim();
+  const notas=document.getElementById('avNotas')?.value?.trim();
+  const rec=document.getElementById('avRec')?.value||'ninguna';
   const fl=document.getElementById('avFl')?.value;
+  const fin=document.getElementById('avFin')?.value||null;
   const uids=[...document.querySelectorAll('#avAsigs .chip-av.chip-sel')].map(c=>c.dataset.id);
+  const editId=document.getElementById('avTit')?.dataset?.editId;
   if(!E.asigVarias)E.asigVarias=[];
-  E.asigVarias.push({id:gId(),titulo:tit,descripcion:desc,pasos:[],asignadoA:uids,fechaLimite:fl,creadoPorId:uAct?.id,creadoPor:uAct?.nombre,fechaCreacion:hoy(),ocultoEnReporte:true});
+  if(editId){
+    const av=E.asigVarias.find(a=>a.id===editId);
+    if(av){Object.assign(av,{titulo:tit,descripcion:desc,notas,recurrencia:rec,fechaLimite:fl,fechaFin:fin,asignadoA:uids});}
+  }else{
+    E.asigVarias.push({id:gId(),titulo:tit,descripcion:desc,notas,recurrencia:rec,pasos:[],asignadoA:uids,fechaLimite:fl,fechaFin:fin,creadoPorId:uAct?.id,creadoPor:uAct?.nombre,fechaCreacion:hoy(),ocultoEnReporte:true});
+    reg('Nueva asig. varia',tit);
+  }
   guardar();cerM('mAsigVar');renderAsigVarias();
-  reg('Nueva asig. varia',tit);
 }
 function elimAV(id){
   if(!confirm('¿Eliminar esta asignación?'))return;
