@@ -4279,7 +4279,7 @@ function renderAsigVarias(){
       <div class="pbar" style="margin-bottom:10px"><div class="pfill" style="width:${pct}%;background:${colPct}"></div></div>
       <div style="border-top:1px solid var(--bo);padding-top:8px">${pasosHtml||'<div style="font-size:12px;color:var(--tm)">Sin pasos definidos.</div>'}</div>
       <div id="fmPasoAV-${av.id}" style="display:none;margin-top:8px;padding:8px;background:var(--fo);border:1px solid var(--bo);border-radius:6px">
-        <input class="fc" id="inPasoAV-${av.id}" placeholder="Descripción del paso..." style="font-size:12px;padding:5px 8px;width:100%;margin-bottom:6px;box-sizing:border-box">
+        <input class="fc" id="inPasoAV-${av.id}" placeholder="Descripción del paso..." style="font-size:12px;padding:5px 8px;width:100%;margin-bottom:6px;box-sizing:border-box" onkeydown="if(event.key==='Enter'){event.preventDefault();agregarPasoAV('${av.id}');}">
         <div style="display:flex;gap:6px">
           <button class="btn bna bsm" onclick="agregarPasoAV('${av.id}')">Agregar</button>
           <button class="btn bgh bsm" onclick="document.getElementById('fmPasoAV-${av.id}').style.display='none'">Cancelar</button>
@@ -4329,9 +4329,12 @@ function abrirFmPasoAV(avId){
 }
 function agregarPasoAV(avId){
   const av=(E.asigVarias||[]).find(a=>a.id===avId);if(!av)return;
-  const txt=document.getElementById('inPasoAV-'+avId)?.value?.trim();if(!txt)return;
+  const inp=document.getElementById('inPasoAV-'+avId);
+  const txt=inp?.value?.trim();if(!txt)return;
   av.pasos.push({id:gId(),texto:txt,comp:false});
   guardar();renderAsigVarias();
+  const nuevoInp=document.getElementById('inPasoAV-'+avId);
+  if(nuevoInp){document.getElementById('fmPasoAV-'+avId).style.display='block';nuevoInp.focus();}
 }
 
 function generarTxtInforme(fecha){
