@@ -3728,13 +3728,16 @@ function copiarRep(){if(!puede('verReportes')){alert('Sin permiso.');return;}nav
 
 function imprimirReporte(){
   if(!puede('verReportes')){alert('Sin permiso.');return;}
-  const ts=E.tareas,total=ts.length;
+  // Filtrar por el período activo igual que en generarRep()
+  const rango=getRepRango();
+  const rangoLbl=fmtRango(rango);
+  const ts=E.tareas.filter(t=>!t.borrador&&t.fecha&&t.fecha>=rango.ini&&t.fecha<=rango.fin);
+  const total=ts.length;
   const comp=ts.filter(t=>eglobal(t)==='Completada').length;
   const prog=ts.filter(t=>eglobal(t)==='En Progreso').length;
-  const pend=ts.filter(t=>eglobal(t)==='Pendiente').length;
   const pct=total?Math.round(comp/total*100):0;
   const venc=ts.filter(t=>t.fecha&&t.fecha<hoy()&&eglobal(t)!=='Completada');
-  const hapr=E.horasExtra.filter(h=>h.aprobacion==='Aprobado');
+  const hapr=E.horasExtra.filter(h=>h.aprobacion==='Aprobado'&&h.fecha&&h.fecha>=rango.ini&&h.fecha<=rango.fin);
   const thrs=hapr.reduce((s,h)=>s+parseFloat(h.horas||0),0);
   const semTxt=pct>=80?'🟢 VERDE — Rendimiento excelente':pct>=50?'🟡 AMARILLO — Rendimiento moderado':'🔴 ROJO — Requiere atención';
   const semCol=pct>=80?'#16a34a':pct>=50?'#d97706':'#dc2626';
@@ -3833,7 +3836,7 @@ function imprimirReporte(){
 
   const htmlContent=`<!DOCTYPE html><html lang="es"><head>
 <meta charset="UTF-8">
-<title>Reporte ${tipo} CACCO — ${fd}</title>
+<title>Reporte ${tipo} CACCO — ${rangoLbl}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#1a1a1a;background:#fff;padding:32px;max-width:860px;margin:0 auto;}
@@ -3858,7 +3861,7 @@ tr:last-child td{border-bottom:none;}
 @media print{.print-btn{display:none;}body{padding:16px;}}
 </style></head><body>
 <div class="hdr">
-  <div><h1>📊 Reporte ${tipo} — CACCO</h1><div style="font-size:12px;color:#666;margin-top:4px">Equipo de Comunicaciones · Centro de Arte y Cultura de Colón</div></div>
+  <div><h1>📊 Reporte ${tipo} — CACCO</h1><div style="font-size:13px;color:#E35205;font-weight:700;margin-top:3px">${rangoLbl}</div><div style="font-size:12px;color:#666;margin-top:2px">Equipo de Comunicaciones · Centro de Arte y Cultura de Colón</div></div>
   <div class="meta">${fd}<br>Generado por: ${uAct?.nombre||'—'}</div>
 </div>
 
