@@ -445,6 +445,8 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 .btn-prog{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:var(--rs);font-size:11px;font-weight:700;cursor:pointer;border:1.5px dashed var(--bo);background:transparent;color:var(--tm);font-family:'Inter',sans-serif;transition:all .15s;flex-shrink:0;}
 .btn-prog:hover{border-color:var(--na);background:var(--nas);color:var(--na);}
 .prog-badge{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:var(--rs);font-size:11px;font-weight:700;background:var(--nas);border:1.5px solid var(--nab);color:var(--na);flex-shrink:0;cursor:pointer;white-space:nowrap;}
+.chip-av{border:1.5px solid var(--bo);background:var(--fo);color:var(--tm);transition:all .15s;}
+.chip-av.chip-sel{background:var(--na);color:#fff;border-color:var(--na);}
 .pub-sec-tarea{margin-top:12px;background:var(--nas);border:1px solid var(--nab);border-radius:8px;padding:10px 14px;}
 .pub-sec-tit{font-size:10px;font-weight:800;color:var(--na);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
 .pub-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--nab);font-size:12px;}
@@ -4285,13 +4287,17 @@ function renderAsigVarias(){
     </div>`;
   }).join('');
 }
+function togChipAV(el){el.classList.toggle('chip-sel');}
 function abrirMAsigVar(){
   document.getElementById('avTit').value='';
   document.getElementById('avDesc').value='';
   document.getElementById('avFl').value='';
   const asigsCont=document.getElementById('avAsigs');
   if(asigsCont){
-    asigsCont.innerHTML=E.equipo.filter(u=>u.nivel!=='lector').map(u=>`<button class="btn bgh bsm chip-av" data-id="${u.id}" onclick="this.classList.toggle('chip-sel');this.style.background=this.classList.contains('chip-sel')?'var(--nab)':''" style="font-size:12px">${u.nombre.split(' ')[0]}</button>`).join('');
+    const miembros=E.equipo.filter(u=>u.nivel!=='lector');
+    asigsCont.innerHTML=miembros.length
+      ? miembros.map(u=>`<button type="button" class="btn bsm chip-av" data-id="${u.id}" onclick="togChipAV(this)">${u.nombre.split(' ')[0]}</button>`).join('')
+      : `<span style="font-size:13px;color:var(--tm)">No hay miembros disponibles</span>`;
   }
   abrirM('mAsigVar');
 }
