@@ -70,6 +70,12 @@ header{background:var(--na);height:60px;display:flex;align-items:center;justify-
 .ni .ico{font-size:14px;width:18px;text-align:center;flex-shrink:0;}
 .ni .ct{margin-left:auto;font-size:11px;background:var(--su2);border:1px solid var(--bo);padding:1px 7px;border-radius:20px;font-weight:600;}
 .ni.on .ct{background:var(--na);color:#fff;border-color:var(--na);}
+/* Chips de filtro de secciones (no son navegación) */
+.nfilts{display:flex;flex-wrap:wrap;gap:6px;padding:4px 8px 6px;}
+.nfilt{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:20px;font-size:12px;font-weight:600;color:var(--tm);cursor:pointer;border:1px solid var(--bo);background:var(--su);transition:all .12s;font-family:'Inter',sans-serif;}
+.nfilt:hover{border-color:var(--na);color:var(--na);}
+.nfilt.on{background:var(--na);color:#fff;border-color:var(--na);}
+.nfilt .ico{font-size:12px;}
 .ni2{padding-left:26px;font-size:12px;}
 .cont{flex:1;padding:28px;overflow-x:hidden;min-width:0;}
 /* STATS */
@@ -582,13 +588,15 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <button class="ni nle ned oculto" onclick="goV('reportes',this)"><span class="ico">📊</span>Reportes</button>
   <button class="ni nle oculto" onclick="goV('historico',this)"><span class="ico">🗂️</span>Histórico</button>
   <button class="ni nle oculto" onclick="goV('bitacora',this)"><span class="ico">📝</span>Bitácora</button>
-  <div class="nsep">Secciones</div>
-  <button class="ni" onclick="filtraCat('todos',this)"><span class="ico">🔘</span>Todas</button>
-  <button class="ni" onclick="filtraCat('Audiovisual',this)"><span class="ico">📹</span>Audiovisual</button>
-  <button class="ni" onclick="filtraCat('Protocolo',this)"><span class="ico">🎯</span>Protocolo</button>
-  <button class="ni" onclick="filtraCat('Diseño',this)"><span class="ico">🎨</span>Diseño</button>
-  <button class="ni" onclick="filtraCat('Redes Sociales',this)"><span class="ico">📱</span>Redes Sociales</button>
-  <button class="ni" onclick="filtraCat('Medios',this)"><span class="ico">📡</span>Medios</button>
+  <div class="nsep">Filtrar tareas por sección</div>
+  <div class="nfilts">
+    <button class="nfilt on" onclick="filtraCat('todos',this)"><span class="ico">🔘</span>Todas</button>
+    <button class="nfilt" onclick="filtraCat('Audiovisual',this)"><span class="ico">📹</span>Audiovisual</button>
+    <button class="nfilt" onclick="filtraCat('Protocolo',this)"><span class="ico">🎯</span>Protocolo</button>
+    <button class="nfilt" onclick="filtraCat('Diseño',this)"><span class="ico">🎨</span>Diseño</button>
+    <button class="nfilt" onclick="filtraCat('Redes Sociales',this)"><span class="ico">📱</span>Redes</button>
+    <button class="nfilt" onclick="filtraCat('Medios',this)"><span class="ico">📡</span>Medios</button>
+  </div>
   <div class="nsep">Publicaciones</div>
   <button class="ni new-item" onclick="goV('calPub',this)"><span class="ico">📡</span>Cal. Publicaciones<span class="new-tag">NUEVO</span></button>
 </nav>
@@ -1402,7 +1410,14 @@ function goV(v,el){
   if(v==='asigVarias')renderAsigVarias();
 }
 
-function filtraCat(c,el){fCat=c;document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));if(el)el.classList.add('on');goV('tareas',null);renderTareas();}
+function filtraCat(c,el){
+  fCat=c;
+  document.querySelectorAll('.nfilt').forEach(n=>n.classList.remove('on'));
+  if(el)el.classList.add('on');
+  // Navegar a Tareas y resaltar "Tareas" en el menú (no el filtro)
+  goV('tareas',document.querySelector('.ni[onclick*="tareas"]'));
+  renderTareas();
+}
 function renderTodo(){renderTareas();renderHoras();renderEquipo();actuCts();if(!document.getElementById('vAsignaciones')?.classList.contains('oculto'))renderAsig();}
 function actuCts(){document.getElementById('ctT').textContent=E.tareas.length;document.getElementById('ctH').textContent=E.horasExtra.length;}
 
@@ -1544,7 +1559,7 @@ function renderTareas(){
   const fa=document.getElementById('filtActivo');
   if(fa){
     const chips=[];
-    if(fCat&&fCat!=='todos')chips.push(`<span style="display:inline-flex;align-items:center;gap:5px;background:var(--na);color:#fff;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600">${fCat} <button onclick="filtraCat('todos',null);document.querySelector('.ni[onclick*=\\\"todos\\\"]')?.classList.add('on')" style="background:none;border:none;color:#fff;cursor:pointer;font-size:13px;line-height:1;padding:0 0 0 3px" title="Limpiar filtro">✕</button></span>`);
+    if(fCat&&fCat!=='todos')chips.push(`<span style="display:inline-flex;align-items:center;gap:5px;background:var(--na);color:#fff;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600">${fCat} <button onclick="filtraCat('todos',document.querySelector('.nfilt[onclick*=\\\"todos\\\"]'))" style="background:none;border:none;color:#fff;cursor:pointer;font-size:13px;line-height:1;padding:0 0 0 3px" title="Limpiar filtro">✕</button></span>`);
     fa.style.display=chips.length?'flex':'none';
     fa.innerHTML=chips.length?`<span style="font-size:12px;color:var(--tm);font-weight:500">Filtro activo:</span>${chips.join('')}`:'';
   }
