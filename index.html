@@ -1197,6 +1197,14 @@ function rAv(n,f,s=28,fs=10){const st=`width:${s}px;height:${s}px;font-size:${fs
 //  PERSISTENCIA (servidor compartido)
 // ════════════════════════
 function getToken(){return localStorage.getItem('cacco_token')||'';}
+// Decodifica el payload del JWT ({id,email,nivel,exp}) para re-entrar tras recargar.
+function tokenPayload(){
+  const t=getToken();if(!t)return null;
+  try{const p=t.split('.')[1];const j=JSON.parse(decodeURIComponent(escape(atob(p.replace(/-/g,'+').replace(/_/g,'/')))));
+    if(j.exp&&Date.now()/1000>j.exp)return null;// expirado
+    return j;
+  }catch(e){return null;}
+}
 
 function sesionExpirada(){
   if(document.getElementById('mSesExp')?.classList.contains('on'))return;
@@ -3724,6 +3732,10 @@ function generarRep(){
   // Semáforo por unidad (asignación), no por tarea completa
   const uTot=tsPer.reduce((s,t)=>{const u=unidadesTarea(t);s.asig+=u.asig;s.comp+=u.comp;s.noc+=u.noc;return s;},{asig:0,comp:0,noc:0});
   const pct=uTot.asig?Math.round(uTot.comp/uTot.asig*100):0;
+  // Puntualidad: tareas completadas a tiempo vs con retraso
+  const esTarde=t=>t.secciones&&Object.values(t.secciones).some(sv=>sv&&(sv.completadaTarde||sv.notaRetraso));
+  const compTarde=tsPer.filter(t=>eglobal(t)==='Completada'&&esTarde(t)).length;
+  const compATiempo=comp-compTarde;
   const sem=pct>=80?'🟢 VERDE — Rendimiento excelente':pct>=50?'🟡 AMARILLO — Rendimiento moderado':'🔴 ROJO — Requiere atención';
   const semC=pct>=80?'sver':pct>=50?'samar':'sroj';
   const pl={diario:'Diario',semanal:'Semanal',mensual:'Mensual'}[repP];
@@ -3776,6 +3788,7 @@ function generarRep(){
     <div class="rbtit">Semáforo · ${rangoLbl}</div>
     <div class="sem ${semC}">${sem}</div>
     <div style="font-size:12px;color:var(--tm);margin-top:8px">📊 ${uTot.comp} de ${uTot.asig} asignaciones completadas (${pct}%)${uTot.noc?` · ${uTot.noc} no cumplidas`:''}</div>
+    ${comp?`<div style="font-size:12px;margin-top:4px"><span style="color:#16a34a;font-weight:600">⏱️ ${compATiempo} a tiempo</span>${compTarde?` · <span style="color:#dc2626;font-weight:600">⏰ ${compTarde} con retraso</span>`:''}</div>`:''}
     <div class="sg" style="margin-top:16px;margin-bottom:0">
       <div class="stat sna"><div class="slbl">Tareas</div><div class="snum">${total}</div></div>
       <div class="stat sve"><div class="slbl">Completadas</div><div class="snum">${comp}</div><div class="ssub">de ${total} tareas</div></div>
@@ -4242,23 +4255,17 @@ ${thrs>0?`<div class="sec-title">Horas Extras Aprobadas</div>
   <button class="print-btn" onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button>
 </div>
 </body></html>`;
-  // Escribir el HTML directamente en la ventana evita que el blob se revoque
-  // y la pestaña quede en blanco antes de poder guardar/imprimir.
-  const w=window.open('','_blank');
-  if(!w){
-    // Ventana bloqueada: ofrecer descarga directa del archivo como respaldo
-    const blob=new Blob([htmlContent],{type:'text/html;charset=utf-8'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.download=`Reporte_CACCO_${tipo}_${rango.ini}.html`;
-    document.body.appendChild(a);a.click();a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),60000);
-    alert('Tu navegador bloqueó la ventana del reporte, así que se descargó como archivo. Ábrelo y usa "Imprimir / Guardar como PDF".');
-    return;
-  }
-  w.document.open();
-  w.document.write(htmlContent);
-  w.document.close();
+  // Imprimir en un iframe oculto dentro de la MISMA página: no abre ventana
+  // nueva ni recarga la app, así no se pierde la sesión ni se "borra" el reporte.
+  let f=document.getElementById('repPrintFrame');
+  if(f)f.remove();
+  f=document.createElement('iframe');
+  f.id='repPrintFrame';
+  f.style.cssText='position:fixed;width:0;height:0;border:0;right:0;bottom:0;visibility:hidden;';
+  document.body.appendChild(f);
+  const doc=f.contentWindow.document;
+  doc.open();doc.write(htmlContent);doc.close();
+  setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print();}catch(e){alert('No se pudo abrir el diálogo de impresión.');}},300);
 }
 
 function archivarRep(){
@@ -4983,7 +4990,15 @@ function iniciarPolling(){
 // ════════════════════════
 //  INICIO
 // ════════════════════════
-cargar().then(()=>renderLogin());
+// Si hay token válido, re-entrar automáticamente tras recargar (no volver al login)
+cargar().then(()=>{
+  const p=tokenPayload();
+  if(p&&getToken()){
+    const u=E.equipo?.find(x=>x.id===p.id);
+    if(u){entrar(u.id);return;}
+  }
+  renderLogin();
+});
 iniciarPolling();
 </script>
 </body>
