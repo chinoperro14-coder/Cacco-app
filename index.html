@@ -1535,6 +1535,7 @@ function renderTareas(){
             <div>
               <div style="font-size:13px;font-weight:700;color:var(--tx)">${sec}</div>
               <div style="font-size:11px;color:var(--tm)">👤 ${respNames}${sv.completadoPor?` · ✅ ${sv.completadoPor} · ${fmt(sv.completadoEn)}`:''}</div>
+              ${sv.notaRetraso?`<div style="font-size:11px;color:#dc2626;margin-top:2px">⏰ Completada con retraso — ${sv.notaRetraso}</div>`:''}
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:6px">
@@ -1895,6 +1896,17 @@ function irATarea(id){
 
 function editT(id){abrirMT(id);}
 
+// Pide motivo del retraso si la tarea está vencida. Devuelve {ok, nota}.
+// ok=false → el usuario canceló o no escribió motivo (abortar completado).
+function pedirJustifVencida(t){
+  if(!(t.fecha&&t.fecha<hoy()))return{ok:true,nota:null};
+  const nota=prompt(`⚠️ Esta tarea está VENCIDA (fecha límite: ${fmt(t.fecha)}).\n\nIndica el motivo del retraso para poder completarla:`);
+  if(nota===null)return{ok:false};
+  const n=nota.trim();
+  if(!n){alert('Debes indicar un motivo para completar una tarea vencida.');return{ok:false};}
+  return{ok:true,nota:n};
+}
+
 function togCat(tareaId,cat){
   if(!puede('marcarAvance')){alert('Sin permiso.');return;}
   const t=E.tareas.find(t=>t.id===tareaId);if(!t)return;
@@ -1904,8 +1916,10 @@ function togCat(tareaId,cat){
     t.avances[cat]={estado:'Pendiente',completadoPor:null,completadoEn:null};
     reg('Avance revertido',`"${t.titulo}" — ${cat} revertido por ${uAct?.nombre}`);
   } else {
-    t.avances[cat]={estado:'Completada',completadoPor:uAct?.nombre,completadoEn:hoy()};
-    reg('Avance completado',`"${t.titulo}" — ${cat} por ${uAct?.nombre}`);
+    const j=pedirJustifVencida(t);
+    if(!j.ok)return;
+    t.avances[cat]={estado:'Completada',completadoPor:uAct?.nombre,completadoEn:hoy(),notaRetraso:j.nota||null};
+    reg('Avance completado',`"${t.titulo}" — ${cat} por ${uAct?.nombre}${j.nota?` (VENCIDA — motivo: ${j.nota})`:''}`);
     addNotif('✅',`${cat} completado: "${t.titulo}"`,`Por ${uAct?.nombre}`);
     if(pctT(t)===100)addNotif('🎉',`Tarea completada: "${t.titulo}"`,'100% — todas las categorías listas');
   }
@@ -2348,8 +2362,10 @@ function togSeccion(tareaId,sec){
     t.secciones[sec]={...sv,estado:'Pendiente',completadoPor:null,completadoEn:null};
     reg('Avance revertido',`"${t.titulo}" — ${sec} revertido por ${uAct?.nombre}`);
   } else {
-    t.secciones[sec]={...sv,estado:'Completada',completadoPor:uAct?.nombre,completadoEn:hoy()};
-    reg('Avance completado',`"${t.titulo}" — ${sec} completado por ${uAct?.nombre}`);
+    const j=pedirJustifVencida(t);
+    if(!j.ok)return;
+    t.secciones[sec]={...sv,estado:'Completada',completadoPor:uAct?.nombre,completadoEn:hoy(),notaRetraso:j.nota||null};
+    reg('Avance completado',`"${t.titulo}" — ${sec} completado por ${uAct?.nombre}${j.nota?` (VENCIDA — motivo: ${j.nota})`:''}`);
     addNotif('✅',`${sec} completado: "${t.titulo}"`,`Por ${uAct?.nombre}`);
     if(pctT(t)===100)addNotif('🎉',`Tarea completada: "${t.titulo}"`,'100% — todas las secciones listas');
   }
@@ -3816,20 +3832,43 @@ function imprimirReporte(){
     </tr>`;
   });
 
-  // Pendientes / Vencidas
-  let pendRows='';
-  ts.filter(t=>eglobal(t)!=='Completada').sort((a,b)=>{if(!a.fecha&&!b.fecha)return 0;if(!a.fecha)return 1;if(!b.fecha)return -1;return a.fecha.localeCompare(b.fecha);}).forEach(t=>{
-    const eg=eglobal(t);
+  // Pendientes / Vencidas — agrupadas por responsable con su área específica
+  const pendPorPersona={};// clave -> {nombre, items:[{titulo,area,fecha,isVenc,estado}]}
+  const pushPend=(clave,nombre,item)=>{if(!pendPorPersona[clave])pendPorPersona[clave]={nombre,items:[]};pendPorPersona[clave].items.push(item);};
+  ts.filter(t=>eglobal(t)!=='Completada').forEach(t=>{
     const isVenc=t.fecha&&t.fecha<hoy();
-    const estCol=eg==='En Progreso'?'#2563eb':isVenc?'#dc2626':'#d97706';
-    const estTxt=isVenc?'⚠️ VENCIDA':eg;
-    const resps=t.secciones?Object.values(t.secciones).flatMap(sv=>(sv.responsables||[]).map(uid=>{const u=E.equipo.find(e=>e.id===uid);return u?u.nombre.split(' ')[0]:null;})).filter(Boolean):[]; 
-    pendRows+=`<tr style="${isVenc?'background:#fff5f5':''} ">
-      <td><strong>${t.titulo}</strong>${t.notas?'<br><span style="font-size:11px;color:#666">📝 '+t.notas+'</span>':''}</td>
-      <td><span style="color:${estCol};font-weight:600;font-size:12px">${estTxt}</span></td>
-      <td style="font-size:12px">${t.fecha?fmt(t.fecha):'-'}</td>
-      <td style="font-size:12px">${resps.join(', ')||'—'}</td>
-    </tr>`;
+    if(t.secciones&&Object.keys(t.secciones).length){
+      Object.entries(t.secciones).forEach(([sec,sv])=>{
+        if(!sv||sv.estado==='Completada')return;// solo áreas pendientes
+        const eg=sv.estado==='En Progreso'?'En Progreso':'Pendiente';
+        const resps=sv.responsables||[];
+        const item={titulo:t.titulo,area:sec,fecha:t.fecha,isVenc,estado:eg};
+        if(!resps.length){pushPend('__sin__','Sin asignar',item);}
+        else resps.forEach(uid=>{const u=E.equipo.find(e=>e.id===uid);pushPend(uid,u?u.nombre:'Sin asignar',item);});
+      });
+    } else {
+      const areas=(t.categorias||[]).filter(c=>(t.avances?.[c]?.estado||'Pendiente')!=='Completada');
+      pushPend('__gen__','Sin asignar',{titulo:t.titulo,area:areas.join(', ')||'—',fecha:t.fecha,isVenc,estado:eglobal(t)});
+    }
+  });
+  let pendRows='';
+  const personasPend=Object.values(pendPorPersona).sort((a,b)=>{
+    if(a.nombre==='Sin asignar')return 1;if(b.nombre==='Sin asignar')return -1;
+    return a.nombre.localeCompare(b.nombre);
+  });
+  personasPend.forEach(p=>{
+    const nVenc=p.items.filter(i=>i.isVenc).length;
+    pendRows+=`<tr style="background:#f3f4f6"><td colspan="3" style="padding:10px"><strong style="font-size:13px">👤 ${p.nombre}</strong> <span style="font-size:11px;color:#888">· ${p.items.length} pendiente(s)${nVenc?` · <span style="color:#dc2626;font-weight:700">${nVenc} vencida(s)</span>`:''}</span></td></tr>`;
+    p.items.sort((a,b)=>{if(!a.fecha&&!b.fecha)return 0;if(!a.fecha)return 1;if(!b.fecha)return -1;return a.fecha.localeCompare(b.fecha);}).forEach(i=>{
+      const estCol=i.estado==='En Progreso'?'#2563eb':i.isVenc?'#dc2626':'#d97706';
+      const estTxt=i.isVenc?'⚠️ VENCIDA':i.estado;
+      const ico=SECCIONES[i.area]?.ico||'📌';
+      pendRows+=`<tr style="${i.isVenc?'background:#fff5f5':''}">
+        <td style="padding-left:22px"><strong>${i.titulo}</strong><br><span style="font-size:11px;color:#666">${ico} ${i.area}</span></td>
+        <td><span style="color:${estCol};font-weight:600;font-size:12px">${estTxt}</span></td>
+        <td style="font-size:12px">${i.fecha?fmt(i.fecha):'-'}</td>
+      </tr>`;
+    });
   });
 
   // Tareas completadas
@@ -3904,9 +3943,9 @@ tr:last-child td{border-bottom:none;}
 <table><thead><tr><th>Tarea</th><th>Sección</th><th>Fecha</th><th>Responsable</th></tr></thead>
 <tbody>${compRows||'<tr><td colspan=4 style="color:#888;text-align:center">Sin tareas completadas</td></tr>'}</tbody></table>
 
-<div class="sec-title">Pendientes y Vencidas</div>
-<table><thead><tr><th>Tarea</th><th>Estado</th><th>Fecha</th><th>Responsable</th></tr></thead>
-<tbody>${pendRows||'<tr><td colspan=4 style="color:#16a34a;text-align:center">✅ Sin tareas pendientes</td></tr>'}</tbody></table>
+<div class="sec-title">Pendientes y Vencidas — por responsable</div>
+<table><thead><tr><th>Tarea / Área</th><th>Estado</th><th>Fecha</th></tr></thead>
+<tbody>${pendRows||'<tr><td colspan=3 style="color:#16a34a;text-align:center">✅ Sin tareas pendientes</td></tr>'}</tbody></table>
 
 ${thrs>0?`<div class="sec-title">Horas Extras Aprobadas</div>
 <table><thead><tr><th>Colaborador</th><th style="text-align:center">Registros</th><th style="text-align:center">Total Horas</th></tr></thead>
