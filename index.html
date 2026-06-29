@@ -1527,6 +1527,23 @@ function recalcSeccionEstado(t,sec){
     if(prev==='Completada')reg('Avance revertido',`"${t.titulo}" — ${sec} dejó de estar completado`);
   }
 }
+// Unidades (asignaciones) de una sección dentro de una tarea. Las áreas simples cuentan como 1.
+function unidadesDeSeccion(t,sec){
+  const sv=t.secciones?.[sec];if(!sv)return{asig:0,comp:0,noc:0};
+  const u=contarUnidadesSeccion(t,sec);
+  if(u&&u.asig>0)return{asig:u.asig,comp:u.comp,noc:u.noc};
+  return{asig:1,comp:sv.estado==='Completada'?1:0,noc:sv.estado==='No cumplida'?1:0};
+}
+// Suma de unidades de toda una tarea (todas sus secciones).
+function unidadesTarea(t){
+  let asig=0,comp=0,noc=0;
+  if(t.secciones&&Object.keys(t.secciones).length){
+    Object.keys(t.secciones).forEach(sec=>{if(!t.secciones[sec])return;const u=unidadesDeSeccion(t,sec);asig+=u.asig;comp+=u.comp;noc+=u.noc;});
+  } else {
+    const cats=(t.categorias||[]);asig=cats.length||1;comp=cats.filter(c=>(t.avances?.[c]?.estado)==='Completada').length;
+  }
+  return{asig,comp,noc};
+}
 function misCats(){
   if(niv==='lider'||niv==='editor')return SECC_NAMES;
   return uAct?.secciones?.length?uAct.secciones:[];
@@ -3686,20 +3703,22 @@ function generarRep(){
   const prog=tsPer.filter(t=>eglobal(t)==='En Progreso').length;
   const pend=tsPer.filter(t=>eglobal(t)==='Pendiente').length;
   const venc=tsPer.filter(t=>t.fecha&&t.fecha<hoy()&&!tResuelta(t));
-  const pct=total?Math.round(comp/total*100):0;
+  // Semáforo por unidad (asignación), no por tarea completa
+  const uTot=tsPer.reduce((s,t)=>{const u=unidadesTarea(t);s.asig+=u.asig;s.comp+=u.comp;s.noc+=u.noc;return s;},{asig:0,comp:0,noc:0});
+  const pct=uTot.asig?Math.round(uTot.comp/uTot.asig*100):0;
   const sem=pct>=80?'🟢 VERDE — Rendimiento excelente':pct>=50?'🟡 AMARILLO — Rendimiento moderado':'🔴 ROJO — Requiere atención';
   const semC=pct>=80?'sver':pct>=50?'samar':'sroj';
   const pl={diario:'Diario',semanal:'Semanal',mensual:'Mensual'}[repP];
 
-  // Métricas por sección (período actual)
+  // Métricas por sección (período actual) — por unidad
   const secMetrics=SECC_NAMES.map(sec=>{
     const tc=tsPer.filter(t=>t.secciones?.[sec]);
-    const cc=tc.filter(t=>t.secciones[sec].estado==='Completada').length;
-    const pp=tc.length?Math.round(cc/tc.length*100):0;
+    const su=tc.reduce((s,t)=>{const u=unidadesDeSeccion(t,sec);s.asig+=u.asig;s.comp+=u.comp;s.noc+=u.noc;return s;},{asig:0,comp:0,noc:0});
+    const pp=su.asig?Math.round(su.comp/su.asig*100):0;
     const col=pp>=80?'var(--ve)':pp>=50?'var(--na)':'var(--ro)';
     const sm2=pp>=80?'🟢':pp>=50?'🟡':'🔴';
     const resps=[...new Set(tc.flatMap(t=>(t.secciones[sec].responsables||[]).map(uid=>{const u=E.equipo.find(e=>e.id===uid);return u?u.nombre.split(' ')[0]:null;}).filter(Boolean)))].join(', ');
-    return{sec,ico:SECCIONES[sec].ico,tc,cc,pp,col,sm2,resps};
+    return{sec,ico:SECCIONES[sec].ico,tc,cc:su.comp,casig:su.asig,pp,col,sm2,resps};
   }).filter(m=>m.tc.length);
 
   // Métricas por persona (período actual)
@@ -3738,9 +3757,10 @@ function generarRep(){
   let html=`<div class="rblk">
     <div class="rbtit">Semáforo · ${rangoLbl}</div>
     <div class="sem ${semC}">${sem}</div>
+    <div style="font-size:12px;color:var(--tm);margin-top:8px">📊 ${uTot.comp} de ${uTot.asig} asignaciones completadas (${pct}%)${uTot.noc?` · ${uTot.noc} no cumplidas`:''}</div>
     <div class="sg" style="margin-top:16px;margin-bottom:0">
       <div class="stat sna"><div class="slbl">Tareas</div><div class="snum">${total}</div></div>
-      <div class="stat sve"><div class="slbl">Completadas</div><div class="snum">${comp}</div><div class="ssub">${pct}%</div></div>
+      <div class="stat sve"><div class="slbl">Completadas</div><div class="snum">${comp}</div><div class="ssub">de ${total} tareas</div></div>
       <div class="stat saz"><div class="slbl">En Progreso</div><div class="snum">${prog}</div></div>
       <div class="stat sro"><div class="slbl">Vencidas</div><div class="snum">${venc.length}</div></div>
     </div>
@@ -3754,7 +3774,7 @@ function generarRep(){
       html+=`<div style="margin-bottom:16px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
           <span style="font-size:14px;font-weight:700">${m.ico} ${m.sec}</span>
-          <span style="font-size:12px;font-weight:700;color:${m.col}">${m.sm2} ${m.cc}/${m.tc.length} · ${m.pp}%</span>
+          <span style="font-size:12px;font-weight:700;color:${m.col}">${m.sm2} ${m.cc}/${m.casig} · ${m.pp}%</span>
         </div>
         <div class="pbar" style="margin-bottom:8px"><div class="pfill" style="width:${m.pp}%;background:${m.col}"></div></div>
         ${m.tc.map(t=>{
@@ -3861,7 +3881,7 @@ function generarRep(){
         html+=`<div style="margin-bottom:10px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
             <span style="font-size:13px;font-weight:600">${m.ico} ${m.sec}</span>
-            <span style="font-size:12px;font-weight:700;color:${m.col}">${m.sm2} ${m.cc}/${m.tc.length} (${m.pp}%)</span>
+            <span style="font-size:12px;font-weight:700;color:${m.col}">${m.sm2} ${m.cc}/${m.casig} (${m.pp}%)</span>
           </div>
           ${m.resps?`<div style="font-size:11px;color:var(--tm);margin-bottom:3px">👤 ${m.resps}</div>`:''}
           <div class="pbar"><div class="pfill" style="width:${m.pp}%;background:${m.col}"></div></div>
@@ -3892,7 +3912,7 @@ function generarRep(){
   if(tsPer.length){
     texto+=`📅 ACTIVIDADES ${periodoLbl.toUpperCase()}\n`;
     secMetrics.forEach(m=>{
-      texto+=`\n${m.ico} ${m.sec.toUpperCase()} — ${m.sm2} ${m.cc}/${m.tc.length} (${m.pp}%)\n`;
+      texto+=`\n${m.ico} ${m.sec.toUpperCase()} — ${m.sm2} ${m.cc}/${m.casig} (${m.pp}%)\n`;
       m.tc.forEach(t=>{
         const sv=t.secciones[m.sec];const est=sv.estado||'Pendiente';
         const estI=est==='Completada'?'✅':est==='En Progreso'?'🔄':'⏳';
@@ -3938,7 +3958,7 @@ function generarRep(){
     });
   }
   texto+=`\n📊 EVALUACIÓN POR SECCIÓN\n`;
-  secMetrics.forEach(m=>{texto+=`  ${m.ico} ${m.sec}: ${m.cc}/${m.tc.length} (${m.pp}%) ${m.sm2}\n`;});
+  secMetrics.forEach(m=>{texto+=`  ${m.ico} ${m.sec}: ${m.cc}/${m.casig} (${m.pp}%) ${m.sm2}\n`;});
   texto+=`\n👥 EVALUACIÓN POR PERSONA\n`;
   persMetrics.forEach(m=>{texto+=`  👤 ${m.u.nombre}: ${m.cc2}/${m.asigs.length} (${m.pp2}%) ${m.sm3}\n`;});
   texto+=`\n${'═'.repeat(50)}\nCACCO · ${new Date().toLocaleString('es-PA')}`;
@@ -3959,7 +3979,9 @@ function imprimirReporte(){
   const total=ts.length;
   const comp=ts.filter(t=>eglobal(t)==='Completada').length;
   const prog=ts.filter(t=>eglobal(t)==='En Progreso').length;
-  const pct=total?Math.round(comp/total*100):0;
+  // Semáforo por unidad (asignación)
+  const uTot=ts.reduce((s,t)=>{const u=unidadesTarea(t);s.asig+=u.asig;s.comp+=u.comp;s.noc+=u.noc;return s;},{asig:0,comp:0,noc:0});
+  const pct=uTot.asig?Math.round(uTot.comp/uTot.asig*100):0;
   const venc=ts.filter(t=>t.fecha&&t.fecha<hoy()&&!tResuelta(t));
   const hapr=E.horasExtra.filter(h=>h.aprobacion==='Aprobado'&&h.fecha&&h.fecha>=rango.ini&&h.fecha<=rango.fin);
   const thrs=hapr.reduce((s,h)=>s+parseFloat(h.horas||0),0);
@@ -3973,13 +3995,14 @@ function imprimirReporte(){
   let secRows='';
   SECC_NAMES.forEach(sec=>{
     const tc=ts.filter(t=>t.secciones?.[sec]);if(!tc.length)return;
-    const cc=tc.filter(t=>t.secciones[sec].estado==='Completada').length;
-    const pp=tc.length?Math.round(cc/tc.length*100):0;
+    const su=tc.reduce((s,t)=>{const u=unidadesDeSeccion(t,sec);s.asig+=u.asig;s.comp+=u.comp;return s;},{asig:0,comp:0});
+    const cc=su.comp;
+    const pp=su.asig?Math.round(su.comp/su.asig*100):0;
     const col=pp>=80?'#16a34a':pp>=50?'#E35205':'#dc2626';
     const resps=[...new Set(tc.flatMap(t=>(t.secciones[sec].responsables||[]).map(uid=>{const u=E.equipo.find(e=>e.id===uid);return u?u.nombre:null;}).filter(Boolean)))].join(', ');
     secRows+=`<tr>
       <td><strong>${SECCIONES[sec].ico} ${sec}</strong>${resps?'<br><span style="font-size:11px;color:#666">👤 '+resps+'</span>':''}</td>
-      <td style="text-align:center">${cc}/${tc.length}</td>
+      <td style="text-align:center">${cc}/${su.asig}</td>
       <td style="width:120px">
         <div style="display:flex;align-items:center;gap:6px">
           <div style="flex:1;height:8px;background:#eee;border-radius:4px;overflow:hidden">
@@ -4147,15 +4170,16 @@ tr:last-child td{border-bottom:none;}
 
 <div class="sec-title">Estado General</div>
 <div class="sem">${semTxt}</div>
+<div style="font-size:12px;color:#666;margin-bottom:14px">📊 ${uTot.comp} de ${uTot.asig} asignaciones completadas (${pct}%)${uTot.noc?` · ${uTot.noc} no cumplidas`:''}</div>
 <div class="grid">
-  <div class="stat" style="border-top:3px solid #E35205"><div class="lbl">Total</div><div class="val">${total}</div></div>
-  <div class="stat" style="border-top:3px solid #16a34a"><div class="lbl">Completadas</div><div class="val">${comp}</div><div class="sub">${pct}%</div></div>
+  <div class="stat" style="border-top:3px solid #E35205"><div class="lbl">Tareas</div><div class="val">${total}</div></div>
+  <div class="stat" style="border-top:3px solid #16a34a"><div class="lbl">Completadas</div><div class="val">${comp}</div><div class="sub">de ${total} tareas</div></div>
   <div class="stat" style="border-top:3px solid #2563eb"><div class="lbl">En Progreso</div><div class="val">${prog}</div></div>
   <div class="stat" style="border-top:3px solid #dc2626"><div class="lbl">Vencidas</div><div class="val">${venc.length}</div></div>
 </div>
 
-<div class="sec-title">Avance por Sección</div>
-<table><thead><tr><th>Sección</th><th style="text-align:center">Tareas</th><th>Progreso</th></tr></thead>
+<div class="sec-title">Avance por Sección (por asignación)</div>
+<table><thead><tr><th>Sección</th><th style="text-align:center">Asignaciones</th><th>Progreso</th></tr></thead>
 <tbody>${secRows||'<tr><td colspan=3 style="color:#888;text-align:center">Sin tareas registradas</td></tr>'}</tbody></table>
 
 <div class="sec-title">Avance por Persona</div>
