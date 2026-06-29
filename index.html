@@ -1154,6 +1154,8 @@ let E={tareas:[],horasExtra:[],equipo:[],bitacora:[],notifs:[],etiquetas:[...ETI
 let uAct=null,niv=null,fCat='todos',nivelTxt=0,repP='semanal',repOffset=0;
 let etiqSel=[];
 let expandidas=new Set();
+let seccExpandidas=new Set();// secciones resueltas que el usuario abrió manualmente (clave: tareaId|sec)
+function togSecc(tareaId,sec){const k=tareaId+'|'+sec;seccExpandidas.has(k)?seccExpandidas.delete(k):seccExpandidas.add(k);renderTareas();}
 let avWiz={userId:null,medio:null};
 let avAsignaciones=[];
 
@@ -1667,8 +1669,11 @@ function renderTareas(){
         // ¿El área tiene sub-asignaciones (Redes/Medios/Audiovisual)? Entonces se resuelve por asignación, no con botón de área.
         const uni=contarUnidadesSeccion(t,sec);
         const tieneUnid=uni&&uni.asig>0;
+        // Las secciones resueltas (completada/no cumplida/cerrada) se contraen por defecto
+        const resuelta=comp||noCump||cerr;
+        const abiertaSec=!resuelta||seccExpandidas.has(t.id+'|'+sec);
 
-        const hdrStyle=`background:${sInfo.bg};border-left:3px solid ${sInfo.color||'var(--na)'};padding:8px 12px;border-radius:var(--rs);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px`;
+        const hdrStyle=`background:${sInfo.bg};border-left:3px solid ${sInfo.color||'var(--na)'};padding:8px 12px;border-radius:var(--rs);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:${abiertaSec?'8px':'0'};cursor:${resuelta?'pointer':'default'}`;
         const statusBadge=comp
           ?`<span style="font-size:11px;background:#E1F5EE;color:#0F6E56;padding:2px 8px;border-radius:20px;font-weight:700">✅ Completado</span>`
           :noCump
@@ -1679,8 +1684,9 @@ function renderTareas(){
           ?`<span style="font-size:11px;background:#E3F2FD;color:#185FA5;padding:2px 8px;border-radius:20px;font-weight:700">⏳ En progreso</span>`
           :`<span style="font-size:11px;background:#FFF8E1;color:#F57F17;padding:2px 8px;border-radius:20px;font-weight:700">⏳ Pendiente</span>`;
         const resumenUnid=tieneUnid?`<div style="font-size:11px;color:var(--tm);margin-top:2px">✅ ${uni.comp} hechas · 🚫 ${uni.noc} no cumplidas · ⏳ ${uni.sinResolver} sin resolver · de ${uni.asig}</div>`:'';
-        const sHdr=`<div style="${hdrStyle}">
+        const sHdr=`<div style="${hdrStyle}" ${resuelta?`onclick="togSecc('${t.id}','${sec}')"`:''} title="${resuelta?(abiertaSec?'Clic para contraer':'Clic para ver detalle'):''}">
           <div style="display:flex;align-items:center;gap:8px">
+            ${resuelta?`<span style="font-size:13px;color:var(--tm);transition:transform .2s;display:inline-block;transform:${abiertaSec?'rotate(90deg)':'rotate(0)'}">▸</span>`:''}
             <span style="font-size:16px">${sInfo.ico}</span>
             <div>
               <div style="font-size:13px;font-weight:700;color:var(--tx)">${sec}</div>
@@ -1902,9 +1908,9 @@ function renderTareas(){
 
         return`<div style="margin-bottom:12px;padding:10px;background:var(--su);border:1px solid var(--bo);border-radius:var(--r)">
           ${sHdr}
-          ${detalle?`<div style="margin-bottom:8px">${detalle}</div>`:''}
+          ${abiertaSec?`${detalle?`<div style="margin-bottom:8px">${detalle}</div>`:''}
           ${entItems}
-          ${addEntForm}
+          ${addEntForm}`:''}
         </div>`;
       }).join('');
     }
