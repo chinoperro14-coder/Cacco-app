@@ -4315,17 +4315,35 @@ ${thrs>0?`<div class="sec-title">Horas Extras Aprobadas</div>
   <button class="print-btn" onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button>
 </div>
 </body></html>`;
-  // Abrir el reporte como página completa en una pestaña nueva (formato establecido).
-  // Se escribe el HTML directo en la ventana (no blob) para que no se borre, y el
-  // auto-login evita que recargar la app saque de la sesión.
-  const w=window.open('','_blank');
-  if(!w){
-    alert('Tu navegador bloqueó la ventana del reporte. Permite las ventanas emergentes para este sitio e intenta de nuevo.');
-    return;
-  }
-  w.document.open();
-  w.document.write(htmlContent);
-  w.document.close();
+  // Mostrar el reporte a pantalla completa dentro de la misma app (iframe).
+  // Así nunca se queda en blanco ni saca del login (a diferencia de abrir una
+  // pestaña nueva, que en algunos navegadores/entornos se "borra").
+  let ov=document.getElementById('repOverlay');
+  if(ov)ov.remove();
+  ov=document.createElement('div');
+  ov.id='repOverlay';
+  ov.style.cssText='position:fixed;inset:0;z-index:99999;background:#fff;display:flex;flex-direction:column';
+  ov.innerHTML=`
+    <div style="display:flex;gap:8px;align-items:center;padding:10px 14px;background:#1a1a1a;flex-wrap:wrap;flex-shrink:0">
+      <span style="color:#fff;font-weight:600;font-size:14px;margin-right:auto">📊 Reporte — ${rangoLbl}</span>
+      <button id="repPrintBtn" style="padding:8px 16px;background:#E35205;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer">🖨️ Imprimir / Guardar PDF</button>
+      <button id="repDescBtn" style="padding:8px 14px;background:#2563eb;color:#fff;border:none;border-radius:8px;cursor:pointer">⬇️ Descargar</button>
+      <button id="repCloseBtn" style="padding:8px 14px;background:#444;color:#fff;border:none;border-radius:8px;cursor:pointer">✕ Cerrar</button>
+    </div>
+    <iframe id="repFrame" style="flex:1;width:100%;border:0;background:#fff"></iframe>`;
+  document.body.appendChild(ov);
+  const fr=document.getElementById('repFrame');
+  const fdoc=fr.contentWindow.document;
+  fdoc.open();fdoc.write(htmlContent);fdoc.close();
+  document.getElementById('repPrintBtn').onclick=()=>{try{fr.contentWindow.focus();fr.contentWindow.print();}catch(e){alert('No se pudo abrir el diálogo de impresión.');}};
+  document.getElementById('repDescBtn').onclick=()=>{
+    const blob=new Blob([htmlContent],{type:'text/html;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=`Reporte_CACCO_${tipo}_${rango.ini}.html`;
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+  };
+  document.getElementById('repCloseBtn').onclick=()=>ov.remove();
 }
 
 function archivarRep(){
