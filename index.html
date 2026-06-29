@@ -4095,7 +4095,7 @@ function imprimirReporte(){
           noCumplidasUnidades(t,sec).forEach(nc=>noCumplidas.push({titulo:t.titulo,area:`${sec} — ${nc.detalle}`,fecha:t.fecha,resp:respN,motivo:nc.motivo,por:''}));
           // Pendientes: solo si quedan unidades sin resolver
           if(u.sinResolver>0){
-            const item={titulo:t.titulo,area:`${sec} (${u.sinResolver} sin resolver)`,fecha:t.fecha,isVenc,estado:sv.estado==='En Progreso'?'En Progreso':'Pendiente'};
+            const item={titulo:t.titulo,notas:t.notas||'',area:`${sec} (${u.sinResolver} sin resolver)`,fecha:t.fecha,isVenc,estado:sv.estado==='En Progreso'?'En Progreso':'Pendiente'};
             if(!resps.length){pushPend('__sin__','Sin asignar',item);}
             else resps.forEach(uid=>{const x=E.equipo.find(e=>e.id===uid);pushPend(uid,x?x.nombre:'Sin asignar',item);});
           }
@@ -4108,13 +4108,13 @@ function imprimirReporte(){
           return;
         }
         const eg=sv.estado==='En Progreso'?'En Progreso':'Pendiente';
-        const item={titulo:t.titulo,area:sec,fecha:t.fecha,isVenc,estado:eg};
+        const item={titulo:t.titulo,notas:t.notas||'',area:sec,fecha:t.fecha,isVenc,estado:eg};
         if(!resps.length){pushPend('__sin__','Sin asignar',item);}
         else resps.forEach(uid=>{const x=E.equipo.find(e=>e.id===uid);pushPend(uid,x?x.nombre:'Sin asignar',item);});
       });
     } else if(eglobal(t)!=='Completada'){
       const areas=(t.categorias||[]).filter(c=>(t.avances?.[c]?.estado||'Pendiente')!=='Completada');
-      pushPend('__gen__','Sin asignar',{titulo:t.titulo,area:areas.join(', ')||'—',fecha:t.fecha,isVenc,estado:eglobal(t)});
+      pushPend('__gen__','Sin asignar',{titulo:t.titulo,notas:t.notas||'',area:areas.join(', ')||'—',fecha:t.fecha,isVenc,estado:eglobal(t)});
     }
   });
   let pendRows='';
@@ -4130,7 +4130,7 @@ function imprimirReporte(){
       const estTxt=i.isVenc?'⚠️ VENCIDA':i.estado;
       const ico=SECCIONES[i.area]?.ico||'📌';
       pendRows+=`<tr style="${i.isVenc?'background:#fff5f5':''}">
-        <td style="padding-left:22px"><strong>${i.titulo}</strong><br><span style="font-size:11px;color:#666">${ico} ${i.area}</span></td>
+        <td style="padding-left:22px"><strong>${i.titulo}</strong>${i.notas?`<br><span style="font-size:11px;color:#666">📝 ${i.notas}</span>`:''}<br><span style="font-size:11px;color:#666">${ico} ${i.area}</span></td>
         <td><span style="color:${estCol};font-weight:600;font-size:12px">${estTxt}</span></td>
         <td style="font-size:12px">${i.fecha?fmt(i.fecha):'-'}</td>
       </tr>`;
@@ -4166,7 +4166,7 @@ function imprimirReporte(){
     const tag=ti.tarde?` <span style="font-size:10px;font-weight:700;color:#dc2626;background:#fee2e2;padding:1px 6px;border-radius:10px;white-space:nowrap">⏰ TARDE</span>`:'';
     const motivoTxt=ti.tarde&&ti.motivos.length?`<br><span style="font-size:11px;color:#991b1b">⏰ ${ti.motivos.join(' · ')}</span>`:'';
     compRows+=`<tr style="background:${ti.tarde?'#fffbeb':'#f0fdf4'}">
-      <td><strong>${t.titulo}</strong>${tag}${motivoTxt}</td>
+      <td><strong>${t.titulo}</strong>${tag}${t.notas?`<br><span style="font-size:11px;color:#666">📝 ${t.notas}</span>`:''}${motivoTxt}</td>
       <td style="font-size:12px;color:#166534">${secs||'—'}</td>
       <td style="font-size:12px">${t.fecha?fmt(t.fecha):'-'}</td>
       <td style="font-size:12px">${[...new Set(resps)].join(', ')||'—'}</td>
