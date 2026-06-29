@@ -1417,11 +1417,12 @@ function eglobal(t){
     const total=avs.length;
     const comp=avs.filter(s=>s.estado==='Completada').length;
     const noc=avs.filter(s=>s.estado==='No cumplida').length;
-    const resueltas=comp+noc;
+    const cerr=avs.filter(s=>s.estado==='Cerrada').length;
+    const resueltas=comp+noc+cerr;
     if(comp===total)return'Completada';
     if(resueltas===total)return noc===total?'No cumplida':'Cerrada';
-    if(resueltas>0)return'En Progreso';
-    return'Pendiente';
+    const hayActividad=resueltas>0||avs.some(s=>s.estado==='En Progreso');
+    return hayActividad?'En Progreso':'Pendiente';
   }
   // Old model: avances (backward compat)
   const avs=Object.values(t.avances||{});
@@ -1441,6 +1442,75 @@ function pctT(t){
   const avs=Object.values(t.avances||{});
   if(!avs.length)return 0;
   return Math.round(avs.filter(a=>a.estado==='Completada').length/avs.length*100);
+}
+
+// Cuenta las unidades (asignadas/hechas/no cumplidas) de un área con sub-asignaciones.
+function contarUnidadesSeccion(t,sec){
+  let asig=0,comp=0,noc=0;
+  if(sec==='Redes Sociales'&&t.redesSociales){
+    Object.values(t.redesSociales).forEach(r=>{
+      Object.keys(r).filter(k=>!k.endsWith('_comp')&&!k.endsWith('_noc')&&!k.endsWith('_motivo')&&!k.startsWith('tipo_')).forEach(k=>{
+        asig+=r[k]||0;comp+=r[k+'_comp']||0;noc+=r[k+'_noc']||0;});
+    });
+  } else if(sec==='Medios'&&t.mediosData){
+    Object.entries(t.mediosData).forEach(([mk,m])=>{
+      if(mk==='apariciones'||typeof m!=='object')return;
+      Object.keys(m).filter(k=>!k.endsWith('_comp')&&!k.endsWith('_noc')&&!k.endsWith('_motivo')).forEach(k=>{
+        asig+=m[k]||0;comp+=m[k+'_comp']||0;noc+=m[k+'_noc']||0;});
+    });
+  } else if(sec==='Audiovisual'&&t.audiovisualData?.asignaciones){
+    const a=t.audiovisualData.asignaciones;
+    asig=a.length;comp=a.filter(x=>x.comp&&!x.noCump).length;noc=a.filter(x=>x.noCump).length;
+  } else return null;// sección sin sub-asignaciones
+  return{asig,comp,noc,sinResolver:asig-comp-noc};
+}
+
+// Lista las unidades NO cumplidas de un área (con su motivo), para el reporte.
+function noCumplidasUnidades(t,sec){
+  const out=[];
+  if(sec==='Redes Sociales'&&t.redesSociales){
+    Object.entries(t.redesSociales).forEach(([rk,r])=>{
+      Object.keys(r).filter(k=>!k.endsWith('_comp')&&!k.endsWith('_noc')&&!k.endsWith('_motivo')&&!k.startsWith('tipo_')).forEach(k=>{
+        const noc=r[k+'_noc']||0;if(noc>0)out.push({detalle:`${noc} ${k} (${rk})`,motivo:r[k+'_motivo']||''});
+      });
+    });
+  } else if(sec==='Medios'&&t.mediosData){
+    Object.entries(t.mediosData).forEach(([mk,m])=>{if(mk==='apariciones'||typeof m!=='object')return;
+      Object.keys(m).filter(k=>!k.endsWith('_comp')&&!k.endsWith('_noc')&&!k.endsWith('_motivo')).forEach(k=>{
+        const noc=m[k+'_noc']||0;if(noc>0)out.push({detalle:`${noc} ${k} (${mk})`,motivo:m[k+'_motivo']||''});
+      });
+    });
+  } else if(sec==='Audiovisual'&&t.audiovisualData?.asignaciones){
+    t.audiovisualData.asignaciones.filter(a=>a.noCump).forEach(a=>{
+      const nom=a.nombre||E.equipo.find(e=>e.id===a.userId)?.nombre||'';
+      out.push({detalle:`${a.medio||''} ${a.tipo||''}${nom?' · '+nom:''}`.trim(),motivo:a.motivo||''});
+    });
+  }
+  return out;
+}
+
+// Recalcula el estado de un área con sub-asignaciones según sus unidades.
+// Sin resolver>0 → Pendiente/En Progreso · todo hecho → Completada · todo no cumplido → No cumplida · mixto → Cerrada
+function recalcSeccionEstado(t,sec){
+  const sv=t.secciones?.[sec];if(!sv)return;
+  const u=contarUnidadesSeccion(t,sec);
+  if(!u||u.asig===0)return;// sin unidades: se maneja manual con togSeccion
+  let nuevo;
+  if(u.sinResolver>0)nuevo=(u.comp+u.noc>0)?'En Progreso':'Pendiente';
+  else if(u.noc===0)nuevo='Completada';
+  else if(u.comp===0)nuevo='No cumplida';
+  else nuevo='Cerrada';
+  const prev=sv.estado;
+  if(nuevo==='Completada'){
+    t.secciones[sec]={...sv,estado:'Completada',completadoPor:sv.completadoPor||uAct?.nombre,completadoEn:sv.completadoEn||hoy()};
+    if(prev!=='Completada'){
+      reg('Avance completado',`"${t.titulo}" — ${sec} completado por ${uAct?.nombre}`);
+      if(pctT(t)===100)addNotif('🎉',`Tarea completada: "${t.titulo}"`,'100% — todas las secciones listas');
+    }
+  } else {
+    t.secciones[sec]={...sv,estado:nuevo,completadoPor:null,completadoEn:null};
+    if(prev==='Completada')reg('Avance revertido',`"${t.titulo}" — ${sec} dejó de estar completado`);
+  }
 }
 function misCats(){
   if(niv==='lider'||niv==='editor')return SECC_NAMES;
@@ -1531,29 +1601,40 @@ function renderTareas(){
         if(!sv)return'';
         const comp=sv.estado==='Completada';
         const noCump=sv.estado==='No cumplida';
+        const cerr=sv.estado==='Cerrada';
+        const enProg=sv.estado==='En Progreso';
         const canMark=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||mySec.includes(sec));
         const sInfo=SECCIONES[sec]||{ico:'📌',color:'#888',bg:'#eee'};
         const respNames=(sv.responsables||[]).map(uid=>{const u=E.equipo.find(e=>e.id===uid);return u?u.nombre:uid;}).join(', ')||'Sin asignar';
+        // ¿El área tiene sub-asignaciones (Redes/Medios/Audiovisual)? Entonces se resuelve por asignación, no con botón de área.
+        const uni=contarUnidadesSeccion(t,sec);
+        const tieneUnid=uni&&uni.asig>0;
 
         const hdrStyle=`background:${sInfo.bg};border-left:3px solid ${sInfo.color||'var(--na)'};padding:8px 12px;border-radius:var(--rs);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px`;
         const statusBadge=comp
           ?`<span style="font-size:11px;background:#E1F5EE;color:#0F6E56;padding:2px 8px;border-radius:20px;font-weight:700">✅ Completado</span>`
           :noCump
           ?`<span style="font-size:11px;background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:20px;font-weight:700">🚫 No cumplida</span>`
+          :cerr
+          ?`<span style="font-size:11px;background:#f3f4f6;color:#6b7280;padding:2px 8px;border-radius:20px;font-weight:700">🔒 Cerrada (parcial)</span>`
+          :enProg
+          ?`<span style="font-size:11px;background:#E3F2FD;color:#185FA5;padding:2px 8px;border-radius:20px;font-weight:700">⏳ En progreso</span>`
           :`<span style="font-size:11px;background:#FFF8E1;color:#F57F17;padding:2px 8px;border-radius:20px;font-weight:700">⏳ Pendiente</span>`;
+        const resumenUnid=tieneUnid?`<div style="font-size:11px;color:var(--tm);margin-top:2px">✅ ${uni.comp} hechas · 🚫 ${uni.noc} no cumplidas · ⏳ ${uni.sinResolver} sin resolver · de ${uni.asig}</div>`:'';
         const sHdr=`<div style="${hdrStyle}">
           <div style="display:flex;align-items:center;gap:8px">
             <span style="font-size:16px">${sInfo.ico}</span>
             <div>
               <div style="font-size:13px;font-weight:700;color:var(--tx)">${sec}</div>
               <div style="font-size:11px;color:var(--tm)">👤 ${respNames}${sv.completadoPor?` · ✅ ${sv.completadoPor} · ${fmt(sv.completadoEn)}`:''}</div>
+              ${resumenUnid}
               ${sv.notaRetraso?`<div style="font-size:11px;color:#dc2626;margin-top:2px">⏰ Completada con retraso — ${sv.notaRetraso}</div>`:''}
-              ${noCump?`<div style="font-size:11px;color:#dc2626;margin-top:2px">🚫 No cumplida${sv.noCumplidaPor?` · ${sv.noCumplidaPor}`:''}${sv.noCumplidaEn?` · ${fmt(sv.noCumplidaEn)}`:''} — ${sv.motivoNoCumplida||''}</div>`:''}
+              ${noCump&&!tieneUnid?`<div style="font-size:11px;color:#dc2626;margin-top:2px">🚫 No cumplida${sv.noCumplidaPor?` · ${sv.noCumplidaPor}`:''}${sv.noCumplidaEn?` · ${fmt(sv.noCumplidaEn)}`:''} — ${sv.motivoNoCumplida||''}</div>`:''}
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:6px">
             ${statusBadge}
-            ${canMark?(comp
+            ${(canMark&&!tieneUnid)?(comp
               ?`<button class="btn bgh bsm" style="font-size:11px;padding:2px 8px" onclick="event.stopPropagation();togSeccion('${t.id}','${sec}')">Revertir</button>`
               :noCump
               ?`<button class="btn bgh bsm" style="font-size:11px;padding:2px 8px" onclick="event.stopPropagation();reabrirSeccion('${t.id}','${sec}')">Reabrir</button>`
@@ -1570,17 +1651,30 @@ function renderTareas(){
           const mkBtn=(rKey,campo,lbl)=>{
             const asig=rs[rKey]?.[campo]||0;if(!asig)return'';
             const comp=rs[rKey]?.[campo+'_comp']||0;
+            const noc=rs[rKey]?.[campo+'_noc']||0;
+            const sinR=asig-comp-noc;
+            const motivo=rs[rKey]?.[campo+'_motivo']||'';
             const tipoTxt=rs[rKey]?.['tipo_'+campo]?` · ${rs[rKey]['tipo_'+campo]}`:'';
-            const pct=Math.round(comp/asig*100);
-            const col=pct>=100?'#0F6E56':pct>0?'#854F0B':'#993C1D';
-            return`<div class="grow" style="padding:6px 10px">
-              <div class="ginfo"><div class="gnom">${lbl}${tipoTxt}</div>
-              <div class="gsub" style="color:${col};font-weight:600">Asignados: ${asig} · Completados: ${comp} (${pct}%)</div></div>
-              ${canMarkR?`<div style="display:flex;gap:4px;align-items:center">
-                <button class="btn bgh bsm" style="padding:2px 7px" onclick="event.stopPropagation();cambCompRed('${t.id}','${rKey}','${campo}',-1)">−</button>
-                <span style="font-size:13px;font-weight:700;min-width:18px;text-align:center">${comp}</span>
-                <button class="btn bgh bsm" style="padding:2px 7px" onclick="event.stopPropagation();cambCompRed('${t.id}','${rKey}','${campo}',1)">+</button>
-              </div>`:`<span class="bg ${pct>=100?'bapr':pct>0?'bmed':'bpen'}">${pct}%</span>`}
+            const estCol=sinR===0?(noc===0?'#0F6E56':comp===0?'#dc2626':'#6b7280'):'#854F0B';
+            const ctrl=canMarkR?`<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+                <div style="display:flex;gap:3px;align-items:center" title="Hechas">
+                  <span style="font-size:11px">✅</span>
+                  <button class="btn bgh bsm" style="padding:1px 6px" onclick="event.stopPropagation();cambCompRed('${t.id}','${rKey}','${campo}',-1)">−</button>
+                  <span style="font-size:13px;font-weight:700;min-width:16px;text-align:center;color:#0F6E56">${comp}</span>
+                  <button class="btn bgh bsm" style="padding:1px 6px" onclick="event.stopPropagation();cambCompRed('${t.id}','${rKey}','${campo}',1)">+</button>
+                </div>
+                <div style="display:flex;gap:3px;align-items:center" title="No cumplidas">
+                  <span style="font-size:11px">🚫</span>
+                  <button class="btn bgh bsm" style="padding:1px 6px" onclick="event.stopPropagation();cambNocRed('${t.id}','${rKey}','${campo}',-1)">−</button>
+                  <span style="font-size:13px;font-weight:700;min-width:16px;text-align:center;color:#dc2626">${noc}</span>
+                  <button class="btn bgh bsm" style="padding:1px 6px" onclick="event.stopPropagation();cambNocRed('${t.id}','${rKey}','${campo}',1)">+</button>
+                </div>
+              </div>`:`<span class="bg ${sinR===0&&noc===0?'bapr':noc>0?'brec':'bmed'}">${comp}/${asig}</span>`;
+            return`<div class="grow" style="padding:6px 10px;flex-wrap:wrap">
+              <div class="ginfo" style="min-width:150px"><div class="gnom">${lbl}${tipoTxt}</div>
+              <div class="gsub" style="color:${estCol};font-weight:600">Asignadas ${asig} · ✅ ${comp} · 🚫 ${noc} · ⏳ ${sinR} sin resolver</div>
+              ${motivo?`<div style="font-size:10px;color:#991b1b">🚫 ${motivo}</div>`:''}</div>
+              ${ctrl}
             </div>`;
           };
           const redRows=[
@@ -1599,16 +1693,29 @@ function renderTareas(){
           const mkM=(mKey,campo,lbl)=>{
             const asig=md[mKey]?.[campo]||0;if(!asig)return'';
             const comp=md[mKey]?.[campo+'_comp']||0;
-            const pct=Math.round(comp/asig*100);
-            const col=pct>=100?'#0F6E56':pct>0?'#854F0B':'#185FA5';
-            return`<div class="grow" style="padding:6px 10px">
-              <div class="ginfo"><div class="gnom">${lbl}</div>
-              <div class="gsub" style="color:${col};font-weight:600">Asignados: ${asig} · Completados: ${comp} (${pct}%)</div></div>
-              ${canMarkM?`<div style="display:flex;gap:4px;align-items:center">
-                <button class="btn bgh bsm" style="padding:2px 7px" onclick="event.stopPropagation();cambCompMed('${t.id}','${mKey}','${campo}',-1)">−</button>
-                <span style="font-size:13px;font-weight:700;min-width:18px;text-align:center">${comp}</span>
-                <button class="btn bgh bsm" style="padding:2px 7px" onclick="event.stopPropagation();cambCompMed('${t.id}','${mKey}','${campo}',1)">+</button>
-              </div>`:`<span class="bg ${pct>=100?'bapr':pct>0?'bmed':'bpen'}">${pct}%</span>`}
+            const noc=md[mKey]?.[campo+'_noc']||0;
+            const sinR=asig-comp-noc;
+            const motivo=md[mKey]?.[campo+'_motivo']||'';
+            const estCol=sinR===0?(noc===0?'#0F6E56':comp===0?'#dc2626':'#6b7280'):'#854F0B';
+            const ctrl=canMarkM?`<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+                <div style="display:flex;gap:3px;align-items:center" title="Hechas">
+                  <span style="font-size:11px">✅</span>
+                  <button class="btn bgh bsm" style="padding:1px 6px" onclick="event.stopPropagation();cambCompMed('${t.id}','${mKey}','${campo}',-1)">−</button>
+                  <span style="font-size:13px;font-weight:700;min-width:16px;text-align:center;color:#0F6E56">${comp}</span>
+                  <button class="btn bgh bsm" style="padding:1px 6px" onclick="event.stopPropagation();cambCompMed('${t.id}','${mKey}','${campo}',1)">+</button>
+                </div>
+                <div style="display:flex;gap:3px;align-items:center" title="No cumplidas">
+                  <span style="font-size:11px">🚫</span>
+                  <button class="btn bgh bsm" style="padding:1px 6px" onclick="event.stopPropagation();cambNocMed('${t.id}','${mKey}','${campo}',-1)">−</button>
+                  <span style="font-size:13px;font-weight:700;min-width:16px;text-align:center;color:#dc2626">${noc}</span>
+                  <button class="btn bgh bsm" style="padding:1px 6px" onclick="event.stopPropagation();cambNocMed('${t.id}','${mKey}','${campo}',1)">+</button>
+                </div>
+              </div>`:`<span class="bg ${sinR===0&&noc===0?'bapr':noc>0?'brec':'bmed'}">${comp}/${asig}</span>`;
+            return`<div class="grow" style="padding:6px 10px;flex-wrap:wrap">
+              <div class="ginfo" style="min-width:150px"><div class="gnom">${lbl}</div>
+              <div class="gsub" style="color:${estCol};font-weight:600">Asignadas ${asig} · ✅ ${comp} · 🚫 ${noc} · ⏳ ${sinR} sin resolver</div>
+              ${motivo?`<div style="font-size:10px;color:#991b1b">🚫 ${motivo}</div>`:''}</div>
+              ${ctrl}
             </div>`;
           };
           const medRows=[
@@ -1701,10 +1808,15 @@ function renderTareas(){
             const tip=AV_TIPO[a.tipo]||{bg:'#f5f5f5',col:'#555'};
             const medB=`<span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;background:${med.bg};color:${med.col};white-space:nowrap">${med.lbl}</span>`;
             const tipB=`<span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;background:${tip.bg};color:${tip.col};white-space:nowrap">${a.tipo}</span>`;
-            const est=a.comp?`<span style="font-size:12px;color:#0F6E56;font-weight:700">✅</span>`:`<span style="font-size:12px;color:#888">⏳</span>`;
+            const est=a.comp?`<span style="font-size:12px;color:#0F6E56;font-weight:700">✅</span>`:a.noCump?`<span style="font-size:12px;color:#dc2626;font-weight:700">🚫</span>`:`<span style="font-size:12px;color:#888">⏳</span>`;
+            const botones=canMarkAV?`<div style="display:flex;gap:4px;flex-wrap:wrap">
+                <button class="btn bgh bsm" style="padding:2px 7px;font-size:11px" onclick="event.stopPropagation();togCompAV('${t.id}',${i})">${a.comp?'Revertir':'✅ Listo'}</button>
+                <button class="btn bsm" style="padding:2px 7px;font-size:11px;background:#fee2e2;color:#dc2626;border:1px solid #dc2626" onclick="event.stopPropagation();marcarNocAV('${t.id}',${i})">${a.noCump?'Reabrir':'🚫'}</button>
+              </div>`:'';
             return`<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--su);border:1px solid var(--bo);border-radius:var(--rs);margin-bottom:4px;flex-wrap:wrap">
               ${medB}<span style="flex:1;font-size:13px;font-weight:600;min-width:80px">${nom}</span>${tipB}${est}
-              ${canMarkAV?`<button class="btn bgh bsm" style="padding:2px 8px;font-size:11px" onclick="event.stopPropagation();togCompAV('${t.id}',${i})">${a.comp?'Revertir':'Marcar listo'}</button>`:''}
+              ${botones}
+              ${a.noCump&&a.motivo?`<div style="flex-basis:100%;font-size:10px;color:#991b1b">🚫 ${a.motivo}</div>`:''}
             </div>`;
           }).join('');
         }
@@ -2453,69 +2565,88 @@ function revertirEtapaDis(tareaId){
   expandidas.add(tareaId);guardar();renderTareas();
 }
 
+// ── Redes Sociales: hechas / no cumplidas por tipo ──
 function cambCompRed(tareaId,rKey,campo,delta){
   if(!puede('marcarAvance')){alert('Sin permiso.');return;}
   const t=E.tareas.find(t=>t.id===tareaId);if(!t||!t.redesSociales?.[rKey])return;
   const asig=t.redesSociales[rKey][campo]||0;
+  const noc=t.redesSociales[rKey][campo+'_noc']||0;
   const cur=t.redesSociales[rKey][campo+'_comp']||0;
-  t.redesSociales[rKey][campo+'_comp']=Math.min(asig,Math.max(0,cur+delta));
-  // Auto-complete Redes section when all assigned items reach 100%
-  if(t.secciones?.['Redes Sociales']){
-    const rs=t.redesSociales||{};
-    const allDone=Object.values(rs).every(r=>
-      Object.keys(r).filter(k=>!k.startsWith('tipo_')&&!k.endsWith('_comp')).every(k=>{
-        const a=r[k]||0;return a===0||(r[k+'_comp']||0)>=a;
-      })
-    );
-    if(allDone&&t.secciones['Redes Sociales'].estado!=='Completada'){
-      t.secciones['Redes Sociales']={...t.secciones['Redes Sociales'],estado:'Completada',completadoPor:uAct?.nombre,completadoEn:hoy()};
-      reg('Avance completado',`"${t.titulo}" — Redes Sociales completado automáticamente`);
-      if(pctT(t)===100)addNotif('🎉',`Tarea completada: "${t.titulo}"`,'100% — todas las secciones listas');
-    }
+  t.redesSociales[rKey][campo+'_comp']=Math.min(asig-noc,Math.max(0,cur+delta));
+  recalcSeccionEstado(t,'Redes Sociales');
+  expandidas.add(tareaId);guardar();renderTareas();
+}
+function cambNocRed(tareaId,rKey,campo,delta){
+  if(!puede('marcarAvance')){alert('Sin permiso.');return;}
+  const t=E.tareas.find(t=>t.id===tareaId);if(!t||!t.redesSociales?.[rKey])return;
+  const asig=t.redesSociales[rKey][campo]||0;
+  const comp=t.redesSociales[rKey][campo+'_comp']||0;
+  const cur=t.redesSociales[rKey][campo+'_noc']||0;
+  const nuevo=Math.min(asig-comp,Math.max(0,cur+delta));
+  if(nuevo>cur&&!t.redesSociales[rKey][campo+'_motivo']){
+    const m=prompt(`🚫 Motivo por el que NO se cumplió "${campo}" en ${rKey}:`);
+    if(m===null)return;const mm=m.trim();if(!mm){alert('Debes indicar un motivo.');return;}
+    t.redesSociales[rKey][campo+'_motivo']=mm;
   }
+  t.redesSociales[rKey][campo+'_noc']=nuevo;
+  if(nuevo===0)delete t.redesSociales[rKey][campo+'_motivo'];
+  recalcSeccionEstado(t,'Redes Sociales');
+  reg('Asignación no cumplida',`"${t.titulo}" — Redes/${rKey}/${campo}: ${nuevo} no cumplida(s) por ${uAct?.nombre}`);
   expandidas.add(tareaId);guardar();renderTareas();
 }
 
+// ── Medios: hechas / no cumplidas por tipo ──
 function cambCompMed(tareaId,mKey,campo,delta){
   if(!puede('marcarAvance')){alert('Sin permiso.');return;}
   const t=E.tareas.find(t=>t.id===tareaId);if(!t||!t.mediosData?.[mKey])return;
   const asig=t.mediosData[mKey][campo]||0;
+  const noc=t.mediosData[mKey][campo+'_noc']||0;
   const cur=t.mediosData[mKey][campo+'_comp']||0;
-  t.mediosData[mKey][campo+'_comp']=Math.min(asig,Math.max(0,cur+delta));
-  // Auto-complete Medios section when all assigned items reach 100%
-  if(t.secciones?.['Medios']){
-    const md=t.mediosData||{};
-    const allDone=Object.values(md).every(m=>
-      Object.keys(m).filter(k=>!k.endsWith('_comp')).every(k=>{
-        const a=m[k]||0;return a===0||(m[k+'_comp']||0)>=a;
-      })
-    );
-    if(allDone&&t.secciones['Medios'].estado!=='Completada'){
-      t.secciones['Medios']={...t.secciones['Medios'],estado:'Completada',completadoPor:uAct?.nombre,completadoEn:hoy()};
-      reg('Avance completado',`"${t.titulo}" — Medios completado automáticamente`);
-      if(pctT(t)===100)addNotif('🎉',`Tarea completada: "${t.titulo}"`,'100% — todas las secciones listas');
-    }
+  t.mediosData[mKey][campo+'_comp']=Math.min(asig-noc,Math.max(0,cur+delta));
+  recalcSeccionEstado(t,'Medios');
+  expandidas.add(tareaId);guardar();renderTareas();
+}
+function cambNocMed(tareaId,mKey,campo,delta){
+  if(!puede('marcarAvance')){alert('Sin permiso.');return;}
+  const t=E.tareas.find(t=>t.id===tareaId);if(!t||!t.mediosData?.[mKey])return;
+  const asig=t.mediosData[mKey][campo]||0;
+  const comp=t.mediosData[mKey][campo+'_comp']||0;
+  const cur=t.mediosData[mKey][campo+'_noc']||0;
+  const nuevo=Math.min(asig-comp,Math.max(0,cur+delta));
+  if(nuevo>cur&&!t.mediosData[mKey][campo+'_motivo']){
+    const m=prompt(`🚫 Motivo por el que NO se cumplió "${campo}" en ${mKey}:`);
+    if(m===null)return;const mm=m.trim();if(!mm){alert('Debes indicar un motivo.');return;}
+    t.mediosData[mKey][campo+'_motivo']=mm;
   }
+  t.mediosData[mKey][campo+'_noc']=nuevo;
+  if(nuevo===0)delete t.mediosData[mKey][campo+'_motivo'];
+  recalcSeccionEstado(t,'Medios');
+  reg('Asignación no cumplida',`"${t.titulo}" — Medios/${mKey}/${campo}: ${nuevo} no cumplida(s) por ${uAct?.nombre}`);
   expandidas.add(tareaId);guardar();renderTareas();
 }
 
+// ── Audiovisual: cada asignación se resuelve (hecha o no cumplida) ──
 function togCompAV(tareaId,idx){
+  if(!puede('marcarAvance')){alert('Sin permiso.');return;}
   const t=E.tareas.find(t=>t.id===tareaId);
-  if(!t?.audiovisualData?.asignaciones?.[idx])return;
-  t.audiovisualData.asignaciones[idx].comp=!t.audiovisualData.asignaciones[idx].comp;
-  // Auto-complete Audiovisual section when all assignments are marked done
-  if(t.secciones?.['Audiovisual']){
-    const asigs=t.audiovisualData.asignaciones;
-    const allDone=asigs.length>0&&asigs.every(a=>a.comp);
-    if(allDone&&t.secciones['Audiovisual'].estado!=='Completada'){
-      t.secciones['Audiovisual']={...t.secciones['Audiovisual'],estado:'Completada',completadoPor:uAct?.nombre,completadoEn:hoy()};
-      reg('Avance completado',`"${t.titulo}" — Audiovisual completado automáticamente`);
-      if(pctT(t)===100)addNotif('🎉',`Tarea completada: "${t.titulo}"`,'100% — todas las secciones listas');
-    } else if(!allDone&&t.secciones['Audiovisual'].estado==='Completada'){
-      // Revert if one is un-checked
-      t.secciones['Audiovisual']={...t.secciones['Audiovisual'],estado:'Pendiente',completadoPor:null,completadoEn:null};
-    }
+  const a=t?.audiovisualData?.asignaciones?.[idx];if(!a)return;
+  a.comp=!a.comp;
+  if(a.comp){a.noCump=false;a.motivo=null;}
+  recalcSeccionEstado(t,'Audiovisual');
+  expandidas.add(tareaId);guardar();renderTareas();
+}
+function marcarNocAV(tareaId,idx){
+  if(!puede('marcarAvance')){alert('Sin permiso.');return;}
+  const t=E.tareas.find(t=>t.id===tareaId);
+  const a=t?.audiovisualData?.asignaciones?.[idx];if(!a)return;
+  if(a.noCump){a.noCump=false;a.motivo=null;}// reabrir
+  else{
+    const m=prompt(`🚫 Motivo por el que NO se cumplió esta asignación audiovisual:`);
+    if(m===null)return;const mm=m.trim();if(!mm){alert('Debes indicar un motivo.');return;}
+    a.noCump=true;a.comp=false;a.motivo=mm;
+    reg('Asignación no cumplida',`"${t.titulo}" — Audiovisual (${a.nombre||''}): ${mm} por ${uAct?.nombre}`);
   }
+  recalcSeccionEstado(t,'Audiovisual');
   expandidas.add(tareaId);guardar();renderTareas();
 }
 
@@ -3885,9 +4016,24 @@ function imprimirReporte(){
     const isVenc=t.fecha&&t.fecha<hoy();
     if(t.secciones&&Object.keys(t.secciones).length){
       Object.entries(t.secciones).forEach(([sec,sv])=>{
-        if(!sv||sv.estado==='Completada')return;
+        if(!sv)return;
         const resps=sv.responsables||[];
         const respN=resps.map(uid=>{const u=E.equipo.find(e=>e.id===uid);return u?u.nombre:null;}).filter(Boolean).join(', ')||'Sin asignar';
+        const u=contarUnidadesSeccion(t,sec);
+        const tieneUnid=u&&u.asig>0;
+        if(tieneUnid){
+          // No cumplidas a nivel de unidad
+          noCumplidasUnidades(t,sec).forEach(nc=>noCumplidas.push({titulo:t.titulo,area:`${sec} — ${nc.detalle}`,fecha:t.fecha,resp:respN,motivo:nc.motivo,por:''}));
+          // Pendientes: solo si quedan unidades sin resolver
+          if(u.sinResolver>0){
+            const item={titulo:t.titulo,area:`${sec} (${u.sinResolver} sin resolver)`,fecha:t.fecha,isVenc,estado:sv.estado==='En Progreso'?'En Progreso':'Pendiente'};
+            if(!resps.length){pushPend('__sin__','Sin asignar',item);}
+            else resps.forEach(uid=>{const x=E.equipo.find(e=>e.id===uid);pushPend(uid,x?x.nombre:'Sin asignar',item);});
+          }
+          return;
+        }
+        // Áreas simples (sin sub-asignaciones)
+        if(sv.estado==='Completada'||sv.estado==='Cerrada')return;
         if(sv.estado==='No cumplida'){
           noCumplidas.push({titulo:t.titulo,area:sec,fecha:t.fecha,resp:respN,motivo:sv.motivoNoCumplida||'',por:sv.noCumplidaPor||''});
           return;
@@ -3895,7 +4041,7 @@ function imprimirReporte(){
         const eg=sv.estado==='En Progreso'?'En Progreso':'Pendiente';
         const item={titulo:t.titulo,area:sec,fecha:t.fecha,isVenc,estado:eg};
         if(!resps.length){pushPend('__sin__','Sin asignar',item);}
-        else resps.forEach(uid=>{const u=E.equipo.find(e=>e.id===uid);pushPend(uid,u?u.nombre:'Sin asignar',item);});
+        else resps.forEach(uid=>{const x=E.equipo.find(e=>e.id===uid);pushPend(uid,x?x.nombre:'Sin asignar',item);});
       });
     } else if(eglobal(t)!=='Completada'){
       const areas=(t.categorias||[]).filter(c=>(t.avances?.[c]?.estado||'Pendiente')!=='Completada');
