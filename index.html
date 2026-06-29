@@ -4255,26 +4255,17 @@ ${thrs>0?`<div class="sec-title">Horas Extras Aprobadas</div>
   <button class="print-btn" onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button>
 </div>
 </body></html>`;
-  // Vista previa dentro de la app: overlay con un iframe (aísla los estilos del
-  // reporte) + botones Imprimir y Cerrar. No abre ventana nueva ni recarga la app.
-  let ov=document.getElementById('repOverlay');
-  if(ov)ov.remove();
-  ov=document.createElement('div');
-  ov.id='repOverlay';
-  ov.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.6);display:flex;flex-direction:column';
-  ov.innerHTML=`
-    <div style="display:flex;gap:8px;align-items:center;padding:10px 14px;background:#1a1a1a;flex-wrap:wrap">
-      <span style="color:#fff;font-weight:600;font-size:14px;margin-right:auto">📊 Vista previa del reporte</span>
-      <button id="repPrintBtn" style="padding:8px 16px;background:#E35205;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer">🖨️ Imprimir / Guardar PDF</button>
-      <button id="repCloseBtn" style="padding:8px 14px;background:#444;color:#fff;border:none;border-radius:8px;cursor:pointer">✕ Cerrar</button>
-    </div>
-    <iframe id="repFrame" style="flex:1;width:100%;border:0;background:#fff"></iframe>`;
-  document.body.appendChild(ov);
-  const fr=document.getElementById('repFrame');
-  const fdoc=fr.contentWindow.document;
-  fdoc.open();fdoc.write(htmlContent);fdoc.close();
-  document.getElementById('repPrintBtn').onclick=()=>{try{fr.contentWindow.focus();fr.contentWindow.print();}catch(e){alert('No se pudo abrir el diálogo de impresión.');}};
-  document.getElementById('repCloseBtn').onclick=()=>ov.remove();
+  // Abrir el reporte como página completa en una pestaña nueva (formato establecido).
+  // Se escribe el HTML directo en la ventana (no blob) para que no se borre, y el
+  // auto-login evita que recargar la app saque de la sesión.
+  const w=window.open('','_blank');
+  if(!w){
+    alert('Tu navegador bloqueó la ventana del reporte. Permite las ventanas emergentes para este sitio e intenta de nuevo.');
+    return;
+  }
+  w.document.open();
+  w.document.write(htmlContent);
+  w.document.close();
 }
 
 function archivarRep(){
