@@ -1529,11 +1529,19 @@ function recalcSeccionEstado(t,sec){
   if(nuevo==='Completada'){
     t.secciones[sec]={...sv,estado:'Completada',completadoPor:sv.completadoPor||uAct?.nombre,completadoEn:sv.completadoEn||hoy()};
     if(prev!=='Completada'){
-      reg('Avance completado',`"${t.titulo}" — ${sec} completado por ${uAct?.nombre}`);
+      // Si la tarea ya estaba vencida, marcar que se completó con retraso (y pedir motivo)
+      if(t.fecha&&t.fecha<hoy()){
+        const motivo=prompt(`⚠️ "${sec}" se está completando CON RETRASO (fecha límite: ${fmt(t.fecha)}).\n\nIndica el motivo del retraso (opcional):`);
+        t.secciones[sec].completadaTarde=true;
+        if(motivo&&motivo.trim())t.secciones[sec].notaRetraso=motivo.trim();
+        reg('Avance completado (con retraso)',`"${t.titulo}" — ${sec} completado tarde por ${uAct?.nombre}${motivo&&motivo.trim()?` (motivo: ${motivo.trim()})`:''}`);
+      } else {
+        reg('Avance completado',`"${t.titulo}" — ${sec} completado por ${uAct?.nombre}`);
+      }
       if(pctT(t)===100)addNotif('🎉',`Tarea completada: "${t.titulo}"`,'100% — todas las secciones listas');
     }
   } else {
-    t.secciones[sec]={...sv,estado:nuevo,completadoPor:null,completadoEn:null};
+    t.secciones[sec]={...sv,estado:nuevo,completadoPor:null,completadoEn:null,completadaTarde:false};
     if(prev==='Completada')reg('Avance revertido',`"${t.titulo}" — ${sec} dejó de estar completado`);
   }
 }
@@ -1670,7 +1678,7 @@ function renderTareas(){
               <div style="font-size:13px;font-weight:700;color:var(--tx)">${sec}</div>
               <div style="font-size:11px;color:var(--tm)">👤 ${respNames}${sv.completadoPor?` · ✅ ${sv.completadoPor} · ${fmt(sv.completadoEn)}`:''}</div>
               ${resumenUnid}
-              ${sv.notaRetraso?`<div style="font-size:11px;color:#dc2626;margin-top:2px">⏰ Completada con retraso — ${sv.notaRetraso}</div>`:''}
+              ${(sv.completadaTarde||sv.notaRetraso)?`<div style="font-size:11px;color:#dc2626;margin-top:2px">⏰ Completada con retraso${sv.notaRetraso?` — ${sv.notaRetraso}`:''}</div>`:''}
               ${noCump&&!tieneUnid?`<div style="font-size:11px;color:#dc2626;margin-top:2px">🚫 No cumplida${sv.noCumplidaPor?` · ${sv.noCumplidaPor}`:''}${sv.noCumplidaEn?` · ${fmt(sv.noCumplidaEn)}`:''} — ${sv.motivoNoCumplida||''}</div>`:''}
             </div>
           </div>
@@ -2530,12 +2538,12 @@ function togSeccion(tareaId,sec){
   const t=E.tareas.find(t=>t.id===tareaId);if(!t||!t.secciones?.[sec])return;
   const sv=t.secciones[sec];
   if(sv.estado==='Completada'){
-    t.secciones[sec]={...sv,estado:'Pendiente',completadoPor:null,completadoEn:null};
+    t.secciones[sec]={...sv,estado:'Pendiente',completadoPor:null,completadoEn:null,notaRetraso:null,completadaTarde:false};
     reg('Avance revertido',`"${t.titulo}" — ${sec} revertido por ${uAct?.nombre}`);
   } else {
     const j=pedirJustifVencida(t);
     if(!j.ok)return;
-    t.secciones[sec]={...sv,estado:'Completada',completadoPor:uAct?.nombre,completadoEn:hoy(),notaRetraso:j.nota||null};
+    t.secciones[sec]={...sv,estado:'Completada',completadoPor:uAct?.nombre,completadoEn:hoy(),notaRetraso:j.nota||null,completadaTarde:!!(t.fecha&&t.fecha<hoy())};
     reg('Avance completado',`"${t.titulo}" — ${sec} completado por ${uAct?.nombre}${j.nota?` (VENCIDA — motivo: ${j.nota})`:''}`);
     addNotif('✅',`${sec} completado: "${t.titulo}"`,`Por ${uAct?.nombre}`);
     if(pctT(t)===100)addNotif('🎉',`Tarea completada: "${t.titulo}"`,'100% — todas las secciones listas');
