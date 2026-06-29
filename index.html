@@ -4165,10 +4165,11 @@ function imprimirReporte(){
     const ti=tardeInfo(t);
     const tag=ti.tarde?` <span style="font-size:10px;font-weight:700;color:#dc2626;background:#fee2e2;padding:1px 6px;border-radius:10px;white-space:nowrap">⏰ TARDE</span>`:'';
     const motivoTxt=ti.tarde&&ti.motivos.length?`<br><span style="font-size:11px;color:#991b1b">⏰ ${ti.motivos.join(' · ')}</span>`:'';
+    const compEn=t.secciones?Object.values(t.secciones).map(sv=>sv?.completadoEn).filter(Boolean).sort().pop():null;
     compRows+=`<tr style="background:${ti.tarde?'#fffbeb':'#f0fdf4'}">
       <td><strong>${t.titulo}</strong>${tag}${t.notas?`<br><span style="font-size:11px;color:#666">📝 ${t.notas}</span>`:''}${motivoTxt}</td>
       <td style="font-size:12px;color:#166534">${secs||'—'}</td>
-      <td style="font-size:12px">${t.fecha?fmt(t.fecha):'-'}</td>
+      <td style="font-size:12px">${t.fecha?'Límite: '+fmt(t.fecha):'-'}${compEn?`<br><span style="color:#16a34a">✓ ${fmt(compEn)}</span>`:''}</td>
       <td style="font-size:12px">${[...new Set(resps)].join(', ')||'—'}</td>
     </tr>`;
   });
@@ -4179,6 +4180,53 @@ function imprimirReporte(){
     const mh=hapr.filter(h=>h.miembro===u.nombre).reduce((s,h)=>s+parseFloat(h.horas||0),0);
     if(mh>0)hrsRows+=`<tr><td>${u.nombre}</td><td style="text-align:center">${hapr.filter(h=>h.miembro===u.nombre).length}</td><td style="text-align:center;font-weight:700">${mh.toFixed(1)} hrs</td></tr>`;
   });
+
+  // Producción de contenido del período (hechas / asignadas por tipo)
+  const prodMap={};
+  const addP=(ico,label,asig,comp)=>{if(!asig)return;if(!prodMap[label])prodMap[label]={ico,asig:0,comp:0};prodMap[label].asig+=asig;prodMap[label].comp+=comp;};
+  ts.forEach(t=>{
+    const rs=t.redesSociales;
+    if(rs){
+      addP('📱','Publicaciones IG',rs.instagram?.publicaciones||0,rs.instagram?.publicaciones_comp||0);
+      addP('📱','Reels IG',rs.instagram?.reels||0,rs.instagram?.reels_comp||0);
+      addP('📱','Historias IG',rs.instagram?.historias||0,rs.instagram?.historias_comp||0);
+      addP('📘','Publicaciones FB',rs.facebook?.publicaciones||0,rs.facebook?.publicaciones_comp||0);
+      addP('📘','Historias FB',rs.facebook?.historias||0,rs.facebook?.historias_comp||0);
+      addP('🎵','Videos TikTok',rs.tiktok?.videos||0,rs.tiktok?.videos_comp||0);
+      addP('🎵','Lives TikTok',rs.tiktok?.lives||0,rs.tiktok?.lives_comp||0);
+    }
+    const md=t.mediosData;
+    if(md){
+      addP('📻','Notas Radio',md.radio?.notas||0,md.radio?.notas_comp||0);
+      addP('📻','Entrevistas Radio',md.radio?.entrevistas||0,md.radio?.entrevistas_comp||0);
+      addP('📺','Notas TV',md.tv?.notas||0,md.tv?.notas_comp||0);
+      addP('📺','Entrevistas TV',md.tv?.entrevistas||0,md.tv?.entrevistas_comp||0);
+      addP('📰','Notas de Prensa',md.prensa?.notas||0,md.prensa?.notas_comp||0);
+      addP('📰','Comunicados',md.prensa?.comunicados||0,md.prensa?.comunicados_comp||0);
+      addP('✍️','Artículos',md.redaccion?.articulos||0,md.redaccion?.articulos_comp||0);
+      addP('✍️','Notas Redacción',md.redaccion?.notas||0,md.redaccion?.notas_comp||0);
+    }
+    const av=t.audiovisualData?.asignaciones||[];
+    const foto=av.filter(a=>a.medio==='foto'),video=av.filter(a=>a.medio==='video');
+    addP('📷','Fotografía',foto.length,foto.filter(a=>a.comp&&!a.noCump).length);
+    addP('🎬','Producción Video',video.length,video.filter(a=>a.comp&&!a.noCump).length);
+  });
+  const prodRows=Object.entries(prodMap).map(([label,d])=>`<tr><td>${d.ico} ${label}</td><td style="text-align:center;font-weight:700;color:${d.comp>=d.asig?'#16a34a':d.comp>0?'#d97706':'#dc2626'}">${d.comp}/${d.asig}</td></tr>`).join('');
+
+  // Publicaciones del período
+  const pubsPer=(E.publicaciones||[]).filter(p=>p.fecha&&p.fecha>=rango.ini&&p.fecha<=rango.fin).sort((a,b)=>a.fecha.localeCompare(b.fecha)||(a.hora||'').localeCompare(b.hora||''));
+  const pubRows=pubsPer.map(p=>{
+    const plat=(p.plataformas||[]).map(x=>PLAT_NOM[x]||x).join(', ');
+    const pub=p.estado==='publicado';
+    return `<tr style="background:${pub?'#f0fdf4':'#fff'}"><td><strong>${p.titulo||'—'}</strong></td><td style="font-size:12px">${plat||'—'}</td><td style="font-size:12px">${p.fecha?fmt(p.fecha):'-'}${p.hora?' · '+p.hora:''}</td><td style="font-size:12px;font-weight:600;color:${pub?'#16a34a':'#d97706'}">${pub?'✅ Publicado':'🕓 Programado'}</td></tr>`;
+  }).join('');
+  const pubOk=pubsPer.filter(p=>p.estado==='publicado').length;
+
+  // Apariciones en medios del período
+  const apSet=new Map();
+  E.tareas.forEach(t=>{(t.mediosData?.apariciones||[]).forEach(a=>{if(!a.fecha||(a.fecha>=rango.ini&&a.fecha<=rango.fin))apSet.set(a.id,{...a});});});
+  const apars=[...apSet.values()].sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
+  const apRows=apars.map(a=>`<tr><td><strong>${a.medio||'—'}</strong>${a.tipo?` · <em>${a.tipo}</em>`:''}${a.titulo?`<br><span style="font-size:11px;color:#666">${a.titulo}</span>`:''}</td><td style="font-size:12px">${a.fecha?fmt(a.fecha):'-'}</td><td style="font-size:12px;font-weight:600;color:${a.publicado?'#16a34a':'#d97706'}">${a.publicado?'✅ Publicado':'🕓 Pendiente'}${a.enlace?` · <a href="${a.enlace}" style="color:#2563eb">enlace</a>`:''}</td></tr>`).join('');
 
   const htmlContent=`<!DOCTYPE html><html lang="es"><head>
 <meta charset="UTF-8">
@@ -4221,6 +4269,10 @@ tr:last-child td{border-bottom:none;}
   <div class="stat" style="border-top:3px solid #dc2626"><div class="lbl">Vencidas</div><div class="val">${venc.length}</div></div>
 </div>
 
+${prodRows?`<div class="sec-title">Producción de Contenido <span style="text-transform:none;letter-spacing:0;font-weight:400;color:#888">(hechas / asignadas)</span></div>
+<table><thead><tr><th>Tipo de contenido</th><th style="text-align:center;width:120px">Producido</th></tr></thead>
+<tbody>${prodRows}</tbody></table>`:''}
+
 <div class="sec-title">Avance por Sección (por asignación)</div>
 <table><thead><tr><th>Sección</th><th style="text-align:center">Asignaciones</th><th>Progreso</th></tr></thead>
 <tbody>${secRows||'<tr><td colspan=3 style="color:#888;text-align:center">Sin tareas registradas</td></tr>'}</tbody></table>
@@ -4240,6 +4292,14 @@ tr:last-child td{border-bottom:none;}
 ${nocRows?`<div class="sec-title" style="color:#dc2626;border-color:#fca5a5">🚫 No Cumplidas</div>
 <table><thead><tr><th>Tarea / Área / Responsable</th><th>Fecha</th><th>Motivo</th></tr></thead>
 <tbody>${nocRows}</tbody></table>`:''}
+
+${pubRows?`<div class="sec-title">📅 Publicaciones del Período <span style="text-transform:none;letter-spacing:0;font-weight:600;color:#16a34a">· ${pubOk} publicadas</span> <span style="text-transform:none;letter-spacing:0;font-weight:400;color:#888">de ${pubsPer.length}</span></div>
+<table><thead><tr><th>Publicación</th><th>Plataformas</th><th>Fecha</th><th>Estado</th></tr></thead>
+<tbody>${pubRows}</tbody></table>`:''}
+
+${apRows?`<div class="sec-title">📰 Apariciones en Medios <span style="text-transform:none;letter-spacing:0;font-weight:400;color:#888">(${apars.length})</span></div>
+<table><thead><tr><th>Medio</th><th>Fecha</th><th>Estado</th></tr></thead>
+<tbody>${apRows}</tbody></table>`:''}
 
 ${thrs>0?`<div class="sec-title">Horas Extras Aprobadas</div>
 <table><thead><tr><th>Colaborador</th><th style="text-align:center">Registros</th><th style="text-align:center">Total Horas</th></tr></thead>
