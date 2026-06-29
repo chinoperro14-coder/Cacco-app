@@ -621,6 +621,8 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       <option value="Pendiente">Pendiente</option>
       <option value="En Progreso">En Progreso</option>
       <option value="Completada">Completada</option>
+      <option value="Cerrada">Cerrada</option>
+      <option value="No cumplida">No cumplida</option>
     </select>
     <label style="display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;font-weight:500">
       <input type="checkbox" id="soloMias" onchange="renderTareas()" style="accent-color:var(--na);width:15px;height:15px"> Solo mis secciones
@@ -1412,8 +1414,13 @@ function eglobal(t){
   if(t.secciones&&Object.keys(t.secciones).length){
     const avs=Object.values(t.secciones).filter(Boolean);
     if(!avs.length)return'Pendiente';
-    if(avs.every(s=>s.estado==='Completada'))return'Completada';
-    if(avs.some(s=>s.estado==='Completada'))return'En Progreso';
+    const total=avs.length;
+    const comp=avs.filter(s=>s.estado==='Completada').length;
+    const noc=avs.filter(s=>s.estado==='No cumplida').length;
+    const resueltas=comp+noc;
+    if(comp===total)return'Completada';
+    if(resueltas===total)return noc===total?'No cumplida':'Cerrada';
+    if(resueltas>0)return'En Progreso';
     return'Pendiente';
   }
   // Old model: avances (backward compat)
@@ -1423,6 +1430,8 @@ function eglobal(t){
   if(avs.some(a=>a.estado==='Completada'))return'En Progreso';
   return'Pendiente';
 }
+// Una tarea está "resuelta" si ya no necesita seguimiento (no aparece en pendientes/vencidas)
+function tResuelta(t){const e=eglobal(t);return e==='Completada'||e==='Cerrada'||e==='No cumplida';}
 function pctT(t){
   if(t.secciones&&Object.keys(t.secciones).length){
     const avs=Object.values(t.secciones).filter(Boolean);
@@ -1474,7 +1483,7 @@ function renderTareas(){
   document.getElementById('stPen').textContent=E.tareas.filter(t=>eglobal(t)==='Pendiente').length;
   document.getElementById('stPro').textContent=E.tareas.filter(t=>eglobal(t)==='En Progreso').length;
   document.getElementById('stLis').textContent=E.tareas.filter(t=>eglobal(t)==='Completada').length;
-  const venc=E.tareas.filter(t=>t.fecha&&t.fecha<hoy()&&eglobal(t)!=='Completada');
+  const venc=E.tareas.filter(t=>t.fecha&&t.fecha<hoy()&&!tResuelta(t)&&!t.borrador);
   const alV=document.getElementById('alVenc');
   if(venc.length){alV.classList.remove('oculto');document.getElementById('txVenc').textContent=`${venc.length} tarea(s) vencida(s): ${venc.map(t=>t.titulo).slice(0,3).join(', ')}${venc.length>3?'...':''}`;}
   else alV.classList.add('oculto');
@@ -1521,6 +1530,7 @@ function renderTareas(){
       seccionesHTML=Object.entries(t.secciones).map(([sec,sv])=>{
         if(!sv)return'';
         const comp=sv.estado==='Completada';
+        const noCump=sv.estado==='No cumplida';
         const canMark=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||mySec.includes(sec));
         const sInfo=SECCIONES[sec]||{ico:'📌',color:'#888',bg:'#eee'};
         const respNames=(sv.responsables||[]).map(uid=>{const u=E.equipo.find(e=>e.id===uid);return u?u.nombre:uid;}).join(', ')||'Sin asignar';
@@ -1528,6 +1538,8 @@ function renderTareas(){
         const hdrStyle=`background:${sInfo.bg};border-left:3px solid ${sInfo.color||'var(--na)'};padding:8px 12px;border-radius:var(--rs);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px`;
         const statusBadge=comp
           ?`<span style="font-size:11px;background:#E1F5EE;color:#0F6E56;padding:2px 8px;border-radius:20px;font-weight:700">✅ Completado</span>`
+          :noCump
+          ?`<span style="font-size:11px;background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:20px;font-weight:700">🚫 No cumplida</span>`
           :`<span style="font-size:11px;background:#FFF8E1;color:#F57F17;padding:2px 8px;border-radius:20px;font-weight:700">⏳ Pendiente</span>`;
         const sHdr=`<div style="${hdrStyle}">
           <div style="display:flex;align-items:center;gap:8px">
@@ -1536,13 +1548,17 @@ function renderTareas(){
               <div style="font-size:13px;font-weight:700;color:var(--tx)">${sec}</div>
               <div style="font-size:11px;color:var(--tm)">👤 ${respNames}${sv.completadoPor?` · ✅ ${sv.completadoPor} · ${fmt(sv.completadoEn)}`:''}</div>
               ${sv.notaRetraso?`<div style="font-size:11px;color:#dc2626;margin-top:2px">⏰ Completada con retraso — ${sv.notaRetraso}</div>`:''}
+              ${noCump?`<div style="font-size:11px;color:#dc2626;margin-top:2px">🚫 No cumplida${sv.noCumplidaPor?` · ${sv.noCumplidaPor}`:''}${sv.noCumplidaEn?` · ${fmt(sv.noCumplidaEn)}`:''} — ${sv.motivoNoCumplida||''}</div>`:''}
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:6px">
             ${statusBadge}
             ${canMark?(comp
               ?`<button class="btn bgh bsm" style="font-size:11px;padding:2px 8px" onclick="event.stopPropagation();togSeccion('${t.id}','${sec}')">Revertir</button>`
-              :`<button class="btn bna bsm" style="font-size:11px;padding:2px 8px" onclick="event.stopPropagation();togSeccion('${t.id}','${sec}')">Marcar listo</button>`
+              :noCump
+              ?`<button class="btn bgh bsm" style="font-size:11px;padding:2px 8px" onclick="event.stopPropagation();reabrirSeccion('${t.id}','${sec}')">Reabrir</button>`
+              :`<button class="btn bna bsm" style="font-size:11px;padding:2px 8px" onclick="event.stopPropagation();togSeccion('${t.id}','${sec}')">Marcar listo</button>
+                <button class="btn bsm" style="font-size:11px;padding:2px 8px;background:#fee2e2;color:#dc2626;border:1px solid #dc2626" onclick="event.stopPropagation();marcarNoCumplida('${t.id}','${sec}')">🚫 No cumplió</button>`
             ):''}
           </div>
         </div>`;
@@ -1841,9 +1857,9 @@ function renderTareas(){
   };
   // Agrupar por fecha
   const hh=hoy();
-  const isComp=t=>eglobal(t)==='Completada';
-  const pendts=ts.filter(t=>!isComp(t));
-  const compts=ts.filter(isComp);
+  const pendts=ts.filter(t=>!tResuelta(t));
+  const compts=ts.filter(t=>eglobal(t)==='Completada');
+  const cerradts=ts.filter(t=>{const e=eglobal(t);return e==='Cerrada'||e==='No cumplida';});
   const vencidts=pendts.filter(t=>t.fecha&&t.fecha<hh);
   const dehoyts=pendts.filter(t=>t.fecha===hh);
   const futurts=pendts.filter(t=>t.fecha&&t.fecha>hh);
@@ -1856,6 +1872,7 @@ function renderTareas(){
   Object.keys(byFch).sort().forEach(f=>{htmlOut+=mkHdrT('📅 '+fmt(f),'#2563eb','#EFF6FF',byFch[f].length);htmlOut+=byFch[f].map(renderTCard).join('');});
   if(sfechts.length){htmlOut+=mkHdrT('📌 Sin fecha','#888','#f5f5f5',sfechts.length);htmlOut+=sfechts.map(renderTCard).join('');}
   if(compts.length){htmlOut+=mkHdrT('✅ Completadas','#16a34a','#DCFCE7',compts.length);htmlOut+=compts.map(renderTCard).join('');}
+  if(cerradts.length){htmlOut+=mkHdrT('🚫 Cerradas / No cumplidas','#6b7280','#f3f4f6',cerradts.length);htmlOut+=cerradts.map(renderTCard).join('');}
   lista.innerHTML=htmlOut;
   // Drafts section
   const borradores=E.tareas.filter(t=>t.borrador&&(niv==='lider'||t.creadaPor===uAct?.nombre||Object.values(t.secciones||{}).some(sv=>(sv.responsables||[]).includes(uAct?.id))));
@@ -2369,6 +2386,33 @@ function togSeccion(tareaId,sec){
     addNotif('✅',`${sec} completado: "${t.titulo}"`,`Por ${uAct?.nombre}`);
     if(pctT(t)===100)addNotif('🎉',`Tarea completada: "${t.titulo}"`,'100% — todas las secciones listas');
   }
+  expandidas.add(tareaId);
+  guardar();renderTareas();
+}
+
+// Marcar un área como NO cumplida (no se realizó). Pide motivo obligatorio.
+function marcarNoCumplida(tareaId,sec){
+  if(!puede('marcarAvance')){alert('Sin permiso.');return;}
+  const t=E.tareas.find(t=>t.id===tareaId);if(!t||!t.secciones?.[sec])return;
+  const sv=t.secciones[sec];
+  const motivo=prompt(`🚫 Marcar "${sec}" como NO CUMPLIDA en "${t.titulo}".\n\nIndica el motivo (por qué no se realizó):`);
+  if(motivo===null)return;
+  const m=motivo.trim();
+  if(!m){alert('Debes indicar un motivo para marcar un área como no cumplida.');return;}
+  t.secciones[sec]={...sv,estado:'No cumplida',completadoPor:null,completadoEn:null,noCumplidaPor:uAct?.nombre,noCumplidaEn:hoy(),motivoNoCumplida:m};
+  reg('Área no cumplida',`"${t.titulo}" — ${sec} marcada NO CUMPLIDA por ${uAct?.nombre} (motivo: ${m})`);
+  addNotif('🚫',`${sec} no cumplida: "${t.titulo}"`,`Por ${uAct?.nombre} — ${m}`);
+  expandidas.add(tareaId);
+  guardar();renderTareas();
+}
+
+// Reabrir un área cerrada como no cumplida → vuelve a Pendiente
+function reabrirSeccion(tareaId,sec){
+  if(!puede('marcarAvance')){alert('Sin permiso.');return;}
+  const t=E.tareas.find(t=>t.id===tareaId);if(!t||!t.secciones?.[sec])return;
+  const sv=t.secciones[sec];
+  t.secciones[sec]={...sv,estado:'Pendiente',noCumplidaPor:null,noCumplidaEn:null,motivoNoCumplida:null};
+  reg('Área reabierta',`"${t.titulo}" — ${sec} reabierta por ${uAct?.nombre}`);
   expandidas.add(tareaId);
   guardar();renderTareas();
 }
@@ -3495,7 +3539,7 @@ function generarRep(){
   const comp=tsPer.filter(t=>eglobal(t)==='Completada').length;
   const prog=tsPer.filter(t=>eglobal(t)==='En Progreso').length;
   const pend=tsPer.filter(t=>eglobal(t)==='Pendiente').length;
-  const venc=tsPer.filter(t=>t.fecha&&t.fecha<hoy()&&eglobal(t)!=='Completada');
+  const venc=tsPer.filter(t=>t.fecha&&t.fecha<hoy()&&!tResuelta(t));
   const pct=total?Math.round(comp/total*100):0;
   const sem=pct>=80?'🟢 VERDE — Rendimiento excelente':pct>=50?'🟡 AMARILLO — Rendimiento moderado':'🔴 ROJO — Requiere atención';
   const semC=pct>=80?'sver':pct>=50?'samar':'sroj';
@@ -3770,7 +3814,7 @@ function imprimirReporte(){
   const comp=ts.filter(t=>eglobal(t)==='Completada').length;
   const prog=ts.filter(t=>eglobal(t)==='En Progreso').length;
   const pct=total?Math.round(comp/total*100):0;
-  const venc=ts.filter(t=>t.fecha&&t.fecha<hoy()&&eglobal(t)!=='Completada');
+  const venc=ts.filter(t=>t.fecha&&t.fecha<hoy()&&!tResuelta(t));
   const hapr=E.horasExtra.filter(h=>h.aprobacion==='Aprobado'&&h.fecha&&h.fecha>=rango.ini&&h.fecha<=rango.fin);
   const thrs=hapr.reduce((s,h)=>s+parseFloat(h.horas||0),0);
   const semTxt=pct>=80?'🟢 VERDE — Rendimiento excelente':pct>=50?'🟡 AMARILLO — Rendimiento moderado':'🔴 ROJO — Requiere atención';
@@ -3833,20 +3877,27 @@ function imprimirReporte(){
   });
 
   // Pendientes / Vencidas — agrupadas por responsable con su área específica
+  // (las áreas "No cumplida" se recogen aparte en nocRows)
   const pendPorPersona={};// clave -> {nombre, items:[{titulo,area,fecha,isVenc,estado}]}
   const pushPend=(clave,nombre,item)=>{if(!pendPorPersona[clave])pendPorPersona[clave]={nombre,items:[]};pendPorPersona[clave].items.push(item);};
-  ts.filter(t=>eglobal(t)!=='Completada').forEach(t=>{
+  const noCumplidas=[];// {titulo,area,fecha,resp,motivo,por}
+  ts.forEach(t=>{
     const isVenc=t.fecha&&t.fecha<hoy();
     if(t.secciones&&Object.keys(t.secciones).length){
       Object.entries(t.secciones).forEach(([sec,sv])=>{
-        if(!sv||sv.estado==='Completada')return;// solo áreas pendientes
-        const eg=sv.estado==='En Progreso'?'En Progreso':'Pendiente';
+        if(!sv||sv.estado==='Completada')return;
         const resps=sv.responsables||[];
+        const respN=resps.map(uid=>{const u=E.equipo.find(e=>e.id===uid);return u?u.nombre:null;}).filter(Boolean).join(', ')||'Sin asignar';
+        if(sv.estado==='No cumplida'){
+          noCumplidas.push({titulo:t.titulo,area:sec,fecha:t.fecha,resp:respN,motivo:sv.motivoNoCumplida||'',por:sv.noCumplidaPor||''});
+          return;
+        }
+        const eg=sv.estado==='En Progreso'?'En Progreso':'Pendiente';
         const item={titulo:t.titulo,area:sec,fecha:t.fecha,isVenc,estado:eg};
         if(!resps.length){pushPend('__sin__','Sin asignar',item);}
         else resps.forEach(uid=>{const u=E.equipo.find(e=>e.id===uid);pushPend(uid,u?u.nombre:'Sin asignar',item);});
       });
-    } else {
+    } else if(eglobal(t)!=='Completada'){
       const areas=(t.categorias||[]).filter(c=>(t.avances?.[c]?.estado||'Pendiente')!=='Completada');
       pushPend('__gen__','Sin asignar',{titulo:t.titulo,area:areas.join(', ')||'—',fecha:t.fecha,isVenc,estado:eglobal(t)});
     }
@@ -3869,6 +3920,17 @@ function imprimirReporte(){
         <td style="font-size:12px">${i.fecha?fmt(i.fecha):'-'}</td>
       </tr>`;
     });
+  });
+
+  // No cumplidas
+  let nocRows='';
+  noCumplidas.sort((a,b)=>{if(!a.fecha&&!b.fecha)return 0;if(!a.fecha)return 1;if(!b.fecha)return -1;return a.fecha.localeCompare(b.fecha);}).forEach(i=>{
+    const ico=SECCIONES[i.area]?.ico||'📌';
+    nocRows+=`<tr style="background:#fef2f2">
+      <td><strong>${i.titulo}</strong><br><span style="font-size:11px;color:#666">${ico} ${i.area} · 👤 ${i.resp}</span></td>
+      <td style="font-size:12px">${i.fecha?fmt(i.fecha):'-'}</td>
+      <td style="font-size:12px;color:#991b1b">${i.motivo||'—'}${i.por?`<br><span style="font-size:10px;color:#888">— ${i.por}</span>`:''}</td>
+    </tr>`;
   });
 
   // Tareas completadas
@@ -3946,6 +4008,10 @@ tr:last-child td{border-bottom:none;}
 <div class="sec-title">Pendientes y Vencidas — por responsable</div>
 <table><thead><tr><th>Tarea / Área</th><th>Estado</th><th>Fecha</th></tr></thead>
 <tbody>${pendRows||'<tr><td colspan=3 style="color:#16a34a;text-align:center">✅ Sin tareas pendientes</td></tr>'}</tbody></table>
+
+${nocRows?`<div class="sec-title" style="color:#dc2626;border-color:#fca5a5">🚫 No Cumplidas</div>
+<table><thead><tr><th>Tarea / Área / Responsable</th><th>Fecha</th><th>Motivo</th></tr></thead>
+<tbody>${nocRows}</tbody></table>`:''}
 
 ${thrs>0?`<div class="sec-title">Horas Extras Aprobadas</div>
 <table><thead><tr><th>Colaborador</th><th style="text-align:center">Registros</th><th style="text-align:center">Total Horas</th></tr></thead>
