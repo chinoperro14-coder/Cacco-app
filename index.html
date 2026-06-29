@@ -579,8 +579,8 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 <nav class="sid" id="sidNav">
   <div class="nsep">Principal</div>
   <button class="ni on" onclick="goV('tareas',this)"><span class="ico">📋</span>Tareas<span class="ct" id="ctT">0</span></button>
-  <button class="ni" onclick="goV('asignaciones',this)"><span class="ico">📌</span>Asignaciones Diarias</button>
-  <button class="ni" onclick="goV('asigVarias',this)"><span class="ico">📋</span>Asig. Varias</button>
+  <button class="ni" onclick="goV('asignaciones',this)"><span class="ico">☀️</span>Parte Diario</button>
+  <button class="ni" onclick="goV('asigVarias',this)"><span class="ico">🔁</span>Tareas Recurrentes</button>
   <button class="ni" onclick="goV('calendario',this)"><span class="ico">📅</span>Calendario</button>
   <button class="ni" onclick="goV('horasExtra',this)"><span class="ico">⏱️</span>Horas Extras<span class="ct" id="ctH">0</span></button>
   <button class="ni" onclick="goV('equipo',this)"><span class="ico">👥</span>Equipo</button>
@@ -598,7 +598,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <button class="nfilt" onclick="filtraCat('Medios',this)"><span class="ico">📡</span>Medios</button>
   </div>
   <div class="nsep">Publicaciones</div>
-  <button class="ni new-item" onclick="goV('calPub',this)"><span class="ico">📡</span>Cal. Publicaciones<span class="new-tag">NUEVO</span></button>
+  <button class="ni new-item" onclick="goV('calPub',this)"><span class="ico">🗓️</span>Cal. Publicaciones<span class="new-tag">NUEVO</span></button>
 </nav>
 
 <main class="cont">
@@ -764,7 +764,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 <div id="vAsignaciones" class="oculto">
   <div class="sh2">
     <div>
-      <div class="stit">📌 Asignaciones Diarias</div>
+      <div class="stit">☀️ Parte Diario</div>
       <div style="font-size:13px;color:var(--tm);margin-top:3px" id="asigSubtit"></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
@@ -786,8 +786,8 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 <div id="vAsigVarias" class="oculto">
   <div class="sh2">
     <div>
-      <div class="stit">📋 Asignaciones Varias</div>
-      <div style="font-size:13px;color:var(--tm);margin-top:3px">Tareas internas · No aparecen en los reportes</div>
+      <div class="stit">🔁 Tareas Recurrentes</div>
+      <div style="font-size:13px;color:var(--tm);margin-top:3px">Tareas internas y permanentes · No aparecen en los reportes</div>
     </div>
     <button class="btn bna bsm" onclick="abrirMAsigVar()">+ Nueva</button>
   </div>
@@ -797,7 +797,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 <!-- MODAL NUEVA ASIGNACIÓN VARIA -->
 <div id="mAsigVar" class="mov">
   <div class="mo" style="max-width:480px">
-    <div class="mcab"><div class="mtit" id="avModalTit">Nueva Asignación Varia</div><button class="mx" onclick="cerM('mAsigVar')">×</button></div>
+    <div class="mcab"><div class="mtit" id="avModalTit">Nueva Tarea Recurrente</div><button class="mx" onclick="cerM('mAsigVar')">×</button></div>
     <div class="mbody" style="display:flex;flex-direction:column;gap:14px">
       <div class="fg"><label class="fl">Título *</label><input class="fc" id="avTit" placeholder="Ej. Preparar presentación reunión..."></div>
       <div class="fg"><label class="fl">Descripción</label><textarea class="fc" id="avDesc" rows="2" placeholder="Qué hay que hacer..."></textarea></div>
@@ -3612,7 +3612,7 @@ function renderCal(){
           </div>`;
         }),
         ...av.map(a=>`<div onclick="goV('asigVarias',document.querySelector('[onclick*=asigVarias]'))" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;background:var(--mos);border-left:3px solid var(--mo);margin-bottom:4px">
-            <span style="font-size:13px;flex-shrink:0">📋</span>
+            <span style="font-size:13px;flex-shrink:0">🔁</span>
             <span style="font-size:13px;font-weight:600;color:var(--mo);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.titulo}</span>
             ${a.recurrencia&&a.recurrencia!=='ninguna'?`<span style="font-size:10px;color:var(--mo);flex-shrink:0">🔁</span>`:''}
           </div>`)
@@ -3648,7 +3648,7 @@ function renderCal(){
     });
     const slots=Math.max(0,3-td.length);
     const eventosAV=av.slice(0,slots).map(a=>
-      `<a class="cev" onclick="goV('asigVarias',document.querySelector('[onclick*=asigVarias]'))" title="${a.titulo}" style="background:var(--mos);border-left:3px solid var(--mo);color:var(--mo)">📋 ${a.titulo}</a>`
+      `<a class="cev" onclick="goV('asigVarias',document.querySelector('[onclick*=asigVarias]'))" title="${a.titulo}" style="background:var(--mos);border-left:3px solid var(--mo);color:var(--mo)">🔁 ${a.titulo}</a>`
     );
     const mas=totalEv>3?`<div style="font-size:10px;color:var(--tm);padding:2px 4px;white-space:nowrap">+${totalEv-3} más</div>`:'';
     celdas+=`<div class="cd ${esHoy?'hoy':''}"><div class="cdnum">${d}</div>${[...eventosT,...eventosAV].join('')}${mas}</div>`;
@@ -4616,7 +4616,7 @@ function renderAsigVarias(){
   const cont=document.getElementById('asigVCont');if(!cont)return;
   const avList=(E.asigVarias||[]);
   if(!avList.length){
-    cont.innerHTML=`<div style="padding:40px;text-align:center;color:var(--tm)"><div style="font-size:32px;margin-bottom:10px">📋</div><div style="font-size:14px;font-weight:500">Sin asignaciones varias.</div><div style="font-size:12px;margin-top:6px">Estas tareas son internas y no aparecen en los reportes.</div></div>`;
+    cont.innerHTML=`<div style="padding:40px;text-align:center;color:var(--tm)"><div style="font-size:32px;margin-bottom:10px">🔁</div><div style="font-size:14px;font-weight:500">Sin tareas recurrentes.</div><div style="font-size:12px;margin-top:6px">Estas tareas son internas y no aparecen en los reportes.</div></div>`;
     return;
   }
   const hh=hoy();
@@ -4728,7 +4728,7 @@ function avOcurreEnFecha(av,fs){
 const REC_LBL={diaria:'Diaria',semanal:'Semanal',bisemanal:'Bisemanal',mensual:'Mensual',anual:'Anual'};
 function abrirMAsigVar(avId){
   const av=avId?(E.asigVarias||[]).find(a=>a.id===avId):null;
-  document.getElementById('avModalTit').textContent=av?'Editar Asignación Varia':'Nueva Asignación Varia';
+  document.getElementById('avModalTit').textContent=av?'Editar Tarea Recurrente':'Nueva Tarea Recurrente';
   document.getElementById('avTit').value=av?.titulo||'';
   document.getElementById('avDesc').value=av?.descripcion||'';
   document.getElementById('avNotas').value=av?.notas||'';
@@ -4762,12 +4762,12 @@ function guardarAsigVar(){
     if(av){Object.assign(av,{titulo:tit,descripcion:desc,notas,recurrencia:rec,fechaLimite:fl,fechaFin:fin,asignadoA:uids});}
   }else{
     E.asigVarias.push({id:gId(),titulo:tit,descripcion:desc,notas,recurrencia:rec,pasos:[],asignadoA:uids,fechaLimite:fl,fechaFin:fin,creadoPorId:uAct?.id,creadoPor:uAct?.nombre,fechaCreacion:hoy(),ocultoEnReporte:true});
-    reg('Nueva asig. varia',tit);
+    reg('Nueva tarea recurrente',tit);
   }
   guardar();cerM('mAsigVar');renderAsigVarias();
 }
 function elimAV(id){
-  if(!confirm('¿Eliminar esta asignación?'))return;
+  if(!confirm('¿Eliminar esta tarea recurrente?'))return;
   E.asigVarias=(E.asigVarias||[]).filter(a=>a.id!==id);
   guardar();renderAsigVarias();
 }
