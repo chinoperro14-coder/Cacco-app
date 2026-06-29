@@ -4173,10 +4173,23 @@ ${thrs>0?`<div class="sec-title">Horas Extras Aprobadas</div>
   <button class="print-btn" onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button>
 </div>
 </body></html>`;
-  const blob=new Blob([htmlContent],{type:'text/html;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const w=window.open(url,'_blank');
-  setTimeout(()=>URL.revokeObjectURL(url),60000);
+  // Escribir el HTML directamente en la ventana evita que el blob se revoque
+  // y la pestaña quede en blanco antes de poder guardar/imprimir.
+  const w=window.open('','_blank');
+  if(!w){
+    // Ventana bloqueada: ofrecer descarga directa del archivo como respaldo
+    const blob=new Blob([htmlContent],{type:'text/html;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=`Reporte_CACCO_${tipo}_${rango.ini}.html`;
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+    alert('Tu navegador bloqueó la ventana del reporte, así que se descargó como archivo. Ábrelo y usa "Imprimir / Guardar como PDF".');
+    return;
+  }
+  w.document.open();
+  w.document.write(htmlContent);
+  w.document.close();
 }
 
 function archivarRep(){
