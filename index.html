@@ -164,6 +164,9 @@ textarea.fc{resize:vertical;min-height:80px;}
 .gico{font-size:20px;flex-shrink:0;}
 .gnom{font-size:13px;font-weight:700;}
 .gsub{font-size:11px;color:var(--tm);margin-top:1px;}
+/* Botones +/− de unidades (hechas / no cumplidas) — táctiles en móvil */
+.ubtn{padding:2px 8px!important;font-size:13px;}
+.ugrp{display:flex;gap:3px;align-items:center;}
 .btn-comp{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:var(--rs);border:2px solid var(--na);background:transparent;color:var(--na);font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap;}
 .btn-comp:hover{background:var(--na);color:#fff;}
 .btn-hecho{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:var(--rs);border:2px solid #16a34a;background:var(--ves);color:var(--ve);font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap;}
@@ -403,6 +406,9 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   /* Grow rows (subtask assignment) */
   .grow{flex-direction:column;align-items:flex-start;gap:8px;}
   .grow .btn-comp,.grow .btn-hecho{width:100%;justify-content:center;}
+  /* Controles de unidades más grandes y separados para el dedo */
+  .ubtn{padding:7px 14px!important;font-size:16px;min-width:40px;}
+  .ugrp{gap:6px;}
   /* Historial items */
   .hitem{flex-direction:column;gap:6px;}
   /* Notifications panel */
@@ -1689,17 +1695,17 @@ function renderTareas(){
             const tipoTxt=rs[rKey]?.['tipo_'+campo]?` · ${rs[rKey]['tipo_'+campo]}`:'';
             const estCol=sinR===0?(noc===0?'#0F6E56':comp===0?'#dc2626':'#6b7280'):'#854F0B';
             const ctrl=canMarkR?`<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-                <div style="display:flex;gap:3px;align-items:center" title="Hechas">
+                <div class="ugrp" title="Hechas">
                   <span style="font-size:11px">✅</span>
-                  <button class="btn bgh bsm" style="padding:1px 6px" onclick="event.stopPropagation();cambCompRed('${t.id}','${rKey}','${campo}',-1)">−</button>
+                  <button class="btn bgh bsm ubtn" onclick="event.stopPropagation();cambCompRed('${t.id}','${rKey}','${campo}',-1)">−</button>
                   <span style="font-size:13px;font-weight:700;min-width:16px;text-align:center;color:#0F6E56">${comp}</span>
-                  <button class="btn bgh bsm" style="padding:1px 6px" onclick="event.stopPropagation();cambCompRed('${t.id}','${rKey}','${campo}',1)">+</button>
+                  <button class="btn bgh bsm ubtn" onclick="event.stopPropagation();cambCompRed('${t.id}','${rKey}','${campo}',1)">+</button>
                 </div>
-                <div style="display:flex;gap:3px;align-items:center" title="No cumplidas">
+                <div class="ugrp" title="No cumplidas">
                   <span style="font-size:11px">🚫</span>
-                  <button class="btn bgh bsm" style="padding:1px 6px" onclick="event.stopPropagation();cambNocRed('${t.id}','${rKey}','${campo}',-1)">−</button>
+                  <button class="btn bgh bsm ubtn" onclick="event.stopPropagation();cambNocRed('${t.id}','${rKey}','${campo}',-1)">−</button>
                   <span style="font-size:13px;font-weight:700;min-width:16px;text-align:center;color:#dc2626">${noc}</span>
-                  <button class="btn bgh bsm" style="padding:1px 6px" onclick="event.stopPropagation();cambNocRed('${t.id}','${rKey}','${campo}',1)">+</button>
+                  <button class="btn bgh bsm ubtn" onclick="event.stopPropagation();cambNocRed('${t.id}','${rKey}','${campo}',1)">+</button>
                 </div>
               </div>`:`<span class="bg ${sinR===0&&noc===0?'bapr':noc>0?'brec':'bmed'}">${comp}/${asig}</span>`;
             return`<div class="grow" style="padding:6px 10px;flex-wrap:wrap">
@@ -1730,17 +1736,17 @@ function renderTareas(){
             const motivo=md[mKey]?.[campo+'_motivo']||'';
             const estCol=sinR===0?(noc===0?'#0F6E56':comp===0?'#dc2626':'#6b7280'):'#854F0B';
             const ctrl=canMarkM?`<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-                <div style="display:flex;gap:3px;align-items:center" title="Hechas">
+                <div class="ugrp" title="Hechas">
                   <span style="font-size:11px">✅</span>
-                  <button class="btn bgh bsm" style="padding:1px 6px" onclick="event.stopPropagation();cambCompMed('${t.id}','${mKey}','${campo}',-1)">−</button>
+                  <button class="btn bgh bsm ubtn" onclick="event.stopPropagation();cambCompMed('${t.id}','${mKey}','${campo}',-1)">−</button>
                   <span style="font-size:13px;font-weight:700;min-width:16px;text-align:center;color:#0F6E56">${comp}</span>
-                  <button class="btn bgh bsm" style="padding:1px 6px" onclick="event.stopPropagation();cambCompMed('${t.id}','${mKey}','${campo}',1)">+</button>
+                  <button class="btn bgh bsm ubtn" onclick="event.stopPropagation();cambCompMed('${t.id}','${mKey}','${campo}',1)">+</button>
                 </div>
-                <div style="display:flex;gap:3px;align-items:center" title="No cumplidas">
+                <div class="ugrp" title="No cumplidas">
                   <span style="font-size:11px">🚫</span>
-                  <button class="btn bgh bsm" style="padding:1px 6px" onclick="event.stopPropagation();cambNocMed('${t.id}','${mKey}','${campo}',-1)">−</button>
+                  <button class="btn bgh bsm ubtn" onclick="event.stopPropagation();cambNocMed('${t.id}','${mKey}','${campo}',-1)">−</button>
                   <span style="font-size:13px;font-weight:700;min-width:16px;text-align:center;color:#dc2626">${noc}</span>
-                  <button class="btn bgh bsm" style="padding:1px 6px" onclick="event.stopPropagation();cambNocMed('${t.id}','${mKey}','${campo}',1)">+</button>
+                  <button class="btn bgh bsm ubtn" onclick="event.stopPropagation();cambNocMed('${t.id}','${mKey}','${campo}',1)">+</button>
                 </div>
               </div>`:`<span class="bg ${sinR===0&&noc===0?'bapr':noc>0?'brec':'bmed'}">${comp}/${asig}</span>`;
             return`<div class="grow" style="padding:6px 10px;flex-wrap:wrap">
