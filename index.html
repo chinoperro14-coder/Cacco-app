@@ -1468,6 +1468,9 @@ function eglobal(t){
 }
 // Una tarea está "resuelta" si ya no necesita seguimiento (no aparece en pendientes/vencidas)
 function tResuelta(t){const e=eglobal(t);return e==='Completada'||e==='Cerrada'||e==='No cumplida';}
+// Fecha/hora efectiva de una sección: su propia fecha o, si no tiene, la general de la tarea
+function secFecha(t,sec){return t.secciones?.[sec]?.fecha||t.fecha||null;}
+function secHora(t,sec){return t.secciones?.[sec]?.hora||'';}
 function pctT(t){
   if(t.secciones&&Object.keys(t.secciones).length){
     const avs=Object.values(t.secciones).filter(Boolean);
@@ -1691,6 +1694,7 @@ function renderTareas(){
             <div>
               <div style="font-size:13px;font-weight:700;color:var(--tx)">${sec}</div>
               <div style="font-size:11px;color:var(--tm)">👤 ${respNames}${sv.completadoPor?` · ✅ ${sv.completadoPor} · ${fmt(sv.completadoEn)}`:''}</div>
+              ${sv.fecha?`<div style="font-size:11px;color:${sInfo.color||'var(--na)'};font-weight:600;margin-top:2px">📅 Entrega: ${fmt(sv.fecha)}${sv.hora?` · ${sv.hora}`:''}</div>`:''}
               ${resumenUnid}
               ${(sv.completadaTarde||sv.notaRetraso)?`<div style="font-size:11px;color:#dc2626;margin-top:2px">⏰ Completada con retraso${sv.notaRetraso?` — ${sv.notaRetraso}`:''}</div>`:''}
               ${noCump&&!tieneUnid?`<div style="font-size:11px;color:#dc2626;margin-top:2px">🚫 No cumplida${sv.noCumplidaPor?` · ${sv.noCumplidaPor}`:''}${sv.noCumplidaEn?` · ${fmt(sv.noCumplidaEn)}`:''} — ${sv.motivoNoCumplida||''}</div>`:''}
@@ -2152,10 +2156,22 @@ function renderSeccionesModal(t){
     const togLabel=activa
       ?`✅ Activa <span onclick="event.stopPropagation();quitarSeccion('${sec}')" style="margin-left:4px;opacity:.6;font-size:11px;cursor:pointer">✕</span>`
       :'+ Incluir';
+    // Fecha y hora de entrega propias de la sección (opcionales)
+    const fechaBlk=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+        <div style="flex:1;min-width:130px">
+          <div style="font-size:11px;color:var(--tm);margin-bottom:3px">📅 Fecha de entrega</div>
+          <input type="date" class="fc" id="secfecha-${key}" value="${sv?.fecha||''}" style="font-size:12px;padding:5px 8px">
+        </div>
+        <div style="width:110px">
+          <div style="font-size:11px;color:var(--tm);margin-bottom:3px">🕐 Hora</div>
+          <input type="time" class="fc" id="sechora-${key}" value="${sv?.hora||''}" style="font-size:12px;padding:5px 8px">
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--tm);margin-bottom:8px">Si lo dejas vacío, usa la fecha general de la tarea.</div>`;
     // Para Audiovisual: el body se llena via actualizarAudiovisualBlk, no con userChips directos
     const bodyContent= sec==='Audiovisual'
-      ?`<div id="audiovisualWizBlk"></div>`
-      :`<div style="font-size:11px;color:var(--tm);margin-bottom:6px">Responsable(s)</div>
+      ?`${fechaBlk}<div id="audiovisualWizBlk"></div>`
+      :`${fechaBlk}<div style="font-size:11px;color:var(--tm);margin-bottom:6px">Responsable(s)</div>
         <div class="usr-chips" id="uch-${key}">${
           assignableUsers.filter(u=>u.nivel!=='lector').map(u=>`<div class="uchip ${respActuales.includes(u.id)?'sel':''}" onclick="togRespModal('${sec}','${u.id}',this)">${rAv(u.nombre,u.foto||'',18,7)} ${u.nombre.split(' ')[0]}</div>`).join('')
           ||'<span style="font-size:12px;color:var(--tm)">Sin miembros en esta sección</span>'
@@ -2421,11 +2437,15 @@ function guardarT(){
         return m?m[2]:null;
       }).filter(Boolean);
       const prev=orig?.secciones?.[sec]||{};
+      const fEl=document.getElementById(`secfecha-${key}`);
+      const hEl=document.getElementById(`sechora-${key}`);
       secciones[sec]={
         responsables,
         estado:prev.estado||'Pendiente',
         completadoPor:prev.completadoPor||null,
         completadoEn:prev.completadoEn||null,
+        fecha:fEl?.value||null,
+        hora:hEl?.value||null,
         ...(sec==='Diseño'?{etapa:prev.etapa||'Maquetación'}:{})
       };
       seccionesCount++;
@@ -3636,7 +3656,15 @@ function renderCal(){
       return false;
     });
     const av=(E.asigVarias||[]).filter(a=>avOcurreEnFecha(a,fs));
-    return{td,av};
+    // Secciones con fecha propia distinta a la general → evento independiente
+    const secEvs=[];
+    E.tareas.forEach(t=>{
+      if(t.borrador||!t.secciones)return;
+      Object.entries(t.secciones).forEach(([sec,sv])=>{
+        if(sv&&sv.fecha&&sv.fecha===fs&&sv.fecha!==t.fecha)secEvs.push({t,sec,hora:sv.hora||''});
+      });
+    });
+    return{td,av,secEvs};
   }
 
   // ── Vista agenda (móvil < 600px) ──
@@ -3645,11 +3673,19 @@ function renderCal(){
     let rows='';
     for(let d=1;d<=dm;d++){
       const fs=`${calAnio}-${String(calMes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      const {td,av}=evsDia(fs);
-      if(!td.length&&!av.length)continue;
+      const {td,av,secEvs}=evsDia(fs);
+      if(!td.length&&!av.length&&!secEvs.length)continue;
       const esHoy=fs===hh;
       const diaSemNom=DIAS_S[new Date(fs+'T00:00:00').getDay()];
       const evHtml=[
+        ...secEvs.map(({t,sec,hora})=>{
+          const col=SECCIONES[sec]?.color||'#888';const ico=SECCIONES[sec]?.ico||'📌';
+          return`<div onclick="irATarea('${t.id}')" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;background:${col}15;border-left:3px solid ${col};margin-bottom:4px">
+            <span style="font-size:13px;flex-shrink:0">${ico}</span>
+            <span style="font-size:13px;font-weight:600;color:var(--tx);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="color:${col};font-weight:700">${sec}</span> — ${t.titulo}</span>
+            ${hora?`<span style="font-size:11px;color:var(--tm);flex-shrink:0">${hora}</span>`:''}
+          </div>`;
+        }),
         ...td.map(t=>{
           const sec=t.secciones?Object.keys(t.secciones)[0]:null;
           const col=sec&&SECCIONES[sec]?SECCIONES[sec].color:'#888';
@@ -3686,21 +3722,26 @@ function renderCal(){
   for(let d=1;d<=dm;d++){
     const fs=`${calAnio}-${String(calMes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const esHoy=fs===hh;
-    const {td,av}=evsDia(fs);
-    const totalEv=td.length+av.length;
-    const eventosT=td.slice(0,3).map(t=>{
+    const {td,av,secEvs}=evsDia(fs);
+    const totalEv=td.length+av.length+secEvs.length;
+    const eventosSec=secEvs.slice(0,3).map(({t,sec})=>{
+      const col=SECCIONES[sec]?.color||'#888';const ico=SECCIONES[sec]?.ico||'📌';
+      return`<a class="cev" onclick="irATarea('${t.id}')" title="${sec} — ${t.titulo}" style="background:${col}20;border-left:3px solid ${col}">${ico} ${sec}: ${t.titulo}</a>`;
+    });
+    const slotsT=Math.max(0,3-secEvs.length);
+    const eventosT=td.slice(0,slotsT).map(t=>{
       const sec=t.secciones?Object.keys(t.secciones)[0]:null;
       const col=sec&&SECCIONES[sec]?SECCIONES[sec].color:'#888';
       const ico=sec?SECCIONES[sec].ico:'📌';
       const recIco=t.recurrencia&&t.recurrencia!=='ninguna'&&t.fecha!==fs?' 🔁':'';
       return`<a class="cev" onclick="irATarea('${t.id}')" title="${t.titulo}" style="background:${col}20;border-left:3px solid ${col}">${ico} ${t.titulo}${recIco}</a>`;
     });
-    const slots=Math.max(0,3-td.length);
+    const slots=Math.max(0,3-secEvs.length-td.length);
     const eventosAV=av.slice(0,slots).map(a=>
       `<a class="cev" onclick="goV('asigVarias',document.querySelector('[onclick*=asigVarias]'))" title="${a.titulo}" style="background:var(--mos);border-left:3px solid var(--mo);color:var(--mo)">🔁 ${a.titulo}</a>`
     );
     const mas=totalEv>3?`<div style="font-size:10px;color:var(--tm);padding:2px 4px;white-space:nowrap">+${totalEv-3} más</div>`:'';
-    celdas+=`<div class="cd ${esHoy?'hoy':''}"><div class="cdnum">${d}</div>${[...eventosT,...eventosAV].join('')}${mas}</div>`;
+    celdas+=`<div class="cd ${esHoy?'hoy':''}"><div class="cdnum">${d}</div>${[...eventosSec,...eventosT,...eventosAV].join('')}${mas}</div>`;
   }
   const total=p1+dm;
   const resto=total%7===0?0:7-(total%7);
@@ -4563,18 +4604,21 @@ function fmtFechaWA(fechaStr){
 }
 
 function getAsigPersona(uid,nombre,fecha){
-  // Tareas donde el usuario es responsable de alguna sección
+  // Tareas donde el usuario es responsable de alguna sección.
+  // Cada sección aparece en su fecha propia (o la general de la tarea si no tiene).
   const tareaLines=[];
-  E.tareas.filter(t=>!t.borrador&&t.fecha===fecha).forEach(t=>{
+  E.tareas.filter(t=>!t.borrador).forEach(t=>{
     if(!t.secciones)return;
     Object.entries(t.secciones).forEach(([sec,sv])=>{
       if(!sv)return;
       const esResp=(sv.responsables||[]).includes(uid);
       if(!esResp)return;
+      const fSec=sv.fecha||t.fecha||'';
+      if(fSec!==fecha)return;// esta sección no cae en este día
       const estado=sv.estado||'Pendiente';
       const etapaStr=(sec==='Diseño'&&sv.etapa)?` [${sv.etapa}]`:'';
       const ico=SECCIONES[sec]?.ico||'📌';
-      tareaLines.push({id:t.id,ico,sec,tarea:t.titulo,estado,etapaStr,fecha:t.fecha||'',hora:t.hora||'',lugar:t.lugar||''});
+      tareaLines.push({id:t.id,ico,sec,tarea:t.titulo,estado,etapaStr,fecha:fSec,hora:sv.hora||t.hora||'',lugar:t.lugar||''});
     });
   });
 
@@ -4984,9 +5028,10 @@ function generarTxtInforme(fecha){
 
   SEQ_SECC.forEach(sec=>{
     const tareas=E.tareas.filter(t=>{
-      if(t.borrador||t.fecha!==fecha)return false;
+      if(t.borrador)return false;
       const sv=t.secciones?.[sec];
-      return sv&&sv.estado!=='Completada';
+      if(!sv||sv.estado==='Completada')return false;
+      return (sv.fecha||t.fecha)===fecha;// la sección cae en este día
     });
     if(!tareas.length)return;
     haySecciones=true;
@@ -4995,7 +5040,7 @@ function generarTxtInforme(fecha){
       totalTareas++;
       const sv=t.secciones[sec];
       txt+=`${t.titulo}\n`;
-      const meta=[t.hora||'',t.lugar||''].filter(Boolean).join(' · ');
+      const meta=[(sv.hora||t.hora)||'',t.lugar||''].filter(Boolean).join(' · ');
       if(meta)txt+=`  ${meta}\n`;
       const tipo=tipoContenido(t,sec)||(t.notas?t.notas.slice(0,70)+(t.notas.length>70?'…':''):null);
       if(tipo)txt+=`  ${tipo}\n`;
