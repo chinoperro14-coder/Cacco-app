@@ -1222,12 +1222,75 @@ function sesionExpirada(){
   abrirM('mSesExp');
 }
 
-function guardar(){
-  const token=getToken();
-  if(!token)return;
-  fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(E)})
-    .then(r=>{if(r.status===401)sesionExpirada();})
-    .catch(()=>{});
+// ── Anti-pisado: fusión 3-vías (base común, lo mío, lo del servidor) ──
+let Ebase=null;      // último estado del servidor con el que reconciliamos (ancestro común)
+let _guardando=false,_reintentar=false,_guardarTimer=null;
+function snap(o){return JSON.parse(JSON.stringify(o));}
+
+// Fusiona dos listas de objetos {id,...} usando la base como ancestro.
+function mergeArrById(base,mine,theirs){
+  base=base||[];mine=mine||[];theirs=theirs||[];
+  const b={},t={};base.forEach(x=>b[x.id]=x);theirs.forEach(x=>t[x.id]=x);
+  const eq=(a,z)=>JSON.stringify(a)===JSON.stringify(z);
+  const out=[],seen=new Set();
+  mine.forEach(item=>{
+    const id=item.id;seen.add(id);
+    const bi=b[id],ti=t[id];
+    if(!ti){ // el otro no lo tiene
+      if(!bi)out.push(item);            // lo agregué yo → conservar
+      else if(!eq(item,bi))out.push(item); // el otro lo borró pero yo lo edité → conservar el mío
+      return;                            // el otro lo borró y yo no lo toqué → respetar borrado
+    }
+    const myCh=!bi||!eq(item,bi);
+    out.push(myCh?item:ti);              // si yo lo cambié gana el mío; si no, tomo el del otro
+  });
+  theirs.forEach(item=>{
+    const id=item.id;if(seen.has(id))return;
+    const bi=b[id];
+    if(!bi)out.push(item);              // lo agregó el otro → conservar
+    else if(!eq(item,bi))out.push(item); // yo lo borré pero el otro lo editó → conservar el del otro
+    // yo lo borré y el otro no lo tocó → respetar mi borrado
+  });
+  return out;
+}
+// Fusiona el estado completo E
+function mergeE(base,mine,theirs){
+  const out={...theirs};// campos sueltos → del servidor
+  ['tareas','equipo','publicaciones','horasExtra','bitacora','historico','asigVarias','notifs'].forEach(k=>{
+    out[k]=mergeArrById(base?.[k],mine?.[k],theirs?.[k]);
+  });
+  out.etiquetas=[...new Set([...(mine?.etiquetas||[]),...(theirs?.etiquetas||[])])];
+  return out;
+}
+
+function guardar(){ // programa un guardado con fusión (agrupa cambios rápidos)
+  if(!getToken())return;
+  clearTimeout(_guardarTimer);
+  _guardarTimer=setTimeout(ejecutarGuardado,350);
+}
+async function ejecutarGuardado(){
+  const token=getToken();if(!token)return;
+  if(_guardando){_reintentar=true;return;}
+  _guardando=true;
+  try{
+    // 1) traer lo último del servidor y fusionar antes de escribir
+    const res=await fetch('/api/data',{headers:{'Authorization':'Bearer '+token}});
+    if(res.status===401){sesionExpirada();_guardando=false;return;}
+    if(res.ok){
+      const theirs=await res.json();
+      if(theirs&&Object.keys(theirs).length&&Ebase){
+        const merged=mergeE(Ebase,E,theirs);
+        const trajoAjeno=JSON.stringify(merged)!==JSON.stringify(E);
+        E=merged;
+        if(trajoAjeno&&!hayModalAbierto())refrescarVistaAbierta();
+      }
+    }
+    // 2) escribir el resultado fusionado
+    await fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(E)});
+    Ebase=snap(E);
+  }catch(e){}
+  _guardando=false;
+  if(_reintentar){_reintentar=false;ejecutarGuardado();}
 }
 
 async function cargar(){
@@ -1281,6 +1344,7 @@ async function cargar(){
   }
   if(!E.equipo||E.equipo.length===0)E.equipo=EQ_DEF.map(u=>({...u,cats:[...(u.cats||[])]}));
   if(!E.etiquetas||!E.etiquetas.length)E.etiquetas=[...ETIQ_DEF];
+  Ebase=snap(E);// base común para la fusión anti-pisado
 }
 
 // ════════════════════════
@@ -5123,14 +5187,16 @@ async function sincronizar(){
     if(res.ok){
       const s=await res.json();
       if(s&&Object.keys(s).length){
-        // Solo re-dibujar si de verdad cambió algo (evita parpadeo cada ciclo)
-        const cambio=JSON.stringify(s)!==JSON.stringify(E);
-        E=s;
+        // Fusionar (no sobrescribir) para no perder cambios locales sin guardar
+        const merged=Ebase?mergeE(Ebase,E,s):s;
+        const cambio=JSON.stringify(merged)!==JSON.stringify(E);
+        E=merged;
         if(!E.etiquetas)E.etiquetas=[...ETIQ_DEF];
         if(!E.notifs)E.notifs=[];
         if(!E.historico)E.historico=[];
         if(!E.publicaciones)E.publicaciones=[];
         if(!E.equipo||!E.equipo.length)E.equipo=EQ_DEF.map(u=>({...u}));
+        Ebase=snap(s);// el servidor es el nuevo ancestro común
         if(cambio)refrescarVistaAbierta();
       }
     }
@@ -5139,10 +5205,10 @@ async function sincronizar(){
 }
 
 function iniciarPolling(){
-  // Cada 7s, salvo que estés con un modal abierto (para no pisar tu edición)
-  setInterval(()=>{if(uAct&&getToken()&&!hayModalAbierto())sincronizar();},7000);
+  // Cada 7s, salvo que estés con un modal abierto o guardando (para no pisar tu edición)
+  setInterval(()=>{if(uAct&&getToken()&&!hayModalAbierto()&&!_guardando)sincronizar();},7000);
   // Al volver a la pestaña, refrescar de inmediato
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&uAct&&getToken()&&!hayModalAbierto())sincronizar();});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&uAct&&getToken()&&!hayModalAbierto()&&!_guardando)sincronizar();});
 }
 
 // ════════════════════════
