@@ -440,6 +440,15 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   .t-tit{white-space:normal!important;overflow:visible!important;text-overflow:unset!important;line-height:1.2;}
   /* Hide section badges in card header on mobile (visible in expanded body) */
   .t-badges span[style*="border-radius:10px"]{display:none!important;}
+  /* Tarjetas de tareas más compactas en móvil */
+  .t-topbar{padding:8px 12px!important;}
+  .t-ico{font-size:15px!important;}
+  .t-tit{font-size:13px!important;}
+  .t-midbar{padding:7px 12px!important;gap:5px!important;}
+  .t-midbar .bg{font-size:10px!important;padding:1px 6px!important;}
+  .t-badges-row{gap:4px!important;}
+  /* Progreso: barra fina a la derecha, no ocupa fila entera */
+  .t-midbar .tprog{width:56px!important;margin-top:0!important;}
   /* Perfil */
   #vPerfil .fr{grid-template-columns:1fr;}
   /* Landscape phone */
@@ -1998,9 +2007,9 @@ function renderTareas(){
     const allSecBadges=t.secciones?Object.keys(t.secciones).map(s=>`<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:rgba(255,255,255,.25);color:#fff;font-weight:600">${SECCIONES[s]?.ico||''} ${s}</span>`).join(' '):'';
 
     return`<div class="tcard ${vencida?'venc':''}" id="tc-${t.id}" style="overflow:hidden;border:1px solid ${cardColor}40">
-      <div style="background:${cardColor};padding:8px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="togT('${t.id}')">
+      <div class="t-topbar" style="background:${cardColor};padding:8px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="togT('${t.id}')">
         <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">
-          <span style="font-size:17px;flex-shrink:0">${secIco}</span>
+          <span class="t-ico" style="font-size:17px;flex-shrink:0">${secIco}</span>
           <div style="min-width:0">
             <div class="t-tit" style="font-size:14px;font-weight:700;color:#fff;white-space:normal;word-break:break-word">${t.titulo}${t.recurrencia&&t.recurrencia!=='ninguna'?' 🔁':''}</div>
             ${t.notas&&abierta?`<div style="font-size:11px;color:rgba(255,255,255,.82);margin-top:1px;word-break:break-word">📝 ${t.notas}</div>`:''}
@@ -2011,8 +2020,8 @@ function renderTareas(){
           <span style="color:rgba(255,255,255,.8);font-size:18px;transition:transform .2s;display:inline-block;transform:${abierta?'rotate(180deg)':'rotate(0)'}">▾</span>
         </div>
       </div>
-      <div style="padding:10px 14px;background:${cardBg};display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;cursor:pointer" onclick="togT('${t.id}')">
-        <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+      <div class="t-midbar" style="padding:10px 14px;background:${cardBg};display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;cursor:pointer" onclick="togT('${t.id}')">
+        <div class="t-badges-row" style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
           <span class="bg ${bEst[eg]||'bgr'}">${eg}</span>
           <span class="bg ${bPri[t.prioridad]||'bgr'}">${t.prioridad}</span>
           ${t.fecha?`<span class="bg bgr" style="${vencida?'color:var(--ro);font-weight:700':''}">${vencida?'⚠️ ':'📅 '}${fmt(t.fecha)}</span>`:''}
