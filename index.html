@@ -2165,18 +2165,13 @@ function renderSeccionesModal(t){
     const togLabel=activa
       ?`✅ Activa <span onclick="event.stopPropagation();quitarSeccion('${sec}')" style="margin-left:4px;opacity:.6;font-size:11px;cursor:pointer">✕</span>`
       :'+ Incluir';
-    // Fecha y hora de entrega propias de la sección (opcionales)
-    const fechaBlk=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
-        <div style="flex:1;min-width:130px">
-          <div style="font-size:11px;color:var(--tm);margin-bottom:3px">📅 Fecha de entrega</div>
-          <input type="date" class="fc" id="secfecha-${key}" value="${sv?.fecha||''}" style="font-size:12px;padding:5px 8px">
-        </div>
-        <div style="width:110px">
-          <div style="font-size:11px;color:var(--tm);margin-bottom:3px">🕐 Hora</div>
-          <input type="time" class="fc" id="sechora-${key}" value="${sv?.hora||''}" style="font-size:12px;padding:5px 8px">
-        </div>
-      </div>
-      <div style="font-size:10px;color:var(--tm);margin-bottom:8px">Si lo dejas vacío, usa la fecha general de la tarea.</div>`;
+    // Fecha y hora de entrega propias de la sección (opcionales) — fila compacta
+    const fechaBlk=`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;padding:7px 10px;background:var(--fo);border:1px dashed var(--bo);border-radius:8px">
+        <span style="font-size:12px;font-weight:600;color:var(--tx)">📅 Entrega</span>
+        <input type="date" class="fc" id="secfecha-${key}" value="${sv?.fecha||''}" style="flex:1;min-width:120px;font-size:12px;padding:4px 8px">
+        <input type="time" class="fc" id="sechora-${key}" value="${sv?.hora||''}" style="width:108px;font-size:12px;padding:4px 8px">
+        <span style="font-size:10px;color:var(--tm);flex-basis:100%;margin-top:1px">Opcional — vacío = usa la fecha general de la tarea</span>
+      </div>`;
     // Para Audiovisual: el body se llena via actualizarAudiovisualBlk, no con userChips directos
     const bodyContent= sec==='Audiovisual'
       ?`${fechaBlk}<div id="audiovisualWizBlk"></div>`
