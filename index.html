@@ -5091,6 +5091,27 @@ function fallbackCopyWA(txt){
 // ════════════════════════
 //  SINCRONIZACIÓN
 // ════════════════════════
+// ¿Hay un modal abierto? Si sí, no sincronizamos para no interrumpir la edición.
+function hayModalAbierto(){return !!document.querySelector('.mov.on')||!!document.getElementById('repOverlay');}
+
+// Re-dibuja SOLO la vista que está abierta ahora mismo (todas las vistas).
+function refrescarVistaAbierta(){
+  actuCts();
+  const vis=id=>{const el=document.getElementById(id);return el&&!el.classList.contains('oculto');};
+  try{
+    if(vis('vTareas'))renderTareas();
+    if(vis('vHorasExtra'))renderHoras();
+    if(vis('vEquipo'))renderEquipo();
+    if(vis('vCalendario'))renderCal();
+    if(vis('vAsignaciones'))renderAsig();
+    if(vis('vAsigVarias'))renderAsigVarias();
+    if(vis('vReportes'))generarRep();
+    if(vis('vHistorico'))renderHist();
+    if(vis('vBitacora'))renderBit();
+    if(vis('vCalPub'))renderCalPub();
+  }catch(e){}
+}
+
 async function sincronizar(){
   const btn=document.getElementById('btnSync');
   if(btn){btn.textContent='⏳';btn.disabled=true;}
@@ -5102,22 +5123,26 @@ async function sincronizar(){
     if(res.ok){
       const s=await res.json();
       if(s&&Object.keys(s).length){
+        // Solo re-dibujar si de verdad cambió algo (evita parpadeo cada ciclo)
+        const cambio=JSON.stringify(s)!==JSON.stringify(E);
         E=s;
         if(!E.etiquetas)E.etiquetas=[...ETIQ_DEF];
         if(!E.notifs)E.notifs=[];
         if(!E.historico)E.historico=[];
         if(!E.publicaciones)E.publicaciones=[];
         if(!E.equipo||!E.equipo.length)E.equipo=EQ_DEF.map(u=>({...u}));
+        if(cambio)refrescarVistaAbierta();
       }
-      renderTodo();
-      if(document.getElementById('vCalendario')&&!document.getElementById('vCalendario').classList.contains('oculto'))renderCal();
     }
   }catch{}
   if(btn){btn.textContent='🔄';btn.disabled=false;}
 }
 
 function iniciarPolling(){
-  setInterval(()=>{if(uAct&&getToken())sincronizar();},30000);
+  // Cada 7s, salvo que estés con un modal abierto (para no pisar tu edición)
+  setInterval(()=>{if(uAct&&getToken()&&!hayModalAbierto())sincronizar();},7000);
+  // Al volver a la pestaña, refrescar de inmediato
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&uAct&&getToken()&&!hayModalAbierto())sincronizar();});
 }
 
 // ════════════════════════
