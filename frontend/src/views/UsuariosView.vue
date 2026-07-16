@@ -321,6 +321,6 @@ onMounted(() => {
   background: none; border: none; padding: 10px 18px; cursor: pointer; font: inherit;
   font-weight: 600; color: var(--gris-500); border-bottom: 2px solid transparent; margin-bottom: -2px;
 }
-.pestanas button.activa { color: var(--azul-800); border-bottom-color: var(--azul-700); }
+.pestanas button.activa { color: var(--oscuro-800); border-bottom-color: var(--marca-osc); }
 .rejilla-roles { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
 </style>

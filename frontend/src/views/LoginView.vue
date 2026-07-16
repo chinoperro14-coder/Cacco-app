@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { mensajeError } from '../api'
 import { useAuthStore } from '../stores/auth'
+import logo from '../assets/logo.png'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -30,7 +31,7 @@ async function entrar() {
   <div class="fondo-login">
     <div class="caja-login">
       <div class="cabecera-login">
-        <div class="sello">CACCO</div>
+        <img :src="logo" alt="CACCO · Centro de Arte y Cultura de Colón" class="sello" />
         <h1>SIGEP-CACCO</h1>
         <p>Sistema Integral de Gestión Pública<br />Centro de Arte y Cultura de Colón</p>
       </div>
@@ -61,18 +62,16 @@ async function entrar() {
 <style scoped>
 .fondo-login {
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(150deg, var(--azul-900) 0%, var(--azul-700) 60%, var(--azul-600) 100%);
+  background: linear-gradient(155deg, var(--oscuro-900) 0%, #7a2f10 55%, var(--marca) 125%);
   padding: 16px;
 }
 .caja-login {
   background: var(--blanco); border-radius: 14px; box-shadow: var(--sombra-alta);
   width: 100%; max-width: 400px; padding: 32px;
+  border-top: 5px solid var(--marca);
 }
 .cabecera-login { text-align: center; margin-bottom: 24px; }
-.sello {
-  display: inline-block; background: var(--dorado); color: var(--azul-900);
-  font-weight: 800; padding: 10px 14px; border-radius: 10px; letter-spacing: 0.08em; margin-bottom: 12px;
-}
+.sello { width: 210px; max-width: 80%; margin-bottom: 10px; }
 .cabecera-login h1 { margin-bottom: 4px; }
 .cabecera-login p { color: var(--gris-500); font-size: 0.85rem; }
 .btn-entrar { width: 100%; justify-content: center; padding: 11px; margin-top: 6px; }

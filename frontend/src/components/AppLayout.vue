@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api'
 import { useAuthStore } from '../stores/auth'
+import isotipo from '../assets/isotipo.png'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -96,7 +97,7 @@ onBeforeUnmount(() => clearInterval(temporizador))
     <!-- Menú lateral -->
     <aside class="lateral" :class="{ abierto: menuAbierto }">
       <div class="marca">
-        <div class="marca-logo">CACCO</div>
+        <img :src="isotipo" alt="CACCO" class="marca-logo" />
         <div class="marca-texto">
           <strong>SIGEP-CACCO</strong>
           <span>Gestión Pública</span>
@@ -193,25 +194,22 @@ onBeforeUnmount(() => clearInterval(temporizador))
 .disposicion { display: flex; min-height: 100vh; }
 
 .lateral {
-  width: 240px; background: var(--azul-900); color: #cbd8e4;
+  width: 240px; background: var(--oscuro-900); color: #e6d9d1;
   display: flex; flex-direction: column; flex-shrink: 0;
 }
-.marca { display: flex; align-items: center; gap: 10px; padding: 18px 16px; border-bottom: 1px solid rgba(255,255,255,0.12); }
-.marca-logo {
-  background: var(--dorado); color: var(--azul-900); font-weight: 800; font-size: 0.7rem;
-  border-radius: 8px; padding: 8px 6px; letter-spacing: 0.05em;
-}
+.marca { display: flex; align-items: center; gap: 10px; padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.12); }
+.marca-logo { width: 38px; height: 38px; border-radius: 50%; }
 .marca-texto { display: flex; flex-direction: column; line-height: 1.25; }
 .marca-texto strong { color: #fff; font-size: 0.95rem; }
 .marca-texto span { font-size: 0.72rem; opacity: 0.75; }
 
 nav { flex: 1; padding: 12px 8px; }
 .enlace-menu {
-  display: flex; align-items: center; gap: 10px; color: #cbd8e4;
+  display: flex; align-items: center; gap: 10px; color: #e6d9d1;
   padding: 10px 12px; border-radius: 8px; margin-bottom: 2px; font-size: 0.92rem;
 }
 .enlace-menu:hover { background: rgba(255,255,255,0.08); color: #fff; }
-.enlace-menu.router-link-exact-active { background: var(--azul-700); color: #fff; font-weight: 600; }
+.enlace-menu.router-link-exact-active { background: var(--marca); color: #fff; font-weight: 600; }
 .icono { width: 22px; text-align: center; }
 .lateral-pie { padding: 14px 16px; font-size: 0.7rem; opacity: 0.6; border-top: 1px solid rgba(255,255,255,0.12); }
 
@@ -235,7 +233,7 @@ nav { flex: 1; padding: 12px 8px; }
   display: flex; gap: 10px; width: 100%; text-align: left; padding: 8px 14px;
   background: none; border: none; cursor: pointer; font: inherit;
 }
-.item-resultado:hover { background: var(--azul-100); }
+.item-resultado:hover { background: var(--marca-claro); }
 
 .campana-envoltura { position: relative; }
 .campana { background: none; border: none; font-size: 1.25rem; cursor: pointer; position: relative; }
@@ -249,7 +247,7 @@ nav { flex: 1; padding: 12px 8px; }
 }
 .panel-cabecera { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--gris-200); }
 .notificacion { padding: 10px 14px; border-bottom: 1px solid var(--gris-100); font-size: 0.85rem; }
-.notificacion.no-leida { background: var(--azul-100); }
+.notificacion.no-leida { background: var(--marca-claro); }
 .notificacion p { margin: 2px 0; color: var(--gris-700); }
 
 .usuario-caja { display: flex; align-items: center; gap: 12px; }

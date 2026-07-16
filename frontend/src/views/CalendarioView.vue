@@ -189,20 +189,20 @@ onMounted(() => {
   padding: 4px; display: flex; flex-direction: column; gap: 3px; overflow: hidden;
 }
 .celda.vacia { background: var(--gris-50); border-style: dashed; }
-.celda.hoy { border-color: var(--azul-600); border-width: 2px; background: var(--azul-100); }
+.celda.hoy { border-color: var(--marca); border-width: 2px; background: var(--marca-claro); }
 .numero-dia { font-size: 0.78rem; font-weight: 700; color: var(--gris-700); }
 
 .evento {
   border: none; text-align: left; font-size: 0.68rem; padding: 2px 5px; border-radius: 4px;
   cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600;
 }
-.evento-azul { background: var(--info-suave); color: var(--azul-700); }
+.evento-azul { background: var(--info-suave); color: var(--marca-osc); }
 .evento-verde { background: var(--verde-suave); color: var(--verde); }
 .evento-ambar { background: var(--ambar-suave); color: var(--ambar); }
 
 @media (max-width: 700px) {
   .celda { min-height: 56px; }
   .evento { display: none; }
-  .celda:has(.evento)::after { content: '•'; color: var(--azul-600); font-size: 1.1rem; line-height: 0.5; }
+  .celda:has(.evento)::after { content: '•'; color: var(--marca); font-size: 1.1rem; line-height: 0.5; }
 }
 </style>

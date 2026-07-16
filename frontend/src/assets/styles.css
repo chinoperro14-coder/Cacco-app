@@ -3,19 +3,20 @@
    ============================================================ */
 
 :root {
-  --azul-900: #0f2a43;
-  --azul-800: #163a5c;
-  --azul-700: #1e4d7a;
-  --azul-600: #2563a8;
-  --azul-100: #e3edf7;
-  --dorado: #c9a227;
-  --gris-900: #1f2937;
-  --gris-700: #374151;
-  --gris-500: #6b7280;
-  --gris-300: #d1d5db;
-  --gris-200: #e5e7eb;
-  --gris-100: #f3f4f6;
-  --gris-50: #f9fafb;
+  /* Paleta basada en el logo institucional CACCO (naranja #EF561F) */
+  --marca: #ef561f;        /* naranja CACCO: acciones y acentos */
+  --marca-osc: #c74112;    /* naranja oscuro: hover y textos de código */
+  --marca-claro: #fdeee6;  /* tinte suave: hovers y fondos destacados */
+  --oscuro-900: #26170f;   /* carbón cálido: menú lateral y títulos */
+  --oscuro-800: #46362c;   /* carbón medio: textos secundarios */
+  --secundario: #0e7490;   /* petróleo complementario: gráficos secundarios */
+  --gris-900: #292420;
+  --gris-700: #4d443d;
+  --gris-500: #7d746c;
+  --gris-300: #d9d3ce;
+  --gris-200: #e9e4e0;
+  --gris-100: #f5f2f0;
+  --gris-50: #faf8f7;
   --blanco: #ffffff;
   --verde: #15803d;
   --verde-suave: #dcfce7;
@@ -24,9 +25,10 @@
   --ambar: #b45309;
   --ambar-suave: #fef3c7;
   --info-suave: #dbeafe;
+  --info: #1d4ed8;
   --radio: 8px;
-  --sombra: 0 1px 3px rgba(15, 42, 67, 0.1), 0 1px 2px rgba(15, 42, 67, 0.06);
-  --sombra-alta: 0 10px 25px rgba(15, 42, 67, 0.15);
+  --sombra: 0 1px 3px rgba(38, 23, 15, 0.1), 0 1px 2px rgba(38, 23, 15, 0.06);
+  --sombra-alta: 0 10px 25px rgba(38, 23, 15, 0.18);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -39,20 +41,20 @@ body {
   line-height: 1.5;
 }
 
-h1 { font-size: 1.35rem; color: var(--azul-900); }
-h2 { font-size: 1.1rem; color: var(--azul-900); }
-a { color: var(--azul-600); text-decoration: none; }
+h1 { font-size: 1.35rem; color: var(--oscuro-900); }
+h2 { font-size: 1.1rem; color: var(--oscuro-900); }
+a { color: var(--marca); text-decoration: none; }
 
 /* ---------- Botones ---------- */
 .btn {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 8px 16px; border: 1px solid transparent; border-radius: var(--radio);
   font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: background 0.15s;
-  background: var(--azul-700); color: var(--blanco);
+  background: var(--marca); color: var(--blanco);
 }
-.btn:hover { background: var(--azul-600); }
+.btn:hover { background: var(--marca-osc); }
 .btn:disabled { opacity: 0.55; cursor: not-allowed; }
-.btn-sec { background: var(--blanco); color: var(--azul-800); border-color: var(--gris-300); }
+.btn-sec { background: var(--blanco); color: var(--oscuro-800); border-color: var(--gris-300); }
 .btn-sec:hover { background: var(--gris-50); }
 .btn-peligro { background: var(--rojo); }
 .btn-peligro:hover { background: #dc2626; }
@@ -65,7 +67,7 @@ input, select, textarea {
   border-radius: var(--radio); font: inherit; background: var(--blanco); color: var(--gris-900);
 }
 input:focus, select:focus, textarea:focus {
-  outline: 2px solid var(--azul-600); outline-offset: -1px; border-color: var(--azul-600);
+  outline: 2px solid var(--marca); outline-offset: -1px; border-color: var(--marca);
 }
 .campo { margin-bottom: 14px; }
 .fila-campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
@@ -81,8 +83,8 @@ th {
   background: var(--gris-50); white-space: nowrap;
 }
 td { padding: 10px 14px; border-bottom: 1px solid var(--gris-100); vertical-align: middle; }
-tbody tr:hover { background: var(--azul-100); }
-.codigo { font-family: 'Consolas', monospace; font-size: 0.82rem; color: var(--azul-700); font-weight: 700; white-space: nowrap; }
+tbody tr:hover { background: var(--marca-claro); }
+.codigo { font-family: 'Consolas', monospace; font-size: 0.82rem; color: var(--marca-osc); font-weight: 700; white-space: nowrap; }
 
 /* ---------- Chips de estado ---------- */
 .chip {
@@ -93,7 +95,7 @@ tbody tr:hover { background: var(--azul-100); }
 .chip-verde { background: var(--verde-suave); color: var(--verde); }
 .chip-rojo { background: var(--rojo-suave); color: var(--rojo); }
 .chip-ambar { background: var(--ambar-suave); color: var(--ambar); }
-.chip-azul { background: var(--info-suave); color: var(--azul-700); }
+.chip-azul { background: var(--info-suave); color: var(--info); }
 
 /* ---------- Utilidades ---------- */
 .encabezado-vista { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }

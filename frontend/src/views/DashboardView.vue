@@ -70,7 +70,7 @@ function barras(objeto) {
           <h2>Actividades por tipo</h2>
           <div v-for="b in barras(datos.actividades.por_tipo)" :key="b.clave" class="barra-fila">
             <span class="barra-etiqueta">{{ b.clave }}</span>
-            <div class="barra-fondo"><div class="barra barra-dorada" :style="{ width: b.porcentaje + '%' }"></div></div>
+            <div class="barra-fondo"><div class="barra barra-secundaria" :style="{ width: b.porcentaje + '%' }"></div></div>
             <strong>{{ b.valor }}</strong>
           </div>
           <div v-if="!barras(datos.actividades.por_tipo).length" class="texto-suave">Sin datos.</div>
@@ -112,7 +112,7 @@ function barras(objeto) {
 }
 .indicador { display: flex; gap: 12px; align-items: center; }
 .indicador-icono { font-size: 1.7rem; }
-.indicador-valor { font-size: 1.7rem; font-weight: 800; color: var(--azul-800); line-height: 1.1; }
+.indicador-valor { font-size: 1.7rem; font-weight: 800; color: var(--oscuro-800); line-height: 1.1; }
 .indicador-titulo { font-weight: 600; font-size: 0.85rem; }
 
 .rejilla-paneles { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -121,8 +121,8 @@ function barras(objeto) {
 .barra-fila { display: grid; grid-template-columns: 110px 1fr 32px; gap: 10px; align-items: center; margin-top: 10px; }
 .barra-etiqueta { font-size: 0.82rem; color: var(--gris-700); text-transform: capitalize; }
 .barra-fondo { background: var(--gris-100); border-radius: 999px; height: 12px; overflow: hidden; }
-.barra { background: var(--azul-600); height: 100%; border-radius: 999px; }
-.barra-dorada { background: var(--dorado); }
+.barra { background: var(--marca); height: 100%; border-radius: 999px; }
+.barra-secundaria { background: var(--secundario); }
 
 @media (max-width: 900px) {
   .rejilla-paneles { grid-template-columns: 1fr; }
