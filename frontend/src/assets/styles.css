@@ -1,0 +1,125 @@
+/* ============================================================
+   SIGEP-CACCO · Sistema de diseño institucional (modo claro)
+   ============================================================ */
+
+:root {
+  --azul-900: #0f2a43;
+  --azul-800: #163a5c;
+  --azul-700: #1e4d7a;
+  --azul-600: #2563a8;
+  --azul-100: #e3edf7;
+  --dorado: #c9a227;
+  --gris-900: #1f2937;
+  --gris-700: #374151;
+  --gris-500: #6b7280;
+  --gris-300: #d1d5db;
+  --gris-200: #e5e7eb;
+  --gris-100: #f3f4f6;
+  --gris-50: #f9fafb;
+  --blanco: #ffffff;
+  --verde: #15803d;
+  --verde-suave: #dcfce7;
+  --rojo: #b91c1c;
+  --rojo-suave: #fee2e2;
+  --ambar: #b45309;
+  --ambar-suave: #fef3c7;
+  --info-suave: #dbeafe;
+  --radio: 8px;
+  --sombra: 0 1px 3px rgba(15, 42, 67, 0.1), 0 1px 2px rgba(15, 42, 67, 0.06);
+  --sombra-alta: 0 10px 25px rgba(15, 42, 67, 0.15);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+  color: var(--gris-900);
+  background: var(--gris-100);
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+
+h1 { font-size: 1.35rem; color: var(--azul-900); }
+h2 { font-size: 1.1rem; color: var(--azul-900); }
+a { color: var(--azul-600); text-decoration: none; }
+
+/* ---------- Botones ---------- */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border: 1px solid transparent; border-radius: var(--radio);
+  font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: background 0.15s;
+  background: var(--azul-700); color: var(--blanco);
+}
+.btn:hover { background: var(--azul-600); }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn-sec { background: var(--blanco); color: var(--azul-800); border-color: var(--gris-300); }
+.btn-sec:hover { background: var(--gris-50); }
+.btn-peligro { background: var(--rojo); }
+.btn-peligro:hover { background: #dc2626; }
+.btn-mini { padding: 4px 10px; font-size: 0.8rem; }
+
+/* ---------- Formularios ---------- */
+label { display: block; font-weight: 600; font-size: 0.82rem; color: var(--gris-700); margin-bottom: 4px; }
+input, select, textarea {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--gris-300);
+  border-radius: var(--radio); font: inherit; background: var(--blanco); color: var(--gris-900);
+}
+input:focus, select:focus, textarea:focus {
+  outline: 2px solid var(--azul-600); outline-offset: -1px; border-color: var(--azul-600);
+}
+.campo { margin-bottom: 14px; }
+.fila-campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+
+/* ---------- Tarjetas y tablas ---------- */
+.tarjeta { background: var(--blanco); border-radius: var(--radio); box-shadow: var(--sombra); padding: 18px; }
+
+.tabla-envoltura { overflow-x: auto; background: var(--blanco); border-radius: var(--radio); box-shadow: var(--sombra); }
+table { width: 100%; border-collapse: collapse; }
+th {
+  text-align: left; padding: 10px 14px; font-size: 0.75rem; text-transform: uppercase;
+  letter-spacing: 0.04em; color: var(--gris-500); border-bottom: 2px solid var(--gris-200);
+  background: var(--gris-50); white-space: nowrap;
+}
+td { padding: 10px 14px; border-bottom: 1px solid var(--gris-100); vertical-align: middle; }
+tbody tr:hover { background: var(--azul-100); }
+.codigo { font-family: 'Consolas', monospace; font-size: 0.82rem; color: var(--azul-700); font-weight: 700; white-space: nowrap; }
+
+/* ---------- Chips de estado ---------- */
+.chip {
+  display: inline-block; padding: 2px 10px; border-radius: 999px;
+  font-size: 0.75rem; font-weight: 700; white-space: nowrap;
+  background: var(--gris-200); color: var(--gris-700);
+}
+.chip-verde { background: var(--verde-suave); color: var(--verde); }
+.chip-rojo { background: var(--rojo-suave); color: var(--rojo); }
+.chip-ambar { background: var(--ambar-suave); color: var(--ambar); }
+.chip-azul { background: var(--info-suave); color: var(--azul-700); }
+
+/* ---------- Utilidades ---------- */
+.encabezado-vista { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+.filtros { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.filtros > * { width: auto; min-width: 150px; }
+.alerta { padding: 10px 14px; border-radius: var(--radio); margin-bottom: 12px; font-size: 0.88rem; }
+.alerta-error { background: var(--rojo-suave); color: var(--rojo); border: 1px solid #fca5a5; }
+.alerta-ok { background: var(--verde-suave); color: var(--verde); border: 1px solid #86efac; }
+.texto-suave { color: var(--gris-500); font-size: 0.85rem; }
+.sin-datos { text-align: center; padding: 36px; color: var(--gris-500); }
+.paginacion { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 12px; }
+
+/* ---------- Modal ---------- */
+.modal-fondo {
+  position: fixed; inset: 0; background: rgba(15, 42, 67, 0.55);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 5vh 16px; z-index: 100; overflow-y: auto;
+}
+.modal {
+  background: var(--blanco); border-radius: 12px; box-shadow: var(--sombra-alta);
+  width: 100%; max-width: 640px; padding: 22px;
+}
+.modal-cabecera { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.modal-pie { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+  .filtros > * { min-width: 120px; flex: 1; }
+}
