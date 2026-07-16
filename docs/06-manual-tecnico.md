@@ -4,7 +4,7 @@
 
 | Capa | Tecnología |
 |---|---|
-| Backend | Laravel 13 (PHP 8.3+), API REST `/api/v1` |
+| Backend | Laravel 13 (PHP 8.4+), API REST `/api/v1` |
 | Autenticación | Laravel Sanctum (tokens Bearer con expiración) |
 | Frontend | Vue 3 + Vite + Pinia + Vue Router (SPA, modo claro) |
 | Base de datos | PostgreSQL 16 (SQLite para desarrollo/pruebas) |

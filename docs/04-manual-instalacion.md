@@ -55,7 +55,7 @@ Todos los usuarios demo usan la contraseña `Sigep2026*cambiar`
 
 ## Opción B — Instalación manual (desarrollo)
 
-**Requisitos**: PHP 8.3+ (ext. `pdo_pgsql`), Composer 2, Node.js 20+, PostgreSQL 16.
+**Requisitos**: PHP 8.4+ (ext. `pdo_pgsql`), Composer 2, Node.js 20+, PostgreSQL 16.
 
 ```bash
 # Base de datos

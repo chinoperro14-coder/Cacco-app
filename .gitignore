@@ -3,3 +3,6 @@ node_modules/
 *.log
 .DS_Store
 .claude/worktrees/
+docker/ca-local.crt
+docker-compose.override.yml
+docker/*.local.Dockerfile
