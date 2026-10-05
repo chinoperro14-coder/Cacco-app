@@ -1512,7 +1512,7 @@ function filtraCat(c,el){
   renderTareas();
 }
 function renderTodo(){renderTareas();renderHoras();renderEquipo();actuCts();if(!document.getElementById('vAsignaciones')?.classList.contains('oculto'))renderAsig();}
-function actuCts(){document.getElementById('ctT').textContent=E.tareas.length;document.getElementById('ctH').textContent=E.horasExtra.length;}
+function actuCts(){document.getElementById('ctT').textContent=E.tareas.filter(t=>!t.borrador).length;document.getElementById('ctH').textContent=E.horasExtra.length;}
 
 // ════════════════════════
 //  TAREAS
@@ -1685,17 +1685,24 @@ function renderTareas(){
     fa.innerHTML=chips.length?`<span style="font-size:12px;color:var(--tm);font-weight:500">Filtro activo:</span>${chips.join('')}`:'';
   }
   const ts=getTareas();
-  document.getElementById('stTot').textContent=E.tareas.length;
-  document.getElementById('stPen').textContent=E.tareas.filter(t=>eglobal(t)==='Pendiente').length;
-  document.getElementById('stPro').textContent=E.tareas.filter(t=>eglobal(t)==='En Progreso').length;
-  document.getElementById('stLis').textContent=E.tareas.filter(t=>eglobal(t)==='Completada').length;
+  // Los borradores no cuentan en las estadísticas
+  const reales=E.tareas.filter(t=>!t.borrador);
+  document.getElementById('stTot').textContent=reales.length;
+  document.getElementById('stPen').textContent=reales.filter(t=>eglobal(t)==='Pendiente').length;
+  document.getElementById('stPro').textContent=reales.filter(t=>eglobal(t)==='En Progreso').length;
+  document.getElementById('stLis').textContent=reales.filter(t=>eglobal(t)==='Completada').length;
   const venc=E.tareas.filter(t=>t.fecha&&t.fecha<hoy()&&!tResuelta(t)&&!t.borrador);
   const alV=document.getElementById('alVenc');
   if(venc.length){alV.classList.remove('oculto');document.getElementById('txVenc').textContent=`${venc.length} tarea(s) vencida(s): ${venc.map(t=>t.titulo).slice(0,3).join(', ')}${venc.length>3?'...':''}`;}
   else alV.classList.add('oculto');
 
   const lista=document.getElementById('listaTareas'),vac=document.getElementById('vacTareas');
-  if(!ts.length){lista.innerHTML='';vac.classList.remove('oculto');return;}
+  if(!ts.length){
+    lista.innerHTML='';
+    // Sin tareas publicadas igual se muestran los borradores
+    if(renderBorradores(lista))vac.classList.add('oculto');else vac.classList.remove('oculto');
+    return;
+  }
   vac.classList.add('oculto');
   const renderTCard=t=>{
     const eg=eglobal(t),pct=pctT(t);
@@ -2127,25 +2134,31 @@ function renderTareas(){
   if(compts.length){htmlOut+=mkHdrT('✅ Completadas','#16a34a','#DCFCE7',compts.length);htmlOut+=compts.map(renderTCard).join('');}
   if(cerradts.length){htmlOut+=mkHdrT('🚫 Cerradas / No cumplidas','#6b7280','#f3f4f6',cerradts.length);htmlOut+=cerradts.map(renderTCard).join('');}
   lista.innerHTML=htmlOut;
-  // Drafts section
-  const borradores=E.tareas.filter(t=>t.borrador&&(niv==='lider'||t.creadaPor===uAct?.nombre||Object.values(t.secciones||{}).some(sv=>(sv.responsables||[]).includes(uAct?.id))));
-  if(borradores.length){
-    const borHtml=borradores.map(t=>`
+  renderBorradores(lista);
+}
+
+// Borradores: visibles para líder y editor (pueden completarlos), y para su autor o responsables
+function renderBorradores(lista){
+  const borradores=E.tareas.filter(t=>t.borrador&&(puede('editarTarea')||t.creadaPor===uAct?.nombre||Object.values(t.secciones||{}).some(sv=>(sv.responsables||[]).includes(uAct?.id))))
+    .sort((a,b)=>(a.fecha||'9999').localeCompare(b.fecha||'9999'));
+  if(!borradores.length)return false;
+  const nivelDe=t=>((t.notas||'').match(/NIVEL SUGERIDO: ([^\n(]+)/)||[])[1]||'';
+  const borHtml=borradores.map(t=>`
       <div style="padding:10px 14px;border:1px dashed var(--na);border-radius:var(--r);background:var(--su);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;font-weight:700;color:var(--tx)">${t.titulo||'(Sin título)'}</div>
-          <div style="font-size:11px;color:var(--tm);margin-top:2px">📝 Borrador · ${t.creadaPor||'?'} · ${fmt(t.creadaEn)||''}</div>
+          <div style="font-size:11px;color:var(--tm);margin-top:2px">📝 Borrador · ${t.fecha?'📅 '+fmt(t.fecha)+(t.hora?' '+t.hora:'')+' · ':''}${nivelDe(t)?nivelDe(t).trim()+' · ':''}${t.creadaPor||'?'}</div>
         </div>
         ${puede('editarTarea')?`<button class="btn bna bsm" onclick="abrirMT('${t.id}')">✏️ Completar</button>`:''}
         ${puede('eliminarTarea')?`<button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro)" onclick="elimT('${t.id}')">🗑</button>`:''}
       </div>`).join('');
-    lista.innerHTML+=`<div style="margin-top:20px">
+  lista.innerHTML+=`<div style="margin-top:20px">
       <div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px">
         📝 Borradores <span style="background:var(--ams);color:var(--am);padding:1px 7px;border-radius:10px">${borradores.length}</span>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px">${borHtml}</div>
     </div>`;
-  }
+  return true;
 }
 
 function togT(id){
