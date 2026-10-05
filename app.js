@@ -76,7 +76,7 @@ async function escribirData(data) {
 // auto: copia del estado anterior antes de guardar (máx. una cada 15 min)
 // diario: una copia por día · manual: la crea el líder · pre-restauracion: antes de restaurar
 const BACKUP_DIR = path.join(__dirname, "backups");
-const BACKUP_MAX = { auto: 96, diario: 30, manual: 50, "pre-restauracion": 20, "pre-reinicio": 20 };
+const BACKUP_MAX = { auto: 96, diario: 30, manual: 50, "pre-restauracion": 20 };
 const AUTO_CADA_MS = 15 * 60 * 1000;
 const TZ = "America/Panama";
 const diaDe = d => new Date(d).toLocaleDateString("en-CA", { timeZone: TZ });
@@ -236,26 +236,6 @@ app.get("/api/backups/:id", verificarToken, soloLider, async (req, res) => {
     res.setHeader("Content-Disposition", `attachment; filename="CACCO_respaldo_${diaDe(b.fecha)}_${b.tipo}.json"`);
     res.json(b.payload);
   } catch { res.status(500).json({ error: "Error leyendo respaldo" }); }
-});
-// Reinicio: borra los registros y conserva el equipo y las etiquetas (con respaldo previo)
-const SECCIONES_REGISTROS = ["tareas", "horasExtra", "publicaciones", "asigVarias", "bitacora", "historico", "notifs"];
-app.post("/api/reiniciar", verificarToken, soloLider, async (req, res) => {
-  try {
-    const actual = await leerData();
-    await crearBackup("pre-reinicio", actual, req.usuario.email);
-    const limpio = { ...actual };
-    SECCIONES_REGISTROS.forEach(k => { limpio[k] = []; });
-    const n = new Date();
-    const quien = (actual.equipo || []).find(u => u.email === req.usuario.email)?.nombre || req.usuario.email;
-    limpio.bitacora = [{
-      id: n.getTime().toString(36),
-      fecha: n.toLocaleDateString("es-PA", { day: "2-digit", month: "short", year: "numeric", timeZone: TZ }),
-      hora: n.toLocaleTimeString("es-PA", { hour: "2-digit", minute: "2-digit", timeZone: TZ }),
-      usuario: quien, accion: "Dashboard reiniciado", detalle: "Se borraron los registros; hay un respaldo previo en Respaldos"
-    }];
-    await escribirData(limpio);
-    res.json({ ok: true });
-  } catch { res.status(500).json({ error: "No se pudo reiniciar" }); }
 });
 app.post("/api/backups/:id/restaurar", verificarToken, soloLider, async (req, res) => {
   try {
