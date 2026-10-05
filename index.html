@@ -680,12 +680,15 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 <div id="vHorasExtra" class="oculto">
   <div class="sh2">
     <div class="stit">Horas Extras</div>
-    <button class="btn bna bsm nhe oculto" onclick="abrirMH()">+ Registrar Horas</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn bgh bsm nhe oculto" onclick="abrirMRepComp()">📄 Reporte compensatorio</button>
+      <button class="btn bna bsm nhe oculto" onclick="abrirMH()">+ Registrar Horas</button>
+    </div>
   </div>
   <div id="alHE" class="al alam oculto">⏱️ <span id="txHE"></span></div>
   <div class="sg" style="grid-template-columns:repeat(3,1fr)">
     <div class="stat sna"><div class="slbl">Registros</div><div class="snum" id="heTot">0</div></div>
-    <div class="stat sve"><div class="slbl">Horas aprobadas</div><div class="snum" id="heApr">0</div><div class="ssub">acumuladas</div></div>
+    <div class="stat sve"><div class="slbl">Saldo compensatorio</div><div class="snum" id="heApr">0</div><div class="ssub" id="heAprSub">horas disponibles</div></div>
     <div class="stat sam"><div class="slbl">Pendientes</div><div class="snum" id="hePen">0</div></div>
   </div>
   <div id="heResumen" style="display:none;margin-bottom:18px"></div>
@@ -975,22 +978,40 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <div class="mbody">
     <input type="hidden" id="hId">
     <div class="fg" id="hMiemGrupo"><label class="fl">Persona *</label><select class="fc" id="hMiem"></select></div>
+    <div class="fg"><label class="fl">Tipo de registro</label>
+      <select class="fc" id="hTipo" onchange="tipoHCambio()"><option value="extra">⏱️ Horas extra (suman al saldo)</option><option value="compensatorio">🌴 Tiempo compensatorio usado (descuenta del saldo)</option></select>
+    </div>
     <div class="fr">
       <div class="fg"><label class="fl">Fecha *</label><input type="date" class="fc" id="hFecha" onchange="calcHorasH()"></div>
-      <div class="fg"><label class="fl">Tipo de día</label><div style="display:flex;align-items:center;gap:8px;min-height:38px"><span id="hTipoDia" class="bg bgr">—</span><label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" id="hFeriado" onchange="calcHorasH()"> Feriado</label></div></div>
+      <div class="fg hSoloExtra"><label class="fl">Tipo de día</label><div style="display:flex;align-items:center;gap:8px;min-height:38px"><span id="hTipoDia" class="bg bgr">—</span><label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" id="hFeriado" onchange="calcHorasH()"> Feriado</label></div></div>
     </div>
     <div class="fr">
-      <div class="fg"><label class="fl">Entrada *</label><input type="time" class="fc" id="hDesde" onchange="calcHorasH()"></div>
-      <div class="fg"><label class="fl">Salida *</label><input type="time" class="fc" id="hHasta" onchange="calcHorasH()"></div>
-      <div class="fg"><label class="fl">Horas extra</label><input type="number" class="fc" id="hHoras" min="0" max="24" step="0.25"></div>
+      <div class="fg hSoloExtra"><label class="fl">Entrada *</label><input type="time" class="fc" id="hDesde" onchange="calcHorasH()"></div>
+      <div class="fg hSoloExtra"><label class="fl">Salida *</label><input type="time" class="fc" id="hHasta" onchange="calcHorasH()"></div>
+      <div class="fg"><label class="fl" id="hHorasLbl">Horas extra</label><input type="number" class="fc" id="hHoras" min="0" max="24" step="0.25"></div>
     </div>
-    <div style="font-size:12px;color:var(--tm);margin:-4px 0 12px;line-height:1.5" id="hRegla">Día laboral: cuenta solo lo trabajado antes de 8:00 a. m. o después de 4:00 p. m. Sábado, domingo o feriado: cuenta toda la jornada.</div>
-    <div class="fg"><label class="fl">Actividad *</label><textarea class="fc" id="hAct" placeholder="Describa la actividad realizada..."></textarea></div>
+    <div style="font-size:12px;color:var(--tm);margin:-4px 0 12px;line-height:1.5" id="hSaldoInfo"></div>
+    <div class="hSoloExtra" style="font-size:12px;color:var(--tm);margin:-4px 0 12px;line-height:1.5" id="hRegla">Día laboral: cuenta solo lo trabajado antes de 8:00 a. m. o después de 4:00 p. m. Sábado, domingo o feriado: cuenta toda la jornada.</div>
+    <div class="fg"><label class="fl" id="hActLbl">Actividad *</label><textarea class="fc" id="hAct" placeholder="Describa la actividad realizada..."></textarea></div>
     <div class="fg" id="hAproGrupo" style="display:none"><label class="fl">Aprobación</label>
       <select class="fc" id="hApro"><option value="Pendiente">⏳ Pendiente</option><option value="Aprobado">✅ Aprobado</option><option value="Rechazado">❌ Rechazado</option></select>
     </div>
   </div>
   <div class="mpie"><button class="btn bgh" onclick="cerM('mH')">Cancelar</button><button class="btn bna" onclick="guardarH()">Guardar</button></div>
+</div></div>
+
+<!-- MODAL REPORTE COMPENSATORIO -->
+<div class="mov" id="mRepComp"><div class="mo">
+  <div class="mcab"><div class="mtit">Reporte de tiempo compensatorio</div><button class="mx" onclick="cerM('mRepComp')">×</button></div>
+  <div class="mbody">
+    <div class="fg" id="rcMiemGrupo"><label class="fl">Persona</label><select class="fc" id="rcMiem"></select></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Desde</label><input type="date" class="fc" id="rcIni"></div>
+      <div class="fg"><label class="fl">Hasta</label><input type="date" class="fc" id="rcFin"></div>
+    </div>
+    <div style="font-size:12px;color:var(--tm);line-height:1.5">Solo cuentan los registros aprobados. El saldo inicial incluye todo lo aprobado antes de la fecha «Desde».</div>
+  </div>
+  <div class="mpie"><button class="btn bgh" onclick="cerM('mRepComp')">Cancelar</button><button class="btn bna" onclick="generarRepComp()">Generar reporte</button></div>
 </div></div>
 
 <!-- MODAL EQUIPO -->
@@ -3508,7 +3529,9 @@ function renderHoras(){
   const hs=niv==='colaborador'?E.horasExtra.filter(h=>h.miembro===uAct?.nombre):niv==='lector'?[]:E.horasExtra;
   const apr=hs.filter(h=>h.aprobacion==='Aprobado'),pen=hs.filter(h=>h.aprobacion==='Pendiente');
   document.getElementById('heTot').textContent=hs.length;
-  document.getElementById('heApr').textContent=apr.reduce((s,h)=>s+parseFloat(h.horas||0),0).toFixed(1);
+  const acum=apr.filter(h=>!esComp(h)).reduce((s,h)=>s+parseFloat(h.horas||0),0),usad=apr.filter(esComp).reduce((s,h)=>s+parseFloat(h.horas||0),0);
+  document.getElementById('heApr').textContent=(acum-usad).toFixed(1);
+  document.getElementById('heAprSub').textContent=`${acum.toFixed(1)} acumuladas · ${usad.toFixed(1)} usadas`;
   document.getElementById('hePen').textContent=pen.length;
   const alHE=document.getElementById('alHE');
   if(puede('aprobarHora')&&pen.length){alHE.classList.remove('oculto');document.getElementById('txHE').textContent=`${pen.length} hora(s) pendiente(s) de aprobación.`;}
@@ -3517,10 +3540,10 @@ function renderHoras(){
   // Resumen por persona (solo para editor/líder)
   const resDiv=document.getElementById('heResumen');
   if(resDiv&&niv!=='colaborador'&&niv!=='lector'&&apr.length){
-    const porP={};apr.forEach(h=>{if(!porP[h.miembro])porP[h.miembro]=0;porP[h.miembro]+=parseFloat(h.horas||0);});
+    const porP={};apr.forEach(h=>{if(!porP[h.miembro])porP[h.miembro]=0;porP[h.miembro]+=(esComp(h)?-1:1)*parseFloat(h.horas||0);});
     const items=Object.entries(porP).sort((a,b)=>b[1]-a[1]).map(([nom,hrs])=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--su);border:1px solid var(--bo);border-radius:8px"><div style="flex:1;font-size:13px;font-weight:600">${rAv(nom,'',22,8)} ${nom}</div><div style="font-size:14px;font-weight:800;color:var(--na)">${hrs.toFixed(1)} hrs</div></div>`).join('');
     resDiv.style.display='block';
-    resDiv.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Horas aprobadas por persona</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px">${items}</div>`;
+    resDiv.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Saldo compensatorio por persona</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px">${items}</div>`;
   } else if(resDiv){resDiv.style.display='none';}
 
   // Colaboradores solo ven las suyas
@@ -3546,7 +3569,7 @@ function renderHoras(){
     return`<div class="hecard">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
         <div style="display:flex;align-items:center;gap:9px;font-size:14px;font-weight:700">${rAv(h.miembro,'',30,11)} ${h.miembro}</div>
-        <div style="text-align:right"><div style="font-size:26px;font-weight:800;color:var(--na);line-height:1">${h.horas}</div><div style="font-size:11px;color:var(--tm)">horas</div></div>
+        <div style="text-align:right"><div style="font-size:26px;font-weight:800;color:${esComp(h)?'var(--az)':'var(--na)'};line-height:1">${esComp(h)?'−':''}${h.horas}</div><div style="font-size:11px;color:var(--tm)">${esComp(h)?'h compensatorio':'horas'}</div></div>
       </div>
       <div style="font-size:13px;color:var(--tm);margin-bottom:12px;line-height:1.5">${h.actividad}</div>
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
@@ -3578,6 +3601,7 @@ function abrirMH(id){
   document.getElementById('hDesde').value=h?.desde||'';
   document.getElementById('hHasta').value=h?.hasta||'';
   document.getElementById('hFeriado').checked=!!h?.feriado;
+  document.getElementById('hTipo').value=h&&esComp(h)?'compensatorio':'extra';
   document.getElementById('hHoras').value=h?.horas??'';
   // Las horas salen de entrada/salida; solo quien aprueba puede ajustarlas a mano
   document.getElementById('hHoras').readOnly=!puede('aprobarHora');
@@ -3587,10 +3611,22 @@ function abrirMH(id){
   const ag=document.getElementById('hAproGrupo');
   document.getElementById('hApro').value=h?.aprobacion||'Pendiente';
   // Nadie (salvo el Líder) aprueba sus propias horas
-  sel.onchange=()=>{ag.style.display=puede('aprobarHora')&&(sel.value!==uAct?.nombre||niv==='lider')?'block':'none';};
+  sel.onchange=()=>{ag.style.display=puede('aprobarHora')&&(sel.value!==uAct?.nombre||niv==='lider')?'block':'none';tipoHCambio();};
   sel.onchange();
   abrirM('mH');
 }
+
+// Tiempo compensatorio: los registros tipo 'compensatorio' descuentan del saldo de horas extra
+const esComp=h=>h.tipo==='compensatorio';
+function saldoComp(nombre,hasta){// solo lo aprobado; 'hasta' (AAAA-MM-DD) es inclusivo
+  let acum=0,usadas=0;
+  E.horasExtra.forEach(h=>{
+    if(h.miembro!==nombre||h.aprobacion!=='Aprobado'||(hasta&&(h.fecha||'')>hasta))return;
+    const n=parseFloat(h.horas||0);if(esComp(h))usadas+=n;else acum+=n;
+  });
+  return {acum,usadas,saldo:acum-usadas};
+}
+const fmtH=n=>{const t=Math.round(Math.abs(n)*60),hh=Math.floor(t/60),mm=t%60;return (n<0?'−':'')+hh+' h'+(mm?' '+mm+' min':'');};
 
 // Tipo de día de una fecha AAAA-MM-DD (sin desfase de zona horaria)
 function tipoDiaH(f){
@@ -3608,12 +3644,24 @@ function horasFueraH(fecha,desde,hasta,feriado){
   if(tipoDiaH(fecha)==='laboral'&&!feriado)total-=Math.max(0,Math.min(fin,960)-Math.max(ini,480));
   return Math.round(total/15)/4;
 }
+function tipoHCambio(){
+  const comp=document.getElementById('hTipo').value==='compensatorio';
+  document.querySelectorAll('#mH .hSoloExtra').forEach(el=>el.style.display=comp?'none':'');
+  document.getElementById('hHorasLbl').textContent=comp?'Horas a descontar *':'Horas extra';
+  document.getElementById('hActLbl').textContent=comp?'Motivo *':'Actividad *';
+  document.getElementById('hAct').placeholder=comp?'ej. Día libre por las horas de Sabores de Colón':'Describa la actividad realizada...';
+  // En compensatorio las horas se escriben a mano (8 h = jornada completa)
+  document.getElementById('hHoras').readOnly=!comp&&!puede('aprobarHora');
+  const m=document.getElementById('hMiem').value,inf=document.getElementById('hSaldoInfo');
+  if(comp&&m){const sc=saldoComp(m);inf.textContent=`Saldo aprobado de ${m}: ${fmtH(sc.saldo)}. Una jornada completa son 8 h.`;}
+  else inf.textContent='';
+}
 function calcHorasH(soloEtiqueta){
   const f=document.getElementById('hFecha').value,fer=document.getElementById('hFeriado').checked;
   const td=tipoDiaH(f),el=document.getElementById('hTipoDia');
   el.textContent=fer?'Feriado':({laboral:'Día laboral',sabado:'Sábado',domingo:'Domingo'}[td]||'—');
   el.className='bg '+(fer||td==='sabado'||td==='domingo'?'bnar':'bgr');
-  if(soloEtiqueta===true)return;
+  if(soloEtiqueta===true||document.getElementById('hTipo').value==='compensatorio')return;
   const hrs=horasFueraH(f,document.getElementById('hDesde').value,document.getElementById('hHasta').value,fer);
   if(hrs!==null)document.getElementById('hHoras').value=hrs;
 }
@@ -3623,20 +3671,27 @@ function guardarH(){
   const de=document.getElementById('hDesde').value,ha=document.getElementById('hHasta').value,fer=document.getElementById('hFeriado').checked;
   const id=document.getElementById('hId').value;
   const prev=id?E.horasExtra.find(x=>x.id===id):null;
-  // Entrada y salida son obligatorias en registros nuevos (los anteriores pueden no tenerlas)
-  if(!m||!f||h===''||!a||(!prev&&(!de||!ha))){alert('Complete todos los campos, incluidas la hora de entrada y de salida.');return;}
-  if(!(parseFloat(h)>0)){alert('Con ese horario no hay horas fuera del horario laboral (8:00 a. m. a 4:00 p. m.).');return;}
+  const comp=document.getElementById('hTipo').value==='compensatorio';
+  // Entrada y salida son obligatorias en horas extra nuevas (los registros anteriores pueden no tenerlas)
+  if(!m||!f||h===''||!a||(!comp&&!prev&&(!de||!ha))){alert(comp?'Complete fecha, horas y motivo.':'Complete todos los campos, incluidas la hora de entrada y de salida.');return;}
+  if(!(parseFloat(h)>0)){alert(comp?'Indique cuántas horas se descuentan.':'Con ese horario no hay horas fuera del horario laboral (8:00 a. m. a 4:00 p. m.).');return;}
+  if(comp){
+    // No se puede usar más de lo que hay: saldo aprobado menos lo ya pedido y pendiente
+    const pedido=E.horasExtra.filter(x=>x.id!==id&&x.miembro===m&&esComp(x)&&x.aprobacion==='Pendiente').reduce((t,x)=>t+parseFloat(x.horas||0),0);
+    const disp=saldoComp(m).saldo-pedido+(prev&&esComp(prev)&&prev.aprobacion==='Aprobado'?parseFloat(prev.horas||0):0);
+    if(parseFloat(h)>disp+1e-9){alert(`${m} solo tiene ${fmtH(Math.max(0,disp))} disponibles${pedido?` (ya hay ${fmtH(pedido)} pedidas y pendientes)`:''}.`);return;}
+  }
   // Colaborador solo puede registrar las suyas
   if(niv==='colaborador'&&m!==uAct?.nombre){alert('Solo puede registrar sus propias horas.');return;}
   const propia=m===uAct?.nombre&&niv!=='lider';
   let apro=puede('aprobarHora')&&!propia?document.getElementById('hApro').value:'Pendiente';
   // Editar un registro propio ya aprobado no lo vuelve a dejar pendiente si no cambiaron las horas
   if(propia&&prev&&prev.aprobacion!=='Pendiente'&&parseFloat(h)===parseFloat(prev.horas))apro=prev.aprobacion;
-  const r={...(prev||{}),id:id||gId(),miembro:m,fecha:f,desde:de,hasta:ha,feriado:fer,tipoDia:tipoDiaH(f),horas:parseFloat(h),actividad:a,aprobacion:apro,registradoPor:prev?.registradoPor||uAct?.nombre};
+  const r={...(prev||{}),id:id||gId(),tipo:comp?'compensatorio':'extra',miembro:m,fecha:f,desde:comp?'':de,hasta:comp?'':ha,feriado:comp?false:fer,tipoDia:tipoDiaH(f),horas:parseFloat(h),actividad:a,aprobacion:apro,registradoPor:prev?.registradoPor||uAct?.nombre};
   if(apro!=='Pendiente'&&apro!==prev?.aprobacion)r.aprobadoPor=uAct?.nombre;
   if(apro==='Pendiente')delete r.aprobadoPor;
   if(id){const i=E.horasExtra.findIndex(h=>h.id===id);if(i>=0)E.horasExtra[i]=r;reg('Hora editada',`${m} — ${h} hrs`);}
-  else{E.horasExtra.unshift(r);reg('Hora registrada',`${m} — ${h} hrs`);if(!puede('aprobarHora'))addNotif('⏱️',`Solicitud de horas: ${m}`,'Pendiente de aprobación');}
+  else{E.horasExtra.unshift(r);reg(comp?'Compensatorio solicitado':'Hora registrada',`${m} — ${h} hrs`);if(apro==='Pendiente')addNotif(comp?'🌴':'⏱️',`${comp?'Solicitud de compensatorio':'Solicitud de horas'}: ${m}`,'Pendiente de aprobación');}
   guardar();cerM('mH');renderHoras();
 }
 
@@ -3672,7 +3727,7 @@ function renderEquipo(){
       if(t.secciones){return Object.values(t.secciones).some(sv=>(sv.responsables||[]).includes(p.id));}
       return(p.cats||[]).some(c=>(t.categorias||[]).includes(c));
     });
-    const mh=E.horasExtra.filter(h=>h.miembro===p.nombre&&h.aprobacion==='Aprobado').reduce((s,h)=>s+parseFloat(h.horas||0),0);
+    const mh=saldoComp(p.nombre).saldo;
     const comp=mt.filter(t=>eglobal(t)==='Completada').length;
     const pen=mt.filter(t=>eglobal(t)==='Pendiente').length;
     const pct=mt.length?Math.round(comp/mt.length*100):0;
@@ -3699,7 +3754,7 @@ function renderEquipo(){
         <div><div style="font-size:20px;font-weight:800;color:var(--na)">${mt.length}</div><div style="font-size:10px;color:var(--tm)">Asignadas</div></div>
         <div><div style="font-size:20px;font-weight:800;color:var(--ve)">${comp}</div><div style="font-size:10px;color:var(--tm)">Completadas</div></div>
         <div><div style="font-size:20px;font-weight:800;color:var(--am)">${pen}</div><div style="font-size:10px;color:var(--tm)">Pendientes</div></div>
-        <div><div style="font-size:20px;font-weight:800;color:var(--az)">${mh.toFixed(1)}</div><div style="font-size:10px;color:var(--tm)">Hrs extra</div></div>
+        <div><div style="font-size:20px;font-weight:800;color:var(--az)">${mh.toFixed(1)}</div><div style="font-size:10px;color:var(--tm)">Saldo hrs</div></div>
       </div>
       <div style="margin-top:10px">
         <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--tm);margin-bottom:3px"><span>Progreso general</span><span>${pct}%</span></div>
@@ -3788,7 +3843,7 @@ function renderPerfil(){
   const uSecs=(u.secciones&&u.secciones.length)?u.secciones:(u.seccion?[u.seccion]:[]);
   const secDisplay=uSecs.length?uSecs.map(s=>`<span class="bg bgr" style="font-size:10px">${SECCIONES[s]?.ico||'📌'} ${s}</span>`).join(' '):'<span style="font-size:12px;color:var(--tm)">Sin sección asignada</span>';
   const mt=E.tareas.filter(t=>uSecs.some(s=>t.secciones?.[s])||(t.categorias||[]).some(c=>(u.cats||[]).includes(c)));
-  const mh=E.horasExtra.filter(h=>h.miembro===u.nombre&&h.aprobacion==='Aprobado').reduce((s,h)=>s+parseFloat(h.horas||0),0);
+  const mh=saldoComp(u.nombre).saldo;
   document.getElementById('perfCard').innerHTML=`
     <div style="flex-shrink:0">${rAv(u.nombre,u.foto||'',72,26)}</div>
     <div><div style="font-size:20px;font-weight:800;margin-bottom:4px">${u.nombre}</div>
@@ -3798,7 +3853,7 @@ function renderPerfil(){
     <div style="display:flex;gap:20px;flex-wrap:wrap">
       <div style="font-size:12px;color:var(--tm)"><strong style="display:block;font-size:16px;color:var(--tx)">${mt.length}</strong>Tareas en mis categorías</div>
       <div style="font-size:12px;color:var(--tm)"><strong style="display:block;font-size:16px;color:var(--tx)">${mt.filter(t=>eglobal(t)==='Completada').length}</strong>Completadas</div>
-      <div style="font-size:12px;color:var(--tm)"><strong style="display:block;font-size:16px;color:var(--tx)">${mh.toFixed(1)} hrs</strong>Aprobadas</div>
+      <div style="font-size:12px;color:var(--tm)"><strong style="display:block;font-size:16px;color:var(--tx)">${mh.toFixed(1)} hrs</strong>Saldo compensatorio</div>
     </div></div>`;
   document.getElementById('pNom').value=u.nombre||'';
   document.getElementById('pCargo').value=u.cargo||'';
@@ -4039,7 +4094,7 @@ function generarRep(){
   const apPend=apars.filter(a=>!a.publicado);
 
   // Horas extra
-  const hapr=E.horasExtra.filter(h=>h.aprobacion==='Aprobado');
+  const hapr=E.horasExtra.filter(h=>h.aprobacion==='Aprobado'&&!esComp(h));
   const thrs=hapr.reduce((s,h)=>s+parseFloat(h.horas||0),0);
 
   // ══ HTML ══
@@ -4274,7 +4329,7 @@ function imprimirReporte(){
   const uTot=ts.reduce((s,t)=>{const u=unidadesTarea(t);s.asig+=u.asig;s.comp+=u.comp;s.noc+=u.noc;return s;},{asig:0,comp:0,noc:0});
   const pct=uTot.asig?Math.round(uTot.comp/uTot.asig*100):0;
   const venc=ts.filter(t=>t.fecha&&t.fecha<hoy()&&!tResuelta(t));
-  const hapr=E.horasExtra.filter(h=>h.aprobacion==='Aprobado'&&h.fecha&&h.fecha>=rango.ini&&h.fecha<=rango.fin);
+  const hapr=E.horasExtra.filter(h=>h.aprobacion==='Aprobado'&&!esComp(h)&&h.fecha&&h.fecha>=rango.ini&&h.fecha<=rango.fin);
   const thrs=hapr.reduce((s,h)=>s+parseFloat(h.horas||0),0);
   const semTxt=pct>=80?'🟢 VERDE — Rendimiento excelente':pct>=50?'🟡 AMARILLO — Rendimiento moderado':'🔴 ROJO — Requiere atención';
   const semCol=pct>=80?'#16a34a':pct>=50?'#d97706':'#dc2626';
@@ -4575,7 +4630,12 @@ ${thrs>0?`<div class="sec-title">Horas Extras Aprobadas</div>
   <button class="print-btn" onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button>
 </div>
 </body></html>`;
-  // Mostrar el reporte a pantalla completa dentro de la misma app (iframe).
+  mostrarDocumento(htmlContent,`📊 Reporte — ${rangoLbl}`,`Reporte_CACCO_${tipo}_${rango.ini}.html`);
+}
+
+// Muestra un documento HTML a pantalla completa dentro de la misma app (iframe),
+// con botones para imprimir/guardar PDF, descargar y cerrar.
+function mostrarDocumento(htmlContent,titulo,archivo){
   // Así nunca se queda en blanco ni saca del login (a diferencia de abrir una
   // pestaña nueva, que en algunos navegadores/entornos se "borra").
   let ov=document.getElementById('repOverlay');
@@ -4585,7 +4645,7 @@ ${thrs>0?`<div class="sec-title">Horas Extras Aprobadas</div>
   ov.style.cssText='position:fixed;inset:0;z-index:99999;background:#fff;display:flex;flex-direction:column';
   ov.innerHTML=`
     <div style="display:flex;gap:8px;align-items:center;padding:10px 14px;background:#1a1a1a;flex-wrap:wrap;flex-shrink:0">
-      <span style="color:#fff;font-weight:600;font-size:14px;margin-right:auto">📊 Reporte — ${rangoLbl}</span>
+      <span style="color:#fff;font-weight:600;font-size:14px;margin-right:auto">${titulo}</span>
       <button id="repPrintBtn" style="padding:8px 16px;background:#E35205;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer">🖨️ Imprimir / Guardar PDF</button>
       <button id="repDescBtn" style="padding:8px 14px;background:#2563eb;color:#fff;border:none;border-radius:8px;cursor:pointer">⬇️ Descargar</button>
       <button id="repCloseBtn" style="padding:8px 14px;background:#444;color:#fff;border:none;border-radius:8px;cursor:pointer">✕ Cerrar</button>
@@ -4599,11 +4659,88 @@ ${thrs>0?`<div class="sec-title">Horas Extras Aprobadas</div>
   document.getElementById('repDescBtn').onclick=()=>{
     const blob=new Blob([htmlContent],{type:'text/html;charset=utf-8'});
     const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');a.href=url;a.download=`Reporte_CACCO_${tipo}_${rango.ini}.html`;
+    const a=document.createElement('a');a.href=url;a.download=archivo;
     document.body.appendChild(a);a.click();a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),60000);
   };
   document.getElementById('repCloseBtn').onclick=()=>ov.remove();
+}
+
+// ════════════════════════
+//  REPORTE DE TIEMPO COMPENSATORIO
+// ════════════════════════
+function abrirMRepComp(){
+  if(!puede('registrarHora')){alert('Sin permiso.');return;}
+  const sel=document.getElementById('rcMiem');
+  if(niv==='colaborador'){sel.innerHTML=`<option value="${uAct.nombre}">${uAct.nombre}</option>`;document.getElementById('rcMiemGrupo').style.display='none';}
+  else{sel.innerHTML='<option value="">Todo el equipo</option>'+E.equipo.map(p=>`<option value="${p.nombre}">${p.nombre}</option>`).join('');document.getElementById('rcMiemGrupo').style.display='block';}
+  const h=hoy();
+  document.getElementById('rcIni').value=h.slice(0,4)+'-01-01';
+  document.getElementById('rcFin').value=h;
+  abrirM('mRepComp');
+}
+
+function generarRepComp(){
+  const sel=document.getElementById('rcMiem').value,ini=document.getElementById('rcIni').value,fin=document.getElementById('rcFin').value;
+  if(!ini||!fin||ini>fin){alert('Revise las fechas: «Desde» debe ser anterior a «Hasta».');return;}
+  const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const dia=f=>{const [a,m,d]=f.split('-').map(Number);const w=new Date(a,m-1,d).toLocaleDateString('es-PA',{weekday:'long'});return w.charAt(0).toUpperCase()+w.slice(1);};
+  const antes=d=>{const [a,m,dd]=d.split('-').map(Number);const x=new Date(a,m-1,dd-1);return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;};
+  const personas=(sel?E.equipo.filter(p=>p.nombre===sel):E.equipo).filter(p=>niv!=='colaborador'||p.nombre===uAct?.nombre);
+  const rangoLbl=`${fmt(ini)} al ${fmt(fin)}`;
+  const secciones=personas.map(p=>{
+    const regs=E.horasExtra.filter(h=>h.miembro===p.nombre&&h.fecha>=ini&&h.fecha<=fin).sort((a,b)=>a.fecha.localeCompare(b.fecha));
+    const ext=regs.filter(h=>!esComp(h)&&h.aprobacion==='Aprobado'),usa=regs.filter(h=>esComp(h)&&h.aprobacion==='Aprobado');
+    const pend=regs.filter(h=>h.aprobacion==='Pendiente');
+    const s0=saldoComp(p.nombre,antes(ini)).saldo;
+    if(sel===''&&!regs.length&&!s0)return '';// en el reporte de todo el equipo se omite a quien no tiene nada
+    const tE=ext.reduce((t,h)=>t+parseFloat(h.horas||0),0),tU=usa.reduce((t,h)=>t+parseFloat(h.horas||0),0);
+    const filasE=ext.map(h=>`<tr><td>${fmt(h.fecha)}</td><td>${h.feriado?'Feriado':dia(h.fecha)}</td><td>${h.desde&&h.hasta?h.desde+'–'+h.hasta:'—'}</td><td>${esc(h.actividad)}</td><td class="n">${fmtH(parseFloat(h.horas||0))}</td><td>${esc(h.aprobadoPor||'—')}</td></tr>`).join('');
+    const filasU=usa.map(h=>`<tr><td>${fmt(h.fecha)}</td><td>${dia(h.fecha)}</td><td colspan="2">${esc(h.actividad)}</td><td class="n">${fmtH(parseFloat(h.horas||0))}</td><td>${esc(h.aprobadoPor||'—')}</td></tr>`).join('');
+    return `<section class="persona">
+<table class="datos"><tr><th>Colaborador(a)</th><td>${esc(p.nombre)}</td><th>Cargo</th><td>${esc(p.cargo||'—')}</td></tr>
+<tr><th>Puesto según RRHH</th><td>${esc(p.puesto||'—')}</td><th>N.º de posición</th><td>${esc(p.posicion||'—')}</td></tr></table>
+<table class="resumen"><tr><td>Saldo al ${fmt(antes(ini))}</td><td class="n">${fmtH(s0)}</td></tr>
+<tr><td>(+) Horas extra acreditadas en el período</td><td class="n">${fmtH(tE)}</td></tr>
+<tr><td>(−) Tiempo compensatorio usado en el período</td><td class="n">${fmtH(tU)}</td></tr>
+<tr class="tot"><td>Saldo al ${fmt(fin)}</td><td class="n">${fmtH(s0+tE-tU)}</td></tr></table>
+<h3>Horas extra acreditadas</h3>
+${filasE?`<table><thead><tr><th>Fecha</th><th>Día</th><th>Horario</th><th>Actividad</th><th class="n">Horas</th><th>Aprobó</th></tr></thead><tbody>${filasE}</tbody></table>`:'<p class="vacio">Sin horas extra aprobadas en el período.</p>'}
+<h3>Tiempo compensatorio usado</h3>
+${filasU?`<table><thead><tr><th>Fecha</th><th>Día</th><th colspan="2">Motivo</th><th class="n">Horas</th><th>Aprobó</th></tr></thead><tbody>${filasU}</tbody></table>`:'<p class="vacio">No usó tiempo compensatorio en el período.</p>'}
+${pend.length?`<p class="nota">Hay ${pend.length} registro(s) pendiente(s) de aprobación en el período (${fmtH(pend.reduce((t,h)=>t+(esComp(h)?-1:1)*parseFloat(h.horas||0),0))}). No se cuentan en el saldo.</p>`:''}
+<div class="firma"><div><div class="linea">Colaborador(a)</div></div><div><div class="linea">Jefe(a) inmediato(a)</div></div><div><div class="linea">Recursos Humanos</div></div></div>
+</section>`;}).filter(Boolean);
+  if(!secciones.length){alert('No hay horas registradas para ese período.');return;}
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<title>Tiempo compensatorio CACCO — ${rangoLbl}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Arial,sans-serif;font-size:12.5px;color:#1a1a1a;background:#fff;padding:28px;max-width:860px;margin:0 auto}
+.hdr{border-bottom:3px solid #E35205;padding-bottom:12px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.hdr h1{font-size:20px;font-weight:800;color:#E35205}.hdr .sub{font-size:12px;color:#555;margin-top:2px}
+.hdr .meta{font-size:11px;color:#666;text-align:right;line-height:1.6}
+.persona{margin-bottom:28px}.persona+.persona{page-break-before:always;break-before:page}
+table{width:100%;border-collapse:collapse;margin-bottom:12px}
+th,td{border:1px solid #ddd;padding:6px 8px;text-align:left;vertical-align:top}
+thead th{background:#f5f5f5;font-size:11px;text-transform:uppercase;letter-spacing:.3px;color:#555}
+.datos th{background:#fafafa;width:18%;font-size:11px;color:#555}
+.resumen{width:60%;margin-left:auto}.resumen td{border:none;border-bottom:1px solid #eee;padding:5px 8px}
+.resumen .tot td{border-top:2px solid #1a1a1a;border-bottom:none;font-weight:800;font-size:14px}
+.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+h3{font-size:13px;margin:16px 0 6px;color:#333}
+.vacio{color:#777;font-style:italic;margin-bottom:10px}.nota{font-size:11px;color:#92400e;background:#fef3c7;padding:8px 10px;border-radius:6px;margin:8px 0}
+.firma{display:flex;gap:24px;margin-top:48px}.firma>div{flex:1}.linea{border-top:1px solid #333;padding-top:6px;text-align:center;font-size:11px;color:#444}
+@media print{body{padding:0}}
+</style></head><body>
+<div class="hdr"><div><h1>Reporte de tiempo compensatorio</h1><div class="sub">CACCO · Equipo de Comunicaciones · Período: ${rangoLbl}</div></div>
+<div class="meta">Generado el ${fmt(hoy())}<br>por ${esc(uAct?.nombre||'')}</div></div>
+${secciones.join('')}
+<p style="font-size:10.5px;color:#777;margin-top:8px">Horas extra: en día laboral cuentan solo las trabajadas antes de 8:00 a. m. o después de 4:00 p. m.; en sábado, domingo o feriado cuenta toda la jornada. Solo se incluyen registros aprobados.</p>
+</body></html>`;
+  cerM('mRepComp');
+  reg('Reporte compensatorio',`${sel||'Todo el equipo'} — ${rangoLbl}`);
+  mostrarDocumento(html,`🌴 Tiempo compensatorio — ${rangoLbl}`,`Compensatorio_CACCO_${(sel||'equipo').replace(/\s+/g,'_')}_${ini}_${fin}.html`);
 }
 
 function archivarRep(){
