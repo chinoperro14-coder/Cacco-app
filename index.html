@@ -681,6 +681,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <div class="sh2">
     <div class="stit">Horas Extras</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn bgh bsm nhe oculto" onclick="abrirMOirh()">📋 Formulario OIRH</button>
       <button class="btn bgh bsm nhe oculto" onclick="abrirMRepComp()">📄 Reporte compensatorio</button>
       <button class="btn bna bsm nhe oculto" onclick="abrirMH()">+ Registrar Horas</button>
     </div>
@@ -903,8 +904,9 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       <div class="fg"><label class="fl">Puesto según RRHH</label><input type="text" class="fc" id="pPuesto" placeholder="ej. Promotor Cultural"></div>
       <div class="fg"><label class="fl">N.º de posición</label><input type="text" class="fc" id="pPosicion" inputmode="numeric" placeholder="ej. 4156"></div>
     </div>
+    <div class="fg"><label class="fl">Unidad administrativa</label><input type="text" class="fc" id="pUnidad" placeholder="ej. Centro de Arte y Cultura de Colón"></div>
     <div class="fg"><label class="fl">Correo de contacto</label><input type="email" class="fc" id="pCorreo" placeholder="Si es distinto al de inicio de sesión (minutas, avisos)"></div>
-    <div style="font-size:12px;color:var(--tm);margin:-4px 0 14px">Puesto y posición se usan en el formulario de horas extra de la OIRH.</div>
+    <div style="font-size:12px;color:var(--tm);margin:-4px 0 14px">Puesto, unidad y posición se usan en el formulario de horas extra de la OIRH.</div>
     <button class="btn bna" onclick="guardarPerfil()">Guardar cambios</button>
   </div>
   <div class="tc" style="padding:24px;margin-top:16px">
@@ -1000,6 +1002,18 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <div class="mpie"><button class="btn bgh" onclick="cerM('mH')">Cancelar</button><button class="btn bna" onclick="guardarH()">Guardar</button></div>
 </div></div>
 
+<!-- MODAL FORMULARIO OIRH -->
+<div class="mov" id="mOirh"><div class="mo">
+  <div class="mcab"><div class="mtit">Registro de Horas Extras (OIRH)</div><button class="mx" onclick="cerM('mOirh')">×</button></div>
+  <div class="mbody">
+    <div class="fg" id="oiMiemGrupo"><label class="fl">Servidor público</label><select class="fc" id="oiMiem"></select></div>
+    <div class="fg"><label class="fl">Mes</label><input type="month" class="fc" id="oiMes"></div>
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin-bottom:10px"><input type="checkbox" id="oiPend"> Incluir también las horas pendientes de aprobación</label>
+    <div style="font-size:12px;color:var(--tm);line-height:1.5">Se llena con las horas extra del mes, una línea por jornada. El nombre, el puesto, la unidad y la posición salen de la ficha de Equipo. Las firmas quedan en blanco para firmar a mano.</div>
+  </div>
+  <div class="mpie"><button class="btn bgh" onclick="cerM('mOirh')">Cancelar</button><button class="btn bna" onclick="generarOirh()">Generar formulario</button></div>
+</div></div>
+
 <!-- MODAL REPORTE COMPENSATORIO -->
 <div class="mov" id="mRepComp"><div class="mo">
   <div class="mcab"><div class="mtit">Reporte de tiempo compensatorio</div><button class="mx" onclick="cerM('mRepComp')">×</button></div>
@@ -1028,6 +1042,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       <div class="fg"><label class="fl">Puesto según RRHH</label><input type="text" class="fc" id="eqPuesto" placeholder="ej. Promotor Cultural"></div>
       <div class="fg"><label class="fl">N.º de posición</label><input type="text" class="fc" id="eqPosicion" inputmode="numeric" placeholder="ej. 4156"></div>
     </div>
+    <div class="fg"><label class="fl">Unidad administrativa</label><input type="text" class="fc" id="eqUnidad" placeholder="ej. Centro de Arte y Cultura de Colón"></div>
     <div class="fg"><label class="fl">Correo de contacto</label><input type="email" class="fc" id="eqCorreo" placeholder="Si es distinto al de inicio de sesión (minutas, avisos)"></div>
     <div class="fg"><label class="fl">Secciones del equipo</label>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
@@ -3779,6 +3794,7 @@ function abrirMEq(id){
   document.getElementById('eqEmail').value=p?.email||'';
   document.getElementById('eqPuesto').value=p?.puesto||'';
   document.getElementById('eqPosicion').value=p?.posicion||'';
+  document.getElementById('eqUnidad').value=p?.unidad||'';
   document.getElementById('eqCorreo').value=p?.correo||'';
   document.getElementById('eqNivel').value=p?.nivel||'colaborador';
   document.getElementById('eqIng').value=p?.ingreso||hoy();
@@ -3805,7 +3821,7 @@ async function guardarEq(){
   // Conserva cualquier otro campo de la ficha que este formulario no muestra
   const prev=E.equipo.find(e=>e.id===id)||{};
   const p={...prev,id,nombre:n,cargo:document.getElementById('eqCargo').value.trim(),email,nivel,
-    puesto:document.getElementById('eqPuesto').value.trim(),posicion:document.getElementById('eqPosicion').value.trim(),correo:document.getElementById('eqCorreo').value.trim().toLowerCase(),ingreso:document.getElementById('eqIng').value,foto:document.getElementById('eqFoto').value.trim(),cats,secciones};
+    puesto:document.getElementById('eqPuesto').value.trim(),posicion:document.getElementById('eqPosicion').value.trim(),unidad:document.getElementById('eqUnidad').value.trim(),correo:document.getElementById('eqCorreo').value.trim().toLowerCase(),ingreso:document.getElementById('eqIng').value,foto:document.getElementById('eqFoto').value.trim(),cats,secciones};
 
   // Sincronizar credenciales en el servidor
   if(password||!E.equipo.find(e=>e.id===id)){
@@ -3860,6 +3876,7 @@ function renderPerfil(){
   document.getElementById('pFoto').value=u.foto||'';
   document.getElementById('pPuesto').value=u.puesto||'';
   document.getElementById('pPosicion').value=u.posicion||'';
+  document.getElementById('pUnidad').value=u.unidad||'';
   document.getElementById('pCorreo').value=u.correo||'';
 }
 
@@ -3870,6 +3887,7 @@ function guardarPerfil(){
   p.foto=document.getElementById('pFoto').value.trim();
   p.puesto=document.getElementById('pPuesto').value.trim();
   p.posicion=document.getElementById('pPosicion').value.trim();
+  p.unidad=document.getElementById('pUnidad').value.trim();
   p.correo=document.getElementById('pCorreo').value.trim().toLowerCase();
   uAct=p;reg('Perfil actualizado',p.nombre);guardar();renderPerfil();
   document.getElementById('hdrNom').textContent=p.nombre.split(' ')[0];
@@ -4664,6 +4682,81 @@ function mostrarDocumento(htmlContent,titulo,archivo){
     setTimeout(()=>URL.revokeObjectURL(url),60000);
   };
   document.getElementById('repCloseBtn').onclick=()=>ov.remove();
+}
+
+// ════════════════════════
+//  FORMULARIO OIRH · REGISTRO DE HORAS EXTRAS
+// ════════════════════════
+function abrirMOirh(){
+  if(!puede('registrarHora')){alert('Sin permiso.');return;}
+  const sel=document.getElementById('oiMiem');
+  if(niv==='colaborador'){sel.innerHTML=`<option value="${uAct.nombre}">${uAct.nombre}</option>`;document.getElementById('oiMiemGrupo').style.display='none';}
+  else{sel.innerHTML='<option value="">Todo el equipo (una hoja por persona)</option>'+E.equipo.map(p=>`<option value="${p.nombre}">${p.nombre}</option>`).join('');sel.value=uAct?.nombre||'';document.getElementById('oiMiemGrupo').style.display='block';}
+  document.getElementById('oiMes').value=hoy().slice(0,7);
+  document.getElementById('oiPend').checked=false;
+  abrirM('mOirh');
+}
+
+function generarOirh(){
+  const sel=document.getElementById('oiMiem').value,mes=document.getElementById('oiMes').value,conPend=document.getElementById('oiPend').checked;
+  if(!mes){alert('Elija el mes.');return;}
+  const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const [an,mn]=mes.split('-').map(Number);
+  const mesLbl=new Date(an,mn-1,1).toLocaleDateString('es-PA',{month:'long',year:'numeric'});
+  const fDia=f=>{const [a,m,d]=f.split('-');return `${d}/${m}/${a}`;};
+  const MIN_FILAS=16;// las líneas del formulario impreso
+  const personas=(sel?E.equipo.filter(p=>p.nombre===sel):E.equipo).filter(p=>niv!=='colaborador'||p.nombre===uAct?.nombre);
+  const hojas=personas.map(p=>{
+    const regs=E.horasExtra.filter(h=>h.miembro===p.nombre&&!esComp(h)&&(h.fecha||'').startsWith(mes)&&(h.aprobacion==='Aprobado'||(conPend&&h.aprobacion==='Pendiente')))
+      .sort((a,b)=>a.fecha.localeCompare(b.fecha)||(a.desde||'').localeCompare(b.desde||''));
+    if(!sel&&!regs.length)return '';// en el modo de todo el equipo se omite a quien no tiene horas ese mes
+    const tot=regs.reduce((t,h)=>t+parseFloat(h.horas||0),0);
+    const filas=regs.map(h=>`<tr><td>${fDia(h.fecha)}</td><td>${esc(h.desde||'')}</td><td>${esc(h.hasta||'')}</td><td class="n">${fmtH(parseFloat(h.horas||0))}</td><td class="trab">${esc(h.actividad)}</td><td></td><td></td><td></td></tr>`);
+    while(filas.length<MIN_FILAS)filas.push('<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>');
+    return `<section class="hoja">
+<h1>OFICINA INSTITUCIONAL DE RECURSOS HUMANOS</h1><h2>REGISTRO DE HORAS EXTRAS</h2>
+<div class="cab">
+  <div class="campo"><span>Nombre del servidor público</span><b>${esc(p.nombre)}</b></div>
+  <div class="campo"><span>Puesto Desempeñado</span><b>${esc(p.puesto||p.cargo||'')}</b></div>
+  <div class="campo"><span>Unidad Administrativa</span><b>${esc(p.unidad||'')}</b></div>
+  <div class="fila2"><div class="campo"><span>Posición No.</span><b>${esc(p.posicion||'')}</b></div><div class="campo"><span>Mes</span><b>${esc(mesLbl.charAt(0).toUpperCase()+mesLbl.slice(1))}</b></div></div>
+</div>
+<table>
+<colgroup><col style="width:10%"><col style="width:7%"><col style="width:7%"><col style="width:8%"><col><col style="width:12%"><col style="width:12%"><col style="width:12%"></colgroup>
+<thead>
+<tr><th colspan="4">TIEMPO TRABAJADO<br><small>(Anotar Fecha y Horas)</small></th><th rowspan="2">TRABAJO REALIZADO</th><th colspan="3">FIRMAS</th></tr>
+<tr><th>DÍA</th><th>DE</th><th>HASTA</th><th>TOTAL</th><th>SERVIDOR PÚBLICO</th><th>JEFE INMEDIATO</th><th>DIRECTOR</th></tr>
+</thead>
+<tbody>${filas.join('')}</tbody>
+<tfoot><tr><td colspan="3" class="n"><b>TOTAL DEL MES</b></td><td class="n"><b>${fmtH(tot)}</b></td><td colspan="4"></td></tr></tfoot>
+</table>
+<p class="nota"><b>NOTA:</b> Para la concesión del tiempo compensatorio, es requisito que los sobre tiempos hayan sido aprobados por el superior inmediato.</p>
+</section>`;}).filter(Boolean);
+  if(!hojas.length){alert(`No hay horas extra ${conPend?'':'aprobadas '}en ${mesLbl}.`);return;}
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<title>Registro de Horas Extras — ${mesLbl}</title>
+<style>
+@page{size:letter landscape;margin:12mm}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Times New Roman',Times,serif;font-size:12px;color:#000;background:#fff;padding:20px;max-width:1050px;margin:0 auto}
+.hoja+.hoja{page-break-before:always;break-before:page;margin-top:40px}
+h1{text-align:center;font-size:15px;font-weight:700;letter-spacing:.3px}h2{text-align:center;font-size:14px;font-weight:700;margin-bottom:14px}
+.cab{margin-bottom:12px;max-width:640px}
+.campo{display:flex;align-items:flex-end;gap:6px;margin-bottom:5px}.campo span{font-weight:700;white-space:nowrap}
+.campo b{flex:1;font-weight:400;border-bottom:1px solid #000;padding:0 4px;min-height:16px}
+.fila2{display:flex;gap:24px}.fila2 .campo{flex:1}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+th,td{border:1px solid #000;padding:3px 5px;vertical-align:middle}
+th{font-size:11px;text-align:center;font-weight:700}th small{font-weight:700}
+tbody td{height:22px;font-size:11.5px}td.trab{font-size:11px}
+.n{text-align:right;white-space:nowrap}
+tfoot td{height:24px}
+.nota{margin-top:8px;font-size:11.5px}
+@media print{body{padding:0;max-width:none}}
+</style></head><body>${hojas.join('')}</body></html>`;
+  cerM('mOirh');
+  reg('Formulario OIRH',`${sel||'Todo el equipo'} — ${mesLbl}`);
+  mostrarDocumento(html,`📋 Registro de Horas Extras — ${mesLbl}`,`Registro_Horas_Extras_${(sel||'equipo').replace(/\s+/g,'_')}_${mes}.html`);
 }
 
 // ════════════════════════
