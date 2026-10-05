@@ -783,7 +783,10 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 <div id="vRespaldos" class="oculto">
   <div class="sh2">
     <div class="stit">Respaldos</div>
-    <button class="btn bsm" onclick="crearRespaldo()">🛟 Crear respaldo ahora</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn bsm" onclick="crearRespaldo()">🛟 Crear respaldo ahora</button>
+      <button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro)" onclick="reiniciarDashboard()">🧹 Reiniciar dashboard</button>
+    </div>
   </div>
   <div style="font-size:13px;color:var(--tm);margin-bottom:14px">Se guarda una copia automática antes de los cambios (como máximo cada 15 min) y una copia diaria. Al restaurar, el estado actual también queda respaldado.</div>
   <div class="tc">
@@ -3661,7 +3664,17 @@ async function elimEq(){
 // ════════════════════════
 //  RESPALDOS
 // ════════════════════════
-const RESP_TIPO={auto:'Automático',diario:'Diario',manual:'Manual','pre-restauracion':'Antes de restaurar'};
+const RESP_TIPO={auto:'Automático',diario:'Diario',manual:'Manual','pre-restauracion':'Antes de restaurar','pre-reinicio':'Antes de reiniciar'};
+async function reiniciarDashboard(){
+  const txt=prompt('Esto borra para todos: tareas, horas extras, publicaciones, tareas recurrentes, bitácora, histórico y notificaciones.\nSe conservan el equipo, los accesos y las etiquetas, y antes se guarda un respaldo.\n\nEscribe REINICIAR para confirmar:');
+  if(txt===null)return;
+  if(txt.trim().toUpperCase()!=='REINICIAR'){alert('No se reinició: el texto no coincide.');return;}
+  clearTimeout(_guardarTimer);
+  const r=await fetch('/api/reiniciar',{method:'POST',headers:{'Authorization':'Bearer '+getToken()}});
+  if(!r.ok){alert('No se pudo reiniciar.');return;}
+  alert('✅ Dashboard reiniciado. La página se recargará.');
+  location.reload();
+}
 async function renderRespaldos(){
   const tb=document.getElementById('cResp'),vac=document.getElementById('vacResp');
   tb.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--tm)">Cargando…</td></tr>';
