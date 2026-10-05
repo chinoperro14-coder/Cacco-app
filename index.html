@@ -603,6 +603,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <button class="ni nle ned oculto" onclick="goV('reportes',this)"><span class="ico">📊</span>Reportes</button>
   <button class="ni nle oculto" onclick="goV('historico',this)"><span class="ico">🗂️</span>Histórico</button>
   <button class="ni nle oculto" onclick="goV('bitacora',this)"><span class="ico">📝</span>Bitácora</button>
+  <button class="ni nle oculto" onclick="goV('respaldos',this)"><span class="ico">🛟</span>Respaldos</button>
   <div class="nsep">Filtrar tareas por sección</div>
   <div class="nfilts">
     <button class="nfilt on" onclick="filtraCat('todos',this)"><span class="ico">🔘</span>Todas</button>
@@ -775,6 +776,20 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <tbody id="cBit"></tbody></table>
     <div id="vacBit" style="padding:32px;text-align:center;color:var(--tm);display:none">Sin registros.</div>
     <div id="bitPag" style="display:flex;justify-content:center;gap:8px;padding:12px 0;flex-wrap:wrap"></div>
+  </div>
+</div>
+
+<!-- RESPALDOS -->
+<div id="vRespaldos" class="oculto">
+  <div class="sh2">
+    <div class="stit">Respaldos</div>
+    <button class="btn bsm" onclick="crearRespaldo()">🛟 Crear respaldo ahora</button>
+  </div>
+  <div style="font-size:13px;color:var(--tm);margin-bottom:14px">Se guarda una copia automática antes de los cambios (como máximo cada 15 min) y una copia diaria. Al restaurar, el estado actual también queda respaldado.</div>
+  <div class="tc">
+    <table><thead><tr><th>Fecha / Hora</th><th>Tipo</th><th>Usuario</th><th></th></tr></thead>
+    <tbody id="cResp"></tbody></table>
+    <div id="vacResp" style="padding:32px;text-align:center;color:var(--tm);display:none">Sin respaldos todavía.</div>
   </div>
 </div>
 
@@ -1482,18 +1497,20 @@ function limpNotifs(){E.notifs=[];renderNotifs();document.getElementById('notifP
 // ════════════════════════
 //  NAVEGACIÓN
 // ════════════════════════
-const VISTAS=['Tareas','Calendario','HorasExtra','Equipo','Reportes','Historico','Bitacora','Perfil','CalPub','Asignaciones','AsigVarias'];
+const VISTAS=['Tareas','Calendario','HorasExtra','Equipo','Reportes','Historico','Bitacora','Respaldos','Perfil','CalPub','Asignaciones','AsigVarias'];
 function goV(v,el){
   cerrarSid();
   if(v==='reportes'&&!puede('verReportes')){alert('Sin permiso.');return;}
   if(v==='historico'&&!puede('verReportes')){alert('Sin permiso.');return;}
   if(v==='bitacora'&&!puede('verBitacora')){alert('Sin permiso.');return;}
+  if(v==='respaldos'&&!puede('gestionarEquipo')){alert('Sin permiso.');return;}
   VISTAS.forEach(n=>document.getElementById('v'+n).classList.add('oculto'));
   document.getElementById('v'+v.charAt(0).toUpperCase()+v.slice(1)).classList.remove('oculto');
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
   if(el)el.classList.add('on');
   if(v==='reportes')generarRep();
   if(v==='bitacora')renderBit();
+  if(v==='respaldos')renderRespaldos();
   if(v==='calendario')renderCal();
   if(v==='equipo')renderEquipo();
   if(v==='historico')renderHist();
@@ -3639,6 +3656,47 @@ async function elimEq(){
   E.equipo=E.equipo.filter(e=>e.id!==id);
   E.horasExtra=E.horasExtra.filter(h=>h.miembro!==p.nombre);
   reg('Persona eliminada',p.nombre);guardar();cerM('mEq');renderEquipo();renderLogin();
+}
+
+// ════════════════════════
+//  RESPALDOS
+// ════════════════════════
+const RESP_TIPO={auto:'Automático',diario:'Diario',manual:'Manual','pre-restauracion':'Antes de restaurar'};
+async function renderRespaldos(){
+  const tb=document.getElementById('cResp'),vac=document.getElementById('vacResp');
+  tb.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--tm)">Cargando…</td></tr>';
+  const r=await fetch('/api/backups',{headers:{'Authorization':'Bearer '+getToken()}});
+  if(r.status===401){sesionExpirada();return;}
+  if(!r.ok){tb.innerHTML='';alert('No se pudieron cargar los respaldos.');return;}
+  const lista=await r.json();
+  vac.style.display=lista.length?'none':'block';
+  tb.innerHTML=lista.map(b=>`<tr>
+    <td>${new Date(b.fecha).toLocaleString('es-PA')}</td>
+    <td>${RESP_TIPO[b.tipo]||b.tipo}</td>
+    <td>${b.usuario||''}</td>
+    <td style="white-space:nowrap;text-align:right">
+      <button class="btn bgh bsm" onclick="descargarRespaldo('${b.id}')">⬇️ Descargar</button>
+      <button class="btn bsm" onclick="restaurarRespaldo('${b.id}','${new Date(b.fecha).toLocaleString('es-PA')}')">↩️ Restaurar</button>
+    </td></tr>`).join('');
+}
+async function crearRespaldo(){
+  const r=await fetch('/api/backups',{method:'POST',headers:{'Authorization':'Bearer '+getToken()}});
+  if(!r.ok){alert('No se pudo crear el respaldo.');return;}
+  renderRespaldos();
+}
+async function descargarRespaldo(id){
+  const r=await fetch('/api/backups/'+encodeURIComponent(id),{headers:{'Authorization':'Bearer '+getToken()}});
+  if(!r.ok){alert('No se pudo descargar.');return;}
+  const nombre=(r.headers.get('Content-Disposition')||'').match(/filename="([^"]+)"/)?.[1]||'CACCO_respaldo.json';
+  const a=document.createElement('a');a.href=URL.createObjectURL(await r.blob());a.download=nombre;a.click();URL.revokeObjectURL(a.href);
+}
+async function restaurarRespaldo(id,cuando){
+  if(!confirm(`¿Restaurar el respaldo del ${cuando}?\n\nTodo el dashboard volverá a ese momento para todos los usuarios. El estado actual se guardará antes como respaldo.`))return;
+  clearTimeout(_guardarTimer);
+  const r=await fetch('/api/backups/'+encodeURIComponent(id)+'/restaurar',{method:'POST',headers:{'Authorization':'Bearer '+getToken()}});
+  if(!r.ok){alert('No se pudo restaurar.');return;}
+  alert('✅ Respaldo restaurado. La página se recargará.');
+  location.reload();
 }
 
 // ════════════════════════
