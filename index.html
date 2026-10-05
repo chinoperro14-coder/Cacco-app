@@ -851,7 +851,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <div>
       <div class="stit">🗓️ Calendario de Publicaciones</div>
       <div style="font-size:13px;color:var(--tm);margin-top:3px" id="calPubTit"></div>
-      <div style="font-size:13px;color:var(--tm);margin-top:2px">Solo publicaciones programadas en redes · <a onclick="goV('calendario',document.querySelector('.ni[onclick*=calendario]'))" style="color:var(--na);font-weight:600;cursor:pointer">📅 Ver Calendario de tareas →</a></div>
+      <div style="font-size:13px;color:var(--tm);margin-top:2px">Redes sociales y medios (prensa, radio, TV) · <a onclick="goV('calendario',document.querySelector('.ni[onclick*=calendario]'))" style="color:var(--na);font-weight:600;cursor:pointer">📅 Ver Calendario de tareas →</a></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <div style="display:flex;gap:2px;background:var(--su2);border:1px solid var(--bo);border-radius:7px;padding:2px">
@@ -866,7 +866,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px;align-items:center" id="calPubFiltros">
     <span style="font-size:12px;font-weight:600;color:var(--tm)">Plataformas:</span>
     <span class="chip sel" data-plat="ig" onclick="this.classList.toggle('sel');renderCalPub()"><span style="color:#C13584">●</span> Instagram</span>
-    <span class="chip sel" data-plat="fb" onclick="this.classList.toggle('sel');renderCalPub()"><span style="color:#1877F2">●</span> Facebook</span>
+    <span class="chip sel" data-plat="fb" style="display:none" title="Facebook en pausa" onclick="this.classList.toggle('sel');renderCalPub()"><span style="color:#1877F2">●</span> Facebook</span>
     <span class="chip sel" data-plat="tt" onclick="this.classList.toggle('sel');renderCalPub()"><span style="color:#111">●</span> TikTok</span>
     <span class="chip sel" data-plat="rd" onclick="this.classList.toggle('sel');renderCalPub()"><span style="color:#FF6B00">●</span> Radio</span>
     <span class="chip sel" data-plat="tv" onclick="this.classList.toggle('sel');renderCalPub()"><span style="color:#1b5e20">●</span> TV</span>
@@ -1064,13 +1064,17 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       <label class="fl">Plataformas *</label>
       <div class="chw" id="mProgPlats">
         <span class="chip" data-p="ig" onclick="this.classList.toggle('sel');cntCopy(document.getElementById('mProgCopy'))"><span style="color:#C13584">●</span> Instagram</span>
-        <span class="chip" data-p="fb" onclick="this.classList.toggle('sel');cntCopy(document.getElementById('mProgCopy'))"><span style="color:#1877F2">●</span> Facebook</span>
+        <span class="chip" data-p="fb" style="display:none" title="Facebook en pausa" onclick="this.classList.toggle('sel');cntCopy(document.getElementById('mProgCopy'))"><span style="color:#1877F2">●</span> Facebook</span>
         <span class="chip" data-p="tt" onclick="this.classList.toggle('sel');cntCopy(document.getElementById('mProgCopy'))"><span style="color:#111">●</span> TikTok</span>
         <span class="chip" data-p="rd" onclick="this.classList.toggle('sel');cntCopy(document.getElementById('mProgCopy'))"><span style="color:#FF6B00">●</span> Radio</span>
         <span class="chip" data-p="tv" onclick="this.classList.toggle('sel');cntCopy(document.getElementById('mProgCopy'))"><span style="color:#1b5e20">●</span> Televisión</span>
         <span class="chip" data-p="pr" onclick="this.classList.toggle('sel');cntCopy(document.getElementById('mProgCopy'))"><span style="color:#4527a0">●</span> Prensa</span>
         <span class="chip" data-p="yt" onclick="this.classList.toggle('sel');cntCopy(document.getElementById('mProgCopy'))"><span style="color:#FF0000">●</span> YouTube</span>
       </div>
+    </div>
+    <div class="fg">
+      <label class="fl">Tipo de contenido</label>
+      <select class="fc" id="mProgTipo"></select>
     </div>
     <div class="fr">
       <div class="fg"><label class="fl">Fecha *</label><input type="date" class="fc" id="mProgFecha"></div>
@@ -1185,6 +1189,7 @@ function puede(accion){
     case 'marcarAvance':  return ['lider','editor','colaborador'].includes(niv);
     case 'registrarHora': return ['lider','editor','colaborador'].includes(niv);
     case 'aprobarHora':   return ['lider','editor'].includes(niv);
+    case 'aprobarPub':    return ['lider','editor'].includes(niv);
     case 'gestionarEquipo': return niv==='lider';
     case 'cerrarMes':     return niv==='lider';
     case 'verReportes':   return ['lider','editor'].includes(niv);
@@ -2038,25 +2043,20 @@ function renderTareas(){
 
     // Publications block
     const taskPubs=(E.publicaciones||[]).filter(p=>p.tareaId===t.id);
-    const pubsBadge=(!abierta&&taskPubs.length)?`<span class="bg bgr" style="font-size:10px">📅 ${taskPubs.length} ${taskPubs.some(p=>p.estado==='publicado')?'pubs':'programadas'}</span>`:'';
+    const pubsBadge=(!abierta&&taskPubs.length)?`<span class="bg bgr" style="font-size:10px">📅 ${taskPubs.filter(p=>pubEst(p)==='publicado').length}/${taskPubs.length} publicadas</span>`:'';
     let pubsBlockHTML='';
     if(abierta){
       const canProg=puede('marcarAvance');
       const pubRows=taskPubs.slice().sort((a,b)=>(a.fecha+a.hora).localeCompare(b.fecha+b.hora)).map(p=>{
-        const isPublicado=p.estado==='publicado';
         const platDots=(p.plataformas||[]).map(pl=>`<span class="pc ${pl}">${PLAT_NOM[pl]}</span>`).join(' ');
-        const estadoIco=isPublicado?'✅':'⏳';
-        const accionBtn=canProg?(isPublicado
-          ?`<button class="btn bgh bsm" style="font-size:11px;padding:2px 8px" onclick="event.stopPropagation();revertirPublicado('${p.id}')">Revertir</button>`
-          :`<button class="btn bna bsm" style="font-size:11px;padding:2px 8px" onclick="event.stopPropagation();marcarPublicadoById('${p.id}','publicado');renderTareas()">Marcar publicado</button>`)
-          :'';
+        const accionBtn=pubBotones(p);
         const editBtn=canProg?`<button class="btn bgh bsm" style="font-size:11px;padding:2px 8px" onclick="event.stopPropagation();editarPublicacion('${p.id}')">✏️</button>`:'';
         const linkHTML=p.linkPublicado?`<a href="${p.linkPublicado}" target="_blank" rel="noopener noreferrer" style="font-size:11px;color:var(--na);white-space:nowrap" onclick="event.stopPropagation()">🔗 Ver</a>`:'';
         return`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--bo);flex-wrap:wrap">
           <div style="display:flex;gap:4px;flex-wrap:wrap;flex-shrink:0">${platDots}</div>
-          <div style="flex:1;min-width:0;font-size:12px;font-weight:600;color:var(--tx)">${fmtPubFecha(p.fecha)} · ${p.hora}  ${p.titulo}</div>
+          <div style="flex:1;min-width:0;font-size:12px;font-weight:600;color:var(--tx)">${fmtPubFecha(p.fecha)} · ${p.hora}  ${p.titulo} ${pubTipoBadge(p)}</div>
           ${linkHTML}
-          <span style="font-size:13px;flex-shrink:0">${estadoIco}</span>
+          ${pubBadge(p)}
           ${accionBtn}
           ${editBtn}
         </div>`;
@@ -2828,6 +2828,7 @@ function agregarEntregable(tareaId){
   const seccion=secNames.length===1?secNames[0]:'General';
   if(!t.entregables)t.entregables=[];
   t.entregables.push({id:gId(),nombre:nom,url,seccion,subidoPor:uAct?.nombre,subidoPorId:uAct?.id,subidoEn:hoy()});
+  vincularEntregablePub(t,t.entregables[t.entregables.length-1]);
   if(nomEl)nomEl.value='';
   if(urlEl)urlEl.value='';
   reg('Entregable subido',`"${nom}" en "${t.titulo}" [${seccion}]`);
@@ -2846,6 +2847,7 @@ function agregarEntregableSeccion(tareaId,sec){
   if(!url){urlEl?.focus();return;}
   if(!t.entregables)t.entregables=[];
   t.entregables.push({id:gId(),nombre:nom,url,seccion:sec,subidoPor:uAct?.nombre,subidoPorId:uAct?.id,subidoEn:hoy()});
+  vincularEntregablePub(t,t.entregables[t.entregables.length-1]);
   if(nomEl)nomEl.value='';if(urlEl)urlEl.value='';
   reg('Entregable subido',`"${nom}" en "${t.titulo}" [${sec}]`);
   guardar();expandidas.add(tareaId);renderTareas();
@@ -2863,6 +2865,59 @@ function elimEntregable(tareaId,entId){
 const PLAT_NOM={ig:'IG',fb:'FB',tt:'TK',rd:'RD',tv:'TV',pr:'PR',yt:'YT'};
 const PLAT_COLOR={ig:'#C13584',fb:'#1877F2',tt:'#111111',rd:'#FF6B00',tv:'#1b5e20',pr:'#4527a0',yt:'#FF0000'};
 const PLAT_BG={ig:'#fff0f5',fb:'#e8f0fe',tt:'#f0f0f0',rd:'#fff4ee',tv:'#e8f5e9',pr:'#ede7f6',yt:'#fff0f0'};
+
+// Flujo de publicaciones: propuesta → producción → por aprobar → aprobado → publicado
+const PUB_EST={
+  propuesta:{lbl:'💡 Propuesta',col:'#7c3aed',bg:'#EDE9FE'},
+  produccion:{lbl:'🎨 En producción',col:'#b45309',bg:'#FEF3C7'},
+  aprobacion:{lbl:'👀 Por aprobar',col:'#1d4ed8',bg:'#DBEAFE'},
+  aprobado:{lbl:'👍 Aprobado',col:'#0e7490',bg:'#CFFAFE'},
+  publicado:{lbl:'✅ Publicado',col:'#0F6E56',bg:'#E1F5EE'},
+  atrasado:{lbl:'⚠️ Atrasado',col:'#dc2626',bg:'#fee2e2'}
+};
+const PUB_TIPOS=['Post','Carrusel','Reel','Historia','TikTok','Nota de prensa','Nota radial','Entrevista radial','Nota TV','Entrevista TV','Comunicado'];
+const PUB_NO_FEED=['Historia','Nota de prensa','Nota radial','Entrevista radial','Nota TV','Entrevista TV','Comunicado'];
+const PUB_MAX_DIA=3; // publicaciones de feed por día
+// Qué tipos de publicación puede alimentar un entregable según la sección que lo sube
+const PUB_TIPOS_SECC={'Diseño':['Post','Carrusel','Historia'],'Audiovisual':['Reel','TikTok','Carrusel','Post']};
+function pubEst(p){return p.estado==='pendiente'?'produccion':(p.estado||'produccion');}
+function pubEstVis(p){const e=pubEst(p);return e!=='publicado'&&p.fecha&&p.fecha<hoy()?'atrasado':e;}
+function pubBadge(p){const e=PUB_EST[pubEstVis(p)];return`<span style="font-size:11px;background:${e.bg};color:${e.col};padding:1px 7px;border-radius:20px;font-weight:700;white-space:nowrap">${e.lbl}</span>`;}
+function pubTipoBadge(p){return p.tipo?`<span style="font-size:10px;border:1px solid var(--bo);color:var(--tm);padding:0 6px;border-radius:10px;white-space:nowrap">${p.tipo}</span>`:'';}
+function esFeed(p){return!PUB_NO_FEED.includes(p.tipo)&&(p.plataformas||[]).some(pl=>['ig','fb','tt','yt'].includes(pl));}
+function pubBotones(p){
+  if(!puede('marcarAvance'))return'';
+  const b=(lbl,est,cls='bna')=>`<button class="btn ${cls} bsm" style="font-size:11px;padding:2px 8px;flex-shrink:0" onclick="event.stopPropagation();cambiarEstadoPub('${p.id}','${est}')">${lbl}</button>`;
+  const e=pubEst(p);
+  if(e==='propuesta')return b('🎨 A producción','produccion');
+  if(e==='produccion')return b('👀 Enviar a aprobación','aprobacion');
+  if(e==='aprobacion')return puede('aprobarPub')?b('👍 Aprobar','aprobado')+' '+b('↩ Devolver','produccion','bgh'):'<span style="font-size:11px;color:var(--tm)">Esperando aprobación</span>';
+  if(e==='aprobado')return b('✅ Marcar publicado','publicado');
+  return b('Revertir','aprobado','bgh');
+}
+let pubDiaAbierto=null;
+function cambiarEstadoPub(id,estado){
+  const p=(E.publicaciones||[]).find(p=>p.id===id);if(!p)return;
+  if(estado==='aprobado'&&pubEst(p)==='aprobacion'&&!puede('aprobarPub')){alert('Solo líderes y editores aprueban publicaciones.');return;}
+  if(estado==='publicado')marcarPublicadoById(id,'publicado');
+  else{
+    if(pubEst(p)==='publicado'){delete p.linkPublicado;delete p.publicadoPor;delete p.publicadoEn;}
+    p.estado=estado;
+    if(estado==='aprobado'&&!p.aprobadoPor){p.aprobadoPor=uAct?.nombre;p.aprobadoEn=hoy();}
+    reg('Publicación actualizada',`"${p.titulo||'—'}" → ${PUB_EST[estado].lbl}`);
+    guardar();renderCalPub();renderTareas();
+  }
+  if(pubDiaAbierto&&document.getElementById('diaPubPanel').style.display!=='none')verDiaPub(pubDiaAbierto);
+}
+// Al subir un entregable, la primera publicación de la tarea que lo esperaba lo recibe y pasa a aprobación
+function vincularEntregablePub(t,ent){
+  const tipos=PUB_TIPOS_SECC[ent.seccion];
+  const p=(E.publicaciones||[]).filter(p=>p.tareaId===t.id&&!p.entId&&['propuesta','produccion'].includes(pubEst(p))&&!PUB_NO_FEED.concat(tipos?[]:['Historia']).includes(p.tipo)&&(!tipos||tipos.includes(p.tipo||'Post')))
+    .sort((a,b)=>((a.fecha<hoy())-(b.fecha<hoy()))||(a.fecha+a.hora).localeCompare(b.fecha+b.hora))[0]; // primero las que aún no pasan
+  if(!p)return;
+  p.links=[...(p.links||[]),ent.url];p.entId=ent.id;p.estado='aprobacion';
+  reg('Publicación actualizada',`"${p.titulo||'—'}" recibió el entregable "${ent.nombre}" → 👀 Por aprobar`);
+}
 
 let mProgLinks=[];
 function addProgLink(){
@@ -2893,6 +2948,11 @@ function fmtPubFecha(f){
   return`${parseInt(d)} ${meses[parseInt(m)-1]}`;
 }
 
+function setTipoProg(v){
+  const el=document.getElementById('mProgTipo');
+  el.innerHTML=PUB_TIPOS.map(t=>`<option${t===(v||'Post')?' selected':''}>${t}</option>`).join('');
+}
+
 function nuevaPublicacion(fechaPreset,tareaId){
   if(!puede('marcarAvance')){alert('Sin permiso.');return;}
   mProgId=null;mProgTareaId=tareaId||null;mProgEntId=null;
@@ -2903,6 +2963,7 @@ function nuevaPublicacion(fechaPreset,tareaId){
   document.getElementById('mProgTitulo').value='';
   document.getElementById('mProgFecha').value=fechaPreset||hoy();
   document.getElementById('mProgHora').value='09:00';
+  setTipoProg('Post');
   document.getElementById('mProgCopy').value='';
   document.getElementById('mProgNotas').value='';
   document.querySelectorAll('#mProgPlats .chip').forEach(c=>c.classList.remove('sel'));
@@ -2937,6 +2998,7 @@ function editarPub(id){
   document.getElementById('mProgTitulo').value=pub.titulo||'';
   document.getElementById('mProgFecha').value=pub.fecha||hoy();
   document.getElementById('mProgHora').value=pub.hora||'09:00';
+  setTipoProg(pub.tipo);
   document.getElementById('mProgCopy').value=pub.copy||'';
   document.getElementById('mProgNotas').value=pub.notas||'';
   document.querySelectorAll('#mProgPlats .chip').forEach(c=>{
@@ -2989,6 +3051,7 @@ function programarEntregable(tareaId,entId){
   const pub=e.publicacion||{};
   document.getElementById('mProgFecha').value=pub.fecha||hoy();
   document.getElementById('mProgHora').value=pub.hora||'09:00';
+  setTipoProg(pub.tipo);
   document.getElementById('mProgCopy').value=pub.copy||'';
   document.getElementById('mProgNotas').value=pub.notas||'';
   document.querySelectorAll('#mProgPlats .chip').forEach(c=>{
@@ -3012,6 +3075,7 @@ function guardarProg(){
   const plataformas=[...document.querySelectorAll('#mProgPlats .chip.sel')].map(c=>c.dataset.p);
   const copy=document.getElementById('mProgCopy').value.trim();
   const notas=document.getElementById('mProgNotas').value.trim();
+  const tipo=document.getElementById('mProgTipo').value||'Post';
   if(!fecha||!hora){alert('Fecha y hora son requeridas.');return;}
   if(!plataformas.length){alert('Seleccioná al menos una plataforma.');return;}
   if(!E.publicaciones)E.publicaciones=[];
@@ -3028,9 +3092,9 @@ function guardarProg(){
       const e=(t.entregables||[]).find(e=>e.id===mProgEntId);if(!e)return;
       if(mProgId){
         const i=E.publicaciones.findIndex(p=>p.id===mProgId);
-        if(i>=0)E.publicaciones[i]={...E.publicaciones[i],titulo:e.nombre,fecha,hora,plataformas,copy,notas,links:[...mProgLinks],responsableId,responsableNombre};
+        if(i>=0)E.publicaciones[i]={...E.publicaciones[i],titulo:e.nombre,fecha,hora,plataformas,copy,notas,tipo,links:[...mProgLinks],responsableId,responsableNombre};
       }else{
-        E.publicaciones.push({id:gId(),titulo:e.nombre,plataformas,fecha,hora,copy,notas,links:[...mProgLinks],estado:'pendiente',tareaId:t.id,entId:e.id,creadoPor:uAct?.nombre,creadoEn:hoy(),responsableId,responsableNombre});
+        E.publicaciones.push({id:gId(),titulo:e.nombre,plataformas,fecha,hora,copy,notas,tipo,links:[...mProgLinks],estado:'aprobacion',tareaId:t.id,entId:e.id,creadoPor:uAct?.nombre,creadoEn:hoy(),responsableId,responsableNombre});
       }
       reg('Publicación programada',`"${e.nombre}" en "${t.titulo}" para ${fmtPubFecha(fecha)} ${hora}`);
       guardar();expandidas.add(efectiveTareaId);renderTareas();renderCalPub();
@@ -3038,9 +3102,9 @@ function guardarProg(){
       const tituloFinal=titulo||t.titulo;
       if(mProgId){
         const i=E.publicaciones.findIndex(p=>p.id===mProgId);
-        if(i>=0)E.publicaciones[i]={...E.publicaciones[i],titulo:tituloFinal,fecha,hora,plataformas,copy,notas,links:[...mProgLinks],responsableId,responsableNombre};
+        if(i>=0)E.publicaciones[i]={...E.publicaciones[i],titulo:tituloFinal,fecha,hora,plataformas,copy,notas,tipo,links:[...mProgLinks],responsableId,responsableNombre};
       }else{
-        E.publicaciones.push({id:gId(),titulo:tituloFinal,plataformas,fecha,hora,copy,notas,links:[...mProgLinks],estado:'pendiente',tareaId:t.id,entId:null,creadoPor:uAct?.nombre,creadoEn:hoy(),responsableId,responsableNombre});
+        E.publicaciones.push({id:gId(),titulo:tituloFinal,plataformas,fecha,hora,copy,notas,tipo,links:[...mProgLinks],estado:'produccion',tareaId:t.id,entId:null,creadoPor:uAct?.nombre,creadoEn:hoy(),responsableId,responsableNombre});
       }
       reg('Publicación programada',`"${t.titulo}" para ${fmtPubFecha(fecha)} ${hora}`);
       guardar();renderTareas();renderCalPub();
@@ -3050,10 +3114,10 @@ function guardarProg(){
     if(!titulo){alert('El título es requerido.');return;}
     if(mProgId){
       const i=E.publicaciones.findIndex(p=>p.id===mProgId);
-      if(i>=0)E.publicaciones[i]={...E.publicaciones[i],titulo,fecha,hora,plataformas,copy,notas,links:[...mProgLinks],responsableId,responsableNombre};
+      if(i>=0)E.publicaciones[i]={...E.publicaciones[i],titulo,fecha,hora,plataformas,copy,notas,tipo,links:[...mProgLinks],responsableId,responsableNombre};
       reg('Publicación editada',`"${titulo}" para ${fmtPubFecha(fecha)} ${hora}`);
     }else{
-      E.publicaciones.push({id:gId(),titulo,fecha,hora,plataformas,copy,notas,links:[...mProgLinks],estado:'pendiente',tareaId:null,entId:null,creadoPor:uAct?.nombre,creadoEn:hoy(),responsableId,responsableNombre});
+      E.publicaciones.push({id:gId(),titulo,fecha,hora,plataformas,copy,notas,tipo,links:[...mProgLinks],estado:'produccion',tareaId:null,entId:null,creadoPor:uAct?.nombre,creadoEn:hoy(),responsableId,responsableNombre});
       reg('Publicación creada',`"${titulo}" para ${fmtPubFecha(fecha)} ${hora}`);
     }
     guardar();renderCalPub();
@@ -3106,10 +3170,9 @@ function renderCalPub(){
   document.getElementById('calPubTit').textContent=meses[mes-1]+' '+anio;
   // Status counters
   const allPubs=getPubsDelMes(anio,mes);
-  const pubProg=allPubs.filter(p=>p.estado!=='publicado').length;
-  const pubDone=allPubs.filter(p=>p.estado==='publicado').length;
+  const cuenta={};allPubs.forEach(p=>{const e=pubEstVis(p);cuenta[e]=(cuenta[e]||0)+1;});
   const cntEl=document.getElementById('calPubCnt');
-  if(cntEl)cntEl.innerHTML=`<span style="color:var(--am)">🟠 ${pubProg} programadas</span> · <span style="color:var(--ve)">✅ ${pubDone} publicadas</span>`;
+  if(cntEl)cntEl.innerHTML=Object.keys(PUB_EST).filter(e=>cuenta[e]).map(e=>`<span style="color:${PUB_EST[e].col};font-weight:600">${PUB_EST[e].lbl} ${cuenta[e]}</span>`).join(' · ')||'<span style="color:var(--tm)">Sin publicaciones este mes</span>';
   setVistaCalPub(calPubVista,true);
   renderPendientesPub();
 }
@@ -3176,14 +3239,16 @@ function renderCalPubMes(anio,mes,pubs){
     const esHoy=fechaStr===hoyStr;
     const ps=porDia[d]||[];
     const chips=ps.slice(0,3).map(p=>{
-      const isPublicado=p.estado==='publicado';
-      const c=isPublicado?'#0F6E56':PLAT_COLOR[p.plataformas[0]]||'var(--na)';
-      const bg=isPublicado?'#E1F5EE':PLAT_BG[p.plataformas[0]]||'var(--nas)';
+      const ev=pubEstVis(p);
+      const c=['publicado','atrasado'].includes(ev)?PUB_EST[ev].col:PLAT_COLOR[p.plataformas[0]]||'var(--na)';
+      const bg=['publicado','atrasado'].includes(ev)?PUB_EST[ev].bg:PLAT_BG[p.plataformas[0]]||'var(--nas)';
       return`<span class="cev-pub" style="background:${bg};color:${c};border-left-color:${c}" onclick="verDiaPub(${d})">${p.hora.replace(':','h').slice(0,5)} ${p.nombre.slice(0,18)}</span>`;
     }).join('');
     const mas=ps.length>3?`<span class="cev-pub" style="background:var(--su2);color:var(--tm);border-left-color:var(--bo)" onclick="event.stopPropagation();verDiaPub(${d})">+${ps.length-3} más</span>`:'';
     const dots=ps.length?`<div style="display:flex;gap:2px;justify-content:center;flex-wrap:wrap;margin-top:2px">${[...new Set(ps.flatMap(p=>p.plataformas||[]))].map(pl=>`<span style="width:6px;height:6px;border-radius:50%;background:${PLAT_COL[pl]||'#888'};display:inline-block"></span>`).join('')}</div>`:'';
-    html+=`<div class="cd${esHoy?' hoy':''}" onclick="verDiaPub(${d})" title="Ver / agregar publicaciones"><div class="cdnum">${d}</div>${dots}${chips}${mas}</div>`;
+    const nFeed=ps.filter(esFeed).length;
+    const carga=nFeed>PUB_MAX_DIA?`<span title="Más de ${PUB_MAX_DIA} publicaciones de feed este día" style="float:right;font-size:10px;font-weight:700;color:#dc2626">⚠️ ${nFeed}</span>`:'';
+    html+=`<div class="cd${esHoy?' hoy':''}" onclick="verDiaPub(${d})" title="Ver / agregar publicaciones"><div class="cdnum">${d}${carga}</div>${dots}${chips}${mas}</div>`;
   }
   const resto=(7-(primerDia+ultimoDia)%7)%7;
   for(let i=0;i<resto;i++)html+=`<div class="cd otro"></div>`;
@@ -3205,26 +3270,18 @@ function renderCalPubAgenda(pubs){
     return`<div class="agenda-dia">
       <div class="agenda-dia-hdr">${fmtFechaLarga(f).toUpperCase()}</div>
       ${ps.map(p=>{
-        const isPublicado=p.estado==='publicado';
-        const estadoBg=isPublicado?'var(--ves)':'var(--ams)';
-        const estadoCol=isPublicado?'var(--ve)':'var(--am)';
-        const estadoTxt=isPublicado?'✅ publicado':'⏳ pendiente';
         const platDots=(p.plataformas||[]).map(pl=>`<span style="display:inline-flex;align-items:center;gap:2px;font-size:11px;font-weight:700;padding:1px 5px;border-radius:10px;background:${PLAT_DOT_COL[pl]||'#888'}20;color:${PLAT_DOT_COL[pl]||'#888'}"><span style="width:7px;height:7px;border-radius:50%;background:${PLAT_DOT_COL[pl]||'#888'};display:inline-block"></span>${PLAT_NOM[pl]||pl}</span>`).join(' ');
-        const canProg=puede('marcarAvance');
-        const accionBtn=canProg?(isPublicado
-          ?`<button class="btn bgh bsm" style="font-size:11px;padding:2px 8px;flex-shrink:0" onclick="event.stopPropagation();marcarPublicadoById('${p.id}','pendiente');renderCalPub()">Revertir</button>`
-          :`<button class="btn bna bsm" style="font-size:11px;padding:2px 8px;flex-shrink:0" onclick="event.stopPropagation();marcarPublicadoById('${p.id}','publicado');renderCalPub()">Marcar publicado</button>`)
-          :'';
+        const accionBtn=pubBotones(p);
         return`<div class="agenda-pub" onclick="togAgendaPub('apub-${p._idx}')" style="cursor:pointer">
           <div class="agenda-hora">${p.hora}</div>
           <div class="agenda-info" style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
               ${platDots}
-              <span style="font-size:14px;font-weight:700;color:var(--tx)">${p.nombre}</span>
+              <span style="font-size:14px;font-weight:700;color:var(--tx)">${p.nombre}</span> ${pubTipoBadge(p)}
               <span style="font-size:11px;color:var(--tm);font-weight:400">▾</span>
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-              <span style="font-size:11px;background:${estadoBg};color:${estadoCol};padding:1px 7px;border-radius:20px;font-weight:700">${estadoTxt}</span>
+              ${pubBadge(p)}${p.aprobadoPor?`<span style="font-size:11px;color:var(--tm)">👍 ${p.aprobadoPor}</span>`:''}
               ${p.tarea?`<span style="font-size:11px;color:var(--tm)">📋 ${p.tarea}</span>`:'<span style="font-size:11px;color:var(--tm)">—</span>'}
               ${p.responsableNombre?`<span style="font-size:11px;color:var(--tm)">👤 ${p.responsableNombre}</span>`:''}
             </div>
@@ -3281,7 +3338,9 @@ function verDiaPub(dia){
   const anio=calPubFecha.getFullYear(),mes=calPubFecha.getMonth()+1;
   const fechaStr=`${anio}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
   const pubs=getPubsDelMes(anio,mes).filter(p=>parseInt(p.fecha.split('-')[2])===dia);
-  document.getElementById('diaPubPanelTit').textContent=fmtFechaLarga(fechaStr);
+  pubDiaAbierto=dia;
+  const nFeed=pubs.filter(esFeed).length;
+  document.getElementById('diaPubPanelTit').textContent=fmtFechaLarga(fechaStr)+(nFeed>PUB_MAX_DIA?` · ⚠️ ${nFeed} publicaciones de feed (máximo ${PUB_MAX_DIA})`:'');
   const canEdit=puede('marcarAvance');
   const addBtn=canEdit?`<button class="btn bna bsm" onclick="nuevaPublicacion('${fechaStr}')">+ Nueva</button>`:'';
   if(!pubs.length){
@@ -3297,21 +3356,17 @@ function verDiaPub(dia){
       const origenLine=p.tarea
         ?`<div style="font-size:11px;color:var(--tm);margin-top:2px">📋 ${p.tarea}</div>`
         :'';
-      const estadoBtn=puede('marcarAvance')
-        ?(p.estado==='publicado'
-          ?`<button class="btn bsm" style="background:var(--ves);color:var(--ve);border:1px solid var(--ve);margin-top:6px" onclick="marcarPublicadoById('${p.id}','pendiente');document.getElementById('diaPubPanel').style.display='none'">✅ Publicado · Revertir</button>`
-          :`<button class="btn bna bsm" style="margin-top:6px" onclick="marcarPublicadoById('${p.id}','publicado');document.getElementById('diaPubPanel').style.display='none'">✅ Marcar publicado</button>`)
-        :'';
+      const estadoBtn=`<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">${pubBotones(p)}</div>`;
       return`<div class="dia-pub-card">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px">
           <div style="flex:1;min-width:0">
-            <div class="dia-pub-nom">${p.hora} · ${p.nombre}</div>
+            <div class="dia-pub-nom">${p.hora} · ${p.nombre} ${pubTipoBadge(p)}</div>
             ${origenLine}
             <div style="display:flex;gap:4px;margin-top:5px;flex-wrap:wrap">${(p.plataformas||[]).map(pl=>`<span class="pc ${pl}">${PLAT_NOM[pl]}</span>`).join(' ')}</div>
             ${estadoBtn}
             ${acciones}
           </div>
-          <span style="font-size:11px;background:${p.estado==='publicado'?'var(--ves)':'var(--ams)'};color:${p.estado==='publicado'?'var(--ve)':'var(--am)'};padding:2px 8px;border-radius:20px;font-weight:700;flex-shrink:0">${p.estado==='publicado'?'✅ Publicado':'⏳ Pendiente'}</span>
+          ${pubBadge(p)}
         </div>
         ${p.copy?`<div class="dia-copy">${p.copy}</div>`:''}
       </div>`;
@@ -3342,7 +3397,7 @@ function marcarPublicadoById(id,estado){
 function revertirPublicado(pubId){
   const p=(E.publicaciones||[]).find(p=>p.id===pubId);
   if(!p)return;
-  p.estado='pendiente';
+  p.estado='aprobado';
   guardar();renderTareas();renderCalPub();
 }
 
@@ -3358,6 +3413,7 @@ function editarPublicacion(pubId){
   document.getElementById('mProgTitulo').value=p.titulo||'';
   document.getElementById('mProgFecha').value=p.fecha||hoy();
   document.getElementById('mProgHora').value=p.hora||'09:00';
+  setTipoProg(p.tipo);
   document.getElementById('mProgCopy').value=p.copy||'';
   document.getElementById('mProgNotas').value=p.notas||'';
   document.querySelectorAll('#mProgPlats .chip').forEach(c=>{
