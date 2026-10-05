@@ -8,14 +8,27 @@ const jwt      = require("jsonwebtoken");
 const PDFDocument = require("pdfkit");
 const mongoose = require("mongoose");
 
+const crypto   = require("crypto");
+
 const app        = express();
-const JWT_SECRET = process.env.JWT_SECRET || "cacco_secret_2024";
+// Sin JWT_SECRET se usa una clave aleatoria por arranque (las sesiones se cierran al reiniciar).
+const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(48).toString("hex");
+if (!process.env.JWT_SECRET)
+  console.warn("⚠️  Falta JWT_SECRET — usando clave temporal. Defínela en Render (Environment) para que las sesiones duren.");
 const PORT       = process.env.PORT || 3000;
 const MONGO_URI  = process.env.MONGODB_URI?.includes("xxxxx") ? null : process.env.MONGODB_URI;
 
 app.use(cors());
 app.use(express.json({ limit: "5mb" }));
-app.use(express.static(__dirname));
+// Solo se publican archivos de la interfaz; nunca data.json, users.json, .env ni el código del servidor.
+const EXT_PUBLICAS = new Set([".html", ".png", ".jpg", ".jpeg", ".svg", ".ico", ".webp", ".ttf", ".woff", ".woff2"]);
+app.use((req, res, next) => {
+  const ext = path.extname(req.path).toLowerCase();
+  const oculto = req.path.split("/").some(seg => seg.startsWith(".") || seg === "node_modules" || seg === "backups");
+  if (req.path.startsWith("/api/") || !ext || (EXT_PUBLICAS.has(ext) && !oculto)) return next();
+  res.status(404).end();
+});
+app.use(express.static(__dirname, { dotfiles: "deny" }));
 
 // ════════════════════════
 //  MODELOS MONGODB
@@ -27,6 +40,13 @@ const UserSchema = new mongoose.Schema({
   password: { type: String, required: true },
   nivel:    { type: String, required: true }
 });
+const BackupSchema = new mongoose.Schema({
+  fecha:   { type: Date, required: true, index: true },
+  tipo:    { type: String, required: true },
+  usuario: String,
+  payload: mongoose.Schema.Types.Mixed
+});
+const BackupModel = mongoose.models.AppBackup || mongoose.model("AppBackup", BackupSchema);
 const DataModel = mongoose.models.AppData || mongoose.model("AppData", DataSchema);
 const UserModel = mongoose.models.AppUser || mongoose.model("AppUser", UserSchema);
 
@@ -50,6 +70,70 @@ async function escribirData(data) {
   if (!MONGO_URI) { fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2)); return; }
   await DataModel.findByIdAndUpdate("main", { payload: data }, { upsert: true, new: true });
 }
+// ════════════════════════
+//  RESPALDOS
+// ════════════════════════
+// auto: copia del estado anterior antes de guardar (máx. una cada 15 min)
+// diario: una copia por día · manual: la crea el líder · pre-restauracion: antes de restaurar
+const BACKUP_DIR = path.join(__dirname, "backups");
+const BACKUP_MAX = { auto: 96, diario: 30, manual: 50, "pre-restauracion": 20 };
+const AUTO_CADA_MS = 15 * 60 * 1000;
+const TZ = "America/Panama";
+const diaDe = d => new Date(d).toLocaleDateString("en-CA", { timeZone: TZ });
+
+function listarBackupsLocal() {
+  if (!fs.existsSync(BACKUP_DIR)) return [];
+  return fs.readdirSync(BACKUP_DIR).filter(f => f.endsWith(".json")).map(f => {
+    const id = f.slice(0, -5);
+    const [ts, tipo, ...rest] = id.split("__");
+    return { id, fecha: new Date(Number(ts)), tipo, usuario: rest.join("__") || "" };
+  }).sort((a, b) => b.fecha - a.fecha);
+}
+async function listarBackups() {
+  if (!MONGO_URI) return listarBackupsLocal();
+  const docs = await BackupModel.find({}, { payload: 0 }).sort({ fecha: -1 }).lean();
+  return docs.map(d => ({ id: String(d._id), fecha: d.fecha, tipo: d.tipo, usuario: d.usuario || "" }));
+}
+async function leerBackup(id) {
+  if (!MONGO_URI) {
+    if (!/^[\w.@-]+$/.test(id)) return null;
+    const f = path.join(BACKUP_DIR, id + ".json");
+    return fs.existsSync(f) ? { ...listarBackupsLocal().find(b => b.id === id), payload: JSON.parse(fs.readFileSync(f, "utf8")) } : null;
+  }
+  if (!mongoose.isValidObjectId(id)) return null;
+  const d = await BackupModel.findById(id).lean();
+  return d ? { id: String(d._id), fecha: d.fecha, tipo: d.tipo, usuario: d.usuario || "", payload: d.payload } : null;
+}
+async function crearBackup(tipo, payload, usuario = "") {
+  if (!payload || !Object.keys(payload).length) return;
+  const fecha = new Date();
+  if (!MONGO_URI) {
+    fs.mkdirSync(BACKUP_DIR, { recursive: true });
+    const seguro = String(usuario).replace(/[^\w.@-]/g, "");
+    fs.writeFileSync(path.join(BACKUP_DIR, `${fecha.getTime()}__${tipo}__${seguro}.json`), JSON.stringify(payload));
+  } else {
+    await BackupModel.create({ fecha, tipo, usuario, payload });
+  }
+  await podarBackups(tipo);
+}
+async function podarBackups(tipo) {
+  const max = BACKUP_MAX[tipo]; if (!max) return;
+  const sobran = (await listarBackups()).filter(b => b.tipo === tipo).slice(max);
+  for (const b of sobran) {
+    if (!MONGO_URI) fs.rmSync(path.join(BACKUP_DIR, b.id + ".json"), { force: true });
+    else await BackupModel.deleteOne({ _id: b.id });
+  }
+}
+// Se llama antes de cada guardado con el estado que se va a reemplazar
+async function respaldarSiToca(anterior, usuario) {
+  const lista = await listarBackups();
+  const ultAuto = lista.find(b => b.tipo === "auto");
+  if (!ultAuto || Date.now() - new Date(ultAuto.fecha) >= AUTO_CADA_MS)
+    await crearBackup("auto", anterior, usuario);
+  if (!lista.some(b => b.tipo === "diario" && diaDe(b.fecha) === diaDe(Date.now())))
+    await crearBackup("diario", anterior, "sistema");
+}
+
 async function leerUsers() {
   if (!MONGO_URI) return leerJSONLocal(USERS_FILE, []);
   return await UserModel.find({}).lean();
@@ -126,8 +210,41 @@ app.get("/api/data", verificarToken, async (req, res) => {
   catch { res.status(500).json({ error: "Error leyendo datos" }); }
 });
 app.post("/api/data", verificarToken, async (req, res) => {
-  try { await escribirData(req.body); res.json({ ok: true }); }
+  try {
+    try { await respaldarSiToca(await leerData(), req.usuario.email); }
+    catch (e) { console.error("Error creando respaldo:", e); }
+    await escribirData(req.body); res.json({ ok: true });
+  }
   catch { res.status(500).json({ error: "No se pudo guardar" }); }
+});
+
+// ════════════════════════
+//  RESPALDOS (solo Líder)
+// ════════════════════════
+app.get("/api/backups", verificarToken, soloLider, async (req, res) => {
+  try { res.json(await listarBackups()); }
+  catch { res.status(500).json({ error: "Error leyendo respaldos" }); }
+});
+app.post("/api/backups", verificarToken, soloLider, async (req, res) => {
+  try { await crearBackup("manual", await leerData(), req.usuario.email); res.json({ ok: true }); }
+  catch { res.status(500).json({ error: "No se pudo crear el respaldo" }); }
+});
+app.get("/api/backups/:id", verificarToken, soloLider, async (req, res) => {
+  try {
+    const b = await leerBackup(req.params.id);
+    if (!b) return res.status(404).json({ error: "Respaldo no encontrado" });
+    res.setHeader("Content-Disposition", `attachment; filename="CACCO_respaldo_${diaDe(b.fecha)}_${b.tipo}.json"`);
+    res.json(b.payload);
+  } catch { res.status(500).json({ error: "Error leyendo respaldo" }); }
+});
+app.post("/api/backups/:id/restaurar", verificarToken, soloLider, async (req, res) => {
+  try {
+    const b = await leerBackup(req.params.id);
+    if (!b) return res.status(404).json({ error: "Respaldo no encontrado" });
+    await crearBackup("pre-restauracion", await leerData(), req.usuario.email);
+    await escribirData(b.payload);
+    res.json({ ok: true });
+  } catch { res.status(500).json({ error: "No se pudo restaurar" }); }
 });
 
 // ════════════════════════
@@ -520,9 +637,9 @@ function generarPDF(datos, tipo, generadoPor) {
   return doc;
 }
 
-app.post("/api/reporte-pdf", verificarToken, (req,res)=>{
+app.post("/api/reporte-pdf", verificarToken, async (req,res)=>{
   const {tipo='diario',generadoPor}=req.body;
-  const datos=leerJSON(DATA_FILE,{});
+  const datos=await leerData();
   const label={diario:'Diario',semanal:'Semanal',mensual:'Mensual'}[tipo]||'Diario';
   const fecha=new Date().toISOString().split('T')[0];
   res.setHeader('Content-Type','application/pdf');
@@ -541,6 +658,11 @@ async function iniciar() {
   } else {
     console.log("⚠️  Sin MONGODB_URI — usando archivos locales");
   }
+  // Copia diaria también al arrancar, aunque nadie guarde ese día
+  try { const lista = await listarBackups();
+    if (!lista.some(b => b.tipo === "diario" && diaDe(b.fecha) === diaDe(Date.now())))
+      await crearBackup("diario", await leerData(), "sistema");
+  } catch (e) { console.error("Error creando respaldo diario:", e); }
   app.listen(PORT, () => console.log(`✅ Servidor CACCO corriendo en http://localhost:${PORT}`));
 }
 iniciar().catch(e => { console.error("Error al iniciar:", e); process.exit(1); });
