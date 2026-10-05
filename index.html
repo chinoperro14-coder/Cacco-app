@@ -896,6 +896,12 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       <div class="fg"><label class="fl">Cargo</label><input type="text" class="fc" id="pCargo"></div>
     </div>
     <div class="fg"><label class="fl">Foto (URL)</label><input type="url" class="fc" id="pFoto" placeholder="https://..."></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Puesto según RRHH</label><input type="text" class="fc" id="pPuesto" placeholder="ej. Promotor Cultural"></div>
+      <div class="fg"><label class="fl">N.º de posición</label><input type="text" class="fc" id="pPosicion" inputmode="numeric" placeholder="ej. 4156"></div>
+    </div>
+    <div class="fg"><label class="fl">Correo de contacto</label><input type="email" class="fc" id="pCorreo" placeholder="Si es distinto al de inicio de sesión (minutas, avisos)"></div>
+    <div style="font-size:12px;color:var(--tm);margin:-4px 0 14px">Puesto y posición se usan en el formulario de horas extra de la OIRH.</div>
     <button class="btn bna" onclick="guardarPerfil()">Guardar cambios</button>
   </div>
   <div class="tc" style="padding:24px;margin-top:16px">
@@ -997,6 +1003,11 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       <div class="fg"><label class="fl">Cargo</label><input type="text" class="fc" id="eqCargo" placeholder="ej. Fotógrafo"></div>
     </div>
     <div class="fg"><label class="fl">Email (para iniciar sesión) *</label><input type="email" class="fc" id="eqEmail" placeholder="usuario@cacco.com"></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Puesto según RRHH</label><input type="text" class="fc" id="eqPuesto" placeholder="ej. Promotor Cultural"></div>
+      <div class="fg"><label class="fl">N.º de posición</label><input type="text" class="fc" id="eqPosicion" inputmode="numeric" placeholder="ej. 4156"></div>
+    </div>
+    <div class="fg"><label class="fl">Correo de contacto</label><input type="email" class="fc" id="eqCorreo" placeholder="Si es distinto al de inicio de sesión (minutas, avisos)"></div>
     <div class="fg"><label class="fl">Secciones del equipo</label>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
         <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" class="eqSecCk" value="Audiovisual" style="accent-color:var(--na)"> 📹 Audiovisual</label>
@@ -3675,6 +3686,7 @@ function renderEquipo(){
           <div>
             <div style="font-weight:800;font-size:15px">${p.nombre}</div>
             <div style="font-size:12px;color:var(--tm);margin-top:2px">${p.cargo||'Sin cargo'}</div>
+            ${p.puesto||p.posicion?`<div style="font-size:11px;color:var(--tm);margin-top:2px">RRHH: ${p.puesto||'—'}${p.posicion?` · Posición ${p.posicion}`:''}</div>`:''}
             <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
               <span class="pnivel ${p.nivel}">${NIVEL_ICO[p.nivel]||'👤'} ${NIVEL_NOM[p.nivel]||p.nivel}</span>
               ${seccBadge}
@@ -3710,6 +3722,9 @@ function abrirMEq(id){
   document.getElementById('eqNom').value=p?.nombre||'';
   document.getElementById('eqCargo').value=p?.cargo||'';
   document.getElementById('eqEmail').value=p?.email||'';
+  document.getElementById('eqPuesto').value=p?.puesto||'';
+  document.getElementById('eqPosicion').value=p?.posicion||'';
+  document.getElementById('eqCorreo').value=p?.correo||'';
   document.getElementById('eqNivel').value=p?.nivel||'colaborador';
   document.getElementById('eqIng').value=p?.ingreso||hoy();
   document.getElementById('eqPin').value='';
@@ -3732,7 +3747,10 @@ async function guardarEq(){
   const cats=[...document.querySelectorAll('#chEqCats .chip.sel')].map(c=>c.dataset.v);
   const nivel=document.getElementById('eqNivel').value;
   const secciones=[...document.querySelectorAll('.eqSecCk:checked')].map(ck=>ck.value);
-  const p={id,nombre:n,cargo:document.getElementById('eqCargo').value.trim(),email,nivel,ingreso:document.getElementById('eqIng').value,foto:document.getElementById('eqFoto').value.trim(),cats,secciones};
+  // Conserva cualquier otro campo de la ficha que este formulario no muestra
+  const prev=E.equipo.find(e=>e.id===id)||{};
+  const p={...prev,id,nombre:n,cargo:document.getElementById('eqCargo').value.trim(),email,nivel,
+    puesto:document.getElementById('eqPuesto').value.trim(),posicion:document.getElementById('eqPosicion').value.trim(),correo:document.getElementById('eqCorreo').value.trim().toLowerCase(),ingreso:document.getElementById('eqIng').value,foto:document.getElementById('eqFoto').value.trim(),cats,secciones};
 
   // Sincronizar credenciales en el servidor
   if(password||!E.equipo.find(e=>e.id===id)){
@@ -3785,6 +3803,9 @@ function renderPerfil(){
   document.getElementById('pNom').value=u.nombre||'';
   document.getElementById('pCargo').value=u.cargo||'';
   document.getElementById('pFoto').value=u.foto||'';
+  document.getElementById('pPuesto').value=u.puesto||'';
+  document.getElementById('pPosicion').value=u.posicion||'';
+  document.getElementById('pCorreo').value=u.correo||'';
 }
 
 function guardarPerfil(){
@@ -3792,6 +3813,9 @@ function guardarPerfil(){
   p.nombre=document.getElementById('pNom').value.trim()||p.nombre;
   p.cargo=document.getElementById('pCargo').value.trim();
   p.foto=document.getElementById('pFoto').value.trim();
+  p.puesto=document.getElementById('pPuesto').value.trim();
+  p.posicion=document.getElementById('pPosicion').value.trim();
+  p.correo=document.getElementById('pCorreo').value.trim().toLowerCase();
   uAct=p;reg('Perfil actualizado',p.nombre);guardar();renderPerfil();
   document.getElementById('hdrNom').textContent=p.nombre.split(' ')[0];
   alert('✅ Perfil actualizado.');
