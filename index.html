@@ -970,9 +970,15 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <input type="hidden" id="hId">
     <div class="fg" id="hMiemGrupo"><label class="fl">Persona *</label><select class="fc" id="hMiem"></select></div>
     <div class="fr">
-      <div class="fg"><label class="fl">Fecha *</label><input type="date" class="fc" id="hFecha"></div>
-      <div class="fg"><label class="fl">Horas *</label><input type="number" class="fc" id="hHoras" min="0.5" max="24" step="0.5"></div>
+      <div class="fg"><label class="fl">Fecha *</label><input type="date" class="fc" id="hFecha" onchange="calcHorasH()"></div>
+      <div class="fg"><label class="fl">Tipo de día</label><div style="display:flex;align-items:center;gap:8px;min-height:38px"><span id="hTipoDia" class="bg bgr">—</span><label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" id="hFeriado" onchange="calcHorasH()"> Feriado</label></div></div>
     </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Entrada *</label><input type="time" class="fc" id="hDesde" onchange="calcHorasH()"></div>
+      <div class="fg"><label class="fl">Salida *</label><input type="time" class="fc" id="hHasta" onchange="calcHorasH()"></div>
+      <div class="fg"><label class="fl">Horas extra</label><input type="number" class="fc" id="hHoras" min="0" max="24" step="0.25"></div>
+    </div>
+    <div style="font-size:12px;color:var(--tm);margin:-4px 0 12px;line-height:1.5" id="hRegla">Día laboral: cuenta solo lo trabajado antes de 8:00 a. m. o después de 4:00 p. m. Sábado, domingo o feriado: cuenta toda la jornada.</div>
     <div class="fg"><label class="fl">Actividad *</label><textarea class="fc" id="hAct" placeholder="Describa la actividad realizada..."></textarea></div>
     <div class="fg" id="hAproGrupo" style="display:none"><label class="fl">Aprobación</label>
       <select class="fc" id="hApro"><option value="Pendiente">⏳ Pendiente</option><option value="Aprobado">✅ Aprobado</option><option value="Rechazado">❌ Rechazado</option></select>
@@ -3487,7 +3493,9 @@ function duplT(id){
 //  HORAS EXTRAS
 // ════════════════════════
 function renderHoras(){
-  const hs=E.horasExtra,apr=hs.filter(h=>h.aprobacion==='Aprobado'),pen=hs.filter(h=>h.aprobacion==='Pendiente');
+  // Colaboradores ven solo las suyas (también en los totales)
+  const hs=niv==='colaborador'?E.horasExtra.filter(h=>h.miembro===uAct?.nombre):niv==='lector'?[]:E.horasExtra;
+  const apr=hs.filter(h=>h.aprobacion==='Aprobado'),pen=hs.filter(h=>h.aprobacion==='Pendiente');
   document.getElementById('heTot').textContent=hs.length;
   document.getElementById('heApr').textContent=apr.reduce((s,h)=>s+parseFloat(h.horas||0),0).toFixed(1);
   document.getElementById('hePen').textContent=pen.length;
@@ -3505,7 +3513,7 @@ function renderHoras(){
   } else if(resDiv){resDiv.style.display='none';}
 
   // Colaboradores solo ven las suyas
-  const vis=niv==='colaborador'?hs.filter(h=>h.miembro===uAct?.nombre):niv==='lector'?[]:hs;
+  const vis=[...hs].sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
   const grid=document.getElementById('gridHE'),vac=document.getElementById('vacHE');
   if(!vis.length){grid.innerHTML='';vac.style.display='block';return;}
   vac.style.display='none';
@@ -3514,7 +3522,7 @@ function renderHoras(){
     const puedeAprobar=puede('aprobarHora');
     const esLider=niv==='lider';
     // Botones de aprobación
-    const btnApro=puedeAprobar&&h.aprobacion==='Pendiente'
+    const btnApro=puedeAprobar&&h.aprobacion==='Pendiente'&&(h.miembro!==uAct?.nombre||esLider)
       ?`<button class="btn bve bsm" onclick="aprobarH('${h.id}',true)">✅ Aprobar</button><button class="btn bpe bsm" onclick="aprobarH('${h.id}',false)">❌ Rechazar</button>`
       :`<span class="bg ${bA[h.aprobacion]||'bgr'}">${h.aprobacion}</span>`;
     // Botones de editar/eliminar — solo Líder
@@ -3531,7 +3539,7 @@ function renderHoras(){
       </div>
       <div style="font-size:13px;color:var(--tm);margin-bottom:12px;line-height:1.5">${h.actividad}</div>
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
-        <span style="font-size:11px;color:var(--tm)">📅 ${fmt(h.fecha)}</span>
+        <span style="font-size:11px;color:var(--tm)">📅 ${fmt(h.fecha)}${h.desde&&h.hasta?` · 🕒 ${h.desde}–${h.hasta}`:''}${h.feriado?' · Feriado':h.tipoDia==='sabado'?' · Sábado':h.tipoDia==='domingo'?' · Domingo':''}</span>
         <div style="display:flex;gap:5px;flex-wrap:wrap">${btnApro}</div>
       </div>
       ${btnAdmin}
@@ -3556,23 +3564,66 @@ function abrirMH(id){
   const h=id?E.horasExtra.find(h=>h.id===id):null;
   sel.value=h?.miembro||uAct?.nombre||E.equipo[0]?.nombre||'';
   document.getElementById('hFecha').value=h?.fecha||hoy();
-  document.getElementById('hHoras').value=h?.horas||'';
+  document.getElementById('hDesde').value=h?.desde||'';
+  document.getElementById('hHasta').value=h?.hasta||'';
+  document.getElementById('hFeriado').checked=!!h?.feriado;
+  document.getElementById('hHoras').value=h?.horas??'';
+  // Las horas salen de entrada/salida; solo quien aprueba puede ajustarlas a mano
+  document.getElementById('hHoras').readOnly=!puede('aprobarHora');
+  calcHorasH(true);
   document.getElementById('hAct').value=h?.actividad||'';
   // Solo Editor y Líder ven el selector de aprobación
   const ag=document.getElementById('hAproGrupo');
-  if(puede('aprobarHora')){ag.style.display='block';document.getElementById('hApro').value=h?.aprobacion||'Pendiente';}
-  else ag.style.display='none';
+  document.getElementById('hApro').value=h?.aprobacion||'Pendiente';
+  // Nadie (salvo el Líder) aprueba sus propias horas
+  sel.onchange=()=>{ag.style.display=puede('aprobarHora')&&(sel.value!==uAct?.nombre||niv==='lider')?'block':'none';};
+  sel.onchange();
   abrirM('mH');
+}
+
+// Tipo de día de una fecha AAAA-MM-DD (sin desfase de zona horaria)
+function tipoDiaH(f){
+  if(!f)return '';
+  const [a,m,d]=f.split('-').map(Number),w=new Date(a,m-1,d).getDay();
+  return w===6?'sabado':w===0?'domingo':'laboral';
+}
+// Horas extra entre entrada y salida. Día laboral: solo lo que cae fuera de 8:00–16:00.
+// Sábado, domingo o feriado: toda la jornada. Si la salida es menor que la entrada, termina al día siguiente.
+function horasFueraH(fecha,desde,hasta,feriado){
+  if(!fecha||!desde||!hasta)return null;
+  const min=t=>{const [h,m]=t.split(':').map(Number);return h*60+m;};
+  let ini=min(desde),fin=min(hasta);if(fin<=ini)fin+=1440;
+  let total=fin-ini;
+  if(tipoDiaH(fecha)==='laboral'&&!feriado)total-=Math.max(0,Math.min(fin,960)-Math.max(ini,480));
+  return Math.round(total/15)/4;
+}
+function calcHorasH(soloEtiqueta){
+  const f=document.getElementById('hFecha').value,fer=document.getElementById('hFeriado').checked;
+  const td=tipoDiaH(f),el=document.getElementById('hTipoDia');
+  el.textContent=fer?'Feriado':({laboral:'Día laboral',sabado:'Sábado',domingo:'Domingo'}[td]||'—');
+  el.className='bg '+(fer||td==='sabado'||td==='domingo'?'bnar':'bgr');
+  if(soloEtiqueta===true)return;
+  const hrs=horasFueraH(f,document.getElementById('hDesde').value,document.getElementById('hHasta').value,fer);
+  if(hrs!==null)document.getElementById('hHoras').value=hrs;
 }
 
 function guardarH(){
   const m=document.getElementById('hMiem').value,f=document.getElementById('hFecha').value,h=document.getElementById('hHoras').value,a=document.getElementById('hAct').value.trim();
-  if(!m||!f||!h||!a){alert('Complete todos los campos.');return;}
+  const de=document.getElementById('hDesde').value,ha=document.getElementById('hHasta').value,fer=document.getElementById('hFeriado').checked;
+  const id=document.getElementById('hId').value;
+  const prev=id?E.horasExtra.find(x=>x.id===id):null;
+  // Entrada y salida son obligatorias en registros nuevos (los anteriores pueden no tenerlas)
+  if(!m||!f||h===''||!a||(!prev&&(!de||!ha))){alert('Complete todos los campos, incluidas la hora de entrada y de salida.');return;}
+  if(!(parseFloat(h)>0)){alert('Con ese horario no hay horas fuera del horario laboral (8:00 a. m. a 4:00 p. m.).');return;}
   // Colaborador solo puede registrar las suyas
   if(niv==='colaborador'&&m!==uAct?.nombre){alert('Solo puede registrar sus propias horas.');return;}
-  const id=document.getElementById('hId').value;
-  const apro=puede('aprobarHora')?document.getElementById('hApro').value:'Pendiente';
-  const r={id:id||gId(),miembro:m,fecha:f,horas:parseFloat(h),actividad:a,aprobacion:apro,registradoPor:uAct?.nombre};
+  const propia=m===uAct?.nombre&&niv!=='lider';
+  let apro=puede('aprobarHora')&&!propia?document.getElementById('hApro').value:'Pendiente';
+  // Editar un registro propio ya aprobado no lo vuelve a dejar pendiente si no cambiaron las horas
+  if(propia&&prev&&prev.aprobacion!=='Pendiente'&&parseFloat(h)===parseFloat(prev.horas))apro=prev.aprobacion;
+  const r={...(prev||{}),id:id||gId(),miembro:m,fecha:f,desde:de,hasta:ha,feriado:fer,tipoDia:tipoDiaH(f),horas:parseFloat(h),actividad:a,aprobacion:apro,registradoPor:prev?.registradoPor||uAct?.nombre};
+  if(apro!=='Pendiente'&&apro!==prev?.aprobacion)r.aprobadoPor=uAct?.nombre;
+  if(apro==='Pendiente')delete r.aprobadoPor;
   if(id){const i=E.horasExtra.findIndex(h=>h.id===id);if(i>=0)E.horasExtra[i]=r;reg('Hora editada',`${m} — ${h} hrs`);}
   else{E.horasExtra.unshift(r);reg('Hora registrada',`${m} — ${h} hrs`);if(!puede('aprobarHora'))addNotif('⏱️',`Solicitud de horas: ${m}`,'Pendiente de aprobación');}
   guardar();cerM('mH');renderHoras();
@@ -3581,6 +3632,7 @@ function guardarH(){
 function aprobarH(id,ok){
   if(!puede('aprobarHora')){alert('Sin permiso.');return;}
   const h=E.horasExtra.find(h=>h.id===id);if(!h)return;
+  if(h.miembro===uAct?.nombre&&niv!=='lider'){alert('Sus propias horas las aprueba otra persona.');return;}
   h.aprobacion=ok?'Aprobado':'Rechazado';h.aprobadoPor=uAct?.nombre;
   reg(ok?'Hora aprobada':'Hora rechazada',`${h.miembro} — ${h.horas} hrs`);
   addNotif(ok?'✅':'❌',`Horas ${ok?'aprobadas':'rechazadas'}: ${h.miembro}`,`${h.horas} hrs`);
