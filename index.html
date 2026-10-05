@@ -1008,8 +1008,17 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <div class="mbody">
     <div class="fg" id="oiMiemGrupo"><label class="fl">Servidor público</label><select class="fc" id="oiMiem"></select></div>
     <div class="fg"><label class="fl">Mes</label><input type="month" class="fc" id="oiMes"></div>
+    <div id="oiDatos">
+      <div class="fr">
+        <div class="fg"><label class="fl">Puesto desempeñado</label><input type="text" class="fc" id="oiPuesto" placeholder="Puesto según RRHH"></div>
+        <div class="fg"><label class="fl">Posición No.</label><input type="text" class="fc" id="oiPosicion" inputmode="numeric" placeholder="ej. 4156"></div>
+      </div>
+      <div class="fg"><label class="fl">Unidad administrativa</label><input type="text" class="fc" id="oiUnidad" placeholder="ej. Centro de Arte y Cultura de Colón"></div>
+      <div style="font-size:12px;color:var(--tm);margin:-4px 0 10px">Salen de la ficha de Equipo; si los cambias aquí, se guardan también en la ficha.</div>
+    </div>
+    <div id="oiFaltan" class="al alam" style="display:none;margin-bottom:10px"></div>
     <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin-bottom:10px"><input type="checkbox" id="oiPend"> Incluir también las horas pendientes de aprobación</label>
-    <div style="font-size:12px;color:var(--tm);line-height:1.5">Se llena con las horas extra del mes, una línea por jornada. El nombre, el puesto, la unidad y la posición salen de la ficha de Equipo. Las firmas quedan en blanco para firmar a mano.</div>
+    <div style="font-size:12px;color:var(--tm);line-height:1.5">Se llena con las horas extra del mes, una línea por jornada. Las firmas quedan en blanco para firmar a mano.</div>
   </div>
   <div class="mpie"><button class="btn bgh" onclick="cerM('mOirh')">Cancelar</button><button class="btn bna" onclick="generarOirh()">Generar formulario</button></div>
 </div></div>
@@ -4694,64 +4703,91 @@ function abrirMOirh(){
   else{sel.innerHTML='<option value="">Todo el equipo (una hoja por persona)</option>'+E.equipo.map(p=>`<option value="${p.nombre}">${p.nombre}</option>`).join('');sel.value=uAct?.nombre||'';document.getElementById('oiMiemGrupo').style.display='block';}
   document.getElementById('oiMes').value=hoy().slice(0,7);
   document.getElementById('oiPend').checked=false;
+  sel.onchange=oirhDatos;oirhDatos();
   abrirM('mOirh');
+}
+
+// Muestra los datos del servidor de la persona elegida (o qué fichas están incompletas si es todo el equipo)
+function oirhDatos(){
+  const nom=document.getElementById('oiMiem').value,p=E.equipo.find(x=>x.nombre===nom);
+  const falt=f=>[!f.puesto&&'puesto',!f.unidad&&'unidad',!f.posicion&&'posición'].filter(Boolean);
+  const av=document.getElementById('oiFaltan');
+  document.getElementById('oiDatos').style.display=p?'block':'none';
+  if(p){
+    document.getElementById('oiPuesto').value=p.puesto||'';
+    document.getElementById('oiPosicion').value=p.posicion||'';
+    document.getElementById('oiUnidad').value=p.unidad||'';
+    av.style.display='none';
+  } else {
+    const inc=E.equipo.filter(x=>falt(x).length).map(x=>`${x.nombre} (${falt(x).join(', ')})`);
+    av.style.display=inc.length?'block':'none';
+    av.textContent=inc.length?`Fichas incompletas: ${inc.join(' · ')}. Esos datos saldrán en blanco.`:'';
+  }
 }
 
 function generarOirh(){
   const sel=document.getElementById('oiMiem').value,mes=document.getElementById('oiMes').value,conPend=document.getElementById('oiPend').checked;
   if(!mes){alert('Elija el mes.');return;}
+  // Guardar en la ficha los datos del servidor que se hayan completado aquí
+  const pf=sel&&E.equipo.find(x=>x.nombre===sel);
+  if(pf&&(puede('aprobarHora')||pf.id===uAct?.id)){
+    const nv={puesto:document.getElementById('oiPuesto').value.trim(),posicion:document.getElementById('oiPosicion').value.trim(),unidad:document.getElementById('oiUnidad').value.trim()};
+    if(Object.keys(nv).some(k=>(pf[k]||'')!==nv[k])){Object.assign(pf,nv);if(uAct?.id===pf.id)Object.assign(uAct,nv);reg('Ficha actualizada',`${pf.nombre} — datos de RRHH`);guardar();}
+  }
+  const datosDe=p=>pf&&p.nombre===pf.nombre&&!(puede('aprobarHora')||pf.id===uAct?.id)
+    ?{...p,puesto:document.getElementById('oiPuesto').value.trim(),posicion:document.getElementById('oiPosicion').value.trim(),unidad:document.getElementById('oiUnidad').value.trim()}:p;
   const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const [an,mn]=mes.split('-').map(Number);
   const mesLbl=new Date(an,mn-1,1).toLocaleDateString('es-PA',{month:'long',year:'numeric'});
   const fDia=f=>{const [a,m,d]=f.split('-');return `${d}/${m}/${a}`;};
-  const MIN_FILAS=16;// las líneas del formulario impreso
+  const MIN_FILAS=19;// las líneas del formulario impreso
+  const fTot=n=>(Math.round(n*100)/100).toString()+' h';
   const personas=(sel?E.equipo.filter(p=>p.nombre===sel):E.equipo).filter(p=>niv!=='colaborador'||p.nombre===uAct?.nombre);
-  const hojas=personas.map(p=>{
+  const hojas=personas.map(p0=>{
+    const p=datosDe(p0);
     const regs=E.horasExtra.filter(h=>h.miembro===p.nombre&&!esComp(h)&&(h.fecha||'').startsWith(mes)&&(h.aprobacion==='Aprobado'||(conPend&&h.aprobacion==='Pendiente')))
       .sort((a,b)=>a.fecha.localeCompare(b.fecha)||(a.desde||'').localeCompare(b.desde||''));
     if(!sel&&!regs.length)return '';// en el modo de todo el equipo se omite a quien no tiene horas ese mes
-    const tot=regs.reduce((t,h)=>t+parseFloat(h.horas||0),0);
-    const filas=regs.map(h=>`<tr><td>${fDia(h.fecha)}</td><td>${esc(h.desde||'')}</td><td>${esc(h.hasta||'')}</td><td class="n">${fmtH(parseFloat(h.horas||0))}</td><td class="trab">${esc(h.actividad)}</td><td></td><td></td><td></td></tr>`);
+    const filas=regs.map(h=>`<tr><td class="c">${fDia(h.fecha)}</td><td class="c">${esc(h.desde||'')}</td><td class="c">${esc(h.hasta||'')}</td><td class="c">${fTot(parseFloat(h.horas||0))}</td><td class="trab">${esc(h.actividad)}</td><td></td><td></td><td></td></tr>`);
     while(filas.length<MIN_FILAS)filas.push('<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>');
     return `<section class="hoja">
-<h1>OFICINA INSTITUCIONAL DE RECURSOS HUMANOS</h1><h2>REGISTRO DE HORAS EXTRAS</h2>
+<div class="tit">OFICINA INSTITUCIONAL DE RECURSOS HUMANOS<br>REGISTRO DE HORAS EXTRAS</div>
 <div class="cab">
   <div class="campo"><span>Nombre del servidor público</span><b>${esc(p.nombre)}</b></div>
-  <div class="campo"><span>Puesto Desempeñado</span><b>${esc(p.puesto||p.cargo||'')}</b></div>
+  <div class="campo"><span>Puesto Desempeñado</span><b>${esc(p.puesto||'')}</b></div>
   <div class="campo"><span>Unidad Administrativa</span><b>${esc(p.unidad||'')}</b></div>
-  <div class="fila2"><div class="campo"><span>Posición No.</span><b>${esc(p.posicion||'')}</b></div><div class="campo"><span>Mes</span><b>${esc(mesLbl.charAt(0).toUpperCase()+mesLbl.slice(1))}</b></div></div>
+  <div class="dos"><div class="campo"><span>Posición No.</span><b>${esc(p.posicion||'')}</b></div><div class="campo"><span>Mes</span><b>${esc(mesLbl.charAt(0).toUpperCase()+mesLbl.slice(1))}</b></div></div>
 </div>
 <table>
-<colgroup><col style="width:10%"><col style="width:7%"><col style="width:7%"><col style="width:8%"><col><col style="width:12%"><col style="width:12%"><col style="width:12%"></colgroup>
+<colgroup><col style="width:8.2%"><col style="width:8.9%"><col style="width:9.1%"><col style="width:7.5%"><col style="width:30.3%"><col style="width:12.5%"><col style="width:12.5%"><col style="width:11%"></colgroup>
 <thead>
-<tr><th colspan="4">TIEMPO TRABAJADO<br><small>(Anotar Fecha y Horas)</small></th><th rowspan="2">TRABAJO REALIZADO</th><th colspan="3">FIRMAS</th></tr>
-<tr><th>DÍA</th><th>DE</th><th>HASTA</th><th>TOTAL</th><th>SERVIDOR PÚBLICO</th><th>JEFE INMEDIATO</th><th>DIRECTOR</th></tr>
+<tr class="h1"><th colspan="4">TIEMPO TRABAJADO<br>(Anotar Fecha y Horas)</th><th rowspan="2">TRABAJO REALIZADO</th><th colspan="3">FIRMAS</th></tr>
+<tr class="h2"><th>DIA</th><th>DE</th><th>HASTA</th><th>TOTAL</th><th>SERVIDOR<br>PÚBLICO</th><th>JEFE<br>INMEDIATO</th><th>DIRECTOR</th></tr>
 </thead>
 <tbody>${filas.join('')}</tbody>
-<tfoot><tr><td colspan="3" class="n"><b>TOTAL DEL MES</b></td><td class="n"><b>${fmtH(tot)}</b></td><td colspan="4"></td></tr></tfoot>
 </table>
-<p class="nota"><b>NOTA:</b> Para la concesión del tiempo compensatorio, es requisito que los sobre tiempos hayan sido aprobados por el superior inmediato.</p>
+<p class="nota">NOTA: Para la concesión del tiempo compensatorio, es requisito que los sobre tiempos hayan sido aprobados por el superior inmediato.</p>
 </section>`;}).filter(Boolean);
   if(!hojas.length){alert(`No hay horas extra ${conPend?'':'aprobadas '}en ${mesLbl}.`);return;}
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
 <title>Registro de Horas Extras — ${mesLbl}</title>
 <style>
-@page{size:letter landscape;margin:12mm}
+@page{size:letter landscape;margin:12mm 14mm}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Times New Roman',Times,serif;font-size:12px;color:#000;background:#fff;padding:20px;max-width:1050px;margin:0 auto}
+body{font-family:'Times New Roman',Times,serif;font-size:12px;color:#000;background:#fff;padding:20px;max-width:1000px;margin:0 auto}
 .hoja+.hoja{page-break-before:always;break-before:page;margin-top:40px}
-h1{text-align:center;font-size:15px;font-weight:700;letter-spacing:.3px}h2{text-align:center;font-size:14px;font-weight:700;margin-bottom:14px}
-.cab{margin-bottom:12px;max-width:640px}
-.campo{display:flex;align-items:flex-end;gap:6px;margin-bottom:5px}.campo span{font-weight:700;white-space:nowrap}
-.campo b{flex:1;font-weight:400;border-bottom:1px solid #000;padding:0 4px;min-height:16px}
-.fila2{display:flex;gap:24px}.fila2 .campo{flex:1}
-table{width:100%;border-collapse:collapse;table-layout:fixed}
-th,td{border:1px solid #000;padding:3px 5px;vertical-align:middle}
-th{font-size:11px;text-align:center;font-weight:700}th small{font-weight:700}
-tbody td{height:22px;font-size:11.5px}td.trab{font-size:11px}
-.n{text-align:right;white-space:nowrap}
-tfoot td{height:24px}
-.nota{margin-top:8px;font-size:11.5px}
+.tit{text-align:center;font-weight:700;font-size:15px;line-height:1.25;margin:6px 0 16px}
+.cab{width:81%;margin-bottom:12px}
+.campo{display:flex;align-items:flex-end;gap:4px;margin-bottom:6px;font-weight:700;font-size:12.5px}
+.campo span{white-space:nowrap}
+.campo b{flex:1;font-weight:400;border-bottom:1px solid #000;padding:0 4px;min-height:15px;line-height:1.1}
+.dos{display:flex;gap:4%}.dos .campo:first-child{flex:0 0 48%}.dos .campo:last-child{flex:1}
+table{width:100%;border-collapse:collapse;table-layout:fixed;border:2px solid #000}
+th,td{border:1px solid #000;padding:2px 4px;vertical-align:middle}
+th{font-size:11.5px;text-align:center;font-weight:700;line-height:1.15}
+tr.h1 th{height:40px}tr.h2 th{height:38px}
+tbody td{height:22px;font-size:11px;line-height:1.1}td.c{text-align:center;white-space:nowrap}td.trab{font-size:10.5px}
+.nota{margin-top:6px;font-size:11.5px;font-weight:700}
 @media print{body{padding:0;max-width:none}}
 </style></head><body>${hojas.join('')}</body></html>`;
   cerM('mOirh');
