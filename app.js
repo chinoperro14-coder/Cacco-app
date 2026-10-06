@@ -223,7 +223,7 @@ function generarPDF(datos, tipo, generadoPor) {
   const pct   = total ? Math.round(comp/total*100) : 0;
   const hoyS  = ahora.toISOString().split('T')[0];
   const venc  = tareas.filter(t=>t.fecha&&t.fecha<hoyS&&eg(t)!=='Completada');
-  const hapr  = horasExtra.filter(h=>h.aprobacion==='Aprobado');
+  const hapr  = horasExtra.filter(h=>h.aprobacion==='Aprobado'&&h.tipo!=='compensatorio');
   const thrs  = hapr.reduce((s,h)=>s+parseFloat(h.horas||0),0);
   const semCol = pct>=80?VE : pct>=50?AM : RO;
   const semTxt = pct>=80?'VERDE — Rendimiento excelente'
