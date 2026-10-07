@@ -1006,7 +1006,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     </div>
 
   </div>
-  <div class="mpie"><button class="btn bgh" onclick="cerM('mT')">Cancelar</button>
+  <div class="mpie"><button class="btn bgh" id="tDescartar" onclick="descartarBorr([document.getElementById('tId').value],()=>cerM('mT'))" style="display:none;margin-right:auto;color:var(--ro)">🗑 Descartar borrador</button><button class="btn bgh" onclick="cerM('mT')">Cancelar</button>
 <button class="btn bgh" onclick="guardarBorrador()" style="border:1px dashed var(--na);color:var(--na)">Guardar borrador</button>
 <button class="btn bna" onclick="guardarT()">Guardar tarea</button></div>
 </div></div>
@@ -1329,6 +1329,7 @@ function puede(accion){
     case 'crearTarea':    return ['lider','editor','colaborador'].includes(niv);
     case 'editarTarea':   return ['lider','editor'].includes(niv);
     case 'eliminarTarea': return niv==='lider';
+    case 'descartarBorrador': return ['lider','editor'].includes(niv);
     case 'marcarAvance':  return ['lider','editor','colaborador'].includes(niv);
     case 'registrarHora': return ['lider','editor','colaborador'].includes(niv);
     case 'aprobarHora':   return ['lider','editor'].includes(niv);
@@ -2292,20 +2293,45 @@ function renderBorradores(lista){
   const nivelDe=t=>((t.notas||'').match(/NIVEL SUGERIDO: ([^\n(]+)/)||[])[1]||'';
   const borHtml=borradores.map(t=>`
       <div style="padding:10px 14px;border:1px dashed var(--na);border-radius:var(--r);background:var(--su);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        ${puede('descartarBorrador')?`<input type="checkbox" class="borSel" value="${t.id}" onchange="borSelCambio()" style="width:18px;height:18px;cursor:pointer" title="Seleccionar">`:''}
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;font-weight:700;color:var(--tx)">${t.titulo||'(Sin título)'}</div>
           <div style="font-size:11px;color:var(--tm);margin-top:2px">📝 Borrador · ${t.fecha?'📅 '+fmt(t.fecha)+(t.hora?' '+t.hora:'')+' · ':''}${nivelDe(t)?nivelDe(t).trim()+' · ':''}${t.creadaPor||'?'}</div>
         </div>
         ${puede('editarTarea')?`<button class="btn bna bsm" onclick="abrirMT('${t.id}')">✏️ Completar</button>`:''}
-        ${puede('eliminarTarea')?`<button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro)" onclick="elimT('${t.id}')">🗑</button>`:''}
+        ${puede('descartarBorrador')?`<button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro)" onclick="descartarBorr(['${t.id}'])">🗑 Descartar</button>`:''}
       </div>`).join('');
+  const pd=puede('descartarBorrador'),nc=borradores.filter(t=>/No cubrir/.test(nivelDe(t)));
   lista.innerHTML+=`<div style="margin-top:20px">
       <div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px">
         📝 Borradores <span style="background:var(--ams);color:var(--am);padding:1px 7px;border-radius:10px">${borradores.length}</span>
       </div>
+      ${pd?`<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px;font-size:12px;color:var(--tm)">
+        <span>Los que no se van a cubrir se pueden descartar; la carga diaria no los vuelve a crear.</span>
+        <span style="flex:1"></span>
+        ${nc.length?`<button class="btn bgh bsm" onclick="borSelMarcar(${JSON.stringify(nc.map(t=>t.id)).replace(/"/g,'&quot;')})">⚪ Marcar los «No cubrir» (${nc.length})</button>`:''}
+        <button class="btn bsm" id="borSelBtn" style="display:none;background:var(--ros);color:var(--ro);border:1px solid var(--ro)" onclick="descartarBorr([...document.querySelectorAll('.borSel:checked')].map(c=>c.value))">🗑 Descartar seleccionados</button>
+      </div>`:''}
       <div style="display:flex;flex-direction:column;gap:6px">${borHtml}</div>
     </div>`;
   return true;
+}
+function borSelCambio(){
+  const n=document.querySelectorAll('.borSel:checked').length,b=document.getElementById('borSelBtn');
+  if(b){b.style.display=n?'':'none';b.textContent=`🗑 Descartar seleccionados (${n})`;}
+}
+function borSelMarcar(ids){document.querySelectorAll('.borSel').forEach(c=>{if(ids.includes(c.value))c.checked=true;});borSelCambio();}
+// Descarta borradores (no se van a cubrir). La carga diaria del calendario recuerda los descartados y no los recrea.
+function descartarBorr(ids,despues){
+  if(!puede('descartarBorrador')){alert('Solo Líder o Editor pueden descartar borradores.');return;}
+  const ts=E.tareas.filter(t=>ids.includes(t.id)&&t.borrador);
+  if(!ts.length)return;
+  const msg=ts.length===1?`¿Descartar el borrador "${ts[0].titulo||'(Sin título)'}"?`:`¿Descartar ${ts.length} borradores?\n\n`+ts.slice(0,10).map(t=>'• '+(t.titulo||'(Sin título)')).join('\n')+(ts.length>10?`\n… y ${ts.length-10} más`:'');
+  if(!confirm(msg+'\n\nNo se cubrirán y la carga diaria del calendario no los volverá a crear.'))return;
+  const set=new Set(ts.map(t=>t.id));
+  E.tareas=E.tareas.filter(t=>!set.has(t.id));set.forEach(id=>expandidas.delete(id));
+  reg(ts.length===1?'Borrador descartado':'Borradores descartados',(ts.length===1?`"${ts[0].titulo}"`:`${ts.length}: `+ts.map(t=>`"${t.titulo}"`).join(', '))+` por ${uAct?.nombre}`);
+  guardar();if(despues)despues();refrescarVistaAbierta();
 }
 
 function togT(id){
@@ -2372,6 +2398,7 @@ function abrirMT(id){
   document.getElementById('tRec').value=t?.recurrencia||'ninguna';
   etiqSel=[...(t?.etiquetas||[])];renderChEtiq();
   renderSeccionesModal(t);
+  document.getElementById('tDescartar').style.display=t?.borrador&&puede('descartarBorrador')?'':'none';
   abrirM('mT');
   const errEl=document.getElementById('tErrorMsg');if(errEl)errEl.style.display='none';
 }
@@ -4362,7 +4389,7 @@ function renderAprob(){
 
   const MAXB=12,bors=q.borradores.slice(0,MAXB).map(t=>fila(
     `<div style="font-size:14px;font-weight:700">${escH(t.titulo||'(Sin título)')}</div>`+sub(`📝 Borrador${t.fecha?' · 📅 '+fmt(t.fecha)+(t.hora?' '+t.hora:''):''}${t.creadaPor?' · '+escH(t.creadaPor):''}`),
-    `<button class="btn bna bsm" onclick="abrirMT('${t.id}')">✏️ Completar y publicar</button>`)).join('')
+    `<button class="btn bna bsm" onclick="abrirMT('${t.id}')">✏️ Completar y publicar</button>`+(puede('descartarBorrador')?`<button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro)" onclick="descartarBorr(['${t.id}'])">🗑 Descartar</button>`:''))).join('')
     +(q.borradores.length>MAXB?`<div style="font-size:12px;color:var(--tm)">… y ${q.borradores.length-MAXB} más en <a style="color:var(--az);cursor:pointer" onclick="goV('tareas',document.querySelector('[onclick*=&quot;goV(\\'tareas\\'&quot;]'))">Tareas</a>.</div>`:'');
 
   el.innerHTML=(tot?'':`<div style="padding:28px 20px;text-align:center;color:var(--tm)"><div style="font-size:36px;margin-bottom:8px">🎉</div><div style="font-size:14px;font-weight:600">Todo al día: no hay nada esperando tu aprobación.</div></div>`)
