@@ -594,6 +594,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 <nav class="sid" id="sidNav">
   <div class="nsep">Principal</div>
   <button class="ni on" onclick="goV('tareas',this)"><span class="ico">📋</span>Tareas<span class="ct" id="ctT">0</span></button>
+  <button class="ni ned oculto" onclick="goV('aprobaciones',this)"><span class="ico">✅</span>Aprobaciones<span class="ct" id="ctA">0</span></button>
   <button class="ni" onclick="goV('asignaciones',this)"><span class="ico">☀️</span>Parte Diario</button>
   <button class="ni" onclick="goV('asigVarias',this)"><span class="ico">🔁</span>Tareas Recurrentes</button>
   <button class="ni" onclick="goV('calendario',this)"><span class="ico">📅</span>Calendario</button>
@@ -699,6 +700,14 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <div id="vacHE" style="padding:48px 20px;text-align:center;color:var(--tm);display:none">
     <div style="font-size:36px;margin-bottom:10px">⏱️</div><div style="font-size:14px;font-weight:500">Sin horas extras registradas.</div>
   </div>
+</div>
+
+<!-- APROBACIONES -->
+<div id="vAprobaciones" class="oculto">
+  <div class="sh2">
+    <div><div class="stit">Aprobaciones</div><div style="font-size:13px;color:var(--tm);margin-top:3px" id="aprobSub"></div></div>
+  </div>
+  <div id="aprobCont"></div>
 </div>
 
 <!-- PERMISOS -->
@@ -892,6 +901,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     </div>
   </div>
   <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px;align-items:center" id="calPubFiltros">
+    <span class="chip" id="chipPrep" onclick="calPubVerPrep=!calPubVerPrep;this.classList.toggle('sel',calPubVerPrep);renderCalPub()" title="Por defecto solo se ve lo aprobado">🛠 Ver también lo que está en preparación</span>
     <span style="font-size:12px;font-weight:600;color:var(--tm)">Plataformas:</span>
     <span class="chip sel" data-plat="ig" onclick="this.classList.toggle('sel');renderCalPub()"><span style="color:#C13584">●</span> Instagram</span>
     <span class="chip sel" data-plat="fb" style="display:none" title="Facebook en pausa" onclick="this.classList.toggle('sel');renderCalPub()"><span style="color:#1877F2">●</span> Facebook</span>
@@ -1621,12 +1631,13 @@ function limpNotifs(){E.notifs=[];renderNotifs();document.getElementById('notifP
 // ════════════════════════
 //  NAVEGACIÓN
 // ════════════════════════
-const VISTAS=['Tareas','Calendario','HorasExtra','Permisos','Equipo','Reportes','Historico','Bitacora','Perfil','CalPub','Asignaciones','AsigVarias'];
+const VISTAS=['Tareas','Aprobaciones','Calendario','HorasExtra','Permisos','Equipo','Reportes','Historico','Bitacora','Perfil','CalPub','Asignaciones','AsigVarias'];
 function goV(v,el){
   cerrarSid();
   if(v==='reportes'&&!puede('verReportes')){alert('Sin permiso.');return;}
   if(v==='historico'&&!puede('verReportes')){alert('Sin permiso.');return;}
   if(v==='bitacora'&&!puede('verBitacora')){alert('Sin permiso.');return;}
+  if(v==='aprobaciones'&&!puede('aprobarHora')){alert('Sin permiso.');return;}
   VISTAS.forEach(n=>document.getElementById('v'+n).classList.add('oculto'));
   document.getElementById('v'+v.charAt(0).toUpperCase()+v.slice(1)).classList.remove('oculto');
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
@@ -1636,6 +1647,7 @@ function goV(v,el){
   if(v==='calendario')renderCal();
   if(v==='equipo')renderEquipo();
   if(v==='permisos')renderPermisos();
+  if(v==='aprobaciones')renderAprob();
   if(v==='historico')renderHist();
   if(v==='perfil')renderPerfil();
   if(v==='calPub'){renderCalPub();localStorage.setItem('cacco_calPubVisto','1');document.querySelectorAll('.new-tag').forEach(el=>el.style.display='none');}
@@ -1652,7 +1664,7 @@ function filtraCat(c,el){
   renderTareas();
 }
 function renderTodo(){renderTareas();renderHoras();if(!document.getElementById('vPermisos')?.classList.contains('oculto'))renderPermisos();renderEquipo();actuCts();if(!document.getElementById('vAsignaciones')?.classList.contains('oculto'))renderAsig();}
-function actuCts(){document.getElementById('ctT').textContent=E.tareas.filter(t=>!t.borrador).length;document.getElementById('ctH').textContent=E.horasExtra.length;const cp=document.getElementById('ctP');if(cp)cp.textContent=(E.permisos||[]).filter(x=>x.aprobacion==='Pendiente'&&(niv!=='colaborador'||x.miembro===uAct?.nombre)).length;}
+function actuCts(){document.getElementById('ctT').textContent=E.tareas.filter(t=>!t.borrador).length;document.getElementById('ctH').textContent=E.horasExtra.length;const ca=document.getElementById('ctA');if(ca&&typeof pendientesAprob==='function'){const n=totAprob(pendientesAprob());ca.textContent=n;ca.style.display=n?'':'none';}const cp=document.getElementById('ctP');if(cp)cp.textContent=(E.permisos||[]).filter(x=>x.aprobacion==='Pendiente'&&(niv!=='colaborador'||x.miembro===uAct?.nombre)).length;}
 
 // ════════════════════════
 //  TAREAS
@@ -3049,7 +3061,16 @@ function vincularEntregablePub(t,ent){
   const tipos=PUB_TIPOS_SECC[ent.seccion];
   const p=(E.publicaciones||[]).filter(p=>p.tareaId===t.id&&!p.entId&&['propuesta','produccion'].includes(pubEst(p))&&!PUB_NO_FEED.concat(tipos?[]:['Historia']).includes(p.tipo)&&(!tipos||tipos.includes(p.tipo||'Post')))
     .sort((a,b)=>((a.fecha<hoy())-(b.fecha<hoy()))||(a.fecha+a.hora).localeCompare(b.fecha+b.hora))[0]; // primero las que aún no pasan
-  if(!p)return;
+  if(!p){
+    // Sin propuesta previa: el video o diseño entra igual a Aprobaciones; al aprobarlo se le pone fecha y pasa al calendario
+    if(!tipos||(E.publicaciones||[]).some(x=>x.entId===ent.id))return;
+    if(!E.publicaciones)E.publicaciones=[];
+    E.publicaciones.push({id:gId(),titulo:t.titulo||ent.nombre,tipo:ent.seccion==='Audiovisual'?'Reel':'Post',plataformas:['ig'],fecha:t.fecha&&t.fecha>=hoy()?t.fecha:hoy(),hora:'',copy:'',notas:'',
+      links:[ent.url],estado:'aprobacion',tareaId:t.id,entId:ent.id,creadoPor:uAct?.nombre,creadoEn:hoy()});
+    reg('Pieza por aprobar',`"${ent.nombre}" de "${t.titulo}" → 👀 Aprobaciones`);
+    addNotif('👀',`Pieza por aprobar: ${t.titulo||ent.nombre}`,`${ent.seccion} · ${ent.nombre}`);
+    return;
+  }
   p.links=[...(p.links||[]),ent.url];p.entId=ent.id;p.estado='aprobacion';
   reg('Publicación actualizada',`"${p.titulo||'—'}" recibió el entregable "${ent.nombre}" → 👀 Por aprobar`);
 }
@@ -3284,11 +3305,15 @@ function getPlatsActivas(){
   return[...document.querySelectorAll('#calPubFiltros .chip.sel')].map(c=>c.dataset.plat);
 }
 
+// El calendario muestra lo aprobado y lo publicado; lo que está en preparación se ve solo si se pide
+let calPubVerPrep=false;
+const pubListo=p=>['aprobado','publicado'].includes(pubEst(p));
 function getPubsDelMes(anio,mes){
   const plats=getPlatsActivas();
   const pubs=[];
   (E.publicaciones||[]).forEach(p=>{
     if(!p.fecha)return;
+    if(!calPubVerPrep&&!pubListo(p))return;
     const [y,m]=p.fecha.split('-').map(Number);
     if(y!==anio||m!==mes)return;
     if(plats.length&&!p.plataformas.some(pl=>plats.includes(pl)))return;
@@ -3307,7 +3332,9 @@ function renderCalPub(){
   const allPubs=getPubsDelMes(anio,mes);
   const cuenta={};allPubs.forEach(p=>{const e=pubEstVis(p);cuenta[e]=(cuenta[e]||0)+1;});
   const cntEl=document.getElementById('calPubCnt');
-  if(cntEl)cntEl.innerHTML=Object.keys(PUB_EST).filter(e=>cuenta[e]).map(e=>`<span style="color:${PUB_EST[e].col};font-weight:600">${PUB_EST[e].lbl} ${cuenta[e]}</span>`).join(' · ')||'<span style="color:var(--tm)">Sin publicaciones este mes</span>';
+  const enPrep=(E.publicaciones||[]).filter(p=>!pubListo(p)).length,porAprob=(E.publicaciones||[]).filter(p=>pubEst(p)==='aprobacion').length;
+  if(cntEl)cntEl.innerHTML=(Object.keys(PUB_EST).filter(e=>cuenta[e]).map(e=>`<span style="color:${PUB_EST[e].col};font-weight:600">${PUB_EST[e].lbl} ${cuenta[e]}</span>`).join(' · ')||`<span style="color:var(--tm)">Sin publicaciones ${calPubVerPrep?'':'aprobadas '}este mes</span>`)
+    +(!calPubVerPrep&&enPrep?` <span style="color:var(--tm)">· ${enPrep} en preparación${porAprob?`, ${porAprob} por aprobar${puede('aprobarPub')?` (<a style="color:var(--az);cursor:pointer" onclick="goV('aprobaciones',document.querySelector('[onclick*=&quot;goV(\'aprobaciones\'&quot;]'))">ir a Aprobaciones</a>)`:''}`:''}</span>`:'');
   setVistaCalPub(calPubVista,true);
   renderPendientesPub();
 }
@@ -4253,6 +4280,97 @@ ${firmaFila('Enterado','','Firma del Jefe de la OIRH',false)}
 </div>`;
   reg('Formulario de compensatorio',`${r.miembro} — ${fmt(r.fecha)}`);
   docOirh(`Uso de tiempo compensatorio — ${r.miembro}`,cuerpo,`Solicitud_Compensatorio_${r.miembro.replace(/\s+/g,'_')}_${r.fecha}.html`,`📄 Uso de tiempo compensatorio — ${r.miembro}`);
+}
+
+// ════════════════════════
+//  APROBACIONES: todo lo que espera visto bueno de Editor o Líder, en un solo lugar
+// ════════════════════════
+// Lo que la persona actual puede aprobar (sus propias solicitudes las aprueba otra persona, salvo el Líder)
+function pendientesAprob(){
+  if(!puede('aprobarHora'))return {pubs:[],horas:[],comp:[],permisos:[],borradores:[]};
+  const ajeno=n=>n!==uAct?.nombre||niv==='lider';
+  const porFecha=(a,b)=>(a.fecha||a.desdeF||'9999').localeCompare(b.fecha||b.desdeF||'9999');
+  return {
+    pubs:(E.publicaciones||[]).filter(p=>pubEst(p)==='aprobacion').sort((a,b)=>((a.fecha||'')+(a.hora||'')).localeCompare((b.fecha||'')+(b.hora||''))),
+    horas:E.horasExtra.filter(h=>!esComp(h)&&h.aprobacion==='Pendiente'&&ajeno(h.miembro)).sort(porFecha),
+    comp:E.horasExtra.filter(h=>esComp(h)&&h.aprobacion==='Pendiente'&&ajeno(h.miembro)).sort(porFecha),
+    permisos:(E.permisos||[]).filter(p=>p.aprobacion==='Pendiente'&&ajeno(p.miembro)).sort(porFecha),
+    borradores:puede('editarTarea')?E.tareas.filter(t=>t.borrador).sort(porFecha):[]
+  };
+}
+function totAprob(q){return q.pubs.length+q.horas.length+q.comp.length+q.permisos.length;}
+function aprobY(fn){fn();renderAprob();}
+// Aprobar una pieza desde Aprobaciones: se confirma fecha, hora, tipo y plataformas, y pasa al calendario
+function aprobarPubAq(id){
+  const p=(E.publicaciones||[]).find(x=>x.id===id);if(!p)return;
+  const f=document.getElementById('apF-'+id).value,h=document.getElementById('apH-'+id).value;
+  const plats=[...document.querySelectorAll('.apP-'+id+':checked')].map(x=>x.value);
+  if(!f){alert('Elige la fecha en que se publica.');return;}
+  if(f<hoy()&&!confirm('Esa fecha ya pasó. ¿Aprobar de todas formas?'))return;
+  if(!plats.length){alert('Elige al menos una plataforma.');return;}
+  p.fecha=f;p.hora=h||p.hora||'';p.tipo=document.getElementById('apT-'+id).value;p.plataformas=plats;
+  const mismoDia=(E.publicaciones||[]).filter(x=>x.id!==id&&x.fecha===f&&pubListo(x)&&esFeed(x)).length;
+  if(esFeed(p)&&mismoDia>=PUB_MAX_DIA&&!confirm(`Ese día ya hay ${mismoDia} publicaciones de feed aprobadas (máximo ${PUB_MAX_DIA}). ¿Aprobar igual?`))return;
+  aprobY(()=>cambiarEstadoPub(id,'aprobado'));
+}
+function renderAprob(){
+  const el=document.getElementById('aprobCont');if(!el)return;
+  const q=pendientesAprob(),tot=totAprob(q);
+  document.getElementById('aprobSub').textContent=tot?`${tot} pendiente${tot===1?'':'s'} de tu visto bueno`+(q.borradores.length?` · ${q.borradores.length} borrador${q.borradores.length===1?'':'es'} de tareas por revisar`:''):'Nada pendiente de aprobación'+(q.borradores.length?` · ${q.borradores.length} borradores de tareas por revisar`:'');
+  actuCts();
+  const caja=(ico,tit,n,cuerpo,nota)=>n?`<div style="margin-bottom:22px">
+    <div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px">${ico} ${tit} <span style="background:var(--ams);color:var(--am);padding:1px 7px;border-radius:10px">${n}</span>${nota?`<span style="text-transform:none;font-weight:500;letter-spacing:0">${nota}</span>`:''}</div>
+    <div style="display:flex;flex-direction:column;gap:8px">${cuerpo}</div></div>`:'';
+  const fila=(izq,der,extra='')=>`<div class="hecard" style="padding:12px 16px"><div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap"><div style="flex:1;min-width:220px">${izq}</div><div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">${der}</div></div>${extra}</div>`;
+  const alerta=t=>`<div class="al alam" style="font-size:12px;line-height:1.45;margin:8px 0 0;padding:6px 10px">⚠️ ${escH(t)}</div>`;
+  const sub=t=>`<div style="font-size:12px;color:var(--tm);margin-top:3px;line-height:1.45">${t}</div>`;
+  const PLAT={ig:'Instagram',fb:'Facebook',tt:'TikTok',rd:'Radio',tv:'TV',pr:'Prensa',yt:'YouTube'};
+
+  const pubs=q.pubs.map(p=>fila(
+    `<div style="font-size:14px;font-weight:700">${escH(p.titulo||'(Sin título)')} ${pubTipoBadge(p)} ${pubBadge(p)}</div>`+
+    sub(`📅 ${fmt(p.fecha)}${p.hora?' · '+p.hora:''} · ${(p.plataformas||[]).map(x=>PLAT[x]||x).join(', ')||'Sin plataforma'}${p.responsableNombre?' · '+escH(p.responsableNombre):''}`)+
+    (p.copy?sub('✍️ '+escH(p.copy.length>220?p.copy.slice(0,220)+'…':p.copy)):'')+
+    ((p.links||[]).length?sub((p.links||[]).map((l,i)=>`<a href="${escH(l)}" target="_blank" rel="noopener" style="color:var(--az)">🔗 Ver pieza${p.links.length>1?' '+(i+1):''}</a>`).join(' · ')):sub('Sin pieza adjunta todavía')),
+    `<button class="btn bve bsm" onclick="aprobarPubAq('${p.id}')">👍 Aprobar y programar</button><button class="btn bgh bsm" onclick="aprobY(()=>cambiarEstadoPub('${p.id}','produccion'))">↩ Devolver</button>`,
+    `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--bo);font-size:12px">
+      <span style="color:var(--tm)">Sale en el calendario el</span>
+      <input type="date" class="fc" id="apF-${p.id}" value="${p.fecha||''}" style="width:auto;padding:4px 8px;font-size:12px">
+      <input type="time" class="fc" id="apH-${p.id}" value="${p.hora||''}" style="width:auto;padding:4px 8px;font-size:12px">
+      <select class="fc" id="apT-${p.id}" style="width:auto;padding:4px 8px;font-size:12px">${PUB_TIPOS.map(t=>`<option${t===(p.tipo||'Post')?' selected':''}>${t}</option>`).join('')}</select>
+      ${['ig','tt','yt','fb','rd','tv','pr'].filter(k=>k!=='fb'||(p.plataformas||[]).includes('fb')).map(k=>`<label style="display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" class="apP-${p.id}" value="${k}"${(p.plataformas||[]).includes(k)?' checked':''}> ${PLAT[k]}</label>`).join('')}
+    </div>`+(p.fecha&&p.fecha<hoy()?alerta('La fecha de publicación ya pasó: elige una nueva antes de aprobar.'):''))).join('');
+
+  const sem=alertasHorasExtra(E.horasExtra);
+  const horas=q.horas.map(h=>{const s=sem.find(a=>a.miembro===h.miembro&&a.lunes===lunesDe(h.fecha));return fila(
+    `<div style="font-size:14px;font-weight:700">${rAv(h.miembro,'',22,8)} ${escH(h.miembro)} · <span style="color:var(--na)">${fmtH(parseFloat(h.horas||0))}</span></div>`+
+    sub(`📅 ${fmt(h.fecha)}${h.desde&&h.hasta?' · 🕒 '+h.desde+'–'+h.hasta:''}${h.feriado?' · Feriado':h.tipoDia==='sabado'?' · Sábado':h.tipoDia==='domingo'?' · Domingo':''}`)+sub(escH(h.actividad||'')),
+    `<button class="btn bve bsm" onclick="aprobY(()=>aprobarH('${h.id}',true))">✅ Aprobar</button><button class="btn bpe bsm" onclick="aprobY(()=>aprobarH('${h.id}',false))">❌ Rechazar</button>`,
+    s?alerta(s.texto):'');}).join('');
+
+  const comp=q.comp.map(h=>{const sc=saldoComp(h.miembro).saldo,n=parseFloat(h.horas||0);return fila(
+    `<div style="font-size:14px;font-weight:700">${rAv(h.miembro,'',22,8)} ${escH(h.miembro)} · <span style="color:var(--az)">−${fmtD(n)}</span></div>`+
+    sub(`📅 ${fmt(h.fecha)}${h.fechaFin&&h.fechaFin!==h.fecha?' al '+fmt(h.fechaFin):''}${h.desde&&h.hasta?' · 🕒 '+h.desde+'–'+h.hasta:''} · Saldo aprobado: ${fmtSaldo(sc)}`)+sub(escH(h.actividad||'')),
+    `<button class="btn bve bsm" onclick="aprobY(()=>aprobarH('${h.id}',true))">✅ Aprobar</button><button class="btn bpe bsm" onclick="aprobY(()=>aprobarH('${h.id}',false))">❌ Rechazar</button><button class="btn bgh bsm" onclick="solCompDoc('${h.id}')">📄 Formulario</button>`,
+    n>sc+1e-9?alerta(`Pide más de lo que tiene en su saldo aprobado (${fmtSaldo(sc)}).`):'');}).join('');
+
+  const pers=q.permisos.map(p=>fila(
+    `<div style="font-size:14px;font-weight:700">${rAv(p.miembro,'',22,8)} ${escH(p.miembro)} · <span style="color:var(--az)">${fmtDHM(minPer(p))}</span></div>`+
+    sub(`${p.motivo}. ${escH(MOTIVOS_PER[p.motivo-1]||'')}${p.motivo===2&&PARENTESCO_DUELO[p.parentesco]?' · '+PARENTESCO_DUELO[p.parentesco][0]:''}`)+
+    sub(`📅 ${p.desdeF===p.hastaF?`${fmt(p.desdeF)} · ${p.desdeH||''}–${p.hastaH||''}`:`${fmt(p.desdeF)} ${p.desdeH||''} al ${fmt(p.hastaF)} ${p.hastaH||''}`}${p.comprobante?' · 📎 Con comprobante':''}`)+(p.detalle?sub(escH(p.detalle)):''),
+    `<button class="btn bve bsm" onclick="aprobY(()=>aprobarPer('${p.id}',true))">✅ Aprobar</button><button class="btn bpe bsm" onclick="aprobY(()=>aprobarPer('${p.id}',false))">❌ Rechazar</button><button class="btn bgh bsm" onclick="permisoDoc('${p.id}')">📄 Formulario</button>`,
+    alertasPermiso(p).map(alerta).join(''))).join('');
+
+  const MAXB=12,bors=q.borradores.slice(0,MAXB).map(t=>fila(
+    `<div style="font-size:14px;font-weight:700">${escH(t.titulo||'(Sin título)')}</div>`+sub(`📝 Borrador${t.fecha?' · 📅 '+fmt(t.fecha)+(t.hora?' '+t.hora:''):''}${t.creadaPor?' · '+escH(t.creadaPor):''}`),
+    `<button class="btn bna bsm" onclick="abrirMT('${t.id}')">✏️ Completar y publicar</button>`)).join('')
+    +(q.borradores.length>MAXB?`<div style="font-size:12px;color:var(--tm)">… y ${q.borradores.length-MAXB} más en <a style="color:var(--az);cursor:pointer" onclick="goV('tareas',document.querySelector('[onclick*=&quot;goV(\\'tareas\\'&quot;]'))">Tareas</a>.</div>`:'');
+
+  el.innerHTML=(tot?'':`<div style="padding:28px 20px;text-align:center;color:var(--tm)"><div style="font-size:36px;margin-bottom:8px">🎉</div><div style="font-size:14px;font-weight:600">Todo al día: no hay nada esperando tu aprobación.</div></div>`)
+    +caja('👀','Publicaciones por aprobar',q.pubs.length,pubs)
+    +caja('📝','Permisos',q.permisos.length,pers)
+    +caja('🌴','Tiempo compensatorio',q.comp.length,comp)
+    +caja('⏱️','Horas extra',q.horas.length,horas)
+    +caja('🗂️','Borradores de tareas',q.borradores.length,bors,'· se publican al completarlos');
 }
 
 // ════════════════════════
@@ -6102,6 +6220,7 @@ function refrescarVistaAbierta(){
     if(vis('vTareas'))renderTareas();
     if(vis('vHorasExtra'))renderHoras();
     if(vis('vPermisos'))renderPermisos();
+    if(vis('vAprobaciones'))renderAprob();
     if(vis('vEquipo'))renderEquipo();
     if(vis('vCalendario'))renderCal();
     if(vis('vAsignaciones'))renderAsig();
