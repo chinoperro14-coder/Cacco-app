@@ -3994,14 +3994,14 @@ const minPer=p=>parseInt(p.totalMin||0);
 const anioDe=f=>(f||'').slice(0,4);
 // Art. 55: hasta 18 días (144 horas laborables) al año en permisos, sumando todos los motivos
 function uso144(nombre,anio,salvoId){
-  return (E.permisos||[]).filter(p=>p.miembro===nombre&&p.aprobacion!=='Rechazado'&&p.id!==salvoId&&anioDe(p.desdeF)===anio).reduce((t,p)=>t+minPer(p),0);
+  return (E.permisos||[]).filter(p=>p.miembro===nombre&&perVigente(p)&&p.id!==salvoId&&anioDe(p.desdeF)===anio).reduce((t,p)=>t+minPer(p),0);
 }
 // Tope por motivo (días laborables por solicitud), art. 55
 const PARENTESCO_DUELO={p1:['Padre, madre, hermanos, hijos o cónyuge',5],p2:['Abuelos, nietos, suegros, yernos o nueras',3],p3:['Tíos, sobrinos, primos o cuñados',1]};
 const TOPE_MOTIVO={3:5,4:5,5:3,6:3,7:3};
 // Alertas del Reglamento Interno para una solicitud de permiso (r puede ser un borrador del formulario)
 function alertasPermiso(r){
-  const out=[],dias=minPer(r)/MIN_DIA,anio=anioDe(r.desdeF),otros=(E.permisos||[]).filter(p=>p.miembro===r.miembro&&p.id!==r.id&&p.aprobacion!=='Rechazado');
+  const out=[],dias=minPer(r)/MIN_DIA,anio=anioDe(r.desdeF),otros=(E.permisos||[]).filter(p=>p.miembro===r.miembro&&p.id!==r.id&&perVigente(p));
   const nd=n=>`${Math.round(n*100)/100} día${n===1?'':'s'}`;
   const usado=uso144(r.miembro,anio,r.id),tot=usado+minPer(r);
   if(tot>TOPE_144){
@@ -4075,7 +4075,7 @@ function renderPermisos(){
   if(puede('aprobarHora')&&pen.length){al.classList.remove('oculto');document.getElementById('txPer').textContent=`${pen.length} permiso(s) pendiente(s) de aprobación.`;}
   else al.classList.add('oculto');
   actuCts();
-  panelAlertas('regPer',ps.filter(p=>p.aprobacion!=='Rechazado'&&anioDe(p.desdeF)===anio).flatMap(p=>alertasPermiso(p).map(t=>`${p.miembro} (${fmt(p.desdeF)}): ${t}`)));
+  panelAlertas('regPer',ps.filter(p=>perVigente(p)&&anioDe(p.desdeF)===anio).flatMap(p=>alertasPermiso(p).map(t=>`${p.miembro} (${fmt(p.desdeF)}): ${t}`)));
 
   // Resumen por persona (Editor y Líder)
   const res=document.getElementById('perResumen');
@@ -4091,13 +4091,13 @@ function renderPermisos(){
   const vis=[...ps].sort((a,b)=>(b.desdeF||'').localeCompare(a.desdeF||''));
   if(!vis.length){grid.innerHTML='';vac.style.display='block';return;}
   vac.style.display='none';
-  const bA={Pendiente:'bpen',Aprobado:'bapr',Rechazado:'brec'};
+  const bA={Pendiente:'bpen',Aprobado:'bapr',Rechazado:'brec',Anulado:'brec'};
   grid.innerHTML=vis.map(p=>{
     const propia=p.miembro===uAct?.nombre;
     const btnApro=puede('aprobarHora')&&p.aprobacion==='Pendiente'&&(!propia||niv==='lider')
       ?`<button class="btn bve bsm" onclick="aprobarPer('${p.id}',true)">✅ Aprobar</button><button class="btn bpe bsm" onclick="aprobarPer('${p.id}',false)">❌ Rechazar</button>`
       :`<span class="bg ${bA[p.aprobacion]||'bgr'}">${p.aprobacion}</span>`;
-    const puedeEd=niv==='lider'||(propia&&p.aprobacion==='Pendiente');
+    const puedeEd=p.aprobacion!=='Anulado'&&(niv==='lider'||(propia&&p.aprobacion==='Pendiente'));
     const rango=p.desdeF===p.hastaF?`${fmt(p.desdeF)} · ${p.desdeH||''}–${p.hastaH||''}`:`${fmt(p.desdeF)} ${p.desdeH||''} al ${fmt(p.hastaF)} ${p.hastaH||''}`;
     return `<div class="hecard">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;gap:8px">
@@ -4108,14 +4108,15 @@ function renderPermisos(){
       ${p.motivo===2&&PARENTESCO_DUELO[p.parentesco]?`<div style="font-size:12px;color:var(--tm);margin-bottom:4px">${PARENTESCO_DUELO[p.parentesco][0]}${p.lejos?' · con traslado':''}</div>`:''}
       ${p.detalle?`<div style="font-size:13px;color:var(--tm);margin-bottom:8px;line-height:1.5">${escH(p.detalle)}</div>`:''}
       ${p.comprobante?'<div style="font-size:12px;color:var(--tm);margin-bottom:4px">📎 Presentó comprobante</div>':''}
-      ${p.aprobacion!=='Rechazado'?alertasPermiso(p).map(t=>`<div class="al alam" style="font-size:12px;line-height:1.45;margin:6px 0 0;padding:6px 10px">⚠️ ${escH(t)}</div>`).join(''):''}
+      ${p.aprobacion==='Anulado'?`<div style="font-size:12px;color:var(--ro);margin-bottom:4px">🚫 Anulada por ${escH(p.anuladoPor||'?')}${p.fechaAnul?' el '+fmt(p.fechaAnul):''}${p.motivoAnul?': '+escH(p.motivoAnul):''}</div>`:''}
+      ${perVigente(p)?alertasPermiso(p).map(t=>`<div class="al alam" style="font-size:12px;line-height:1.45;margin:6px 0 0;padding:6px 10px">⚠️ ${escH(t)}</div>`).join(''):''}
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-top:8px">
         <span style="font-size:11px;color:var(--tm)">📅 ${rango}</span>
         <div style="display:flex;gap:5px;flex-wrap:wrap">${btnApro}<button class="btn bgh bsm" onclick="permisoDoc('${p.id}')">📄 Formulario</button></div>
       </div>
-      ${puedeEd?`<div style="display:flex;gap:5px;border-top:1px solid var(--bo);padding-top:10px;margin-top:10px">
-          <button class="btn bgh bsm" style="flex:1" onclick="abrirMPer('${p.id}')">✏️ Editar</button>
-          <button class="btn bpe bsm" onclick="elimPer('${p.id}')">🗑</button></div>`:''}
+      ${puedeEd||puedeAnularPer(p)?`<div style="display:flex;gap:5px;border-top:1px solid var(--bo);padding-top:10px;margin-top:10px">
+          ${puedeEd?`<button class="btn bgh bsm" style="flex:1" onclick="abrirMPer('${p.id}')">✏️ Editar</button>`:''}
+          ${puedeAnularPer(p)?`<button class="btn bpe bsm" onclick="anularPer('${p.id}')" title="La solicitud queda en el historial como anulada">🚫 Anular</button>`:''}</div>`:''}
     </div>`;
   }).join('');
 }
@@ -4123,6 +4124,7 @@ function renderPermisos(){
 function abrirMPer(id){
   if(!puede('registrarHora')){alert('Sin permiso para solicitar permisos.');return;}
   const p=id?E.permisos.find(x=>x.id===id):null;
+  if(p&&p.aprobacion==='Anulado'){alert('Esta solicitud está anulada y no se puede editar.');return;}
   if(p&&!(niv==='lider'||(p.miembro===uAct?.nombre&&p.aprobacion==='Pendiente'))){alert('Solo el Líder puede editar un permiso ya revisado.');return;}
   document.getElementById('mPerTit').textContent=p?'Editar solicitud de permiso':'Solicitud de permiso';
   document.getElementById('perId').value=id||'';
@@ -4210,13 +4212,25 @@ function aprobarPer(id,ok){
   addNotif(ok?'✅':'❌',`Permiso ${ok?'aprobado':'rechazado'}: ${p.miembro}`,`${MOTIVOS_PER[p.motivo-1]} · ${fmt(p.desdeF)}`);
   guardar();renderPermisos();
 }
-function elimPer(id){
-  const p=E.permisos.find(x=>x.id===id);if(!p)return;
-  if(!(niv==='lider'||(p.miembro===uAct?.nombre&&p.aprobacion==='Pendiente'))){alert('Solo el Líder puede eliminar un permiso ya revisado.');return;}
-  if(!confirm(`¿Eliminar la solicitud de permiso de ${p.miembro} (${fmt(p.desdeF)})?`))return;
-  E.permisos=E.permisos.filter(x=>x.id!==id);
-  reg('Permiso eliminado',`${p.miembro} — ${MOTIVOS_PER[p.motivo-1]} — ${fmt(p.desdeF)} — por ${uAct?.nombre}`);
-  guardar();renderPermisos();
+// Las solicitudes de permiso nunca se borran: se anulan y quedan en el historial.
+// Rechazadas y anuladas no cuentan en las 144 h ni en las alertas.
+const perVigente=p=>!['Rechazado','Anulado'].includes(p.aprobacion);
+function puedeAnularPer(p){
+  if(!p||!perVigente(p))return false;
+  const propia=p.miembro===uAct?.nombre;
+  if(propia&&p.aprobacion==='Pendiente')return true;          // quien la pidió puede retirarla mientras está pendiente
+  return puede('aprobarHora')&&(!propia||niv==='lider');       // Líder/Editor, igual que para aprobar
+}
+function anularPer(id){
+  const p=(E.permisos||[]).find(x=>x.id===id);if(!p)return;
+  if(!puedeAnularPer(p)){alert('No puedes anular esta solicitud.');return;}
+  const motivo=prompt(`Anular la solicitud de permiso de ${p.miembro} (${fmt(p.desdeF)}).\n\nNo se borra: queda en el historial como «Anulada» y deja de contar en las 144 h.\n\nMotivo de la anulación:`,'');
+  if(motivo===null)return;
+  if(!motivo.trim()){alert('Escribe el motivo de la anulación.');return;}
+  p.aprobacion='Anulado';p.anuladoPor=uAct?.nombre;p.fechaAnul=hoy();p.motivoAnul=motivo.trim();
+  reg('Permiso anulado',`${p.miembro} — ${MOTIVOS_PER[p.motivo-1]} — ${fmt(p.desdeF)} — por ${uAct?.nombre}: ${p.motivoAnul}`);
+  if(p.miembro!==uAct?.nombre)addNotif('🚫',`Permiso anulado: ${p.miembro}`,`${MOTIVOS_PER[p.motivo-1]} · ${fmt(p.desdeF)} · ${p.motivoAnul}`);
+  guardar();refrescarVistaAbierta();
 }
 
 // ── Formularios impresos de la OIRH (carta vertical, iguales al papel) ──

@@ -125,8 +125,20 @@ app.get("/api/data", verificarToken, async (req, res) => {
   try { res.json(await leerData()); }
   catch { res.status(500).json({ error: "Error leyendo datos" }); }
 });
+// Las solicitudes de permiso no se borran: si un guardado omite alguna que ya existe, se conserva.
+async function conservarPermisos(nuevo) {
+  if (!nuevo || typeof nuevo !== "object") return nuevo;
+  const actual = await leerData();
+  const previos = Array.isArray(actual?.permisos) ? actual.permisos : [];
+  if (!previos.length) return nuevo;
+  const lista = Array.isArray(nuevo.permisos) ? nuevo.permisos : [];
+  const ids = new Set(lista.map(p => p && p.id));
+  const faltan = previos.filter(p => p && p.id && !ids.has(p.id));
+  if (faltan.length) nuevo.permisos = [...lista, ...faltan];
+  return nuevo;
+}
 app.post("/api/data", verificarToken, async (req, res) => {
-  try { await escribirData(req.body); res.json({ ok: true }); }
+  try { await escribirData(await conservarPermisos(req.body)); res.json({ ok: true }); }
   catch { res.status(500).json({ error: "No se pudo guardar" }); }
 });
 
