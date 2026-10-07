@@ -1067,14 +1067,14 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 
 <!-- MODAL ANULAR PERMISO -->
 <div class="mov" id="mAnular"><div class="mo" style="max-width:460px">
-  <div class="mcab"><div class="mtit">🚫 Anular solicitud de permiso</div><button class="mx" onclick="cerM('mAnular')">×</button></div>
+  <div class="mcab"><div class="mtit">🚫 Anular permiso</div><button class="mx" onclick="cerM('mAnular')">×</button></div>
   <div class="mbody">
     <input type="hidden" id="anId">
     <div id="anTxt" style="font-size:13px;color:var(--tm);line-height:1.5;margin-bottom:12px"></div>
-    <div class="fg"><label class="fl">Motivo de la anulación *</label><textarea class="fc" id="anMot" placeholder="ej. Ya no necesito el permiso"></textarea>
-      <div id="anErr" style="display:none;font-size:12px;color:var(--ro);margin-top:4px">Escribe el motivo de la anulación.</div></div>
+    <div class="fg"><label class="fl">Motivo *</label><textarea class="fc" id="anMot" rows="2"></textarea>
+      <div id="anErr" style="display:none;font-size:12px;color:var(--ro);margin-top:4px">Escribe el motivo.</div></div>
   </div>
-  <div class="mpie"><button class="btn bgh" onclick="cerM('mAnular')">Volver</button><button class="btn bpe" onclick="confirmarAnular()">🚫 Anular solicitud</button></div>
+  <div class="mpie"><button class="btn bgh" onclick="cerM('mAnular')">Volver</button><button class="btn bpe" onclick="confirmarAnular()">🚫 Anular</button></div>
 </div></div>
 
 <!-- MODAL TIEMPO COMPENSATORIO -->
@@ -4491,7 +4491,7 @@ function anularPer(id){
   if(!puedeAnularPer(p)){alert('No puedes anular esta solicitud.');return;}
   // Ventana propia para el motivo (prompt() del navegador no funciona en todos los visores)
   document.getElementById('anId').value=id;
-  document.getElementById('anTxt').textContent=`Solicitud de permiso de ${p.miembro} (${fmt(p.desdeF)}). No se borra: queda en el historial como «Anulada» y deja de contar en las 144 h.`;
+  document.getElementById('anTxt').textContent=`${p.miembro} · ${fmt(p.desdeF)}`;
   document.getElementById('anMot').value='';document.getElementById('anErr').style.display='none';
   abrirM('mAnular');setTimeout(()=>document.getElementById('anMot').focus(),50);
 }
