@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es-PA">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -8,6 +8,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 :root{--na:#E35205;--na2:#c44604;--nas:#fff4ee;--nab:#fcd9c4;--fo:#f5f4f2;--su:#ffffff;--su2:#f0eeeb;--bo:#e2ddd8;--tx:#1a1816;--tm:#6b6258;--ve:#166534;--ves:#dcfce7;--az:#1e40af;--azs:#dbeafe;--ro:#991b1b;--ros:#fee2e2;--am:#92400e;--ams:#fef3c7;--mo:#5b21b6;--mos:#ede9fe;--r:10px;--rs:6px;--sh:0 1px 3px rgba(0,0,0,.07),0 4px 12px rgba(0,0,0,.05);--shm:0 4px 16px rgba(0,0,0,.10),0 1px 4px rgba(0,0,0,.06);}
 body.osc{--fo:#111113;--su:#1e1e21;--su2:#28282d;--bo:#3a3a42;--tx:#f0f0f5;--tm:#9999aa;--nas:#2c1400;--nab:#7a3500;--ve:#4ade80;--ves:#0d2e1a;--az:#60a5fa;--azs:#1a2e4a;--ro:#f87171;--ros:#2e0e0e;--am:#fbbf24;--ams:#2e1e00;--mo:#c084fc;--mos:#1e1030;}
+body.osc .tint{background:color-mix(in srgb,var(--sc) 18%,var(--su))!important;}
 body.hc{--tx:#000;--fo:#fff;--su:#fff;--su2:#f0f0f0;--bo:#000;--tm:#333;}
 body.osc.hc{--tx:#fff;--fo:#000;--su:#000;--su2:#111;--bo:#fff;--tm:#ccc;}
 *{margin:0;padding:0;box-sizing:border-box;}html{font-size:15px;}
@@ -87,7 +88,7 @@ header{background:var(--na);height:60px;display:flex;align-items:center;justify-
 .ssub{font-size:12px;color:var(--tm);margin-top:4px;}
 /* SEM */
 .sem{display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:20px;font-size:14px;font-weight:700;margin-bottom:20px;}
-.sver{background:var(--ves);color:var(--ve);}.samar{background:var(--ams);color:var(--am);}.sroj{background:var(--ros);color:var(--ro);}
+.sver{background:var(--ves);color:var(--ve);}.samar{background:var(--ams);color:var(--am);}.sroj{background:var(--ros);color:var(--ro);}.sgris{background:var(--su2);color:var(--tm);}
 /* TABLA */
 .tc{background:var(--su);border:1px solid var(--bo);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;}
 .ttop{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--bo);flex-wrap:wrap;gap:12px;}
@@ -117,6 +118,11 @@ textarea.fc{resize:vertical;min-height:80px;}
 /* MODALES */
 .mov{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:500;padding:20px;backdrop-filter:blur(2px);}
 .mov.on{display:flex;}
+.fhint{font-size:11px;color:var(--tm);margin-top:3px;}.fhint:empty{display:none;}
+#toasts{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:700;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;width:calc(100% - 32px);max-width:440px;}
+.toast{pointer-events:auto;background:var(--tx);color:var(--su);border-radius:10px;padding:11px 16px;font-size:13px;line-height:1.5;box-shadow:0 8px 24px rgba(0,0,0,.25);white-space:pre-line;border-left:4px solid var(--na);cursor:pointer;width:100%;animation:tIn .18s ease-out;}
+.toast.ok{border-left-color:#22c55e;}.toast.mal{border-left-color:#ef4444;}.toast.av{border-left-color:#f59e0b;}
+@keyframes tIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .mo{background:var(--su);border-radius:14px;border:1px solid var(--bo);width:100%;max-width:560px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.22);}
 .molg{max-width:720px;}
 .mcab{display:flex;align-items:center;justify-content:space-between;padding:22px 26px 18px;border-bottom:1px solid var(--bo);position:sticky;top:0;background:var(--su);z-index:1;border-radius:14px 14px 0 0;}
@@ -348,8 +354,8 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 
 @media(max-width:768px){
   /* Sidebar drawer */
-  .sid{position:fixed;top:60px;left:0;height:calc(100vh - 60px);z-index:300;transform:translateX(-100%);transition:transform .25s ease;box-shadow:4px 0 16px rgba(0,0,0,.25);}
-  .sid.open{transform:translateX(0);}
+  .sid{position:fixed;top:60px;left:0;height:calc(100vh - 60px);z-index:300;transform:translateX(-100%);transition:transform .25s ease,box-shadow .25s;box-shadow:none;}
+  .sid.open{transform:translateX(0);box-shadow:4px 0 16px rgba(0,0,0,.25);}
   .sid-overlay{display:none;position:fixed;inset:0;top:60px;background:rgba(0,0,0,.4);z-index:299;}
   .sid-overlay.open{display:block;}
   /* Header */
@@ -511,8 +517,8 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 
     <!-- FORMULARIO -->
     <div class="login-card">
-      <div class="login-card-title">Bienvenido</div>
-      <div class="login-card-sub">Ingrese sus credenciales para continuar</div>
+      <div class="login-card-title">Te damos la bienvenida</div>
+      <div class="login-card-sub">Entra con tu correo y contraseña</div>
 
       <div class="fg">
         <label class="fl" for="loginUser">Correo electrónico</label>
@@ -575,13 +581,13 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   </div>
   <div class="hr">
     <div style="display:flex;gap:4px">
-      <button class="acb" onclick="togOsc()" id="btnOsc">🌙</button>
-      <button class="acb" onclick="togHC()" id="btnHC">◐</button>
-      <button class="acb" onclick="ajTxt(1)">A+</button>
-      <button class="acb" onclick="ajTxt(-1)">A−</button>
+      <button class="acb" onclick="togOsc()" id="btnOsc" title="Modo oscuro" aria-label="Modo oscuro">🌙</button>
+      <button class="acb" onclick="togHC()" id="btnHC" title="Alto contraste" aria-label="Alto contraste">🔳</button>
+      <button class="acb" onclick="ajTxt(1)" title="Letra más grande" aria-label="Letra más grande">A+</button>
+      <button class="acb" onclick="ajTxt(-1)" title="Letra más pequeña" aria-label="Letra más pequeña">A−</button>
     </div>
-    <button class="acb" onclick="sincronizar()" title="Actualizar datos" id="btnSync">🔄</button>
-    <button class="nb" onclick="togNotif()">🔔<span class="ndot" id="ndot"></span></button>
+    <button class="acb" onclick="sincronizar()" title="Actualizar datos" aria-label="Actualizar datos" id="btnSync">🔄</button>
+    <button class="nb" onclick="togNotif()" title="Notificaciones" aria-label="Notificaciones">🔔<span class="ndot" id="ndot"></span></button>
     <div class="uch" onclick="goV('perfil',null)" role="button" tabindex="0">
       <div id="hdrAv" style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0;"></div>
       <span class="unom" id="hdrNom">Usuario</span>
@@ -602,10 +608,10 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <button class="ni" onclick="goV('compensatorio',this)"><span class="ico">🌴</span>Compensatorio<span class="ct" id="ctC">0</span></button>
   <button class="ni" onclick="goV('permisos',this)"><span class="ico">📝</span>Permisos<span class="ct" id="ctP">0</span></button>
   <button class="ni" onclick="goV('equipo',this)"><span class="ico">👥</span>Equipo</button>
-  <div class="nsep">Coordinación</div>
+  <div class="nsep ned oculto">Coordinación</div>
   <button class="ni nle ned oculto" onclick="goV('reportes',this)"><span class="ico">📊</span>Reportes</button>
   <button class="ni nle oculto" onclick="goV('historico',this)"><span class="ico">🗂️</span>Histórico</button>
-  <button class="ni nle oculto" onclick="goV('bitacora',this)"><span class="ico">📝</span>Bitácora</button>
+  <button class="ni nle oculto" onclick="goV('bitacora',this)"><span class="ico">📜</span>Bitácora</button>
   <div class="nsep">Filtrar tareas por sección</div>
   <div class="nfilts">
     <button class="nfilt on" onclick="filtraCat('todos',this)"><span class="ico">🔘</span>Todas</button>
@@ -779,8 +785,8 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     </div>
   </div>
   <div class="rtabs">
-    <button class="rtab on" onclick="swTab('diario',this)">Diario</button>
-    <button class="rtab" onclick="swTab('semanal',this)">Semanal</button>
+    <button class="rtab" onclick="swTab('diario',this)">Diario</button>
+    <button class="rtab on" onclick="swTab('semanal',this)">Semanal</button>
     <button class="rtab" onclick="swTab('mensual',this)">Mensual</button>
   </div>
   <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0 4px">
@@ -807,7 +813,6 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 <div id="vBitacora" class="oculto">
   <div class="sh2">
     <div class="stit">Bitácora de Cambios</div>
-    <button class="btn bpe bsm" onclick="limpBit()">🗑 Limpiar</button>
   </div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
     <div style="position:relative;flex:1;min-width:160px;max-width:260px">
@@ -973,7 +978,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <div style="font-size:13px;color:var(--tm);margin-bottom:16px">Debes ingresar tu contraseña actual para confirmar el cambio.</div>
     <div class="fr">
       <div class="fg"><label class="fl">Contraseña actual</label><input type="password" class="fc" id="pPassActual" placeholder="••••••••"></div>
-      <div class="fg"><label class="fl">Nueva contraseña</label><input type="password" class="fc" id="pPassNueva" placeholder="Mínimo 4 caracteres"></div>
+      <div class="fg"><label class="fl">Nueva contraseña</label><input type="password" class="fc" id="pPassNueva" placeholder="Mínimo 8 caracteres"></div>
       <div class="fg"><label class="fl">Confirmar nueva</label><input type="password" class="fc" id="pPassConf" placeholder="Repite la nueva"></div>
     </div>
     <div id="pPassMsg" style="display:none;font-size:13px;padding:10px 14px;border-radius:6px;margin-bottom:12px"></div>
@@ -1057,7 +1062,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <div style="font-size:12px;color:var(--tm);margin:-4px 0 12px;line-height:1.5" id="hSaldoInfo"></div>
     <div class="hSoloExtra" style="font-size:12px;color:var(--tm);margin:-4px 0 12px;line-height:1.5" id="hRegla">Día laboral: cuenta lo trabajado antes de 8:00 a. m. o después de 4:00 p. m., siempre que sea 1 hora o más (Reglamento Interno, art. 74). Sábado, domingo o feriado: cuenta toda la jornada.</div>
     <div class="hSoloExtra al alam" id="hAvisoReg" style="display:none;margin:-4px 0 12px;font-size:12.5px;line-height:1.5"></div>
-    <div class="fg"><label class="fl" id="hActLbl">Actividad *</label><textarea class="fc" id="hAct" placeholder="Describa la actividad realizada..."></textarea></div>
+    <div class="fg"><label class="fl" id="hActLbl">Actividad *</label><textarea class="fc" id="hAct" placeholder="Describe la actividad realizada…"></textarea></div>
     <div class="fg" id="hAproGrupo" style="display:none"><label class="fl">Aprobación</label>
       <select class="fc" id="hApro"><option value="Pendiente">⏳ Pendiente</option><option value="Aprobado">✅ Aprobado</option><option value="Rechazado">❌ Rechazado</option></select>
     </div>
@@ -1076,6 +1081,18 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   </div>
   <div class="mpie"><button class="btn bgh" onclick="cerM('mAnular')">Volver</button><button class="btn bpe" onclick="confirmarAnular()">🚫 Anular</button></div>
 </div></div>
+
+<!-- DIÁLOGO PROPIO (reemplaza prompt/confirm del navegador, que algunos visores bloquean) -->
+<div class="mov" id="mDlg" style="z-index:600"><div class="mo" style="max-width:440px">
+  <div class="mcab"><div class="mtit" id="dlgTit"></div><button class="mx" onclick="dlgFin(null)">×</button></div>
+  <div class="mbody">
+    <div id="dlgMsg" style="font-size:13px;color:var(--tm);line-height:1.55;white-space:pre-line"></div>
+    <div class="fg" id="dlgCampo" style="margin-top:12px"><label class="fl" id="dlgLbl"></label><textarea class="fc" id="dlgTxt" rows="2"></textarea>
+      <div id="dlgErr" style="display:none;font-size:12px;color:var(--ro);margin-top:4px"></div></div>
+  </div>
+  <div class="mpie"><button class="btn bgh" id="dlgNo" onclick="dlgFin(null)">Cancelar</button><button class="btn bna" id="dlgSi" onclick="dlgOk()">Aceptar</button></div>
+</div></div>
+<div id="toasts" aria-live="polite"></div>
 
 <!-- MODAL TIEMPO COMPENSATORIO -->
 <div class="mov" id="mComp"><div class="mo">
@@ -1207,7 +1224,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       <div class="fg">
         <label class="fl">Nivel de acceso *</label>
         <select class="fc" id="eqNivel" onchange="actuNivelDesc()">
-          <option value="lider">🔴 Líder</option>
+          <option value="lider">⭐ Líder</option>
           <option value="editor">🟡 Editor</option>
           <option value="colaborador">🟢 Colaborador</option>
           <option value="lector">👁️ Lector</option>
@@ -1216,7 +1233,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       </div>
       <div class="fg"><label class="fl">Fecha de ingreso</label><input type="date" class="fc" id="eqIng"></div>
     </div>
-    <div class="fg"><label class="fl">Contraseña</label><input type="password" class="fc" id="eqPin" placeholder="Vacío = sin contraseña (acceso directo)"></div>
+    <div class="fg"><label class="fl">Contraseña</label><input type="password" class="fc" id="eqPin" placeholder="Mínimo 8 caracteres · al editar, vacío = no cambia"></div>
     <div class="fg">
       <label class="fl">Categorías que puede completar</label>
       <p style="font-size:12px;color:var(--tm);margin-bottom:8px">Solo podrá marcar avance en estas categorías. Editores y Líderes pueden completar todas.</p>
@@ -1283,10 +1300,10 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       <div class="fg"><label class="fl">Fecha *</label><input type="date" class="fc" id="mProgFecha"></div>
       <div class="fg"><label class="fl">Hora *</label><input type="time" class="fc" id="mProgHora" value="09:00"></div>
     </div>
-    <div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;margin-top:4px">¿Qué publicás?</div>
+    <div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;margin-top:4px">¿Qué vas a publicar?</div>
     <div class="fg">
       <label class="fl">Copy / texto <span id="mProgCntLbl" style="font-weight:400;text-transform:none;font-size:11px;color:var(--tm)">0 / 2200</span></label>
-      <textarea class="fc" id="mProgCopy" rows="4" placeholder="Escribí el texto que vas a publicar..." oninput="cntCopy(this)"></textarea>
+      <textarea class="fc" id="mProgCopy" rows="4" placeholder="Escribe el texto que vas a publicar…" oninput="cntCopy(this)"></textarea>
       <div style="height:3px;border-radius:2px;margin-top:4px;background:var(--bo);overflow:hidden"><div id="mProgCntBar" style="height:100%;width:0%;background:var(--ve);border-radius:2px;transition:width .2s,background .2s"></div></div>
     </div>
     <div class="fg">
@@ -1351,7 +1368,7 @@ const NIVEL_DESC={
   colaborador:'Puede agendar nuevas actividades, marcar completado en sus categorías asignadas y registrar sus propias horas extras. No puede editar ni eliminar tareas de otros.',
   lector:'Solo lectura. No puede realizar ninguna acción.'
 };
-const NIVEL_ICO={lider:'🔴',editor:'🟡',colaborador:'🟢',lector:'👁️'};
+const NIVEL_ICO={lider:'⭐',editor:'🟡',colaborador:'🟢',lector:'👁️'};
 const NIVEL_NOM={lider:'Líder',editor:'Editor',colaborador:'Colaborador',lector:'Lector'};
 
 // Equipo por defecto
@@ -1675,8 +1692,8 @@ function iniciarApp(){
   av.style.background=cAv(uAct.nombre);av.textContent=ini(uAct.nombre);
   document.getElementById('hdrNom').textContent=uAct.nombre.split(' ')[0];
 
-  const pH=E.horasExtra.filter(h=>h.aprobacion==='Pendiente').length;
-  if(puede('aprobarHora')&&pH>0)addNotif('⏱️',`${pH} hora(s) pendiente(s) de aprobación`,'Horas Extras');
+  const pHs=E.horasExtra.filter(h=>h.aprobacion==='Pendiente'&&!esComp(h));
+  if(puede('aprobarHora')&&pHs.length)addNotif('⏱️',`${plu(pHs.length,'registro','registros')} de horas extra por aprobar (${fmtH(pHs.reduce((t,h)=>t+parseFloat(h.horas||0),0))})`,'Horas Extras');
 
   renderTodo();
 }
@@ -1736,11 +1753,31 @@ function filtraCat(c,el){
   renderTareas();
 }
 function renderTodo(){renderTareas();renderHoras();if(!document.getElementById('vCompensatorio')?.classList.contains('oculto'))renderComp();if(!document.getElementById('vPermisos')?.classList.contains('oculto'))renderPermisos();renderEquipo();actuCts();if(!document.getElementById('vAsignaciones')?.classList.contains('oculto'))renderAsig();}
-function actuCts(){document.getElementById('ctT').textContent=E.tareas.filter(t=>!t.borrador).length;document.getElementById('ctH').textContent=E.horasExtra.filter(h=>!esComp(h)).length;const cc=document.getElementById('ctC');if(cc)cc.textContent=E.horasExtra.filter(h=>esComp(h)&&h.aprobacion==='Pendiente'&&(niv!=='colaborador'||h.miembro===uAct?.nombre)).length;const ca=document.getElementById('ctA');if(ca&&typeof pendientesAprob==='function'){const n=totAprob(pendientesAprob());ca.textContent=n;ca.style.display=n?'':'none';}const cp=document.getElementById('ctP');if(cp)cp.textContent=(E.permisos||[]).filter(x=>x.aprobacion==='Pendiente'&&(niv!=='colaborador'||x.miembro===uAct?.nombre)).length;}
+// Contadores del menú: solo lo que espera acción (lo propio para colaboradores); en 0 no se muestran
+const plu=(n,s,p)=>`${n} ${n===1?s:p}`;
+function actuCts(){
+  const mio=x=>niv!=='colaborador'||x.miembro===uAct?.nombre;
+  const pon=(id,n)=>{const c=document.getElementById(id);if(!c)return;c.textContent=n;c.style.display=n?'':'none';};
+  pon('ctT',E.tareas.filter(t=>!t.borrador&&!tResuelta(t)).length);
+  pon('ctH',E.horasExtra.filter(h=>!esComp(h)&&h.aprobacion==='Pendiente'&&mio(h)).length);
+  pon('ctC',E.horasExtra.filter(h=>esComp(h)&&h.aprobacion==='Pendiente'&&mio(h)).length);
+  pon('ctP',(E.permisos||[]).filter(x=>x.aprobacion==='Pendiente'&&mio(x)).length);
+  if(typeof pendientesAprob==='function')pon('ctA',totAprob(pendientesAprob()));
+}
 
 // ════════════════════════
 //  TAREAS
 // ════════════════════════
+// Una sección está en curso si ya tiene avance aunque no esté terminada:
+// estado En Progreso, etapa de Diseño avanzada, unidades resueltas o entregables subidos.
+function secEnCurso(t,sec){
+  const sv=t.secciones?.[sec];if(!sv)return false;
+  if(['Completada','No cumplida','Cerrada'].includes(sv.estado))return false;
+  if(/^en progreso$/i.test(sv.estado||''))return true;
+  if(sec==='Diseño'&&sv.etapa&&sv.etapa!=='Maquetación')return true;
+  const u=contarUnidadesSeccion(t,sec);if(u&&(u.comp>0||u.noc>0))return true;
+  return (t.entregables||[]).some(e=>e.seccion===sec);
+}
 function eglobal(t){
   // New model: secciones
   if(t.secciones&&Object.keys(t.secciones).length){
@@ -1753,7 +1790,7 @@ function eglobal(t){
     const resueltas=comp+noc+cerr;
     if(comp===total)return'Completada';
     if(resueltas===total)return noc===total?'No cumplida':'Cerrada';
-    const hayActividad=resueltas>0||avs.some(s=>s.estado==='En Progreso');
+    const hayActividad=resueltas>0||Object.keys(t.secciones).some(sec=>secEnCurso(t,sec));
     return hayActividad?'En Progreso':'Pendiente';
   }
   // Old model: avances (backward compat)
@@ -1841,10 +1878,13 @@ function recalcSeccionEstado(t,sec){
     if(prev!=='Completada'){
       // Si la tarea ya estaba vencida, marcar que se completó con retraso (y pedir motivo)
       if(t.fecha&&t.fecha<hoy()){
-        const motivo=prompt(`⚠️ "${sec}" se está completando CON RETRASO (fecha límite: ${fmt(t.fecha)}).\n\nIndica el motivo del retraso (opcional):`);
         t.secciones[sec].completadaTarde=true;
-        if(motivo&&motivo.trim())t.secciones[sec].notaRetraso=motivo.trim();
-        reg('Avance completado (con retraso)',`"${t.titulo}" — ${sec} completado tarde por ${uAct?.nombre}${motivo&&motivo.trim()?` (motivo: ${motivo.trim()})`:''}`);
+        reg('Avance completado (con retraso)',`"${t.titulo}" — ${sec} completado tarde por ${uAct?.nombre}`);
+        const tid=t.id;
+        pedirTexto('⏰ Completada con retraso',`"${sec}" de "${t.titulo}" vencía el ${fmt(t.fecha)}.`,{label:'Motivo del retraso (opcional)',ph:'ej. El evento se reprogramó'},'Guardar motivo').then(m=>{
+          const tt=E.tareas.find(x=>x.id===tid);if(!m||!tt?.secciones?.[sec])return;
+          tt.secciones[sec].notaRetraso=m;reg('Motivo de retraso',`"${tt.titulo}" — ${sec}: ${m}`);guardar();renderTareas();
+        });
       } else {
         reg('Avance completado',`"${t.titulo}" — ${sec} completado por ${uAct?.nombre}`);
       }
@@ -1917,7 +1957,7 @@ function renderTareas(){
   document.getElementById('stLis').textContent=reales.filter(t=>eglobal(t)==='Completada').length;
   const venc=E.tareas.filter(t=>t.fecha&&t.fecha<hoy()&&!tResuelta(t)&&!t.borrador);
   const alV=document.getElementById('alVenc');
-  if(venc.length){alV.classList.remove('oculto');document.getElementById('txVenc').textContent=`${venc.length} tarea(s) vencida(s): ${venc.map(t=>t.titulo).slice(0,3).join(', ')}${venc.length>3?'...':''}`;}
+  if(venc.length){alV.classList.remove('oculto');document.getElementById('txVenc').textContent=`${plu(venc.length,'tarea vencida','tareas vencidas')}: ${venc.map(t=>t.titulo).slice(0,3).join(', ')}${venc.length>3?'...':''}`;}
   else alV.classList.add('oculto');
 
   const lista=document.getElementById('listaTareas'),vac=document.getElementById('vacTareas');
@@ -1969,7 +2009,7 @@ function renderTareas(){
         const comp=sv.estado==='Completada';
         const noCump=sv.estado==='No cumplida';
         const cerr=sv.estado==='Cerrada';
-        const enProg=sv.estado==='En Progreso';
+        const enProg=secEnCurso(t,sec);
         const canMark=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||mySec.includes(sec));
         const sInfo=SECCIONES[sec]||{ico:'📌',color:'#888',bg:'#eee'};
         const respNames=(sv.responsables||[]).map(uid=>{const u=E.equipo.find(e=>e.id===uid);return u?u.nombre:uid;}).join(', ')||'Sin asignar';
@@ -1980,7 +2020,7 @@ function renderTareas(){
         const resuelta=comp||noCump||cerr;
         const abiertaSec=!resuelta||seccExpandidas.has(t.id+'|'+sec);
 
-        const hdrStyle=`background:${sInfo.bg};border-left:3px solid ${sInfo.color||'var(--na)'};padding:8px 12px;border-radius:var(--rs);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:${abiertaSec?'8px':'0'};cursor:${resuelta?'pointer':'default'}`;
+        const hdrStyle=`--sc:${sInfo.color||'#E35205'};background:${sInfo.bg};border-left:3px solid ${sInfo.color||'var(--na)'};padding:8px 12px;border-radius:var(--rs);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:${abiertaSec?'8px':'0'};cursor:${resuelta?'pointer':'default'}`;
         const statusBadge=comp
           ?`<span style="font-size:11px;background:#E1F5EE;color:#0F6E56;padding:2px 8px;border-radius:20px;font-weight:700">✅ Completado</span>`
           :noCump
@@ -1991,7 +2031,7 @@ function renderTareas(){
           ?`<span style="font-size:11px;background:#E3F2FD;color:#185FA5;padding:2px 8px;border-radius:20px;font-weight:700">⏳ En progreso</span>`
           :`<span style="font-size:11px;background:#FFF8E1;color:#F57F17;padding:2px 8px;border-radius:20px;font-weight:700">⏳ Pendiente</span>`;
         const resumenUnid=tieneUnid?`<div style="font-size:11px;color:var(--tm);margin-top:2px">✅ ${uni.comp} hechas · 🚫 ${uni.noc} no cumplidas · ⏳ ${uni.sinResolver} sin resolver · de ${uni.asig}</div>`:'';
-        const sHdr=`<div style="${hdrStyle}" ${resuelta?`onclick="togSecc('${t.id}','${sec}')"`:''} title="${resuelta?(abiertaSec?'Clic para contraer':'Clic para ver detalle'):''}">
+        const sHdr=`<div class="tint" style="${hdrStyle}" ${resuelta?`onclick="togSecc('${t.id}','${sec}')"`:''} title="${resuelta?(abiertaSec?'Clic para contraer':'Clic para ver detalle'):''}">
           <div style="display:flex;align-items:center;gap:8px">
             ${resuelta?`<span style="font-size:13px;color:var(--tm);transition:transform .2s;display:inline-block;transform:${abiertaSec?'rotate(90deg)':'rotate(0)'}">▸</span>`:''}
             <span style="font-size:16px">${sInfo.ico}</span>
@@ -2160,7 +2200,7 @@ function renderTareas(){
             </div>`;
           }).join('<div style="flex:1;height:2px;background:var(--bo);margin-top:13px;min-width:8px"></div>');
           const btnAvanzar=canAvanzar&&etapaIdx<DIS_ETAPAS.length-1
-            ?`<button class="btn bna bsm" style="font-size:11px;padding:3px 10px" onclick="event.stopPropagation();avanzarEtapaDis('${t.id}')">Avanzar → ${DIS_ETAPAS[etapaIdx+1]}</button>`:'';
+            ?`<button class="btn bna bsm" style="font-size:11px;padding:3px 10px" onclick="event.stopPropagation();avanzarEtapaDis('${t.id}')">Pasar a etapa ${etapaIdx+2}: ${DIS_ETAPAS[etapaIdx+1]} ›</button>`:'';
           const btnRevertir=canAvanzar&&etapaIdx>0
             ?`<button class="btn bgh bsm" style="font-size:11px;padding:3px 10px" onclick="event.stopPropagation();revertirEtapaDis('${t.id}')">← Revertir</button>`:'';
           const notaEtapa=sv?.notaEtapa?`<div style="font-size:11px;color:var(--tm);margin-top:6px;padding:4px 8px;background:var(--ams);border-radius:4px;border-left:3px solid var(--am)">📝 ${sv.notaEtapa}</div>`:'';
@@ -2310,10 +2350,10 @@ function renderTareas(){
           <span style="color:rgba(255,255,255,.8);font-size:18px;transition:transform .2s;display:inline-block;transform:${abierta?'rotate(180deg)':'rotate(0)'}">▾</span>
         </div>
       </div>
-      <div class="t-midbar" style="padding:10px 14px;background:${cardBg};display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;cursor:pointer" onclick="togT('${t.id}')">
+      <div class="t-midbar tint" style="--sc:${cardColor};padding:10px 14px;background:${cardBg};display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;cursor:pointer" onclick="togT('${t.id}')">
         <div class="t-badges-row" style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
           <span class="bg ${bEst[eg]||'bgr'}">${eg}</span>
-          <span class="bg ${bPri[t.prioridad]||'bgr'}">${t.prioridad}</span>
+          ${t.prioridad?`<span class="bg ${bPri[t.prioridad]||'bgr'}">${escH(t.prioridad)}</span>`:''}
           ${t.fecha?`<span class="bg bgr" style="${vencida?'color:var(--ro);font-weight:700':''}">${vencida?'⚠️ ':'📅 '}${fmt(t.fecha)}</span>`:''}
           ${t.lugar?`<span class="bg bgr">📍 ${t.lugar}</span>`:''}
           ${etiqH}
@@ -2344,7 +2384,7 @@ function renderTareas(){
   const futurts=pendts.filter(t=>t.fecha&&t.fecha>hh);
   const sfechts=pendts.filter(t=>!t.fecha);
   const byFch={};futurts.forEach(t=>{if(!byFch[t.fecha])byFch[t.fecha]=[];byFch[t.fecha].push(t);});
-  const mkHdrT=(lbl,col,bg,n)=>`<div style="display:flex;align-items:center;gap:8px;margin:16px 0 8px;padding:7px 12px;background:${bg};border-left:4px solid ${col};border-radius:0 var(--rs) var(--rs) 0"><span style="font-size:13px;font-weight:700;color:${col}">${lbl}</span><span style="font-size:11px;background:${col};color:#fff;padding:1px 7px;border-radius:10px;font-weight:700">${n}</span></div>`;
+  const mkHdrT=(lbl,col,bg,n)=>`<div class="tint" style="--sc:${col};display:flex;align-items:center;gap:8px;margin:16px 0 8px;padding:7px 12px;background:${bg};border-left:4px solid ${col};border-radius:0 var(--rs) var(--rs) 0"><span style="font-size:13px;font-weight:700;color:${col}">${lbl}</span><span style="font-size:11px;background:${col};color:#fff;padding:1px 7px;border-radius:10px;font-weight:700">${n}</span></div>`;
   let htmlOut='';
   if(vencidts.length){htmlOut+=mkHdrT('⚠️ Vencidas','#dc2626','#fee2e2',vencidts.length);htmlOut+=vencidts.map(renderTCard).join('');}
   if(dehoyts.length){htmlOut+=mkHdrT('📅 Hoy — '+fmt(hh),'#E35205','#FFF0E8',dehoyts.length);htmlOut+=dehoyts.map(renderTCard).join('');}
@@ -2393,12 +2433,12 @@ function borSelCambio(){
 }
 function borSelMarcar(ids){document.querySelectorAll('.borSel').forEach(c=>{if(ids.includes(c.value))c.checked=true;});borSelCambio();}
 // Descarta borradores (no se van a cubrir). La carga diaria del calendario recuerda los descartados y no los recrea.
-function descartarBorr(ids,despues){
+async function descartarBorr(ids,despues){
   if(!puede('descartarBorrador')){alert('Solo Líder o Editor pueden descartar borradores.');return;}
   const ts=E.tareas.filter(t=>ids.includes(t.id)&&t.borrador);
   if(!ts.length)return;
   const msg=ts.length===1?`¿Descartar el borrador "${ts[0].titulo||'(Sin título)'}"?`:`¿Descartar ${ts.length} borradores?\n\n`+ts.slice(0,10).map(t=>'• '+(t.titulo||'(Sin título)')).join('\n')+(ts.length>10?`\n… y ${ts.length-10} más`:'');
-  if(!confirm(msg+'\n\nNo se cubrirán y la carga diaria del calendario no los volverá a crear.'))return;
+  if(!await confirmar(msg+'\n\nNo se cubrirán y la carga diaria del calendario no los volverá a crear.',{tit:'🗑 Descartar borrador'+(ts.length>1?'es':''),ok:'Descartar',peligro:true}))return;
   const set=new Set(ts.map(t=>t.id));
   E.tareas=E.tareas.filter(t=>!set.has(t.id));set.forEach(id=>expandidas.delete(id));
   reg(ts.length===1?'Borrador descartado':'Borradores descartados',(ts.length===1?`"${ts[0].titulo}"`:`${ts.length}: `+ts.map(t=>`"${t.titulo}"`).join(', '))+` por ${uAct?.nombre}`);
@@ -2425,26 +2465,25 @@ function editT(id){abrirMT(id);}
 
 // Pide motivo del retraso si la tarea está vencida. Devuelve {ok, nota}.
 // ok=false → el usuario canceló o no escribió motivo (abortar completado).
-function pedirJustifVencida(t){
+async function pedirJustifVencida(t){
   if(!(t.fecha&&t.fecha<hoy()))return{ok:true,nota:null};
-  const nota=prompt(`⚠️ Esta tarea está VENCIDA (fecha límite: ${fmt(t.fecha)}).\n\nIndica el motivo del retraso para poder completarla:`);
-  if(nota===null)return{ok:false};
-  const n=nota.trim();
-  if(!n){alert('Debes indicar un motivo para completar una tarea vencida.');return{ok:false};}
+  const n=await pedirTexto('⏰ Tarea vencida',`"${t.titulo}" vencía el ${fmt(t.fecha)}. Para marcarla como lista, indica el motivo del retraso.`,{label:'Motivo del retraso *',req:true,ph:'ej. El material llegó tarde',err:'Escribe el motivo para continuar.'},'Marcar lista');
+  if(n===null)return{ok:false};
   return{ok:true,nota:n};
 }
 
-function togCat(tareaId,cat){
+async function togCat(tareaId,cat){
   if(!puede('marcarAvance')){alert('Sin permiso.');return;}
-  const t=E.tareas.find(t=>t.id===tareaId);if(!t)return;
+  let t=E.tareas.find(t=>t.id===tareaId);if(!t)return;
   if(!t.avances)t.avances={};
   const av=t.avances[cat]||{estado:'Pendiente'};
   if(av.estado==='Completada'){
     t.avances[cat]={estado:'Pendiente',completadoPor:null,completadoEn:null};
     reg('Avance revertido',`"${t.titulo}" — ${cat} revertido por ${uAct?.nombre}`);
   } else {
-    const j=pedirJustifVencida(t);
+    const j=await pedirJustifVencida(t);
     if(!j.ok)return;
+    t=E.tareas.find(t=>t.id===tareaId);if(!t)return;if(!t.avances)t.avances={};
     t.avances[cat]={estado:'Completada',completadoPor:uAct?.nombre,completadoEn:hoy(),notaRetraso:j.nota||null};
     reg('Avance completado',`"${t.titulo}" — ${cat} por ${uAct?.nombre}${j.nota?` (VENCIDA — motivo: ${j.nota})`:''}`);
     addNotif('✅',`${cat} completado: "${t.titulo}"`,`Por ${uAct?.nombre}`);
@@ -2730,14 +2769,16 @@ function selTipoRed(rKey,campo,tipo,el){
 }
 
 function renderChEtiq(){
-  document.getElementById('chEtiq').innerHTML=E.etiquetas.map(e=>`
-    <div class="chip ${etiqSel.includes(e)?'sel':''}" style="display:inline-flex;align-items:center;gap:4px">
-      <span onclick="tgEtiq(this.parentElement,'${e}')">${e}</span>
-      <span onclick="event.stopPropagation();elimEtiq('${e}')" style="cursor:pointer;opacity:.6;font-size:10px;line-height:1;padding:0 1px" title="Eliminar etiqueta">✕</span>
+  // Clic en la etiqueta = marcar/desmarcar para esta tarea. Solo el Líder puede quitarla de la lista general.
+  document.getElementById('chEtiq').innerHTML=E.etiquetas.map((e,i)=>`
+    <div class="chip ${etiqSel.includes(e)?'sel':''}" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer" onclick="tgEtiq(this,E.etiquetas[${i}])">
+      <span>${escH(e)}</span>
+      ${niv==='lider'?`<span onclick="event.stopPropagation();elimEtiq(E.etiquetas[${i}])" style="cursor:pointer;opacity:.45;font-size:10px;line-height:1;padding:0 1px" title="Quitar de la lista de etiquetas (para todas las tareas)">✕</span>`:''}
     </div>`).join('');
 }
-function elimEtiq(e){
-  if(!confirm(`¿Eliminar la etiqueta "${e}"?`))return;
+
+async function elimEtiq(e){
+  if(!await confirmar(`La etiqueta "${e}" dejará de estar disponible para todas las tareas. Las tareas que ya la tienen la conservan.`,{tit:'Eliminar etiqueta',ok:'Eliminar',peligro:true}))return;
   E.etiquetas=E.etiquetas.filter(x=>x!==e);
   etiqSel=etiqSel.filter(x=>x!==e);
   guardar();renderChEtiq();
@@ -2777,7 +2818,7 @@ function guardarT(){
       seccionesCount++;
     }
   });
-  if(!seccionesCount){mostrarErrorModal('❌ Seleccioná al menos una sección para la tarea.');return;}
+  if(!seccionesCount){mostrarErrorModal('❌ Selecciona al menos una sección para la tarea.');return;}
 
   // Build redesSociales data
   let redesSociales=orig?.redesSociales||null;
@@ -2893,16 +2934,17 @@ function mostrarErrorModal(msg){
   el.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
-function togSeccion(tareaId,sec){
+async function togSeccion(tareaId,sec){
   if(!puede('marcarAvance')){alert('Sin permiso.');return;}
-  const t=E.tareas.find(t=>t.id===tareaId);if(!t||!t.secciones?.[sec])return;
-  const sv=t.secciones[sec];
+  let t=E.tareas.find(t=>t.id===tareaId);if(!t||!t.secciones?.[sec])return;
+  let sv=t.secciones[sec];
   if(sv.estado==='Completada'){
     t.secciones[sec]={...sv,estado:'Pendiente',completadoPor:null,completadoEn:null,notaRetraso:null,completadaTarde:false};
     reg('Avance revertido',`"${t.titulo}" — ${sec} revertido por ${uAct?.nombre}`);
   } else {
-    const j=pedirJustifVencida(t);
+    const j=await pedirJustifVencida(t);
     if(!j.ok)return;
+    t=E.tareas.find(t=>t.id===tareaId);if(!t?.secciones?.[sec])return;sv=t.secciones[sec];
     t.secciones[sec]={...sv,estado:'Completada',completadoPor:uAct?.nombre,completadoEn:hoy(),notaRetraso:j.nota||null,completadaTarde:!!(t.fecha&&t.fecha<hoy())};
     reg('Avance completado',`"${t.titulo}" — ${sec} completado por ${uAct?.nombre}${j.nota?` (VENCIDA — motivo: ${j.nota})`:''}`);
     addNotif('✅',`${sec} completado: "${t.titulo}"`,`Por ${uAct?.nombre}`);
@@ -2913,14 +2955,13 @@ function togSeccion(tareaId,sec){
 }
 
 // Marcar un área como NO cumplida (no se realizó). Pide motivo obligatorio.
-function marcarNoCumplida(tareaId,sec){
+async function marcarNoCumplida(tareaId,sec){
   if(!puede('marcarAvance')){alert('Sin permiso.');return;}
-  const t=E.tareas.find(t=>t.id===tareaId);if(!t||!t.secciones?.[sec])return;
+  let t=E.tareas.find(t=>t.id===tareaId);if(!t||!t.secciones?.[sec])return;
+  const m=await pedirTexto('🚫 Marcar como no cumplida',`${sec} · "${t.titulo}"`,{label:'¿Por qué no se realizó? *',req:true,ph:'ej. Se canceló el evento',err:'Escribe el motivo para continuar.'},'Marcar no cumplida');
+  if(m===null)return;
+  t=E.tareas.find(t=>t.id===tareaId);if(!t?.secciones?.[sec])return;
   const sv=t.secciones[sec];
-  const motivo=prompt(`🚫 Marcar "${sec}" como NO CUMPLIDA en "${t.titulo}".\n\nIndica el motivo (por qué no se realizó):`);
-  if(motivo===null)return;
-  const m=motivo.trim();
-  if(!m){alert('Debes indicar un motivo para marcar un área como no cumplida.');return;}
   t.secciones[sec]={...sv,estado:'No cumplida',completadoPor:null,completadoEn:null,noCumplidaPor:uAct?.nombre,noCumplidaEn:hoy(),motivoNoCumplida:m};
   reg('Área no cumplida',`"${t.titulo}" — ${sec} marcada NO CUMPLIDA por ${uAct?.nombre} (motivo: ${m})`);
   addNotif('🚫',`${sec} no cumplida: "${t.titulo}"`,`Por ${uAct?.nombre} — ${m}`);
@@ -2941,14 +2982,17 @@ function reabrirSeccion(tareaId,sec){
 
 const DIS_ETAPAS=['Maquetación','Diseño','Reemplazo','Revisión','Completado'];
 
-function avanzarEtapaDis(tareaId){
+async function avanzarEtapaDis(tareaId){
   if(!puede('marcarAvance')){alert('Sin permiso.');return;}
-  const t=E.tareas.find(t=>t.id===tareaId);if(!t||!t.secciones?.['Diseño'])return;
-  const sv=t.secciones['Diseño'];
+  let t=E.tareas.find(t=>t.id===tareaId);if(!t||!t.secciones?.['Diseño'])return;
+  let sv=t.secciones['Diseño'];
   const idx=DIS_ETAPAS.indexOf(sv.etapa||'Maquetación');
   if(idx>=DIS_ETAPAS.length-1)return;
   const nuevaEtapa=DIS_ETAPAS[idx+1];
-  const nota=prompt(`Nota para avanzar a "${nuevaEtapa}" (opcional — presiona Enter para omitir):`,'')||'';
+  const nota=await pedirTexto(`Avanzar a ${nuevaEtapa}`,`Diseño · "${t.titulo}"`,{label:'Nota (opcional)',ph:'ej. Enviado a revisión de Miguel'},`Avanzar a ${nuevaEtapa}`);
+  if(nota===null)return;
+  t=E.tareas.find(x=>x.id===tareaId);if(!t?.secciones?.['Diseño']||(t.secciones['Diseño'].etapa||'Maquetación')!==(sv.etapa||'Maquetación'))return;
+  sv=t.secciones['Diseño'];
   t.secciones['Diseño']={...sv,etapa:nuevaEtapa};
   if(nota)t.secciones['Diseño'].notaEtapa=nota;
   if(nuevaEtapa==='Completado'){
@@ -2986,16 +3030,17 @@ function cambCompRed(tareaId,rKey,campo,delta){
   recalcSeccionEstado(t,'Redes Sociales');
   expandidas.add(tareaId);guardar();renderTareas();
 }
-function cambNocRed(tareaId,rKey,campo,delta){
+async function cambNocRed(tareaId,rKey,campo,delta){
   if(!puede('marcarAvance')){alert('Sin permiso.');return;}
-  const t=E.tareas.find(t=>t.id===tareaId);if(!t||!t.redesSociales?.[rKey])return;
+  let t=E.tareas.find(t=>t.id===tareaId);if(!t||!t.redesSociales?.[rKey])return;
   const asig=t.redesSociales[rKey][campo]||0;
   const comp=t.redesSociales[rKey][campo+'_comp']||0;
   const cur=t.redesSociales[rKey][campo+'_noc']||0;
   const nuevo=Math.min(asig-comp,Math.max(0,cur+delta));
   if(nuevo>cur&&!t.redesSociales[rKey][campo+'_motivo']){
-    const m=prompt(`🚫 Motivo por el que NO se cumplió "${campo}" en ${rKey}:`);
-    if(m===null)return;const mm=m.trim();if(!mm){alert('Debes indicar un motivo.');return;}
+    const mm=await pedirTexto('🚫 No cumplida',`${campo} · ${rKey} · "${t.titulo}"`,{label:'¿Por qué no se realizó? *',req:true,ph:'ej. Se canceló el evento',err:'Escribe el motivo para continuar.'},'Marcar no cumplida');
+    if(mm===null)return;
+    t=E.tareas.find(t=>t.id===tareaId);if(!t?.redesSociales?.[rKey])return;
     t.redesSociales[rKey][campo+'_motivo']=mm;
   }
   t.redesSociales[rKey][campo+'_noc']=nuevo;
@@ -3016,16 +3061,17 @@ function cambCompMed(tareaId,mKey,campo,delta){
   recalcSeccionEstado(t,'Medios');
   expandidas.add(tareaId);guardar();renderTareas();
 }
-function cambNocMed(tareaId,mKey,campo,delta){
+async function cambNocMed(tareaId,mKey,campo,delta){
   if(!puede('marcarAvance')){alert('Sin permiso.');return;}
-  const t=E.tareas.find(t=>t.id===tareaId);if(!t||!t.mediosData?.[mKey])return;
+  let t=E.tareas.find(t=>t.id===tareaId);if(!t||!t.mediosData?.[mKey])return;
   const asig=t.mediosData[mKey][campo]||0;
   const comp=t.mediosData[mKey][campo+'_comp']||0;
   const cur=t.mediosData[mKey][campo+'_noc']||0;
   const nuevo=Math.min(asig-comp,Math.max(0,cur+delta));
   if(nuevo>cur&&!t.mediosData[mKey][campo+'_motivo']){
-    const m=prompt(`🚫 Motivo por el que NO se cumplió "${campo}" en ${mKey}:`);
-    if(m===null)return;const mm=m.trim();if(!mm){alert('Debes indicar un motivo.');return;}
+    const mm=await pedirTexto('🚫 No cumplida',`${campo} · ${mKey} · "${t.titulo}"`,{label:'¿Por qué no se realizó? *',req:true,ph:'ej. Se canceló el evento',err:'Escribe el motivo para continuar.'},'Marcar no cumplida');
+    if(mm===null)return;
+    t=E.tareas.find(t=>t.id===tareaId);if(!t?.mediosData?.[mKey])return;
     t.mediosData[mKey][campo+'_motivo']=mm;
   }
   t.mediosData[mKey][campo+'_noc']=nuevo;
@@ -3045,14 +3091,15 @@ function togCompAV(tareaId,idx){
   recalcSeccionEstado(t,'Audiovisual');
   expandidas.add(tareaId);guardar();renderTareas();
 }
-function marcarNocAV(tareaId,idx){
+async function marcarNocAV(tareaId,idx){
   if(!puede('marcarAvance')){alert('Sin permiso.');return;}
-  const t=E.tareas.find(t=>t.id===tareaId);
-  const a=t?.audiovisualData?.asignaciones?.[idx];if(!a)return;
+  let t=E.tareas.find(t=>t.id===tareaId);
+  let a=t?.audiovisualData?.asignaciones?.[idx];if(!a)return;
   if(a.noCump){a.noCump=false;a.motivo=null;}// reabrir
   else{
-    const m=prompt(`🚫 Motivo por el que NO se cumplió esta asignación audiovisual:`);
-    if(m===null)return;const mm=m.trim();if(!mm){alert('Debes indicar un motivo.');return;}
+    const mm=await pedirTexto('🚫 No cumplida',`Audiovisual${a.nombre?' · '+a.nombre:''} · "${t.titulo}"`,{label:'¿Por qué no se realizó? *',req:true,ph:'ej. Se canceló el evento',err:'Escribe el motivo para continuar.'},'Marcar no cumplida');
+    if(mm===null)return;
+    t=E.tareas.find(t=>t.id===tareaId);a=t?.audiovisualData?.asignaciones?.[idx];if(!a)return;
     a.noCump=true;a.comp=false;a.motivo=mm;
     reg('Asignación no cumplida',`"${t.titulo}" — Audiovisual (${a.nombre||''}): ${mm} por ${uAct?.nombre}`);
   }
@@ -3278,10 +3325,10 @@ function editarPub(id){
   document.getElementById('mProg').classList.add('on');
 }
 
-function elimPub(id){
+async function elimPub(id){
   if(!puede('marcarAvance')){alert('Sin permiso.');return;}
   const pub=(E.publicaciones||[]).find(p=>p.id===id);
-  if(!pub||!confirm(`¿Eliminar "${pub.titulo}"?`))return;
+  if(!pub||!await confirmar(`"${pub.titulo||'Publicación'}" se eliminará del calendario.`,{tit:'Eliminar publicación',ok:'Eliminar',peligro:true}))return;
   E.publicaciones=E.publicaciones.filter(p=>p.id!==id);
   reg('Publicación eliminada',`"${pub.titulo}" por ${uAct?.nombre}`);
   guardar();renderCalPub();
@@ -3331,7 +3378,7 @@ function guardarProg(){
   const notas=document.getElementById('mProgNotas').value.trim();
   const tipo=document.getElementById('mProgTipo').value||'Post';
   if(!fecha||!hora){alert('Fecha y hora son requeridas.');return;}
-  if(!plataformas.length){alert('Seleccioná al menos una plataforma.');return;}
+  if(!plataformas.length){alert('Selecciona al menos una plataforma.');return;}
   if(!E.publicaciones)E.publicaciones=[];
   const titulo=document.getElementById('mProgTitulo')?.value.trim()||'';
   // Read tarea from dropdown if visible, else use global
@@ -3637,12 +3684,14 @@ function verDiaPub(dia){
   panel.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
-function marcarPublicadoById(id,estado){
-  const p=(E.publicaciones||[]).find(p=>p.id===id);
+async function marcarPublicadoById(id,estado){
+  let p=(E.publicaciones||[]).find(p=>p.id===id);
   if(!p)return;
   if(estado==='publicado'){
-    const link=prompt('¿Link donde quedó publicado? (opcional — presiona Cancelar o deja vacío para omitir)','');
-    if(link===null){/* usuario canceló completamente */}else{p.linkPublicado=link.trim()||'';}
+    const link=await pedirTexto('✅ Marcar como publicado',`"${p.titulo||'Publicación'}"`,{label:'Enlace de la publicación (opcional)',ph:'https://…'},'Marcar publicado');
+    if(link===null)return;
+    p=(E.publicaciones||[]).find(p=>p.id===id);if(!p)return;
+    p.linkPublicado=link;
     p.estado='publicado';
     p.publicadoPor=uAct?.nombre;
     p.publicadoEn=hoy();
@@ -3715,10 +3764,10 @@ function fmtFechaLarga(f){
   return d.toLocaleDateString('es-PA',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 }
 
-function elimT(id){
+async function elimT(id){
   if(!puede('eliminarTarea')){alert('Solo el Líder puede eliminar tareas.');return;}
   const t=E.tareas.find(t=>t.id===id);
-  if(!t||!confirm(`¿Eliminar "${t.titulo}"?`))return;
+  if(!t||!await confirmar(`"${t.titulo}" y todo su avance se eliminarán.`,{tit:'Eliminar tarea',ok:'Eliminar',peligro:true}))return;
   reg('Tarea eliminada',`"${t.titulo}" por ${uAct?.nombre}`);
   E.tareas=E.tareas.filter(t=>t.id!==id);expandidas.delete(id);
   guardar();renderTareas();
@@ -3758,7 +3807,7 @@ function renderHoras(){
   panelAlertas('regHE',alertasHorasExtra(hs).map(a=>a.texto));
   const alHE=document.getElementById('alHE');
   const penX=pen.filter(h=>!esComp(h));
-  if(puede('aprobarHora')&&penX.length){alHE.classList.remove('oculto');document.getElementById('txHE').textContent=`${penX.length} hora(s) pendiente(s) de aprobación.`;}
+  if(puede('aprobarHora')&&penX.length){alHE.classList.remove('oculto');document.getElementById('txHE').textContent=`${plu(penX.length,'registro','registros')} por aprobar (${fmtH(penX.reduce((t,h)=>t+parseFloat(h.horas||0),0))}).`;}
   else alHE.classList.add('oculto');
 
   // Resumen por persona (solo para editor/líder)
@@ -3783,19 +3832,20 @@ function renderHoras(){
     const btnApro=puedeAprobar&&h.aprobacion==='Pendiente'&&(h.miembro!==uAct?.nombre||esLider)
       ?`<button class="btn bve bsm" onclick="aprobarH('${h.id}',true)">✅ Aprobar</button><button class="btn bpe bsm" onclick="aprobarH('${h.id}',false)">❌ Rechazar</button>`
       :`<span class="bg ${bA[h.aprobacion]||'bgr'}">${h.aprobacion}</span>`;
-    // Botones de editar/eliminar — solo Líder
-    const btnAdmin=esLider
+    // Editar/eliminar: el Líder siempre; cada persona, su propio registro mientras está pendiente
+    const propiaPend=h.miembro===uAct?.nombre&&h.aprobacion==='Pendiente';
+    const btnAdmin=esLider||propiaPend
       ?`<div style="display:flex;gap:5px;border-top:1px solid var(--bo);padding-top:10px;margin-top:10px">
           <button class="btn bgh bsm" style="flex:1" onclick="abrirMH('${h.id}')">✏️ Editar</button>
-          <button class="btn bpe bsm" onclick="elimH('${h.id}')">🗑</button>
+          <button class="btn bpe bsm" onclick="elimH('${h.id}')" title="${esLider?'Eliminar':'Retirar mientras está pendiente'}">🗑${esLider?'':' Retirar'}</button>
         </div>`
       :'';
     return`<div class="hecard">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
         <div style="display:flex;align-items:center;gap:9px;font-size:14px;font-weight:700">${rAv(h.miembro,'',30,11)} ${h.miembro}</div>
-        <div style="text-align:right"><div style="font-size:${esComp(h)?20:26}px;font-weight:800;color:${esComp(h)?'var(--az)':'var(--na)'};line-height:1">${esComp(h)?'−'+fmtD(parseFloat(h.horas||0)):h.horas}</div><div style="font-size:11px;color:var(--tm)">${esComp(h)?'compensatorio'+(parseFloat(h.horas||0)>=HORAS_DIA?' · '+fmtH(parseFloat(h.horas||0)):''):'horas'}</div></div>
+        <div style="text-align:right"><div style="font-size:${esComp(h)?20:22}px;font-weight:800;color:${esComp(h)?'var(--az)':'var(--na)'};line-height:1">${esComp(h)?'−'+fmtD(parseFloat(h.horas||0)):fmtH(parseFloat(h.horas||0))}</div><div style="font-size:11px;color:var(--tm)">${esComp(h)?'compensatorio'+(parseFloat(h.horas||0)>=HORAS_DIA?' · '+fmtH(parseFloat(h.horas||0)):''):'horas extra'}</div></div>
       </div>
-      <div style="font-size:13px;color:var(--tm);margin-bottom:12px;line-height:1.5">${h.actividad}</div>
+      <div style="font-size:13px;color:var(--tm);margin-bottom:12px;line-height:1.5">${escH(h.actividad||'')}</div>
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
         <span style="font-size:11px;color:var(--tm)">📅 ${fmt(h.fecha)}${h.fechaFin&&h.fechaFin!==h.fecha?' al '+fmt(h.fechaFin):''}${h.desde&&h.hasta?` · 🕒 ${h.desde}–${h.hasta}`:''}${h.feriado?' · Feriado':h.tipoDia==='sabado'?' · Sábado':h.tipoDia==='domingo'?' · Domingo':''}</span>
         <div style="display:flex;gap:5px;flex-wrap:wrap">${btnApro}${esComp(h)?`<button class="btn bgh bsm" onclick="solCompDoc('${h.id}')">📄 Formulario</button>`:''}</div>
@@ -3808,6 +3858,8 @@ function renderHoras(){
 function abrirMH(id){
   if(!puede('registrarHora')){alert('Sin permiso para registrar horas.');return;}
   if(id&&E.horasExtra.find(h=>h.id===id&&esComp(h))){abrirMComp(id);return;}
+  const hx=id?E.horasExtra.find(h=>h.id===id):null;
+  if(hx&&niv!=='lider'&&!(hx.miembro===uAct?.nombre&&hx.aprobacion==='Pendiente')){alert('Solo el Líder puede editar un registro ya revisado.');return;}
   document.getElementById('mHTit').textContent=id?'Editar Registro':'Registrar Horas Extras';
   document.getElementById('hId').value=id||'';
   const sel=document.getElementById('hMiem');
@@ -3918,7 +3970,7 @@ function renderComp(){
   document.getElementById('cpFueraSub').textContent=fuera.length?fuera.map(p=>p.nombre.split(' ')[0]).join(', '):'de compensatorio';
   const al=document.getElementById('alComp');
   const penAj=pen.filter(h=>h.miembro!==uAct?.nombre||niv==='lider');
-  if(puede('aprobarHora')&&penAj.length){al.classList.remove('oculto');document.getElementById('txComp').textContent=`${penAj.length} solicitud(es) de tiempo compensatorio por aprobar.`;}else al.classList.add('oculto');
+  if(puede('aprobarHora')&&penAj.length){al.classList.remove('oculto');document.getElementById('txComp').textContent=`${plu(penAj.length,'solicitud','solicitudes')} de tiempo compensatorio por aprobar.`;}else al.classList.add('oculto');
 
   const res=document.getElementById('cpResumen');
   if(puede('aprobarHora')){
@@ -3978,7 +4030,7 @@ function abrirMComp(id){
   document.getElementById('cHoras').value=h&&n-d*HORAS_DIA>1e-9?Math.round((n-d*HORAS_DIA)*100)/100:'';
   document.getElementById('cDH').value=h?.desde||'';document.getElementById('cHH').value=h?.hasta||'';
   document.getElementById('cMot').value=h?.actividad||'';
-  if(!h)cRango();else calcComp();
+  calcComp();// al abrir no se sugiere cantidad: se propone al cambiar las fechas
   abrirM('mComp');
 }
 // Al cambiar las fechas se sugiere usar un día por cada día hábil (la persona puede cambiarlo)
@@ -4000,10 +4052,10 @@ function calcComp(){
   const c=compForm(),d=dispComp(c.m,c.id),queda=d.disp-c.tot;
   const box=document.getElementById('cSaldo');
   box.innerHTML=`Saldo aprobado de <b>${escH(c.m)}</b>: <b>${fmtSaldo(Math.max(0,d.saldo))}</b>${d.pend?` · ya pedido y pendiente: ${fmtSaldo(d.pend)}`:''}<br>`+
-    (c.tot>0?`Vas a usar <b>${fmtSaldo(c.tot)}</b> · `+(queda<-1e-9?`<span style="color:var(--ro);font-weight:700">⛔ No alcanza: faltan ${fmtSaldo(-queda)}. El saldo nunca puede quedar en negativo.</span>`:`te quedarían <b>${fmtSaldo(queda)}</b>`):'Escribe cuántos días u horas vas a usar (8 h = 1 día).')+
-    (c.f&&c.tot>0?`<br>${c.tot>=HORAS_DIA-1e-9?`↩️ Regresas el <b>${fmt(c.reg)}</b>. Mientras tanto no tendrás acceso al sistema.`:'Es parte de un día: sigues con acceso al sistema.'}`:'')+
-    (c.f&&c.ff>c.f?`<br><span style="color:var(--tm)">Del ${fmt(c.f)} al ${fmt(c.ff)} hay ${diasHabiles(c.f,c.ff)} día(s) hábil(es).</span>`:'');
-  document.getElementById('cGuardar').disabled=queda<-1e-9;
+    (!(d.disp>1e-9)&&!(c.tot>0)?`<span style="color:var(--tm)">Por ahora no hay saldo disponible para pedir.</span>`:c.tot>0?`Vas a usar <b>${fmtSaldo(c.tot)}</b> · `+(queda<-1e-9?`<span style="color:var(--ro);font-weight:700">⛔ No alcanza: faltan ${fmtSaldo(-queda)}. El saldo nunca puede quedar en negativo.</span>`:`te quedarían <b>${fmtSaldo(queda)}</b>`):'Escribe cuántos días u horas vas a usar (8 h = 1 día).')+
+    (c.f&&c.tot>0?`<br>${c.tot>=HORAS_DIA-1e-9?(c.m===uAct?.nombre?`↩️ Regresas el <b>${fmt(c.reg)}</b>. Esos días tu acceso al dashboard queda en pausa y se reactiva solo al volver.`:`↩️ Regresa el <b>${fmt(c.reg)}</b>. Esos días su acceso al dashboard queda en pausa.`):'Es parte de un día: el acceso sigue normal.'}`:'')+
+    (c.f&&c.ff>c.f?`<br><span style="color:var(--tm)">Del ${fmt(c.f)} al ${fmt(c.ff)} hay ${plu(diasHabiles(c.f,c.ff),'día hábil','días hábiles')}.</span>`:'');
+  document.getElementById('cGuardar').disabled=queda<-1e-9||!(d.disp>1e-9);
   const prevC=c.id?E.horasExtra.find(x=>x.id===c.id):null,ant=avisoAnticipoComp(c.f,prevC?.creado),ab=document.getElementById('cAnticipo');
   ab.style.display=ant?'block':'none';ab.textContent=ant?'⏰ '+ant:'';
   // Aviso de tareas pendientes antes de irse
@@ -4014,27 +4066,27 @@ function calcComp(){
       tp.slice(0,8).map(x=>`• ${escH(x.t.titulo)} <span style="color:var(--tm)">(${x.sec}${x.f?' · '+fmt(x.f):''}${x.atrasada?' · atrasada':''})</span>`).join('<br>')+(tp.length>8?`<br>… y ${tp.length-8} más`:'');
   }else tb.style.display='none';
 }
-function guardarComp(){
+async function guardarComp(){
   const c=compForm(),mot=document.getElementById('cMot').value.trim();
-  if(!c.m||!c.f||!mot){alert('Complete la fecha, cuántos días u horas va a usar y el motivo.');return;}
+  if(!c.m||!c.f||!mot){alert('Completa la fecha, cuántos días u horas vas a usar y el motivo.');return;}
   if(c.ff<c.f){alert('«Hasta el día» no puede ser anterior a «Desde el día».');return;}
-  if(!(c.tot>0)){alert('Indique cuántos días u horas va a usar.');return;}
+  if(!(c.tot>0)){alert('Indica cuántos días u horas vas a usar.');return;}
   if(c.de&&c.ha&&c.ff===c.f&&c.ha<=c.de){alert('La hora «Hasta las» debe ser posterior a «Desde las».');return;}
-  if(niv==='colaborador'&&c.m!==uAct?.nombre){alert('Solo puede solicitar su propio tiempo compensatorio.');return;}
+  if(niv==='colaborador'&&c.m!==uAct?.nombre){alert('Solo puedes solicitar tu propio tiempo compensatorio.');return;}
   const d=dispComp(c.m,c.id);
   if(c.tot>d.disp+1e-9){alert(`${c.m} solo tiene ${fmtSaldo(Math.max(0,d.disp))} disponibles${d.pend?` (ya hay ${fmtSaldo(d.pend)} pedidas y pendientes)`:''}. El saldo nunca puede quedar en negativo.`);return;}
   const prevA=c.id?E.horasExtra.find(x=>x.id===c.id):null,ant=avisoAnticipoComp(c.f,prevA?.creado);
-  if(ant&&!prevA&&!confirm(`⏰ ${ant}\n\n¿Enviar la solicitud de todos modos?`))return;
+  if(ant&&!prevA&&!await confirmar(ant,{tit:'⏰ Solicitud con poca anticipación',ok:'Enviar igual',no:'Revisar'}))return;
   const tp=tareasPendComp(c.m,c.tot>=HORAS_DIA-1e-9?c.ff:c.f);
-  if(tp.length&&!confirm(`${c.m===uAct?.nombre?'Tienes':c.m+' tiene'} ${tp.length} tarea(s) pendiente(s) antes del regreso:\n\n`+tp.slice(0,8).map(x=>`• ${x.t.titulo} (${x.sec}${x.f?' · '+fmt(x.f):''})`).join('\n')+(tp.length>8?`\n… y ${tp.length-8} más`:'')+'\n\n¿Enviar la solicitud de todos modos?'))return;
+  if(tp.length&&!await confirmar(`${c.m===uAct?.nombre?'Tienes':c.m+' tiene'} ${tp.length} ${tp.length===1?'tarea pendiente':'tareas pendientes'} antes del regreso:\n\n`+tp.slice(0,8).map(x=>`• ${x.t.titulo} (${x.sec}${x.f?' · '+fmt(x.f):''})`).join('\n')+(tp.length>8?`\n… y ${tp.length-8} más`:'')+'\n\nConviene dejarlas listas o avisar a quien te cubre.',{tit:'📋 Tareas pendientes',ok:'Enviar solicitud',no:'Revisar'}))return;
   const prev=c.id?E.horasExtra.find(x=>x.id===c.id):null;
   const r={...(prev||{}),id:c.id||gId(),tipo:'compensatorio',miembro:c.m,fecha:c.f,desde:c.de,hasta:c.ha,feriado:false,tipoDia:tipoDiaH(c.f),horas:Math.round(c.tot*100)/100,actividad:mot,
     aprobacion:prev?.aprobacion||'Pendiente',registradoPor:prev?.registradoPor||uAct?.nombre,creado:prev?.creado||hoy(),regreso:c.reg};
   if(c.ff!==c.f)r.fechaFin=c.ff;else delete r.fechaFin;
   // Un cambio en una solicitud ya revisada vuelve a quedar pendiente (salvo que la edite el Líder sin cambiar las horas)
   if(prev&&prev.aprobacion!=='Pendiente'&&parseFloat(prev.horas)!==r.horas){r.aprobacion='Pendiente';delete r.aprobadoPor;delete r.fechaAprob;}
-  if(prev){const i=E.horasExtra.findIndex(x=>x.id===prev.id);if(i>=0)E.horasExtra[i]=r;reg('Compensatorio editado',`${c.m} — ${r.horas} hrs`);}
-  else{E.horasExtra.unshift(r);reg('Compensatorio solicitado',`${c.m} — ${r.horas} hrs`);addNotif('🌴',`Solicitud de compensatorio: ${c.m}`,`${fmtSaldo(r.horas)} · desde ${fmt(c.f)}`);}
+  if(prev){const i=E.horasExtra.findIndex(x=>x.id===prev.id);if(i>=0)E.horasExtra[i]=r;reg('Compensatorio editado',`${c.m} — ${fmtH(r.horas)}`);}
+  else{E.horasExtra.unshift(r);reg('Compensatorio solicitado',`${c.m} — ${fmtH(r.horas)}`);addNotif('🌴',`Solicitud de compensatorio: ${c.m}`,`${fmtSaldo(r.horas)} · desde ${fmt(c.f)}`);}
   guardar();cerM('mComp');refrescarVistaAbierta();
 }
 function saldoComp(nombre,hasta){// solo lo aprobado; 'hasta' (AAAA-MM-DD) es inclusivo
@@ -4103,7 +4155,7 @@ function tipoHCambio(){
   document.querySelectorAll('#mH .hSoloComp').forEach(el=>el.style.display=comp?'':'none');
   document.getElementById('hHorasLbl').textContent=comp?'Horas a descontar *':'Horas extra';
   document.getElementById('hActLbl').textContent=comp?'Motivo *':'Actividad *';
-  document.getElementById('hAct').placeholder=comp?'ej. Día libre por las horas de Sabores de Colón':'Describa la actividad realizada...';
+  document.getElementById('hAct').placeholder=comp?'ej. Día libre por las horas de Sabores de Colón':'Describe la actividad realizada…';
   document.getElementById('hFechaLbl').textContent=comp?'Desde *':'Fecha *';
   document.getElementById('hDesdeLbl').textContent=comp?'Desde las (opcional)':'Entrada *';
   document.getElementById('hHastaLbl').textContent=comp?'Hasta las (opcional)':'Salida *';
@@ -4181,8 +4233,8 @@ function guardarH(){
   const ffin=comp?document.getElementById('hFechaFin').value:'';
   if(ffin&&f&&ffin<f){alert('La fecha «Hasta» no puede ser anterior a «Desde».');return;}
   if(comp&&de&&ha&&(!ffin||ffin===f)&&ha<=de){alert('La hora «Hasta las» debe ser posterior a «Desde las».');return;}
-  if(!m||!f||h===''||!a||(!comp&&!prev&&(!de||!ha))){alert(comp?'Complete la fecha, cuántos días u horas va a usar y el motivo.':'Complete todos los campos, incluidas la hora de entrada y de salida.');return;}
-  if(!(parseFloat(h)>0)){alert(comp?'Indique cuántos días u horas va a usar.':'Con ese horario no hay horas fuera del horario laboral (8:00 a. m. a 4:00 p. m.).');return;}
+  if(!m||!f||h===''||!a||(!comp&&!prev&&(!de||!ha))){alert(comp?'Completa la fecha, cuántos días u horas vas a usar y el motivo.':'Completa todos los campos, incluidas la hora de entrada y de salida.');return;}
+  if(!(parseFloat(h)>0)){alert(comp?'Indica cuántos días u horas vas a usar.':'Con ese horario no hay horas fuera del horario laboral (8:00 a. m. a 4:00 p. m.).');return;}
   if(comp){
     // No se puede usar más de lo que hay: saldo aprobado menos lo ya pedido y pendiente
     const pedido=E.horasExtra.filter(x=>x.id!==id&&x.miembro===m&&esComp(x)&&x.aprobacion==='Pendiente').reduce((t,x)=>t+parseFloat(x.horas||0),0);
@@ -4190,7 +4242,7 @@ function guardarH(){
     if(parseFloat(h)>disp+1e-9){alert(`${m} solo tiene ${fmtSaldo(Math.max(0,disp))} disponibles${pedido?` (ya hay ${fmtSaldo(pedido)} pedidas y pendientes)`:''}.`);return;}
   }
   // Colaborador solo puede registrar las suyas
-  if(niv==='colaborador'&&m!==uAct?.nombre){alert('Solo puede registrar sus propias horas.');return;}
+  if(niv==='colaborador'&&m!==uAct?.nombre){alert('Solo puedes registrar tus propias horas.');return;}
   const propia=m===uAct?.nombre&&niv!=='lider';
   let apro=puede('aprobarHora')&&!propia?document.getElementById('hApro').value:'Pendiente';
   // Editar un registro propio ya aprobado no lo vuelve a dejar pendiente si no cambiaron las horas
@@ -4205,8 +4257,8 @@ function guardarH(){
   if(comp&&ffin&&ffin!==f)r.fechaFin=ffin;else delete r.fechaFin;
   if(apro!=='Pendiente'&&apro!==prev?.aprobacion){r.aprobadoPor=uAct?.nombre;r.fechaAprob=hoy();}
   if(apro==='Pendiente'){delete r.aprobadoPor;delete r.fechaAprob;}
-  if(id){const i=E.horasExtra.findIndex(h=>h.id===id);if(i>=0)E.horasExtra[i]=r;reg('Hora editada',`${m} — ${h} hrs`);}
-  else{E.horasExtra.unshift(r);reg(comp?'Compensatorio solicitado':'Hora registrada',`${m} — ${h} hrs`);if(apro==='Pendiente')addNotif(comp?'🌴':'⏱️',`${comp?'Solicitud de compensatorio':'Solicitud de horas'}: ${m}`,'Pendiente de aprobación');}
+  if(id){const i=E.horasExtra.findIndex(h=>h.id===id);if(i>=0)E.horasExtra[i]=r;reg('Hora editada',`${m} — ${fmtH(h)}`);}
+  else{E.horasExtra.unshift(r);reg(comp?'Compensatorio solicitado':'Hora registrada',`${m} — ${fmtH(h)}`);if(apro==='Pendiente')addNotif(comp?'🌴':'⏱️',`${comp?'Solicitud de compensatorio':'Solicitud de horas'}: ${m}`,'Pendiente de aprobación');}
   guardar();cerM('mH');renderHoras();
 }
 
@@ -4217,17 +4269,18 @@ function aprobarH(id,ok){
   if(ok&&esComp(h)){const sc=saldoComp(h.miembro).saldo,n=parseFloat(h.horas||0);
     if(n>sc+1e-9){alert(`No se puede aprobar: ${h.miembro} tiene ${fmtSaldo(Math.max(0,sc))} de saldo aprobado y pide ${fmtSaldo(n)}. El saldo nunca puede quedar en negativo.`);return;}}
   h.aprobacion=ok?'Aprobado':'Rechazado';h.aprobadoPor=uAct?.nombre;h.fechaAprob=hoy();
-  reg(ok?(esComp(h)?'Compensatorio aprobado':'Hora aprobada'):(esComp(h)?'Compensatorio rechazado':'Hora rechazada'),`${h.miembro} — ${h.horas} hrs`);
-  addNotif(ok?'✅':'❌',`${esComp(h)?'Compensatorio':'Horas'} ${ok?'aprobado':'rechazado'}: ${h.miembro}`,`${h.horas} hrs`);
+  reg(ok?(esComp(h)?'Compensatorio aprobado':'Hora aprobada'):(esComp(h)?'Compensatorio rechazado':'Hora rechazada'),`${h.miembro} — ${fmtH(parseFloat(h.horas||0))}`);
+  addNotif(ok?'✅':'❌',`${esComp(h)?'Compensatorio':'Horas'} ${ok?'aprobado':'rechazado'}: ${h.miembro}`,fmtH(parseFloat(h.horas||0)));
   guardar();renderHoras();refrescarVistaAbierta();
 }
 
-function elimH(id){
-  if(niv!=='lider'){alert('Solo el Líder puede eliminar registros de horas.');return;}
+async function elimH(id){
   const h=E.horasExtra.find(h=>h.id===id);if(!h)return;
+  const propiaPend=h.miembro===uAct?.nombre&&h.aprobacion==='Pendiente';
+  if(niv!=='lider'&&!propiaPend){alert('Solo el Líder puede eliminar registros ya revisados.');return;}
   if(!esComp(h)&&h.aprobacion==='Aprobado'){const msg=quedaNegativo(h.miembro,parseFloat(h.horas||0));if(msg){alert(msg);return;}}
-  if(!confirm(`¿Eliminar el registro de ${h.horas} hrs de ${h.miembro} (${fmt(h.fecha)})?`))return;
-  reg('Hora eliminada',`${h.miembro} — ${h.horas} hrs — ${fmt(h.fecha)} — por ${uAct?.nombre}`);
+  if(!await confirmar(`${h.miembro} · ${fmt(h.fecha)} · ${fmtSaldo(parseFloat(h.horas||0))}`,{tit:niv==='lider'?'Eliminar registro de horas':'Retirar registro pendiente',ok:niv==='lider'?'Eliminar':'Retirar',peligro:true}))return;
+  reg('Hora eliminada',`${h.miembro} — ${fmtH(parseFloat(h.horas||0))} — ${fmt(h.fecha)} — por ${uAct?.nombre}`);
   E.horasExtra=E.horasExtra.filter(h=>h.id!==id);
   guardar();renderHoras();
 }
@@ -4287,7 +4340,7 @@ function alertasPermiso(r){
   }
   if(r.motivo===2){
     const par=PARENTESCO_DUELO[r.parentesco];
-    if(!par)out.push('Indique el parentesco: el tope del permiso por duelo depende de él (art. 55, b-d).');
+    if(!par)out.push('Indica el parentesco: el tope del permiso por duelo depende de él (art. 55, b-d).');
     else{const tope=par[1]+(r.lejos?3:0);if(dias>tope)out.push(`Duelo (${par[0].toLowerCase()}): hasta ${tope} día${tope===1?'':'s'} laborable${tope===1?'':'s'}${r.lejos?' contando los 3 por traslado':''}; la solicitud es de ${nd(dias)} (art. 55).`);}
   }
   if(TOPE_MOTIVO[r.motivo]&&dias>TOPE_MOTIVO[r.motivo])out.push(`${MOTIVOS_PER[r.motivo-1]}: hasta ${TOPE_MOTIVO[r.motivo]} días laborables; la solicitud es de ${nd(dias)} (art. 55).`);
@@ -4452,18 +4505,18 @@ function perTxt(){
   const al=alertasPermiso(perBorrador()),el=document.getElementById('perAlertas');
   el.innerHTML=al.map(t=>'⚠️ '+escH(t)).join('<br>');el.style.display=al.length?'block':'none';
 }
-function guardarPer(){
+async function guardarPer(){
   const id=document.getElementById('perId').value,prev=id?E.permisos.find(x=>x.id===id):null;
   const m=document.getElementById('perMiem').value,mot=parseInt(document.getElementById('perMot').value);
   const df=document.getElementById('perDF').value,dh=document.getElementById('perDH').value,hf=document.getElementById('perHF').value,hh=document.getElementById('perHH').value;
   const tot=perTotalMin();
-  if(!m||!mot||!df||!hf){alert('Complete el motivo y las fechas.');return;}
+  if(!m||!mot||!df||!hf){alert('Completa el motivo y las fechas.');return;}
   if(hf<df||(hf===df&&dh&&hh&&hh<=dh)){alert('El final del permiso debe ser posterior al inicio.');return;}
-  if(!(tot>0)){alert('Indique el tiempo utilizado (días, horas o minutos).');return;}
-  if(niv==='colaborador'&&m!==uAct?.nombre){alert('Solo puede solicitar sus propios permisos.');return;}
-  if(mot===2&&!document.getElementById('perPar').value){alert('Indique el parentesco para el permiso por duelo.');return;}
+  if(!(tot>0)){alert('Indica el tiempo utilizado (días, horas o minutos).');return;}
+  if(niv==='colaborador'&&m!==uAct?.nombre){alert('Solo puedes solicitar tus propios permisos.');return;}
+  if(mot===2&&!document.getElementById('perPar').value){alert('Indica el parentesco para el permiso por duelo.');return;}
   const al=alertasPermiso(perBorrador());
-  if(al.length&&!confirm('Esta solicitud tiene alertas del Reglamento Interno:\n\n• '+al.join('\n• ')+'\n\n¿Guardarla de todas formas?'))return;
+  if(al.length&&!await confirmar('• '+al.join('\n• '),{tit:'⚠️ Alertas del Reglamento Interno',ok:'Guardar igual',no:'Revisar'}))return;
   const propia=m===uAct?.nombre&&niv!=='lider';
   let apro=puede('aprobarHora')&&!propia?document.getElementById('perApro').value:'Pendiente';
   const t=partesMin(tot);
@@ -4623,16 +4676,18 @@ function pendientesAprob(){
 function totAprob(q){return q.pubs.length+q.horas.length+q.comp.length+q.permisos.length;}
 function aprobY(fn){fn();renderAprob();}
 // Aprobar una pieza desde Aprobaciones: se confirma fecha, hora, tipo y plataformas, y pasa al calendario
-function aprobarPubAq(id){
+async function aprobarPubAq(id){
   const p=(E.publicaciones||[]).find(x=>x.id===id);if(!p)return;
   const f=document.getElementById('apF-'+id).value,h=document.getElementById('apH-'+id).value;
   const plats=[...document.querySelectorAll('.apP-'+id+':checked')].map(x=>x.value);
   if(!f){alert('Elige la fecha en que se publica.');return;}
-  if(f<hoy()&&!confirm('Esa fecha ya pasó. ¿Aprobar de todas formas?'))return;
   if(!plats.length){alert('Elige al menos una plataforma.');return;}
-  p.fecha=f;p.hora=h||p.hora||'';p.tipo=document.getElementById('apT-'+id).value;p.plataformas=plats;
+  const tipo=document.getElementById('apT-'+id).value;
+  if(f<hoy()&&!await confirmar(`La fecha elegida (${fmt(f)}) ya pasó.`,{tit:'Fecha pasada',ok:'Aprobar igual',no:'Cambiar fecha'}))return;
   const mismoDia=(E.publicaciones||[]).filter(x=>x.id!==id&&x.fecha===f&&pubListo(x)&&esFeed(x)).length;
-  if(esFeed(p)&&mismoDia>=PUB_MAX_DIA&&!confirm(`Ese día ya hay ${mismoDia} publicaciones de feed aprobadas (máximo ${PUB_MAX_DIA}). ¿Aprobar igual?`))return;
+  if(esFeed({...p,tipo})&&mismoDia>=PUB_MAX_DIA&&!await confirmar(`Ese día ya hay ${mismoDia} publicaciones de feed aprobadas (máximo recomendado: ${PUB_MAX_DIA}).`,{tit:'Día lleno',ok:'Aprobar igual',no:'Cambiar fecha'}))return;
+  const p2=(E.publicaciones||[]).find(x=>x.id===id);if(!p2)return;
+  p2.fecha=f;p2.hora=h||p2.hora||'';p2.tipo=tipo;p2.plataformas=plats;
   aprobY(()=>cambiarEstadoPub(id,'aprobado'));
 }
 function renderAprob(){
@@ -4672,8 +4727,8 @@ function renderAprob(){
   const comp=q.comp.map(h=>{const sc=saldoComp(h.miembro).saldo,n=parseFloat(h.horas||0);return fila(
     `<div style="font-size:14px;font-weight:700">${rAv(h.miembro,'',22,8)} ${escH(h.miembro)} · <span style="color:var(--az)">−${fmtD(n)}</span></div>`+
     sub(`📅 ${fmt(h.fecha)}${h.fechaFin&&h.fechaFin!==h.fecha?' al '+fmt(h.fechaFin):''}${h.desde&&h.hasta?' · 🕒 '+h.desde+'–'+h.hasta:''} · Saldo aprobado: ${fmtSaldo(sc)}`)+sub(escH(h.actividad||'')),
-    `<button class="btn bve bsm" onclick="aprobY(()=>aprobarH('${h.id}',true))">✅ Aprobar</button><button class="btn bpe bsm" onclick="aprobY(()=>aprobarH('${h.id}',false))">❌ Rechazar</button><button class="btn bgh bsm" onclick="solCompDoc('${h.id}')">📄 Formulario</button>`,
-    (n>sc+1e-9?alerta(`Pide más de lo que tiene en su saldo aprobado (${fmtSaldo(sc)}). No se puede aprobar: el saldo nunca queda en negativo.`):'')
+    (n>sc+1e-9?`<button class="btn bve bsm" disabled title="Pide más de su saldo aprobado" style="opacity:.45;cursor:not-allowed">✅ Aprobar</button>`:`<button class="btn bve bsm" onclick="aprobY(()=>aprobarH('${h.id}',true))">✅ Aprobar</button>`)+`<button class="btn bpe bsm" onclick="aprobY(()=>aprobarH('${h.id}',false))">❌ Rechazar</button><button class="btn bgh bsm" onclick="solCompDoc('${h.id}')">📄 Formulario</button>`,
+    (n>sc+1e-9?alerta(`Pide ${fmtSaldo(n)} y su saldo aprobado es ${fmtSaldo(Math.max(0,sc))}. Solo se puede rechazar o esperar a que se aprueben más horas extra.`):'')
     +(()=>{const a=avisoAnticipoComp(h.fecha,h.creado);return a?alerta(a):'';})()
     +(()=>{const tp=tareasPendComp(h.miembro,h.fechaFin||h.fecha);return tp.length?alerta(`Tiene ${tp.length} tarea${tp.length===1?'':'s'} pendiente${tp.length===1?'':'s'} hasta su regreso: `+tp.slice(0,4).map(x=>`${x.t.titulo} (${x.sec}${x.f?', '+fmt(x.f):''})`).join('; ')+(tp.length>4?'…':'')):'';})());}).join('');
 
@@ -4711,6 +4766,7 @@ function renderEquipo(){
       return(p.cats||[]).some(c=>(t.categorias||[]).includes(c));
     });
     const mh=saldoComp(p.nombre).saldo;
+    const verSaldo=niv!=='colaborador'||p.nombre===uAct?.nombre;// el saldo de cada persona es privado
     const comp=mt.filter(t=>eglobal(t)==='Completada').length;
     const pen=mt.filter(t=>eglobal(t)==='Pendiente').length;
     const pct=mt.length?Math.round(comp/mt.length*100):0;
@@ -4722,8 +4778,8 @@ function renderEquipo(){
         <div style="display:flex;align-items:center;gap:12px">
           ${rAv(p.nombre,p.foto||'',44,16)}
           <div>
-            <div style="font-weight:800;font-size:15px">${p.nombre}</div>
-            <div style="font-size:12px;color:var(--tm);margin-top:2px">${p.cargo||'Sin cargo'}</div>
+            <div style="font-weight:800;font-size:15px">${escH(p.nombre)}</div>
+            <div style="font-size:12px;color:var(--tm);margin-top:2px">${escH(p.cargo||'Sin cargo')}</div>
             ${(()=>{const a=ausenciaComp(p.nombre);return a?`<div style="font-size:11px;font-weight:700;color:var(--az);margin-top:3px">🌴 De compensatorio · regresa el ${fmt(a.regreso)}</div>`:'';})()}
             ${p.puesto||p.posicion?`<div style="font-size:11px;color:var(--tm);margin-top:2px">RRHH: ${p.puesto||'—'}${p.posicion?` · Posición ${p.posicion}`:''}</div>`:''}
             <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
@@ -4734,11 +4790,11 @@ function renderEquipo(){
         </div>
         ${puede('gestionarEquipo')?`<button class="btn bgh bsm" onclick="abrirMEq('${p.id}')">✏️</button>`:''}
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;text-align:center;background:var(--su2);border-radius:8px;padding:10px">
+      <div style="display:grid;grid-template-columns:repeat(${verSaldo?4:3},1fr);gap:8px;text-align:center;background:var(--su2);border-radius:8px;padding:10px">
         <div><div style="font-size:20px;font-weight:800;color:var(--na)">${mt.length}</div><div style="font-size:10px;color:var(--tm)">Asignadas</div></div>
         <div><div style="font-size:20px;font-weight:800;color:var(--ve)">${comp}</div><div style="font-size:10px;color:var(--tm)">Completadas</div></div>
         <div><div style="font-size:20px;font-weight:800;color:var(--am)">${pen}</div><div style="font-size:10px;color:var(--tm)">Pendientes</div></div>
-        <div><div style="font-size:20px;font-weight:800;color:var(--az)">${fmtD(mh)}</div><div style="font-size:10px;color:var(--tm)">Saldo compensatorio</div></div>
+        ${verSaldo?`<div><div style="font-size:${Math.abs(mh)>=HORAS_DIA?14:20}px;line-height:${Math.abs(mh)>=HORAS_DIA?'28px':'normal'};font-weight:800;color:var(--az);white-space:nowrap">${fmtD(mh)}</div><div style="font-size:10px;color:var(--tm)">Saldo compensatorio</div></div>`:''}
       </div>
       <div style="margin-top:10px">
         <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--tm);margin-bottom:3px"><span>Progreso general</span><span>${pct}%</span></div>
@@ -4785,6 +4841,9 @@ async function guardarEq(){
   if(!email){alert('Email obligatorio para poder iniciar sesión.');return;}
   const id=document.getElementById('eqId').value||gId();
   const password=document.getElementById('eqPin').value;
+  const esNueva=!E.equipo.some(e=>e.id===id);
+  if(esNueva&&!password){alert('Escribe una contraseña inicial para la persona nueva.');return;}
+  if(password&&password.length<8){alert('La contraseña debe tener al menos 8 caracteres.');return;}
   const cats=[...document.querySelectorAll('#chEqCats .chip.sel')].map(c=>c.dataset.v);
   const nivel=document.getElementById('eqNivel').value;
   const secciones=[...document.querySelectorAll('.eqSecCk:checked')].map(ck=>ck.value);
@@ -4814,10 +4873,9 @@ async function guardarEq(){
 async function elimEq(){
   const id=document.getElementById('eqId').value;
   const p=E.equipo.find(e=>e.id===id);
-  if(!p||!confirm(`¿Eliminar a "${p.nombre}" del equipo?\n\nSe eliminará su acceso al sistema.`))return;
+  if(!p||!await confirmar(`${p.nombre} perderá el acceso al sistema. Sus horas, permisos y tareas pasadas se conservan en el historial.`,{tit:'Eliminar del equipo',ok:'Eliminar',peligro:true}))return;
   await fetch(`/api/users/${id}`,{method:'DELETE',headers:{'Authorization':'Bearer '+getToken()}});
   E.equipo=E.equipo.filter(e=>e.id!==id);
-  E.horasExtra=E.horasExtra.filter(h=>h.miembro!==p.nombre);
   reg('Persona eliminada',p.nombre);guardar();cerM('mEq');renderEquipo();renderLogin();
 }
 
@@ -4874,7 +4932,7 @@ async function cambiarPassword(){
   const show=(txt,ok)=>{msg.textContent=txt;msg.style.display='block';msg.style.background=ok?'var(--ves)':'var(--ros)';msg.style.color=ok?'var(--ve)':'var(--ro)';};
   if(!actual||!nueva||!conf){show('Completa todos los campos.',false);return;}
   if(nueva!==conf){show('Las contraseñas nuevas no coinciden.',false);return;}
-  if(nueva.length<4){show('La contraseña debe tener al menos 4 caracteres.',false);return;}
+  if(nueva.length<8){show('La contraseña debe tener al menos 8 caracteres.',false);return;}
   const r=await fetch('/api/change-password',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()},body:JSON.stringify({passwordActual:actual,passwordNueva:nueva})});
   const d=await r.json();
   if(r.ok){
@@ -5041,8 +5099,9 @@ function generarRep(){
   const esTarde=t=>t.secciones&&Object.values(t.secciones).some(sv=>sv&&(sv.completadaTarde||sv.notaRetraso));
   const compTarde=tsPer.filter(t=>eglobal(t)==='Completada'&&esTarde(t)).length;
   const compATiempo=comp-compTarde;
-  const sem=pct>=80?'🟢 VERDE — Rendimiento excelente':pct>=50?'🟡 AMARILLO — Rendimiento moderado':'🔴 ROJO — Requiere atención';
-  const semC=pct>=80?'sver':pct>=50?'samar':'sroj';
+  const sinDatos=!uTot.asig;
+  const sem=sinDatos?'⚪ SIN DATOS — No hay asignaciones en este periodo':pct>=80?'🟢 VERDE — Rendimiento excelente':pct>=50?'🟡 AMARILLO — Rendimiento moderado':'🔴 ROJO — Requiere atención';
+  const semC=sinDatos?'sgris':pct>=80?'sver':pct>=50?'samar':'sroj';
   const pl={diario:'Diario',semanal:'Semanal',mensual:'Mensual'}[repP];
 
   // Métricas por sección (período actual) — por unidad
@@ -5050,8 +5109,8 @@ function generarRep(){
     const tc=tsPer.filter(t=>t.secciones?.[sec]);
     const su=tc.reduce((s,t)=>{const u=unidadesDeSeccion(t,sec);s.asig+=u.asig;s.comp+=u.comp;s.noc+=u.noc;return s;},{asig:0,comp:0,noc:0});
     const pp=su.asig?Math.round(su.comp/su.asig*100):0;
-    const col=pp>=80?'var(--ve)':pp>=50?'var(--na)':'var(--ro)';
-    const sm2=pp>=80?'🟢':pp>=50?'🟡':'🔴';
+    const col=!su.asig?'var(--tm)':pp>=80?'var(--ve)':pp>=50?'var(--na)':'var(--ro)';
+    const sm2=!su.asig?'⚪':pp>=80?'🟢':pp>=50?'🟡':'🔴';
     const resps=[...new Set(tc.flatMap(t=>(t.secciones[sec].responsables||[]).map(uid=>{const u=E.equipo.find(e=>e.id===uid);return u?u.nombre.split(' ')[0]:null;}).filter(Boolean)))].join(', ');
     return{sec,ico:SECCIONES[sec].ico,tc,cc:su.comp,casig:su.asig,pp,col,sm2,resps};
   }).filter(m=>m.tc.length);
@@ -5321,9 +5380,9 @@ function imprimirReporte(){
   const venc=ts.filter(t=>t.fecha&&t.fecha<hoy()&&!tResuelta(t));
   const hapr=E.horasExtra.filter(h=>h.aprobacion==='Aprobado'&&!esComp(h)&&h.fecha&&h.fecha>=rango.ini&&h.fecha<=rango.fin);
   const thrs=hapr.reduce((s,h)=>s+parseFloat(h.horas||0),0);
-  const semTxt=pct>=80?'🟢 VERDE — Rendimiento excelente':pct>=50?'🟡 AMARILLO — Rendimiento moderado':'🔴 ROJO — Requiere atención';
-  const semCol=pct>=80?'#16a34a':pct>=50?'#d97706':'#dc2626';
-  const semBg=pct>=80?'#dcfce7':pct>=50?'#fef3c7':'#fee2e2';
+  const semTxt=!uTot.asig?'⚪ SIN DATOS — No hay asignaciones en este periodo':pct>=80?'🟢 VERDE — Rendimiento excelente':pct>=50?'🟡 AMARILLO — Rendimiento moderado':'🔴 ROJO — Requiere atención';
+  const semCol=!uTot.asig?'#6b7280':pct>=80?'#16a34a':pct>=50?'#d97706':'#dc2626';
+  const semBg=!uTot.asig?'#f3f4f6':pct>=80?'#dcfce7':pct>=50?'#fef3c7':'#fee2e2';
   const tipo={diario:'Diario',semanal:'Semanal',mensual:'Mensual'}[repP]||'Semanal';
   const fd=new Date().toLocaleDateString('es-PA',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 
@@ -5483,7 +5542,7 @@ function imprimirReporte(){
   let hrsRows='';
   E.equipo.forEach(u=>{
     const mh=hapr.filter(h=>h.miembro===u.nombre).reduce((s,h)=>s+parseFloat(h.horas||0),0);
-    if(mh>0)hrsRows+=`<tr><td>${u.nombre}</td><td style="text-align:center">${hapr.filter(h=>h.miembro===u.nombre).length}</td><td style="text-align:center;font-weight:700">${mh.toFixed(1)} hrs</td></tr>`;
+    if(mh>0)hrsRows+=`<tr><td>${u.nombre}</td><td style="text-align:center">${hapr.filter(h=>h.miembro===u.nombre).length}</td><td style="text-align:center;font-weight:700">${fmtH(mh)}</td></tr>`;
   });
 
   // Producción de contenido del período (hechas / asignadas por tipo)
@@ -5692,7 +5751,7 @@ function oirhDatos(){
 
 function generarOirh(){
   const sel=document.getElementById('oiMiem').value,mes=document.getElementById('oiMes').value,conPend=document.getElementById('oiPend').checked;
-  if(!mes){alert('Elija el mes.');return;}
+  if(!mes){alert('Elige el mes.');return;}
   // Guardar en la ficha los datos del servidor que se hayan completado aquí
   const pf=sel&&E.equipo.find(x=>x.nombre===sel);
   if(pf&&(puede('aprobarHora')||pf.id===uAct?.id)){
@@ -5778,7 +5837,7 @@ function abrirMRepComp(){
 
 function generarRepComp(){
   const sel=document.getElementById('rcMiem').value,ini=document.getElementById('rcIni').value,fin=document.getElementById('rcFin').value;
-  if(!ini||!fin||ini>fin){alert('Revise las fechas: «Desde» debe ser anterior a «Hasta».');return;}
+  if(!ini||!fin||ini>fin){alert('Revisa las fechas: «Desde» debe ser anterior a «Hasta».');return;}
   const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const dia=f=>{const [a,m,d]=f.split('-').map(Number);const w=new Date(a,m-1,d).toLocaleDateString('es-PA',{weekday:'long'});return w.charAt(0).toUpperCase()+w.slice(1);};
   const antes=d=>{const [a,m,dd]=d.split('-').map(Number);const x=new Date(a,m-1,dd-1);return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;};
@@ -5804,7 +5863,7 @@ function generarRepComp(){
 ${filasE?`<table><thead><tr><th>Fecha</th><th>Día</th><th>Horario</th><th>Actividad</th><th class="n">Horas</th><th>Aprobó</th></tr></thead><tbody>${filasE}</tbody></table>`:'<p class="vacio">Sin horas extra aprobadas en el período.</p>'}
 <h3>Tiempo compensatorio usado</h3>
 ${filasU?`<table><thead><tr><th>Fecha</th><th>Día</th><th colspan="2">Motivo</th><th class="n">Tiempo</th><th>Aprobó</th></tr></thead><tbody>${filasU}</tbody></table>`:'<p class="vacio">No usó tiempo compensatorio en el período.</p>'}
-${pend.length?`<p class="nota">Hay ${pend.length} registro(s) pendiente(s) de aprobación en el período (${fmtSaldo(pend.reduce((t,h)=>t+(esComp(h)?-1:1)*parseFloat(h.horas||0),0))}). No se cuentan en el saldo.</p>`:''}
+${pend.length?`<p class="nota">Hay ${plu(pend.length,'registro pendiente','registros pendientes')} de aprobación en el período (${fmtSaldo(pend.reduce((t,h)=>t+(esComp(h)?-1:1)*parseFloat(h.horas||0),0))}). No se cuentan en el saldo.</p>`:''}
 <div class="firma"><div><div class="linea">Colaborador(a)</div></div><div><div class="linea">Jefe(a) inmediato(a)</div></div><div><div class="linea">Recursos Humanos</div></div></div>
 </section>`;}).filter(Boolean);
   if(!secciones.length){alert('No hay horas registradas para ese período.');return;}
@@ -5853,11 +5912,11 @@ function archivarRep(){
   alert(`✅ Reporte archivado a las ${hora}.\n\nPuedes verlo en la sección "Histórico".\nLos datos actuales no fueron modificados.`);
 }
 
-function cerrarMes(){
+async function cerrarMes(){
   if(!puede('cerrarMes')){alert('Solo el Líder puede cerrar el mes.');return;}
   const ahora=new Date();
   const nombreMes=ahora.toLocaleDateString('es-PA',{month:'long',year:'numeric'});
-  if(!confirm(`¿Cerrar el mes de ${nombreMes}?\n\n✅ El reporte actual quedará archivado.\n🔁 Las tareas recurrentes se conservan y reinician.\n🗑 Las tareas únicas serán eliminadas.\n⏱️ Las horas extras y el tiempo compensatorio se conservan (el saldo pasa al mes siguiente).\n👥 El equipo, bitácora e histórico se conservan.\n\nEsta acción no se puede deshacer.`))return;
+  if(!await confirmar(`✅ El reporte actual se archiva.\n🔁 Las tareas recurrentes se conservan y reinician.\n🗑 Las tareas únicas se eliminan.\n⏱️ Horas extra y compensatorio se conservan (el saldo pasa al mes siguiente).\n👥 Equipo, bitácora e histórico se conservan.\n\nNo se puede deshacer.`,{tit:`Cerrar el mes de ${nombreMes}`,ok:'Cerrar mes',peligro:true}))return;
   generarRep();
   const ts=E.tareas,comp=ts.filter(t=>eglobal(t)==='Completada').length;
   const _hora=new Date().toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit'});
@@ -5907,10 +5966,10 @@ function verHistRep(id){
 }
 function copHistRep(){navigator.clipboard.writeText(document.getElementById('mHistBody')?.textContent||'').then(()=>alert('✅ Copiado.'));}
 
-function elimHist(id){
+async function elimHist(id){
   if(!puede('cerrarMes')){alert('Sin permiso.');return;}
   const h=E.historico.find(h=>h.id===id);
-  if(!h||!confirm(`¿Eliminar el reporte "${h.mes}"? Esta acción no se puede deshacer.`))return;
+  if(!h||!await confirmar(`El reporte de ${h.mes} se eliminará del histórico. No se puede deshacer.`,{tit:'Eliminar reporte',ok:'Eliminar',peligro:true}))return;
   E.historico=E.historico.filter(h=>h.id!==id);
   reg('Reporte eliminado',`"${h.mes}" eliminado por ${uAct?.nombre}`);
   guardar();renderHist();
@@ -5976,23 +6035,69 @@ function renderBit(){
   pagDiv.innerHTML=pgH;
 }
 
-function limpBit(){
-  if(!confirm('¿Eliminar todo el historial de cambios?'))return;
-  // Reset selector de usuarios
-  const selU=document.getElementById('bitFiltU');
-  if(selU)while(selU.options.length>1)selU.remove(1);
-  bitPagina=0;
-  E.bitacora=[];reg('Bitácora limpiada','Por '+uAct?.nombre);guardar();renderBit();
-}
 
 // ════════════════════════
 //  MODALES
 // ════════════════════════
-function abrirM(id){document.getElementById(id).classList.add('on');}
+// Avisos sin bloquear la pantalla (reemplazan alert() del navegador)
+function avisar(msg){
+  const m=String(msg??'');const c=document.getElementById('toasts');if(!c)return;
+  const d=document.createElement('div');
+  d.className='toast '+(/^(✅|🎉|✓)/.test(m)?'ok':/^(❌|🚫|⛔)|^Sin permiso|^No (puedes|se pudo|tienes)|^Error/.test(m)?'mal':/^⚠️|^Debes|^Escribe|^Selecciona|^Indica|^Completa|^Ingresa/.test(m)?'av':'');
+  d.textContent=m;d.onclick=()=>d.remove();
+  c.appendChild(d);while(c.children.length>3)c.firstChild.remove();
+  setTimeout(()=>d.remove(),Math.min(12000,3500+m.length*45));
+}
+window.alert=avisar;
+
+// Diálogo propio: dialogo({tit,msg,campo:{label,req,ph,val,err},ok,no,peligro}) → Promise
+let _dlg=null;
+function dialogo(o){
+  if(_dlg)dlgFin(null);
+  return new Promise(res=>{
+    _dlg={res,o};
+    const $=id=>document.getElementById(id);
+    $('dlgTit').textContent=o.tit||'Confirmar';
+    $('dlgMsg').textContent=o.msg||'';$('dlgMsg').style.display=o.msg?'block':'none';
+    $('dlgCampo').style.display=o.campo?'block':'none';
+    if(o.campo){$('dlgLbl').textContent=o.campo.label||'';$('dlgTxt').value=o.campo.val||'';$('dlgTxt').placeholder=o.campo.ph||'';}
+    $('dlgErr').style.display='none';
+    $('dlgSi').textContent=o.ok||'Aceptar';$('dlgSi').className='btn '+(o.peligro?'bpe':'bna');
+    $('dlgNo').textContent=o.no||'Cancelar';
+    abrirM('mDlg');
+    setTimeout(()=>(o.campo?$('dlgTxt'):$('dlgSi')).focus(),50);
+  });
+}
+function dlgFin(v){if(!_dlg)return;const d=_dlg;_dlg=null;cerM('mDlg');d.res(v);}
+function dlgOk(){
+  const o=_dlg?.o;if(!o)return;
+  if(!o.campo){dlgFin(true);return;}
+  const v=document.getElementById('dlgTxt').value.trim();
+  if(o.campo.req&&!v){const e=document.getElementById('dlgErr');e.textContent=o.campo.err||'Este dato es obligatorio.';e.style.display='block';return;}
+  dlgFin(v);
+}
+document.getElementById('dlgTxt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();dlgOk();}});
+// Pide un texto; devuelve el texto (puede ser '') o null si se cancela
+const pedirTexto=(tit,msg,campo,ok)=>dialogo({tit,msg,campo,ok});
+// Pide confirmación; devuelve true/false
+const confirmar=(msg,o={})=>dialogo({tit:o.tit,msg,ok:o.ok,no:o.no,peligro:o.peligro}).then(v=>v===true);
+
+// Fecha escrita debajo de cada campo de fecha de los formularios: el navegador puede mostrar
+// mm/dd/aaaa según su idioma y en Panamá eso se confunde (10/07 = 10 de julio o 7 de octubre).
+function pistaFecha(inp){
+  if(!inp||inp.type!=='date'||!inp.closest('.fg'))return;
+  let h=inp.nextElementSibling;
+  if(!h||!h.classList.contains('fhint')){h=document.createElement('div');h.className='fhint';inp.after(h);}
+  const v=inp.value;
+  h.textContent=v?new Date(v+'T12:00:00').toLocaleDateString('es-PA',{weekday:'long',day:'numeric',month:'long',year:'numeric'}):'';
+}
+['input','change'].forEach(ev=>document.addEventListener(ev,e=>{if(e.target?.type==='date')pistaFecha(e.target);}));
+function abrirM(id){const m=document.getElementById(id);m.classList.add('on');setTimeout(()=>m.querySelectorAll('input[type=date]').forEach(pistaFecha),0);}
 function cerM(id){document.getElementById(id).classList.remove('on');}
-document.querySelectorAll('.mov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('on');}));
+document.querySelectorAll('.mov').forEach(o=>o.addEventListener('click',e=>{if(e.target!==o)return;if(o.id==='mDlg')dlgFin(null);else o.classList.remove('on');}));
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
+    if(_dlg){dlgFin(null);return;}
     document.querySelectorAll('.mov.on').forEach(o=>o.classList.remove('on'));
     cerrarSid();
   }
@@ -6120,9 +6225,11 @@ function renderAsig(){
 
   html+=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-bottom:24px">`;
 
+  const libres=[];// personas sin nada ese día: van en una sola línea al final
   personas.forEach(u=>{
     const{tareaLines,pubLines}=getAsigPersona(u.id,u.nombre,fecha);
     totalTareas+=tareaLines.length;totalPubs+=pubLines.length;
+    if(!tareaLines.length&&!pubLines.length){libres.push(u);return;}
     const seccStr=(u.secciones||[]).join(' · ')||'Sin sección';
 
     const tareasHTML=tareaLines.length
@@ -6143,7 +6250,7 @@ function renderAsig(){
           <span style="font-size:14px;color:var(--tm);flex-shrink:0;margin-top:2px">›</span>
         </div>`;
       }).join('')
-      :`<div style="font-size:12px;color:var(--tm);padding:6px 0">Sin tareas asignadas en esta sección.</div>`;
+      :`<div style="font-size:12px;color:var(--tm);padding:6px 0">Sin tareas este día.</div>`;
 
     const pubsHTML=pubLines.length
       ?`<div style="margin-top:8px;border-top:1px solid var(--bo);padding-top:8px">
@@ -6161,8 +6268,8 @@ function renderAsig(){
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;border-bottom:1px solid var(--bo);padding-bottom:10px">
         ${rAv(u.nombre,u.foto,34,12)}
         <div style="flex:1;min-width:0">
-          <div style="font-size:14px;font-weight:800;color:var(--tx)">${u.nombre}</div>
-          <div style="font-size:11px;color:var(--tm);margin-top:1px">${u.cargo||seccStr}</div>
+          <div style="font-size:14px;font-weight:800;color:var(--tx)">${escH(u.nombre)}</div>
+          <div style="font-size:11px;color:var(--tm);margin-top:1px">${escH(u.cargo||seccStr)}</div>
         </div>
         <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--su2);color:var(--tm)">${tareaLines.length} tarea${tareaLines.length!==1?'s':''}</span>
       </div>
@@ -6172,6 +6279,7 @@ function renderAsig(){
   });
 
   html+='</div>';
+  if(libres.length)html+=`<div style="font-size:12px;color:var(--tm);margin:-12px 0 20px">🟢 Sin asignaciones este día: ${libres.map(u=>escH(u.nombre.split(' ')[0])).join(', ')}</div>`;
 
   // Publicaciones sin responsable
   if(pubsSinResp.length&&['lider','editor'].includes(niv)){
@@ -6190,7 +6298,7 @@ function renderAsig(){
   html+=`<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--tm);padding:8px 0">
     <span>📋 <strong>${totalTareas}</strong> asignaciones activas</span>
     <span>📅 <strong>${totalPubs}</strong> publicaciones hoy</span>
-    <span>👥 <strong>${personas.length}</strong> personas</span>
+    <span>👥 <strong>${personas.length}</strong> ${personas.length===1?'persona':'personas'}</span>
   </div>`;
 
   cont.innerHTML=html;
@@ -6402,8 +6510,8 @@ function guardarAsigVar(){
   }
   guardar();cerM('mAsigVar');renderAsigVarias();
 }
-function elimAV(id){
-  if(!confirm('¿Eliminar esta tarea recurrente?'))return;
+async function elimAV(id){
+  if(!await confirmar('Dejará de generarse en los próximos periodos.',{tit:'Eliminar tarea recurrente',ok:'Eliminar',peligro:true}))return;
   E.asigVarias=(E.asigVarias||[]).filter(a=>a.id!==id);
   guardar();renderAsigVarias();
 }
