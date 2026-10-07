@@ -4894,7 +4894,7 @@ function cerrarMes(){
   if(!puede('cerrarMes')){alert('Solo el Líder puede cerrar el mes.');return;}
   const ahora=new Date();
   const nombreMes=ahora.toLocaleDateString('es-PA',{month:'long',year:'numeric'});
-  if(!confirm(`¿Cerrar el mes de ${nombreMes}?\n\n✅ El reporte actual quedará archivado.\n🔁 Las tareas recurrentes se conservan y reinician.\n🗑 Las tareas únicas y horas extras serán eliminadas.\n👥 El equipo, bitácora e histórico se conservan.\n\nEsta acción no se puede deshacer.`))return;
+  if(!confirm(`¿Cerrar el mes de ${nombreMes}?\n\n✅ El reporte actual quedará archivado.\n🔁 Las tareas recurrentes se conservan y reinician.\n🗑 Las tareas únicas serán eliminadas.\n⏱️ Las horas extras y el tiempo compensatorio se conservan (el saldo pasa al mes siguiente).\n👥 El equipo, bitácora e histórico se conservan.\n\nEsta acción no se puede deshacer.`))return;
   generarRep();
   const ts=E.tareas,comp=ts.filter(t=>eglobal(t)==='Completada').length;
   const _hora=new Date().toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit'});
@@ -4907,7 +4907,8 @@ function cerrarMes(){
     if(t.redesSociales)Object.keys(t.redesSociales).forEach(r=>Object.keys(t.redesSociales[r]).forEach(k=>{if(k.endsWith('_comp'))t.redesSociales[r][k]=0;}));
     if(t.mediosData)Object.keys(t.mediosData).forEach(m=>Object.keys(t.mediosData[m]).forEach(k=>{if(k.endsWith('_comp'))t.mediosData[m][k]=0;}));
   });
-  E.tareas=recurrentes;E.horasExtra=[];expandidas.clear();
+  // Las horas extras NO se borran: son el saldo de tiempo compensatorio y la base del formulario OIRH de cada mes
+  E.tareas=recurrentes;expandidas.clear();
   reg('Mes cerrado',`${nombreMes} — ${comp}/${ts.length} tareas completadas — ${recurrentes.length} recurrentes conservadas`);
   addNotif('🗂️',`Mes cerrado: ${nombreMes}`,'Datos operativos reiniciados · Histórico guardado');
   guardar();generarRep();renderTareas();renderHoras();actuCts();
