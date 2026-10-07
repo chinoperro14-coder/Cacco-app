@@ -9,13 +9,26 @@ const PDFDocument = require("pdfkit");
 const mongoose = require("mongoose");
 
 const app        = express();
-const JWT_SECRET = process.env.JWT_SECRET || "cacco_secret_2024";
+// La clave de las sesiones nunca va en el código (el repositorio es público).
+// Sin JWT_SECRET se usa una clave aleatoria por arranque: las sesiones se cierran al reiniciar.
+const JWT_SECRET = process.env.JWT_SECRET || require("crypto").randomBytes(48).toString("hex");
+if (!process.env.JWT_SECRET)
+  console.warn("⚠️  Falta JWT_SECRET — usando clave temporal. Defínela en Render (Environment) para que las sesiones duren.");
 const PORT       = process.env.PORT || 3000;
 const MONGO_URI  = process.env.MONGODB_URI?.includes("xxxxx") ? null : process.env.MONGODB_URI;
 
 app.use(cors());
 app.use(express.json({ limit: "5mb" }));
-app.use(express.static(__dirname));
+// Solo se publica la interfaz y sus imágenes; nunca data.json, users.json, el código del servidor ni archivos ocultos.
+const EXT_PUBLICAS = new Set([".png", ".jpg", ".jpeg", ".svg", ".ico", ".webp", ".woff", ".woff2"]);
+app.use((req, res, next) => {
+  if (req.path === "/" || req.path.startsWith("/api/")) return next();
+  const ext = path.extname(req.path).toLowerCase();
+  const oculto = req.path.split("/").some(seg => seg.startsWith(".") || seg === "node_modules" || seg === "backups");
+  if (EXT_PUBLICAS.has(ext) && !oculto) return next();
+  res.status(404).end();
+});
+app.use(express.static(__dirname, { dotfiles: "deny", index: false }));
 
 // ════════════════════════
 //  MODELOS MONGODB
@@ -90,6 +103,30 @@ function soloLider(req, res, next) {
   next();
 }
 
+// Tiempo compensatorio: quien está fuera (aprobado, un día completo o más) no entra ni guarda
+// hasta su fecha de regreso. El Líder siempre puede entrar, para que nunca falte quien administre.
+const hoyPanama = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Panama" }).format(new Date());
+function siguienteDiaSemana(f) {
+  const d = new Date(f + "T12:00:00Z");
+  do { d.setUTCDate(d.getUTCDate() + 1); } while ([0, 6].includes(d.getUTCDay()));
+  return d.toISOString().slice(0, 10);
+}
+async function regresoSiAusente(userId, nivel) {
+  if (nivel === "lider") return null;
+  const data = await leerData();
+  const yo = (data.equipo || []).find(p => p.id === userId);
+  if (!yo) return null;
+  const f = hoyPanama();
+  for (const h of data.horasExtra || []) {
+    if (h.tipo !== "compensatorio" || h.miembro !== yo.nombre || h.aprobacion !== "Aprobado") continue;
+    if (!(parseFloat(h.horas || 0) >= 8 - 1e-9)) continue;
+    const regreso = h.regreso || siguienteDiaSemana(h.fechaFin || h.fecha);
+    if (h.fecha <= f && f < regreso) return regreso;
+  }
+  return null;
+}
+const msgAusente = r => `🌴 Estás de tiempo compensatorio. Tu acceso se habilita el ${r.split("-").reverse().join("/")}.`;
+
 // ════════════════════════
 //  RUTA PRINCIPAL
 // ════════════════════════
@@ -108,6 +145,8 @@ app.post("/api/login", async (req, res) => {
     if (!user) return res.status(401).json({ error: "Usuario no encontrado" });
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(401).json({ error: "Contraseña incorrecta" });
+    const regreso = await regresoSiAusente(user.id, user.nivel);
+    if (regreso) return res.status(403).json({ error: msgAusente(regreso) });
     const expira = recordar ? "30d" : "8h";
     const token = jwt.sign({ id: user.id, email: user.email, nivel: user.nivel }, JWT_SECRET, { expiresIn: expira });
     res.json({ token, userId: user.id });
@@ -117,16 +156,67 @@ app.post("/api/login", async (req, res) => {
 // ════════════════════════
 //  DATOS COMPARTIDOS
 // ════════════════════════
+// Modo invitado: solo tareas, calendario y publicaciones. Nunca cédulas, correos, permisos, horas ni bitácora.
+function datosPublicos(d) {
+  const equipo = (d.equipo || []).map(p => ({ id: p.id, nombre: p.nombre, cargo: p.cargo, nivel: p.nivel, foto: p.foto, secciones: p.secciones, cats: p.cats }));
+  return { tareas: d.tareas || [], etiquetas: d.etiquetas || [], publicaciones: d.publicaciones || [], asigVarias: d.asigVarias || [],
+           equipo, horasExtra: [], permisos: [], bitacora: [], notifs: [], historico: [] };
+}
 app.get("/api/data/public", async (req, res) => {
-  try { res.json(await leerData()); }
+  try { res.json(datosPublicos(await leerData())); }
   catch { res.status(500).json({ error: "Error leyendo datos" }); }
 });
 app.get("/api/data", verificarToken, async (req, res) => {
   try { res.json(await leerData()); }
   catch { res.status(500).json({ error: "Error leyendo datos" }); }
 });
+// Las solicitudes de permiso no se borran: si un guardado omite alguna que ya existe, se conserva.
+// Reglas por rol que el servidor hace cumplir aunque alguien salte la interfaz:
+// - nadie salvo el Líder cambia niveles ni agrega personas al equipo
+// - un colaborador no aprueba ni rechaza horas, compensatorios ni permisos (los suyos nuevos quedan «Pendiente»)
+function aplicarReglasRol(nuevo, actual, nivel) {
+  if (!nuevo || typeof nuevo !== "object" || nivel === "lider") return nuevo;
+  const previos = new Map((actual.equipo || []).map(p => [p.id, p]));
+  if (Array.isArray(nuevo.equipo))
+    nuevo.equipo = [
+      ...nuevo.equipo.filter(p => p && previos.has(p.id)).map(p => ({ ...p, nivel: previos.get(p.id).nivel })),
+      ...[...previos.values()].filter(p => !nuevo.equipo.some(q => q && q.id === p.id))
+    ];
+  if (nivel === "colaborador") {
+    for (const col of ["horasExtra", "permisos"]) {
+      if (!Array.isArray(nuevo[col])) continue;
+      const ant = new Map((actual[col] || []).map(r => [r && r.id, r]));
+      nuevo[col] = nuevo[col].map(r => {
+        if (!r) return r;
+        const a = ant.get(r.id);
+        if (!a) return ["Aprobado", "Rechazado"].includes(r.aprobacion) ? { ...r, aprobacion: "Pendiente", aprobadoPor: undefined, fechaAprob: undefined } : r;
+        if (r.aprobacion !== a.aprobacion && ["Aprobado", "Rechazado"].includes(r.aprobacion))
+          return { ...r, aprobacion: a.aprobacion, aprobadoPor: a.aprobadoPor, fechaAprob: a.fechaAprob };
+        return r;
+      });
+    }
+  }
+  return nuevo;
+}
+async function conservarPermisos(nuevo, actual) {
+  if (!nuevo || typeof nuevo !== "object") return nuevo;
+  actual = actual || await leerData();
+  const previos = Array.isArray(actual?.permisos) ? actual.permisos : [];
+  if (!previos.length) return nuevo;
+  const lista = Array.isArray(nuevo.permisos) ? nuevo.permisos : [];
+  const ids = new Set(lista.map(p => p && p.id));
+  const faltan = previos.filter(p => p && p.id && !ids.has(p.id));
+  if (faltan.length) nuevo.permisos = [...lista, ...faltan];
+  return nuevo;
+}
 app.post("/api/data", verificarToken, async (req, res) => {
-  try { await escribirData(req.body); res.json({ ok: true }); }
+  try {
+    if (req.usuario?.nivel === "lector") return res.status(403).json({ error: "Solo lectura" });
+    const regreso = await regresoSiAusente(req.usuario?.id, req.usuario?.nivel);
+    if (regreso) return res.status(403).json({ error: msgAusente(regreso) });
+    const actual = await leerData();
+    await escribirData(await conservarPermisos(aplicarReglasRol(req.body, actual, req.usuario?.nivel), actual)); res.json({ ok: true });
+  }
   catch { res.status(500).json({ error: "No se pudo guardar" }); }
 });
 

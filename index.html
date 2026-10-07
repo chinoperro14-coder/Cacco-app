@@ -599,6 +599,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <button class="ni" onclick="goV('asigVarias',this)"><span class="ico">🔁</span>Tareas Recurrentes</button>
   <button class="ni" onclick="goV('calendario',this)"><span class="ico">📅</span>Calendario</button>
   <button class="ni" onclick="goV('horasExtra',this)"><span class="ico">⏱️</span>Horas Extras<span class="ct" id="ctH">0</span></button>
+  <button class="ni" onclick="goV('compensatorio',this)"><span class="ico">🌴</span>Compensatorio<span class="ct" id="ctC">0</span></button>
   <button class="ni" onclick="goV('permisos',this)"><span class="ico">📝</span>Permisos<span class="ct" id="ctP">0</span></button>
   <button class="ni" onclick="goV('equipo',this)"><span class="ico">👥</span>Equipo</button>
   <div class="nsep">Coordinación</div>
@@ -684,7 +685,6 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <div class="stit">Horas Extras</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn bgh bsm nhe oculto" onclick="abrirMOirh()">📋 Formulario OIRH</button>
-      <button class="btn bgh bsm nhe oculto" onclick="abrirMRepComp()">📄 Reporte compensatorio</button>
       <button class="btn bna bsm nhe oculto" onclick="abrirMH()">+ Registrar Horas</button>
     </div>
   </div>
@@ -699,6 +699,28 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <div class="hegrid" id="gridHE"></div>
   <div id="vacHE" style="padding:48px 20px;text-align:center;color:var(--tm);display:none">
     <div style="font-size:36px;margin-bottom:10px">⏱️</div><div style="font-size:14px;font-weight:500">Sin horas extras registradas.</div>
+  </div>
+</div>
+
+<!-- TIEMPO COMPENSATORIO (trámite aparte de las horas extra) -->
+<div id="vCompensatorio" class="oculto">
+  <div class="sh2">
+    <div><div class="stit">Tiempo compensatorio</div><div style="font-size:13px;color:var(--tm);margin-top:3px">Se usa el saldo de horas extra aprobadas · 8 h = 1 día · el saldo nunca queda en negativo</div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn bgh bsm nhe oculto" onclick="abrirMRepComp()">📄 Reporte compensatorio</button>
+      <button class="btn bna bsm nhe oculto" onclick="abrirMComp()">+ Solicitar tiempo compensatorio</button>
+    </div>
+  </div>
+  <div id="alComp" class="al alam oculto">🌴 <span id="txComp"></span></div>
+  <div class="sg" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat sve"><div class="slbl" id="cpSaldoLbl">Disponible</div><div class="snum" id="cpSaldo">0</div><div class="ssub" id="cpSaldoSub"></div></div>
+    <div class="stat sam"><div class="slbl">Pendientes</div><div class="snum" id="cpPen">0</div><div class="ssub">por aprobar</div></div>
+    <div class="stat sna"><div class="slbl">Fuera hoy</div><div class="snum" id="cpFuera">0</div><div class="ssub" id="cpFueraSub">de compensatorio</div></div>
+  </div>
+  <div id="cpResumen" style="display:none;margin-bottom:18px"></div>
+  <div class="hegrid" id="gridComp"></div>
+  <div id="vacComp" style="padding:48px 20px;text-align:center;color:var(--tm);display:none">
+    <div style="font-size:36px;margin-bottom:10px">🌴</div><div style="font-size:14px;font-weight:500">Sin solicitudes de tiempo compensatorio.</div>
   </div>
 </div>
 
@@ -1017,7 +1039,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <div class="mbody">
     <input type="hidden" id="hId">
     <div class="fg" id="hMiemGrupo"><label class="fl">Persona *</label><select class="fc" id="hMiem"></select></div>
-    <div class="fg"><label class="fl">Tipo de registro</label>
+    <div class="fg" style="display:none"><label class="fl">Tipo de registro</label>
       <select class="fc" id="hTipo" onchange="tipoHCambio()"><option value="extra">⏱️ Horas extra (suman al saldo)</option><option value="compensatorio">🌴 Tiempo compensatorio usado (descuenta del saldo)</option></select>
     </div>
     <div class="fr">
@@ -1030,7 +1052,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       <div class="fg"><label class="fl" id="hHastaLbl">Salida *</label><input type="time" class="fc" id="hHasta" onchange="calcHorasH()"></div>
       <div class="fg hSoloComp" style="display:none"><label class="fl">Días a usar</label><input type="number" class="fc" id="hDias" min="0" max="60" step="0.5" placeholder="0" oninput="calcCompH()"></div>
       <div class="fg hSoloComp" style="display:none"><label class="fl">Horas a usar</label><input type="number" class="fc" id="hHorasC" min="0" max="23.75" step="0.25" placeholder="0" oninput="this.dataset.auto='';calcCompH()"></div>
-      <div class="fg hSoloExtra"><label class="fl" id="hHorasLbl">Horas extra</label><input type="number" class="fc" id="hHoras" min="0" max="24" step="0.25"></div>
+      <div class="fg hSoloExtra"><label class="fl" id="hHorasLbl">Horas extra</label><input type="number" class="fc" id="hHoras" min="0" max="24" step="0.25" readonly tabindex="-1" style="background:var(--su);cursor:not-allowed" title="Se calcula solo con la entrada y la salida"><div style="font-size:11px;color:var(--tm);margin-top:3px">🔒 Se calcula solo con la entrada y la salida; no se puede corregir a mano.</div></div>
     </div>
     <div style="font-size:12px;color:var(--tm);margin:-4px 0 12px;line-height:1.5" id="hSaldoInfo"></div>
     <div class="hSoloExtra" style="font-size:12px;color:var(--tm);margin:-4px 0 12px;line-height:1.5" id="hRegla">Día laboral: cuenta lo trabajado antes de 8:00 a. m. o después de 4:00 p. m., siempre que sea 1 hora o más (Reglamento Interno, art. 74). Sábado, domingo o feriado: cuenta toda la jornada.</div>
@@ -1041,6 +1063,44 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     </div>
   </div>
   <div class="mpie"><button class="btn bgh" onclick="cerM('mH')">Cancelar</button><button class="btn bna" onclick="guardarH()">Guardar</button></div>
+</div></div>
+
+<!-- MODAL ANULAR PERMISO -->
+<div class="mov" id="mAnular"><div class="mo" style="max-width:460px">
+  <div class="mcab"><div class="mtit">🚫 Anular solicitud de permiso</div><button class="mx" onclick="cerM('mAnular')">×</button></div>
+  <div class="mbody">
+    <input type="hidden" id="anId">
+    <div id="anTxt" style="font-size:13px;color:var(--tm);line-height:1.5;margin-bottom:12px"></div>
+    <div class="fg"><label class="fl">Motivo de la anulación *</label><textarea class="fc" id="anMot" rows="2" placeholder="ej. Ya no necesito el permiso"></textarea>
+      <div id="anErr" style="display:none;font-size:12px;color:var(--ro);margin-top:4px">Escribe el motivo.</div></div>
+  </div>
+  <div class="mpie"><button class="btn bgh" onclick="cerM('mAnular')">Volver</button><button class="btn bpe" onclick="confirmarAnular()">🚫 Anular</button></div>
+</div></div>
+
+<!-- MODAL TIEMPO COMPENSATORIO -->
+<div class="mov" id="mComp"><div class="mo">
+  <div class="mcab"><div class="mtit" id="mCompTit">Solicitud de tiempo compensatorio</div><button class="mx" onclick="cerM('mComp')">×</button></div>
+  <div class="mbody">
+    <input type="hidden" id="cId">
+    <div class="fg" id="cMiemGrupo"><label class="fl">Servidor público *</label><select class="fc" id="cMiem" onchange="calcComp()"></select></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Desde el día *</label><input type="date" class="fc" id="cDF" onchange="cRango()"></div>
+      <div class="fg"><label class="fl">Hasta el día *</label><input type="date" class="fc" id="cHF" onchange="cRango()"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Días a usar</label><input type="number" class="fc" id="cDias" min="0" max="60" step="0.5" placeholder="0" oninput="this.dataset.auto='';calcComp()"></div>
+      <div class="fg"><label class="fl">Horas a usar</label><input type="number" class="fc" id="cHoras" min="0" max="7.75" step="0.25" placeholder="0" oninput="calcComp()"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Desde las (si es parte del día)</label><input type="time" class="fc" id="cDH" onchange="calcComp()"></div>
+      <div class="fg"><label class="fl">Hasta las</label><input type="time" class="fc" id="cHH" onchange="calcComp()"></div>
+    </div>
+    <div id="cSaldo" style="font-size:13px;line-height:1.55;margin:-2px 0 12px;padding:10px 12px;border-radius:8px;background:var(--su);border:1px solid var(--bo)"></div>
+    <div id="cAnticipo" class="al alam" style="display:none;margin:0 0 12px;font-size:12.5px;line-height:1.5"></div>
+    <div id="cTareas" class="al alam" style="display:none;margin:0 0 12px;font-size:12.5px;line-height:1.5"></div>
+    <div class="fg"><label class="fl">Motivo *</label><textarea class="fc" id="cMot" placeholder="ej. Días libres por las horas de Sabores de Colón"></textarea></div>
+  </div>
+  <div class="mpie"><button class="btn bgh" onclick="cerM('mComp')">Cancelar</button><button class="btn bna" id="cGuardar" onclick="guardarComp()">Enviar solicitud</button></div>
 </div></div>
 
 <!-- MODAL PERMISO -->
@@ -1346,7 +1406,8 @@ function puede(accion){
 //  UTILS
 // ════════════════════════
 const gId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2);
-const hoy=()=>new Date().toISOString().split('T')[0];
+// Fecha de hoy en Panamá (antes usaba UTC: desde las 7 p. m. ya era «mañana»)
+const hoy=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Panama'}).format(new Date());
 const fmt=f=>f?new Date(f+'T00:00:00').toLocaleDateString('es-PA',{day:'2-digit',month:'short',year:'numeric'}):'—';
 const dH=f=>f?Math.ceil((new Date(f+'T00:00:00')-new Date(hoy()+'T00:00:00'))/86400000):null;
 function cAv(n){let h=0;for(let c of(n||'?'))h=(h*31+c.charCodeAt(0))&0xffff;return COLORS[h%COLORS.length];}
@@ -1425,6 +1486,8 @@ async function ejecutarGuardado(){
     // 1) traer lo último del servidor y fusionar antes de escribir
     const res=await fetch('/api/data',{headers:{'Authorization':'Bearer '+token}});
     if(res.status===401){sesionExpirada();_guardando=false;return;}
+    // Sin la versión del servidor no se escribe nada (evita pisar los datos de todos); se reintenta luego
+    if(!res.ok){_guardando=false;setTimeout(guardar,5000);return;}
     if(res.ok){
       const theirs=await res.json();
       if(theirs&&Object.keys(theirs).length&&Ebase){
@@ -1435,7 +1498,11 @@ async function ejecutarGuardado(){
       }
     }
     // 2) escribir el resultado fusionado
-    await fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(E)});
+    const pr=await fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(E)});
+    if(pr.status===403){// el servidor rechazó el cambio: se avisa y se vuelve a lo que hay guardado
+      const j=await pr.json().catch(()=>({}));alert(j.error||'No tienes permiso para guardar ese cambio.');
+      _guardando=false;await cargar();refrescarVistaAbierta();return;}
+    if(!pr.ok){_guardando=false;setTimeout(guardar,5000);return;}
     Ebase=snap(E);
   }catch(e){}
   _guardando=false;
@@ -1585,7 +1652,10 @@ async function entrarLect(){
 // Foco automático al cargar
 setTimeout(()=>{const el=document.getElementById('loginUser');if(el)el.focus();},200);
 
-function entrar(uid){const u=E.equipo.find(u=>u.id===uid);if(!u)return;uAct=u;niv=u.nivel;iniciarApp();}
+function entrar(uid){const u=E.equipo.find(u=>u.id===uid);if(!u)return;
+  if(bloqueoComp(u)){const a=ausenciaComp(u.nombre);localStorage.removeItem('cacco_token');
+    const le=document.getElementById('loginErr');if(le){le.textContent=`🌴 Estás de tiempo compensatorio. Tu acceso se habilita el ${fmt(a.regreso)}.`;le.classList.remove('oculto');}return;}
+  uAct=u;niv=u.nivel;iniciarApp();}
 
 function iniciarApp(){
   document.getElementById('pLog').style.display='none';
@@ -1632,7 +1702,7 @@ function limpNotifs(){E.notifs=[];renderNotifs();document.getElementById('notifP
 // ════════════════════════
 //  NAVEGACIÓN
 // ════════════════════════
-const VISTAS=['Tareas','Aprobaciones','Calendario','HorasExtra','Permisos','Equipo','Reportes','Historico','Bitacora','Perfil','CalPub','Asignaciones','AsigVarias'];
+const VISTAS=['Tareas','Aprobaciones','Calendario','HorasExtra','Compensatorio','Permisos','Equipo','Reportes','Historico','Bitacora','Perfil','CalPub','Asignaciones','AsigVarias'];
 function goV(v,el){
   cerrarSid();
   if(v==='reportes'&&!puede('verReportes')){alert('Sin permiso.');return;}
@@ -1648,6 +1718,7 @@ function goV(v,el){
   if(v==='calendario')renderCal();
   if(v==='equipo')renderEquipo();
   if(v==='permisos')renderPermisos();
+  if(v==='compensatorio')renderComp();
   if(v==='aprobaciones')renderAprob();
   if(v==='historico')renderHist();
   if(v==='perfil')renderPerfil();
@@ -1664,8 +1735,8 @@ function filtraCat(c,el){
   goV('tareas',document.querySelector('.ni[onclick*="tareas"]'));
   renderTareas();
 }
-function renderTodo(){renderTareas();renderHoras();if(!document.getElementById('vPermisos')?.classList.contains('oculto'))renderPermisos();renderEquipo();actuCts();if(!document.getElementById('vAsignaciones')?.classList.contains('oculto'))renderAsig();}
-function actuCts(){document.getElementById('ctT').textContent=E.tareas.filter(t=>!t.borrador).length;document.getElementById('ctH').textContent=E.horasExtra.length;const ca=document.getElementById('ctA');if(ca&&typeof pendientesAprob==='function'){const n=totAprob(pendientesAprob());ca.textContent=n;ca.style.display=n?'':'none';}const cp=document.getElementById('ctP');if(cp)cp.textContent=(E.permisos||[]).filter(x=>x.aprobacion==='Pendiente'&&(niv!=='colaborador'||x.miembro===uAct?.nombre)).length;}
+function renderTodo(){renderTareas();renderHoras();if(!document.getElementById('vCompensatorio')?.classList.contains('oculto'))renderComp();if(!document.getElementById('vPermisos')?.classList.contains('oculto'))renderPermisos();renderEquipo();actuCts();if(!document.getElementById('vAsignaciones')?.classList.contains('oculto'))renderAsig();}
+function actuCts(){document.getElementById('ctT').textContent=E.tareas.filter(t=>!t.borrador).length;document.getElementById('ctH').textContent=E.horasExtra.filter(h=>!esComp(h)).length;const cc=document.getElementById('ctC');if(cc)cc.textContent=E.horasExtra.filter(h=>esComp(h)&&h.aprobacion==='Pendiente'&&(niv!=='colaborador'||h.miembro===uAct?.nombre)).length;const ca=document.getElementById('ctA');if(ca&&typeof pendientesAprob==='function'){const n=totAprob(pendientesAprob());ca.textContent=n;ca.style.display=n?'':'none';}const cp=document.getElementById('ctP');if(cp)cp.textContent=(E.permisos||[]).filter(x=>x.aprobacion==='Pendiente'&&(niv!=='colaborador'||x.miembro===uAct?.nombre)).length;}
 
 // ════════════════════════
 //  TAREAS
@@ -3679,14 +3750,15 @@ function renderHoras(){
   // Colaboradores ven solo las suyas (también en los totales)
   const hs=niv==='colaborador'?E.horasExtra.filter(h=>h.miembro===uAct?.nombre):niv==='lector'?[]:E.horasExtra;
   const apr=hs.filter(h=>h.aprobacion==='Aprobado'),pen=hs.filter(h=>h.aprobacion==='Pendiente');
-  document.getElementById('heTot').textContent=hs.length;
+  document.getElementById('heTot').textContent=hs.filter(h=>!esComp(h)).length;
   const acum=apr.filter(h=>!esComp(h)).reduce((s,h)=>s+parseFloat(h.horas||0),0),usad=apr.filter(esComp).reduce((s,h)=>s+parseFloat(h.horas||0),0);
   document.getElementById('heApr').textContent=fmtD(acum-usad);
   document.getElementById('heAprSub').textContent=`${Math.abs(acum-usad)>=HORAS_DIA?fmtH(acum-usad)+' · ':''}${fmtH(acum)} acumuladas · ${fmtH(usad)} usadas · 8 h = 1 día`;
-  document.getElementById('hePen').textContent=pen.length;
+  document.getElementById('hePen').textContent=pen.filter(h=>!esComp(h)).length;
   panelAlertas('regHE',alertasHorasExtra(hs).map(a=>a.texto));
   const alHE=document.getElementById('alHE');
-  if(puede('aprobarHora')&&pen.length){alHE.classList.remove('oculto');document.getElementById('txHE').textContent=`${pen.length} hora(s) pendiente(s) de aprobación.`;}
+  const penX=pen.filter(h=>!esComp(h));
+  if(puede('aprobarHora')&&penX.length){alHE.classList.remove('oculto');document.getElementById('txHE').textContent=`${penX.length} hora(s) pendiente(s) de aprobación.`;}
   else alHE.classList.add('oculto');
 
   // Resumen por persona (solo para editor/líder)
@@ -3698,8 +3770,8 @@ function renderHoras(){
     resDiv.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Saldo compensatorio por persona</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px">${items}</div>`;
   } else if(resDiv){resDiv.style.display='none';}
 
-  // Colaboradores solo ven las suyas
-  const vis=[...hs].sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+  // Colaboradores solo ven las suyas; el compensatorio tiene su propia sección
+  const vis=hs.filter(h=>!esComp(h)).sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
   const grid=document.getElementById('gridHE'),vac=document.getElementById('vacHE');
   if(!vis.length){grid.innerHTML='';vac.style.display='block';return;}
   vac.style.display='none';
@@ -3735,6 +3807,7 @@ function renderHoras(){
 
 function abrirMH(id){
   if(!puede('registrarHora')){alert('Sin permiso para registrar horas.');return;}
+  if(id&&E.horasExtra.find(h=>h.id===id&&esComp(h))){abrirMComp(id);return;}
   document.getElementById('mHTit').textContent=id?'Editar Registro':'Registrar Horas Extras';
   document.getElementById('hId').value=id||'';
   const sel=document.getElementById('hMiem');
@@ -3761,8 +3834,7 @@ function abrirMH(id){
   document.getElementById('hDias').value=hn?hd:'';
   document.getElementById('hHorasC').dataset.auto='';
   document.getElementById('hHorasC').value=hn?Math.round((hn-hd*HORAS_DIA)*100)/100:'';
-  // Las horas salen de entrada/salida; solo quien aprueba puede ajustarlas a mano
-  document.getElementById('hHoras').readOnly=!puede('aprobarHora');
+  // Las horas extra salen siempre de entrada/salida; nadie las corrige a mano (por las variaciones)
   calcHorasH(true);
   document.getElementById('hAct').value=h?.actividad||'';
   // Solo Editor y Líder ven el selector de aprobación
@@ -3777,6 +3849,194 @@ function abrirMH(id){
 
 // Tiempo compensatorio: los registros tipo 'compensatorio' descuentan del saldo de horas extra
 const esComp=h=>h.tipo==='compensatorio';
+// ¿Quitar 'menos' horas aprobadas a una persona dejaría su saldo en negativo? Devuelve el aviso o ''.
+function quedaNegativo(nombre,menos){
+  const sc=saldoComp(nombre).saldo;
+  if(menos>1e-9&&sc-menos<-1e-9)return `No se puede: ${nombre} ya usó parte de estas horas en tiempo compensatorio y su saldo quedaría en ${fmtSaldo(sc-menos)}. El saldo nunca puede quedar en negativo.`;
+  return '';
+}
+// Saldo que aún se puede pedir: aprobado menos lo ya pedido y pendiente (sin contar 'salvoId')
+function dispComp(nombre,salvoId){
+  const pend=E.horasExtra.filter(x=>x.id!==salvoId&&x.miembro===nombre&&esComp(x)&&x.aprobacion==='Pendiente').reduce((t,x)=>t+parseFloat(x.horas||0),0);
+  const prev=salvoId?E.horasExtra.find(x=>x.id===salvoId):null;
+  const ya=prev&&esComp(prev)&&prev.aprobacion==='Aprobado'?parseFloat(prev.horas||0):0;
+  return {saldo:saldoComp(nombre).saldo,pend,disp:saldoComp(nombre).saldo-pend+ya};
+}
+// El compensatorio se pide con 7 a 10 días de anticipación: aviso (no bloquea) si se pide tarde
+const ANTICIPO_COMP=7;
+const diasEntre=(a,b)=>{const u=x=>{const [y,m,d]=x.split('-').map(Number);return Date.UTC(y,m-1,d);};return Math.round((u(b)-u(a))/864e5);};
+function avisoAnticipoComp(fecha,pedido){
+  if(!fecha)return '';const d=diasEntre(pedido||hoy(),fecha);
+  if(d>=ANTICIPO_COMP)return '';
+  return d<0?`Se pidió ${-d} día${d===-1?'':'s'} después de la fecha de inicio. El tiempo compensatorio debe pedirse con 7 a 10 días de anticipación.`
+    :`Se pide con ${d===0?'0 días (el mismo día)':d+' día'+(d===1?'':'s')} de anticipación. El tiempo compensatorio debe pedirse con 7 a 10 días de anticipación.`;
+}
+// Día hábil siguiente (lunes a viernes, sin feriados)
+function siguienteHabil(f){const [a,m,d]=f.split('-').map(Number),x=new Date(a,m-1,d);
+  do{x.setDate(x.getDate()+1);}while(x.getDay()===0||x.getDay()===6||esFeriado(ymd(x)));return ymd(x);}
+// Un compensatorio de al menos un día completo saca a la persona del sistema desde «Desde» hasta su regreso
+const compDiaCompleto=h=>parseFloat(h.horas||0)>=HORAS_DIA-1e-9;
+const regresoComp=h=>h.regreso||siguienteHabil(h.fechaFin||h.fecha);
+function ausenciaComp(nombre,f){
+  f=f||hoy();
+  const h=E.horasExtra.find(h=>esComp(h)&&h.miembro===nombre&&h.aprobacion==='Aprobado'&&compDiaCompleto(h)&&h.fecha<=f&&f<regresoComp(h));
+  return h?{h,regreso:regresoComp(h)}:null;
+}
+// El Líder nunca queda fuera (para que siempre haya quien administre)
+const bloqueoComp=u=>!!u&&u.nivel!=='lider'&&!!ausenciaComp(u.nombre);
+// Tareas sin terminar de una persona con fecha hasta 'hasta' (atrasadas o durante su ausencia)
+function tareasPendComp(nombre,hasta){
+  const p=E.equipo.find(x=>x.nombre===nombre);if(!p)return [];
+  const out=[],hecho=['Completada','Cerrada','No cumplida'];
+  E.tareas.forEach(t=>{if(t.borrador||!t.secciones)return;
+    Object.entries(t.secciones).forEach(([sec,sv])=>{
+      if(!sv||!(sv.responsables||[]).includes(p.id)||hecho.includes(sv.estado))return;
+      const f=secFecha(t,sec);if(f&&hasta&&f>hasta)return;
+      out.push({t,sec,f,atrasada:!!(f&&f<hoy())});
+    });});
+  return out.sort((a,b)=>(a.f||'').localeCompare(b.f||''));
+}
+
+function renderComp(){
+  const todos=E.horasExtra.filter(esComp);
+  const hs=niv==='colaborador'?todos.filter(h=>h.miembro===uAct?.nombre):niv==='lector'?[]:todos;
+  const pen=hs.filter(h=>h.aprobacion==='Pendiente');
+  const fuera=E.equipo.filter(p=>ausenciaComp(p.nombre));
+  if(niv==='colaborador'){
+    const d=dispComp(uAct.nombre);
+    document.getElementById('cpSaldoLbl').textContent='Tu saldo disponible';
+    document.getElementById('cpSaldo').textContent=fmtD(Math.max(0,d.disp));
+    document.getElementById('cpSaldoSub').textContent=`${fmtH(Math.max(0,d.saldo))} aprobadas${d.pend?` · ${fmtH(d.pend)} pedidas y pendientes`:''}`;
+  }else{
+    const tot=E.equipo.reduce((t,p)=>t+Math.max(0,saldoComp(p.nombre).saldo),0);
+    document.getElementById('cpSaldoLbl').textContent='Saldo del equipo';
+    document.getElementById('cpSaldo').textContent=fmtD(tot);
+    document.getElementById('cpSaldoSub').textContent='horas extra aprobadas sin usar';
+  }
+  document.getElementById('cpPen').textContent=pen.length;
+  document.getElementById('cpFuera').textContent=fuera.length;
+  document.getElementById('cpFueraSub').textContent=fuera.length?fuera.map(p=>p.nombre.split(' ')[0]).join(', '):'de compensatorio';
+  const al=document.getElementById('alComp');
+  const penAj=pen.filter(h=>h.miembro!==uAct?.nombre||niv==='lider');
+  if(puede('aprobarHora')&&penAj.length){al.classList.remove('oculto');document.getElementById('txComp').textContent=`${penAj.length} solicitud(es) de tiempo compensatorio por aprobar.`;}else al.classList.add('oculto');
+
+  const res=document.getElementById('cpResumen');
+  if(puede('aprobarHora')){
+    const noms=E.equipo.map(p=>p.nombre).filter(n=>saldoComp(n).acum>0||todos.some(h=>h.miembro===n)).sort();
+    res.style.display=noms.length?'block':'none';
+    res.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Saldo por persona</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px">`+
+      noms.map(n=>{const d=dispComp(n),a=ausenciaComp(n);return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--su);border:1px solid var(--bo);border-radius:8px"><div style="flex:1;font-size:13px;font-weight:600">${rAv(n,'',22,8)} ${escH(n)}${a?`<div style="font-size:11px;color:var(--az);font-weight:700">🌴 Fuera · regresa el ${fmt(a.regreso)}</div>`:''}</div><div style="text-align:right"><div style="font-size:14px;font-weight:800;color:var(--ve)">${fmtD(Math.max(0,d.saldo))}</div><div style="font-size:10px;color:var(--tm)">${d.pend?fmtH(d.pend)+' pedidas':'disponible'}</div></div></div>`;}).join('')+'</div>';
+  }else res.style.display='none';
+
+  const grid=document.getElementById('gridComp'),vac=document.getElementById('vacComp');
+  const vis=[...hs].sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+  if(!vis.length){grid.innerHTML='';vac.style.display='block';return;}
+  vac.style.display='none';
+  const bA={Pendiente:'bpen',Aprobado:'bapr',Rechazado:'brec'};
+  grid.innerHTML=vis.map(h=>{
+    const n=parseFloat(h.horas||0),propia=h.miembro===uAct?.nombre,a=ausenciaComp(h.miembro);
+    const enCurso=a&&a.h.id===h.id;
+    const btnApro=puede('aprobarHora')&&h.aprobacion==='Pendiente'&&(!propia||niv==='lider')
+      ?`<button class="btn bve bsm" onclick="aprobarH('${h.id}',true)">✅ Aprobar</button><button class="btn bpe bsm" onclick="aprobarH('${h.id}',false)">❌ Rechazar</button>`
+      :`<span class="bg ${bA[h.aprobacion]||'bgr'}">${enCurso?'🌴 En curso':h.aprobacion}</span>`;
+    const tp=h.aprobacion==='Pendiente'?tareasPendComp(h.miembro,h.fechaFin||h.fecha):[];
+    const puedeEd=niv==='lider'||(propia&&h.aprobacion==='Pendiente');
+    return `<div class="hecard">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;gap:8px">
+        <div style="display:flex;align-items:center;gap:9px;font-size:14px;font-weight:700">${rAv(h.miembro,'',30,11)} ${escH(h.miembro)}</div>
+        <div style="text-align:right;flex:0 0 auto;max-width:45%"><div style="font-size:19px;font-weight:800;color:var(--az);line-height:1.1">${fmtD(n)}</div><div style="font-size:11px;color:var(--tm)">${n>=HORAS_DIA?fmtH(n):'compensatorio'}</div></div>
+      </div>
+      <div style="font-size:13px;color:var(--tm);margin-bottom:6px;line-height:1.5">${escH(h.actividad||'')}</div>
+      ${compDiaCompleto(h)&&h.aprobacion!=='Rechazado'?`<div style="font-size:12px;color:var(--az);margin-bottom:4px">↩️ Regresa el ${fmt(regresoComp(h))}${h.aprobacion==='Aprobado'?' · sin acceso al sistema mientras tanto':''}</div>`:''}
+      ${h.aprobacion!=='Rechazado'&&h.creado&&avisoAnticipoComp(h.fecha,h.creado)?`<div class="al alam" style="font-size:12px;line-height:1.45;margin:6px 0 0;padding:6px 10px">⏰ Pedido tarde: ${(()=>{const d=diasEntre(h.creado,h.fecha);return d<0?'después de la fecha de inicio':'con '+d+' día'+(d===1?'':'s')+' de anticipación';})()} (deben ser 7 a 10).</div>`:''}
+      ${tp.length?`<div class="al alam" style="font-size:12px;line-height:1.45;margin:6px 0 0;padding:6px 10px">⚠️ ${tp.length} tarea${tp.length===1?'':'s'} pendiente${tp.length===1?'':'s'} hasta su regreso</div>`:''}
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-top:8px">
+        <span style="font-size:11px;color:var(--tm)">📅 ${fmt(h.fecha)}${h.fechaFin&&h.fechaFin!==h.fecha?' al '+fmt(h.fechaFin):''}${h.desde&&h.hasta?` · 🕒 ${h.desde}–${h.hasta}`:''}</span>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">${btnApro}<button class="btn bgh bsm" onclick="solCompDoc('${h.id}')">📄 Formulario</button></div>
+      </div>
+      ${puedeEd?`<div style="display:flex;gap:5px;border-top:1px solid var(--bo);padding-top:10px;margin-top:10px">
+          <button class="btn bgh bsm" style="flex:1" onclick="abrirMComp('${h.id}')">✏️ Editar</button>
+          ${niv==='lider'?`<button class="btn bpe bsm" onclick="elimH('${h.id}')">🗑</button>`:''}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function abrirMComp(id){
+  if(!puede('registrarHora')){alert('Sin permiso para solicitar tiempo compensatorio.');return;}
+  const h=id?E.horasExtra.find(x=>x.id===id):null;
+  if(h&&!(niv==='lider'||(h.miembro===uAct?.nombre&&h.aprobacion==='Pendiente'))){alert('Solo el Líder puede editar una solicitud ya revisada.');return;}
+  document.getElementById('mCompTit').textContent=h?'Editar solicitud de tiempo compensatorio':'Solicitud de tiempo compensatorio';
+  document.getElementById('cId').value=id||'';
+  const sel=document.getElementById('cMiem');
+  if(niv==='colaborador'){sel.innerHTML=`<option value="${escH(uAct.nombre)}">${escH(uAct.nombre)}</option>`;document.getElementById('cMiemGrupo').style.display='none';}
+  else{sel.innerHTML=E.equipo.map(p=>`<option value="${escH(p.nombre)}">${escH(p.nombre)}</option>`).join('');document.getElementById('cMiemGrupo').style.display='block';}
+  sel.value=h?.miembro||uAct?.nombre||'';
+  const f=h?.fecha||siguienteHabil(hoy());
+  document.getElementById('cDF').value=f;document.getElementById('cHF').value=h?.fechaFin||f;
+  const n=h?parseFloat(h.horas||0):0,d=Math.floor(n/HORAS_DIA+1e-9);
+  const cd=document.getElementById('cDias');cd.value=h?d:'';cd.dataset.auto=h?'':'1';
+  document.getElementById('cHoras').value=h&&n-d*HORAS_DIA>1e-9?Math.round((n-d*HORAS_DIA)*100)/100:'';
+  document.getElementById('cDH').value=h?.desde||'';document.getElementById('cHH').value=h?.hasta||'';
+  document.getElementById('cMot').value=h?.actividad||'';
+  if(!h)cRango();else calcComp();
+  abrirM('mComp');
+}
+// Al cambiar las fechas se sugiere usar un día por cada día hábil (la persona puede cambiarlo)
+function cRango(){
+  const df=document.getElementById('cDF'),hf=document.getElementById('cHF');
+  if(df.value&&(!hf.value||hf.value<df.value))hf.value=df.value;
+  const cd=document.getElementById('cDias');
+  if(df.value&&(cd.dataset.auto==='1'||!cd.value)&&!document.getElementById('cHoras').value){cd.value=diasHabiles(df.value,hf.value)||'';cd.dataset.auto='1';}
+  calcComp();
+}
+function compForm(){
+  const n=id=>Math.max(0,parseFloat(document.getElementById(id).value)||0);
+  const m=document.getElementById('cMiem').value,f=document.getElementById('cDF').value,ff=document.getElementById('cHF').value||f;
+  const tot=n('cDias')*HORAS_DIA+n('cHoras');
+  const reg=f?(tot>=HORAS_DIA-1e-9?siguienteHabil(ff):f):'';
+  return {m,f,ff,tot,reg,de:document.getElementById('cDH').value,ha:document.getElementById('cHH').value,id:document.getElementById('cId').value};
+}
+function calcComp(){
+  const c=compForm(),d=dispComp(c.m,c.id),queda=d.disp-c.tot;
+  const box=document.getElementById('cSaldo');
+  box.innerHTML=`Saldo aprobado de <b>${escH(c.m)}</b>: <b>${fmtSaldo(Math.max(0,d.saldo))}</b>${d.pend?` · ya pedido y pendiente: ${fmtSaldo(d.pend)}`:''}<br>`+
+    (c.tot>0?`Vas a usar <b>${fmtSaldo(c.tot)}</b> · `+(queda<-1e-9?`<span style="color:var(--ro);font-weight:700">⛔ No alcanza: faltan ${fmtSaldo(-queda)}. El saldo nunca puede quedar en negativo.</span>`:`te quedarían <b>${fmtSaldo(queda)}</b>`):'Escribe cuántos días u horas vas a usar (8 h = 1 día).')+
+    (c.f&&c.tot>0?`<br>${c.tot>=HORAS_DIA-1e-9?`↩️ Regresas el <b>${fmt(c.reg)}</b>. Mientras tanto no tendrás acceso al sistema.`:'Es parte de un día: sigues con acceso al sistema.'}`:'')+
+    (c.f&&c.ff>c.f?`<br><span style="color:var(--tm)">Del ${fmt(c.f)} al ${fmt(c.ff)} hay ${diasHabiles(c.f,c.ff)} día(s) hábil(es).</span>`:'');
+  document.getElementById('cGuardar').disabled=queda<-1e-9;
+  const prevC=c.id?E.horasExtra.find(x=>x.id===c.id):null,ant=avisoAnticipoComp(c.f,prevC?.creado),ab=document.getElementById('cAnticipo');
+  ab.style.display=ant?'block':'none';ab.textContent=ant?'⏰ '+ant:'';
+  // Aviso de tareas pendientes antes de irse
+  const tp=c.f?tareasPendComp(c.m,c.tot>=HORAS_DIA-1e-9?c.ff:c.f):[],tb=document.getElementById('cTareas');
+  if(tp.length){
+    tb.style.display='block';
+    tb.innerHTML=`⚠️ <b>${c.m===uAct?.nombre?'Tienes':escH(c.m)+' tiene'} ${tp.length} tarea${tp.length===1?'':'s'} pendiente${tp.length===1?'':'s'}</b> que ${tp.length===1?'vence':'vencen'} antes de ${c.m===uAct?.nombre?'tu':'su'} regreso. Déjalas terminadas o coordina quién las cubre:<br>`+
+      tp.slice(0,8).map(x=>`• ${escH(x.t.titulo)} <span style="color:var(--tm)">(${x.sec}${x.f?' · '+fmt(x.f):''}${x.atrasada?' · atrasada':''})</span>`).join('<br>')+(tp.length>8?`<br>… y ${tp.length-8} más`:'');
+  }else tb.style.display='none';
+}
+function guardarComp(){
+  const c=compForm(),mot=document.getElementById('cMot').value.trim();
+  if(!c.m||!c.f||!mot){alert('Complete la fecha, cuántos días u horas va a usar y el motivo.');return;}
+  if(c.ff<c.f){alert('«Hasta el día» no puede ser anterior a «Desde el día».');return;}
+  if(!(c.tot>0)){alert('Indique cuántos días u horas va a usar.');return;}
+  if(c.de&&c.ha&&c.ff===c.f&&c.ha<=c.de){alert('La hora «Hasta las» debe ser posterior a «Desde las».');return;}
+  if(niv==='colaborador'&&c.m!==uAct?.nombre){alert('Solo puede solicitar su propio tiempo compensatorio.');return;}
+  const d=dispComp(c.m,c.id);
+  if(c.tot>d.disp+1e-9){alert(`${c.m} solo tiene ${fmtSaldo(Math.max(0,d.disp))} disponibles${d.pend?` (ya hay ${fmtSaldo(d.pend)} pedidas y pendientes)`:''}. El saldo nunca puede quedar en negativo.`);return;}
+  const prevA=c.id?E.horasExtra.find(x=>x.id===c.id):null,ant=avisoAnticipoComp(c.f,prevA?.creado);
+  if(ant&&!prevA&&!confirm(`⏰ ${ant}\n\n¿Enviar la solicitud de todos modos?`))return;
+  const tp=tareasPendComp(c.m,c.tot>=HORAS_DIA-1e-9?c.ff:c.f);
+  if(tp.length&&!confirm(`${c.m===uAct?.nombre?'Tienes':c.m+' tiene'} ${tp.length} tarea(s) pendiente(s) antes del regreso:\n\n`+tp.slice(0,8).map(x=>`• ${x.t.titulo} (${x.sec}${x.f?' · '+fmt(x.f):''})`).join('\n')+(tp.length>8?`\n… y ${tp.length-8} más`:'')+'\n\n¿Enviar la solicitud de todos modos?'))return;
+  const prev=c.id?E.horasExtra.find(x=>x.id===c.id):null;
+  const r={...(prev||{}),id:c.id||gId(),tipo:'compensatorio',miembro:c.m,fecha:c.f,desde:c.de,hasta:c.ha,feriado:false,tipoDia:tipoDiaH(c.f),horas:Math.round(c.tot*100)/100,actividad:mot,
+    aprobacion:prev?.aprobacion||'Pendiente',registradoPor:prev?.registradoPor||uAct?.nombre,creado:prev?.creado||hoy(),regreso:c.reg};
+  if(c.ff!==c.f)r.fechaFin=c.ff;else delete r.fechaFin;
+  // Un cambio en una solicitud ya revisada vuelve a quedar pendiente (salvo que la edite el Líder sin cambiar las horas)
+  if(prev&&prev.aprobacion!=='Pendiente'&&parseFloat(prev.horas)!==r.horas){r.aprobacion='Pendiente';delete r.aprobadoPor;delete r.fechaAprob;}
+  if(prev){const i=E.horasExtra.findIndex(x=>x.id===prev.id);if(i>=0)E.horasExtra[i]=r;reg('Compensatorio editado',`${c.m} — ${r.horas} hrs`);}
+  else{E.horasExtra.unshift(r);reg('Compensatorio solicitado',`${c.m} — ${r.horas} hrs`);addNotif('🌴',`Solicitud de compensatorio: ${c.m}`,`${fmtSaldo(r.horas)} · desde ${fmt(c.f)}`);}
+  guardar();cerM('mComp');refrescarVistaAbierta();
+}
 function saldoComp(nombre,hasta){// solo lo aprobado; 'hasta' (AAAA-MM-DD) es inclusivo
   let acum=0,usadas=0;
   E.horasExtra.forEach(h=>{
@@ -3844,7 +4104,6 @@ function tipoHCambio(){
   document.getElementById('hHorasLbl').textContent=comp?'Horas a descontar *':'Horas extra';
   document.getElementById('hActLbl').textContent=comp?'Motivo *':'Actividad *';
   document.getElementById('hAct').placeholder=comp?'ej. Día libre por las horas de Sabores de Colón':'Describa la actividad realizada...';
-  document.getElementById('hHoras').readOnly=!comp&&!puede('aprobarHora');
   document.getElementById('hFechaLbl').textContent=comp?'Desde *':'Fecha *';
   document.getElementById('hDesdeLbl').textContent=comp?'Desde las (opcional)':'Entrada *';
   document.getElementById('hHastaLbl').textContent=comp?'Hasta las (opcional)':'Salida *';
@@ -3909,11 +4168,15 @@ function calcHorasH(soloEtiqueta){
 }
 
 function guardarH(){
-  const m=document.getElementById('hMiem').value,f=document.getElementById('hFecha').value,h=document.getElementById('hHoras').value,a=document.getElementById('hAct').value.trim();
+  let h=document.getElementById('hHoras').value;
+  const m=document.getElementById('hMiem').value,f=document.getElementById('hFecha').value,a=document.getElementById('hAct').value.trim();
   const de=document.getElementById('hDesde').value,ha=document.getElementById('hHasta').value,fer=document.getElementById('hFeriado').checked;
   const id=document.getElementById('hId').value;
   const prev=id?E.horasExtra.find(x=>x.id===id):null;
   const comp=document.getElementById('hTipo').value==='compensatorio';
+  // Horas extra: el total se recalcula aquí con entrada y salida, no se toma lo escrito en el campo.
+  // Solo un registro antiguo sin horario conserva sus horas.
+  if(!comp){const auto=de&&ha?horasFueraH(f,de,ha,fer):null;h=auto!==null?String(auto):(prev&&!prev.desde&&!prev.hasta?String(prev.horas??''):'');}
   // Entrada y salida son obligatorias en horas extra nuevas (los registros anteriores pueden no tenerlas)
   const ffin=comp?document.getElementById('hFechaFin').value:'';
   if(ffin&&f&&ffin<f){alert('La fecha «Hasta» no puede ser anterior a «Desde».');return;}
@@ -3932,6 +4195,12 @@ function guardarH(){
   let apro=puede('aprobarHora')&&!propia?document.getElementById('hApro').value:'Pendiente';
   // Editar un registro propio ya aprobado no lo vuelve a dejar pendiente si no cambiaron las horas
   if(propia&&prev&&prev.aprobacion!=='Pendiente'&&parseFloat(h)===parseFloat(prev.horas))apro=prev.aprobacion;
+  // El saldo compensatorio nunca puede quedar en negativo (si ya se usó, no se puede quitar lo acumulado)
+  if(!comp&&prev&&!esComp(prev)&&prev.aprobacion==='Aprobado'){
+    const quita=parseFloat(prev.horas||0),pone=apro==='Aprobado'?parseFloat(h):0;
+    const msg=quedaNegativo(prev.miembro,prev.miembro===m?quita-pone:quita);
+    if(msg){alert(msg);return;}
+  }
   const r={...(prev||{}),id:id||gId(),tipo:comp?'compensatorio':'extra',miembro:m,fecha:f,desde:de,hasta:ha,feriado:comp?false:fer,tipoDia:tipoDiaH(f),horas:parseFloat(h),actividad:a,aprobacion:apro,registradoPor:prev?.registradoPor||uAct?.nombre,creado:prev?.creado||hoy()};
   if(comp&&ffin&&ffin!==f)r.fechaFin=ffin;else delete r.fechaFin;
   if(apro!=='Pendiente'&&apro!==prev?.aprobacion){r.aprobadoPor=uAct?.nombre;r.fechaAprob=hoy();}
@@ -3945,16 +4214,19 @@ function aprobarH(id,ok){
   if(!puede('aprobarHora')){alert('Sin permiso.');return;}
   const h=E.horasExtra.find(h=>h.id===id);if(!h)return;
   if(h.miembro===uAct?.nombre&&niv!=='lider'){alert('Sus propias horas las aprueba otra persona.');return;}
+  if(ok&&esComp(h)){const sc=saldoComp(h.miembro).saldo,n=parseFloat(h.horas||0);
+    if(n>sc+1e-9){alert(`No se puede aprobar: ${h.miembro} tiene ${fmtSaldo(Math.max(0,sc))} de saldo aprobado y pide ${fmtSaldo(n)}. El saldo nunca puede quedar en negativo.`);return;}}
   h.aprobacion=ok?'Aprobado':'Rechazado';h.aprobadoPor=uAct?.nombre;h.fechaAprob=hoy();
-  reg(ok?'Hora aprobada':'Hora rechazada',`${h.miembro} — ${h.horas} hrs`);
-  addNotif(ok?'✅':'❌',`Horas ${ok?'aprobadas':'rechazadas'}: ${h.miembro}`,`${h.horas} hrs`);
-  guardar();renderHoras();
+  reg(ok?(esComp(h)?'Compensatorio aprobado':'Hora aprobada'):(esComp(h)?'Compensatorio rechazado':'Hora rechazada'),`${h.miembro} — ${h.horas} hrs`);
+  addNotif(ok?'✅':'❌',`${esComp(h)?'Compensatorio':'Horas'} ${ok?'aprobado':'rechazado'}: ${h.miembro}`,`${h.horas} hrs`);
+  guardar();renderHoras();refrescarVistaAbierta();
 }
 
 function elimH(id){
   if(niv!=='lider'){alert('Solo el Líder puede eliminar registros de horas.');return;}
-  const h=E.horasExtra.find(h=>h.id===id);
-  if(!h||!confirm(`¿Eliminar el registro de ${h.horas} hrs de ${h.miembro} (${fmt(h.fecha)})?`))return;
+  const h=E.horasExtra.find(h=>h.id===id);if(!h)return;
+  if(!esComp(h)&&h.aprobacion==='Aprobado'){const msg=quedaNegativo(h.miembro,parseFloat(h.horas||0));if(msg){alert(msg);return;}}
+  if(!confirm(`¿Eliminar el registro de ${h.horas} hrs de ${h.miembro} (${fmt(h.fecha)})?`))return;
   reg('Hora eliminada',`${h.miembro} — ${h.horas} hrs — ${fmt(h.fecha)} — por ${uAct?.nombre}`);
   E.horasExtra=E.horasExtra.filter(h=>h.id!==id);
   guardar();renderHoras();
@@ -3994,14 +4266,14 @@ const minPer=p=>parseInt(p.totalMin||0);
 const anioDe=f=>(f||'').slice(0,4);
 // Art. 55: hasta 18 días (144 horas laborables) al año en permisos, sumando todos los motivos
 function uso144(nombre,anio,salvoId){
-  return (E.permisos||[]).filter(p=>p.miembro===nombre&&p.aprobacion!=='Rechazado'&&p.id!==salvoId&&anioDe(p.desdeF)===anio).reduce((t,p)=>t+minPer(p),0);
+  return (E.permisos||[]).filter(p=>p.miembro===nombre&&perVigente(p)&&p.id!==salvoId&&anioDe(p.desdeF)===anio).reduce((t,p)=>t+minPer(p),0);
 }
 // Tope por motivo (días laborables por solicitud), art. 55
 const PARENTESCO_DUELO={p1:['Padre, madre, hermanos, hijos o cónyuge',5],p2:['Abuelos, nietos, suegros, yernos o nueras',3],p3:['Tíos, sobrinos, primos o cuñados',1]};
 const TOPE_MOTIVO={3:5,4:5,5:3,6:3,7:3};
 // Alertas del Reglamento Interno para una solicitud de permiso (r puede ser un borrador del formulario)
 function alertasPermiso(r){
-  const out=[],dias=minPer(r)/MIN_DIA,anio=anioDe(r.desdeF),otros=(E.permisos||[]).filter(p=>p.miembro===r.miembro&&p.id!==r.id&&p.aprobacion!=='Rechazado');
+  const out=[],dias=minPer(r)/MIN_DIA,anio=anioDe(r.desdeF),otros=(E.permisos||[]).filter(p=>p.miembro===r.miembro&&p.id!==r.id&&perVigente(p));
   const nd=n=>`${Math.round(n*100)/100} día${n===1?'':'s'}`;
   const usado=uso144(r.miembro,anio,r.id),tot=usado+minPer(r);
   if(tot>TOPE_144){
@@ -4075,7 +4347,7 @@ function renderPermisos(){
   if(puede('aprobarHora')&&pen.length){al.classList.remove('oculto');document.getElementById('txPer').textContent=`${pen.length} permiso(s) pendiente(s) de aprobación.`;}
   else al.classList.add('oculto');
   actuCts();
-  panelAlertas('regPer',ps.filter(p=>p.aprobacion!=='Rechazado'&&anioDe(p.desdeF)===anio).flatMap(p=>alertasPermiso(p).map(t=>`${p.miembro} (${fmt(p.desdeF)}): ${t}`)));
+  panelAlertas('regPer',ps.filter(p=>perVigente(p)&&anioDe(p.desdeF)===anio).flatMap(p=>alertasPermiso(p).map(t=>`${p.miembro} (${fmt(p.desdeF)}): ${t}`)));
 
   // Resumen por persona (Editor y Líder)
   const res=document.getElementById('perResumen');
@@ -4091,13 +4363,13 @@ function renderPermisos(){
   const vis=[...ps].sort((a,b)=>(b.desdeF||'').localeCompare(a.desdeF||''));
   if(!vis.length){grid.innerHTML='';vac.style.display='block';return;}
   vac.style.display='none';
-  const bA={Pendiente:'bpen',Aprobado:'bapr',Rechazado:'brec'};
+  const bA={Pendiente:'bpen',Aprobado:'bapr',Rechazado:'brec',Anulado:'brec'};
   grid.innerHTML=vis.map(p=>{
     const propia=p.miembro===uAct?.nombre;
     const btnApro=puede('aprobarHora')&&p.aprobacion==='Pendiente'&&(!propia||niv==='lider')
       ?`<button class="btn bve bsm" onclick="aprobarPer('${p.id}',true)">✅ Aprobar</button><button class="btn bpe bsm" onclick="aprobarPer('${p.id}',false)">❌ Rechazar</button>`
       :`<span class="bg ${bA[p.aprobacion]||'bgr'}">${p.aprobacion}</span>`;
-    const puedeEd=niv==='lider'||(propia&&p.aprobacion==='Pendiente');
+    const puedeEd=p.aprobacion!=='Anulado'&&(niv==='lider'||(propia&&p.aprobacion==='Pendiente'));
     const rango=p.desdeF===p.hastaF?`${fmt(p.desdeF)} · ${p.desdeH||''}–${p.hastaH||''}`:`${fmt(p.desdeF)} ${p.desdeH||''} al ${fmt(p.hastaF)} ${p.hastaH||''}`;
     return `<div class="hecard">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;gap:8px">
@@ -4108,14 +4380,15 @@ function renderPermisos(){
       ${p.motivo===2&&PARENTESCO_DUELO[p.parentesco]?`<div style="font-size:12px;color:var(--tm);margin-bottom:4px">${PARENTESCO_DUELO[p.parentesco][0]}${p.lejos?' · con traslado':''}</div>`:''}
       ${p.detalle?`<div style="font-size:13px;color:var(--tm);margin-bottom:8px;line-height:1.5">${escH(p.detalle)}</div>`:''}
       ${p.comprobante?'<div style="font-size:12px;color:var(--tm);margin-bottom:4px">📎 Presentó comprobante</div>':''}
-      ${p.aprobacion!=='Rechazado'?alertasPermiso(p).map(t=>`<div class="al alam" style="font-size:12px;line-height:1.45;margin:6px 0 0;padding:6px 10px">⚠️ ${escH(t)}</div>`).join(''):''}
+      ${p.aprobacion==='Anulado'?`<div style="font-size:12px;color:var(--ro);margin-bottom:4px">🚫 Anulada por ${escH(p.anuladoPor||'?')}${p.fechaAnul?' el '+fmt(p.fechaAnul):''}${p.motivoAnul?': '+escH(p.motivoAnul):''}</div>`:''}
+      ${perVigente(p)?alertasPermiso(p).map(t=>`<div class="al alam" style="font-size:12px;line-height:1.45;margin:6px 0 0;padding:6px 10px">⚠️ ${escH(t)}</div>`).join(''):''}
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-top:8px">
         <span style="font-size:11px;color:var(--tm)">📅 ${rango}</span>
         <div style="display:flex;gap:5px;flex-wrap:wrap">${btnApro}<button class="btn bgh bsm" onclick="permisoDoc('${p.id}')">📄 Formulario</button></div>
       </div>
-      ${puedeEd?`<div style="display:flex;gap:5px;border-top:1px solid var(--bo);padding-top:10px;margin-top:10px">
-          <button class="btn bgh bsm" style="flex:1" onclick="abrirMPer('${p.id}')">✏️ Editar</button>
-          <button class="btn bpe bsm" onclick="elimPer('${p.id}')">🗑</button></div>`:''}
+      ${puedeEd||puedeAnularPer(p)?`<div style="display:flex;gap:5px;border-top:1px solid var(--bo);padding-top:10px;margin-top:10px">
+          ${puedeEd?`<button class="btn bgh bsm" style="flex:1" onclick="abrirMPer('${p.id}')">✏️ Editar</button>`:''}
+          ${puedeAnularPer(p)?`<button class="btn bpe bsm" onclick="anularPer('${p.id}')" title="La solicitud queda en el historial como anulada">🚫 Anular</button>`:''}</div>`:''}
     </div>`;
   }).join('');
 }
@@ -4123,6 +4396,7 @@ function renderPermisos(){
 function abrirMPer(id){
   if(!puede('registrarHora')){alert('Sin permiso para solicitar permisos.');return;}
   const p=id?E.permisos.find(x=>x.id===id):null;
+  if(p&&p.aprobacion==='Anulado'){alert('Esta solicitud está anulada y no se puede editar.');return;}
   if(p&&!(niv==='lider'||(p.miembro===uAct?.nombre&&p.aprobacion==='Pendiente'))){alert('Solo el Líder puede editar un permiso ya revisado.');return;}
   document.getElementById('mPerTit').textContent=p?'Editar solicitud de permiso':'Solicitud de permiso';
   document.getElementById('perId').value=id||'';
@@ -4210,13 +4484,34 @@ function aprobarPer(id,ok){
   addNotif(ok?'✅':'❌',`Permiso ${ok?'aprobado':'rechazado'}: ${p.miembro}`,`${MOTIVOS_PER[p.motivo-1]} · ${fmt(p.desdeF)}`);
   guardar();renderPermisos();
 }
-function elimPer(id){
-  const p=E.permisos.find(x=>x.id===id);if(!p)return;
-  if(!(niv==='lider'||(p.miembro===uAct?.nombre&&p.aprobacion==='Pendiente'))){alert('Solo el Líder puede eliminar un permiso ya revisado.');return;}
-  if(!confirm(`¿Eliminar la solicitud de permiso de ${p.miembro} (${fmt(p.desdeF)})?`))return;
-  E.permisos=E.permisos.filter(x=>x.id!==id);
-  reg('Permiso eliminado',`${p.miembro} — ${MOTIVOS_PER[p.motivo-1]} — ${fmt(p.desdeF)} — por ${uAct?.nombre}`);
-  guardar();renderPermisos();
+// Las solicitudes de permiso nunca se borran: se anulan y quedan en el historial.
+// Rechazadas y anuladas no cuentan en las 144 h ni en las alertas.
+const perVigente=p=>!['Rechazado','Anulado'].includes(p.aprobacion);
+function puedeAnularPer(p){
+  if(!p||!perVigente(p))return false;
+  const propia=p.miembro===uAct?.nombre;
+  if(propia&&p.aprobacion==='Pendiente')return true;          // quien la pidió puede retirarla mientras está pendiente
+  return puede('aprobarHora')&&(!propia||niv==='lider');       // Líder/Editor, igual que para aprobar
+}
+function anularPer(id){
+  const p=(E.permisos||[]).find(x=>x.id===id);if(!p)return;
+  if(!puedeAnularPer(p)){alert('No puedes anular esta solicitud.');return;}
+  // Ventana propia para el motivo (prompt() del navegador no funciona en todos los visores)
+  document.getElementById('anId').value=id;
+  document.getElementById('anTxt').innerHTML=`<div style="font-weight:700;color:var(--tx)">${escH(p.miembro)}</div><div>${p.motivo}. ${escH(MOTIVOS_PER[p.motivo-1]||'')} · ${p.desdeF===p.hastaF?fmt(p.desdeF):fmt(p.desdeF)+' al '+fmt(p.hastaF)} · ${fmtDHM(minPer(p))}</div><div style="margin-top:8px">La solicitud no se borra: queda en el historial como anulada y deja de contar en las 144 h.</div>`;
+  document.getElementById('anMot').value='';document.getElementById('anErr').style.display='none';
+  abrirM('mAnular');setTimeout(()=>document.getElementById('anMot').focus(),50);
+}
+function confirmarAnular(){
+  const p=(E.permisos||[]).find(x=>x.id===document.getElementById('anId').value);if(!p)return;
+  if(!puedeAnularPer(p)){alert('No puedes anular esta solicitud.');return;}
+  const motivo=document.getElementById('anMot').value;
+  if(!motivo.trim()){document.getElementById('anErr').style.display='block';return;}
+  cerM('mAnular');
+  p.aprobacion='Anulado';p.anuladoPor=uAct?.nombre;p.fechaAnul=hoy();p.motivoAnul=motivo.trim();
+  reg('Permiso anulado',`${p.miembro} — ${MOTIVOS_PER[p.motivo-1]} — ${fmt(p.desdeF)} — por ${uAct?.nombre}: ${p.motivoAnul}`);
+  if(p.miembro!==uAct?.nombre)addNotif('🚫',`Permiso anulado: ${p.miembro}`,`${MOTIVOS_PER[p.motivo-1]} · ${fmt(p.desdeF)} · ${p.motivoAnul}`);
+  guardar();refrescarVistaAbierta();
 }
 
 // ── Formularios impresos de la OIRH (carta vertical, iguales al papel) ──
@@ -4299,9 +4594,9 @@ solicito el uso de ${campoF(cant,150)} (horas/días) del tiempo compensatorio qu
 <p class="just" style="margin-top:22px">Dicho tiempo lo haré efectivo el ${campoF(dia,90)} de ${campoF(mes,150)} de ${campoF(d2.a,80)} desde las<br>
 ${campoF(de,90)} horas hasta las ${campoF(ha,90)} horas.</p>
 <div class="firmas" style="margin-top:60px">
-${firmaFila('',fCorta(r.creado||r.fecha),'Firma del Servidor Público Solicitante',false)}
+${firmaFila('','','Firma del Servidor Público Solicitante',false)}
 <div style="height:30px"></div>
-${firmaFila('Aprobado',r.aprobacion==='Aprobado'?fCorta(r.fechaAprob):'','Firma del Superior Inmediato',false)}
+${firmaFila('Aprobado','','Firma del Superior Inmediato',false)}
 <div style="height:30px"></div>
 ${firmaFila('Enterado','','Firma del Jefe de la OIRH',false)}
 </div>`;
@@ -4378,7 +4673,9 @@ function renderAprob(){
     `<div style="font-size:14px;font-weight:700">${rAv(h.miembro,'',22,8)} ${escH(h.miembro)} · <span style="color:var(--az)">−${fmtD(n)}</span></div>`+
     sub(`📅 ${fmt(h.fecha)}${h.fechaFin&&h.fechaFin!==h.fecha?' al '+fmt(h.fechaFin):''}${h.desde&&h.hasta?' · 🕒 '+h.desde+'–'+h.hasta:''} · Saldo aprobado: ${fmtSaldo(sc)}`)+sub(escH(h.actividad||'')),
     `<button class="btn bve bsm" onclick="aprobY(()=>aprobarH('${h.id}',true))">✅ Aprobar</button><button class="btn bpe bsm" onclick="aprobY(()=>aprobarH('${h.id}',false))">❌ Rechazar</button><button class="btn bgh bsm" onclick="solCompDoc('${h.id}')">📄 Formulario</button>`,
-    n>sc+1e-9?alerta(`Pide más de lo que tiene en su saldo aprobado (${fmtSaldo(sc)}).`):'');}).join('');
+    (n>sc+1e-9?alerta(`Pide más de lo que tiene en su saldo aprobado (${fmtSaldo(sc)}). No se puede aprobar: el saldo nunca queda en negativo.`):'')
+    +(()=>{const a=avisoAnticipoComp(h.fecha,h.creado);return a?alerta(a):'';})()
+    +(()=>{const tp=tareasPendComp(h.miembro,h.fechaFin||h.fecha);return tp.length?alerta(`Tiene ${tp.length} tarea${tp.length===1?'':'s'} pendiente${tp.length===1?'':'s'} hasta su regreso: `+tp.slice(0,4).map(x=>`${x.t.titulo} (${x.sec}${x.f?', '+fmt(x.f):''})`).join('; ')+(tp.length>4?'…':'')):'';})());}).join('');
 
   const pers=q.permisos.map(p=>fila(
     `<div style="font-size:14px;font-weight:700">${rAv(p.miembro,'',22,8)} ${escH(p.miembro)} · <span style="color:var(--az)">${fmtDHM(minPer(p))}</span></div>`+
@@ -4427,6 +4724,7 @@ function renderEquipo(){
           <div>
             <div style="font-weight:800;font-size:15px">${p.nombre}</div>
             <div style="font-size:12px;color:var(--tm);margin-top:2px">${p.cargo||'Sin cargo'}</div>
+            ${(()=>{const a=ausenciaComp(p.nombre);return a?`<div style="font-size:11px;font-weight:700;color:var(--az);margin-top:3px">🌴 De compensatorio · regresa el ${fmt(a.regreso)}</div>`:'';})()}
             ${p.puesto||p.posicion?`<div style="font-size:11px;color:var(--tm);margin-top:2px">RRHH: ${p.puesto||'—'}${p.posicion?` · Posición ${p.posicion}`:''}</div>`:''}
             <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
               <span class="pnivel ${p.nivel}">${NIVEL_ICO[p.nivel]||'👤'} ${NIVEL_NOM[p.nivel]||p.nivel}</span>
@@ -6247,6 +6545,7 @@ function refrescarVistaAbierta(){
     if(vis('vTareas'))renderTareas();
     if(vis('vHorasExtra'))renderHoras();
     if(vis('vPermisos'))renderPermisos();
+    if(vis('vCompensatorio'))renderComp();
     if(vis('vAprobaciones'))renderAprob();
     if(vis('vEquipo'))renderEquipo();
     if(vis('vCalendario'))renderCal();
@@ -6280,6 +6579,8 @@ async function sincronizar(){
         if(!E.publicaciones)E.publicaciones=[];
         if(!E.equipo||!E.equipo.length)E.equipo=EQ_DEF.map(u=>({...u}));
         Ebase=snap(s);// el servidor es el nuevo ancestro común
+        // Si empezó su tiempo compensatorio con la sesión abierta, se cierra
+        if(uAct&&bloqueoComp(uAct)){const a=ausenciaComp(uAct.nombre);cerrarSes();const le=document.getElementById('loginErr');if(le){le.textContent=`🌴 Estás de tiempo compensatorio. Tu acceso se habilita el ${fmt(a.regreso)}.`;le.classList.remove('oculto');}if(btn){btn.textContent='🔄';btn.disabled=false;}return;}
         if(cambio)refrescarVistaAbierta();
       }
     }
