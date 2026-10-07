@@ -901,6 +901,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     </div>
   </div>
   <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px;align-items:center" id="calPubFiltros">
+    <span class="chip" id="chipPrep" onclick="calPubVerPrep=!calPubVerPrep;this.classList.toggle('sel',calPubVerPrep);renderCalPub()" title="Por defecto solo se ve lo aprobado">🛠 Ver también lo que está en preparación</span>
     <span style="font-size:12px;font-weight:600;color:var(--tm)">Plataformas:</span>
     <span class="chip sel" data-plat="ig" onclick="this.classList.toggle('sel');renderCalPub()"><span style="color:#C13584">●</span> Instagram</span>
     <span class="chip sel" data-plat="fb" style="display:none" title="Facebook en pausa" onclick="this.classList.toggle('sel');renderCalPub()"><span style="color:#1877F2">●</span> Facebook</span>
@@ -3060,7 +3061,16 @@ function vincularEntregablePub(t,ent){
   const tipos=PUB_TIPOS_SECC[ent.seccion];
   const p=(E.publicaciones||[]).filter(p=>p.tareaId===t.id&&!p.entId&&['propuesta','produccion'].includes(pubEst(p))&&!PUB_NO_FEED.concat(tipos?[]:['Historia']).includes(p.tipo)&&(!tipos||tipos.includes(p.tipo||'Post')))
     .sort((a,b)=>((a.fecha<hoy())-(b.fecha<hoy()))||(a.fecha+a.hora).localeCompare(b.fecha+b.hora))[0]; // primero las que aún no pasan
-  if(!p)return;
+  if(!p){
+    // Sin propuesta previa: el video o diseño entra igual a Aprobaciones; al aprobarlo se le pone fecha y pasa al calendario
+    if(!tipos||(E.publicaciones||[]).some(x=>x.entId===ent.id))return;
+    if(!E.publicaciones)E.publicaciones=[];
+    E.publicaciones.push({id:gId(),titulo:t.titulo||ent.nombre,tipo:ent.seccion==='Audiovisual'?'Reel':'Post',plataformas:['ig'],fecha:t.fecha&&t.fecha>=hoy()?t.fecha:hoy(),hora:'',copy:'',notas:'',
+      links:[ent.url],estado:'aprobacion',tareaId:t.id,entId:ent.id,creadoPor:uAct?.nombre,creadoEn:hoy()});
+    reg('Pieza por aprobar',`"${ent.nombre}" de "${t.titulo}" → 👀 Aprobaciones`);
+    addNotif('👀',`Pieza por aprobar: ${t.titulo||ent.nombre}`,`${ent.seccion} · ${ent.nombre}`);
+    return;
+  }
   p.links=[...(p.links||[]),ent.url];p.entId=ent.id;p.estado='aprobacion';
   reg('Publicación actualizada',`"${p.titulo||'—'}" recibió el entregable "${ent.nombre}" → 👀 Por aprobar`);
 }
@@ -3295,11 +3305,15 @@ function getPlatsActivas(){
   return[...document.querySelectorAll('#calPubFiltros .chip.sel')].map(c=>c.dataset.plat);
 }
 
+// El calendario muestra lo aprobado y lo publicado; lo que está en preparación se ve solo si se pide
+let calPubVerPrep=false;
+const pubListo=p=>['aprobado','publicado'].includes(pubEst(p));
 function getPubsDelMes(anio,mes){
   const plats=getPlatsActivas();
   const pubs=[];
   (E.publicaciones||[]).forEach(p=>{
     if(!p.fecha)return;
+    if(!calPubVerPrep&&!pubListo(p))return;
     const [y,m]=p.fecha.split('-').map(Number);
     if(y!==anio||m!==mes)return;
     if(plats.length&&!p.plataformas.some(pl=>plats.includes(pl)))return;
@@ -3318,7 +3332,9 @@ function renderCalPub(){
   const allPubs=getPubsDelMes(anio,mes);
   const cuenta={};allPubs.forEach(p=>{const e=pubEstVis(p);cuenta[e]=(cuenta[e]||0)+1;});
   const cntEl=document.getElementById('calPubCnt');
-  if(cntEl)cntEl.innerHTML=Object.keys(PUB_EST).filter(e=>cuenta[e]).map(e=>`<span style="color:${PUB_EST[e].col};font-weight:600">${PUB_EST[e].lbl} ${cuenta[e]}</span>`).join(' · ')||'<span style="color:var(--tm)">Sin publicaciones este mes</span>';
+  const enPrep=(E.publicaciones||[]).filter(p=>!pubListo(p)).length,porAprob=(E.publicaciones||[]).filter(p=>pubEst(p)==='aprobacion').length;
+  if(cntEl)cntEl.innerHTML=(Object.keys(PUB_EST).filter(e=>cuenta[e]).map(e=>`<span style="color:${PUB_EST[e].col};font-weight:600">${PUB_EST[e].lbl} ${cuenta[e]}</span>`).join(' · ')||`<span style="color:var(--tm)">Sin publicaciones ${calPubVerPrep?'':'aprobadas '}este mes</span>`)
+    +(!calPubVerPrep&&enPrep?` <span style="color:var(--tm)">· ${enPrep} en preparación${porAprob?`, ${porAprob} por aprobar${puede('aprobarPub')?` (<a style="color:var(--az);cursor:pointer" onclick="goV('aprobaciones',document.querySelector('[onclick*=&quot;goV(\'aprobaciones\'&quot;]'))">ir a Aprobaciones</a>)`:''}`:''}</span>`:'');
   setVistaCalPub(calPubVista,true);
   renderPendientesPub();
 }
@@ -4284,6 +4300,19 @@ function pendientesAprob(){
 }
 function totAprob(q){return q.pubs.length+q.horas.length+q.comp.length+q.permisos.length;}
 function aprobY(fn){fn();renderAprob();}
+// Aprobar una pieza desde Aprobaciones: se confirma fecha, hora, tipo y plataformas, y pasa al calendario
+function aprobarPubAq(id){
+  const p=(E.publicaciones||[]).find(x=>x.id===id);if(!p)return;
+  const f=document.getElementById('apF-'+id).value,h=document.getElementById('apH-'+id).value;
+  const plats=[...document.querySelectorAll('.apP-'+id+':checked')].map(x=>x.value);
+  if(!f){alert('Elige la fecha en que se publica.');return;}
+  if(f<hoy()&&!confirm('Esa fecha ya pasó. ¿Aprobar de todas formas?'))return;
+  if(!plats.length){alert('Elige al menos una plataforma.');return;}
+  p.fecha=f;p.hora=h||p.hora||'';p.tipo=document.getElementById('apT-'+id).value;p.plataformas=plats;
+  const mismoDia=(E.publicaciones||[]).filter(x=>x.id!==id&&x.fecha===f&&pubListo(x)&&esFeed(x)).length;
+  if(esFeed(p)&&mismoDia>=PUB_MAX_DIA&&!confirm(`Ese día ya hay ${mismoDia} publicaciones de feed aprobadas (máximo ${PUB_MAX_DIA}). ¿Aprobar igual?`))return;
+  aprobY(()=>cambiarEstadoPub(id,'aprobado'));
+}
 function renderAprob(){
   const el=document.getElementById('aprobCont');if(!el)return;
   const q=pendientesAprob(),tot=totAprob(q);
@@ -4302,8 +4331,14 @@ function renderAprob(){
     sub(`📅 ${fmt(p.fecha)}${p.hora?' · '+p.hora:''} · ${(p.plataformas||[]).map(x=>PLAT[x]||x).join(', ')||'Sin plataforma'}${p.responsableNombre?' · '+escH(p.responsableNombre):''}`)+
     (p.copy?sub('✍️ '+escH(p.copy.length>220?p.copy.slice(0,220)+'…':p.copy)):'')+
     ((p.links||[]).length?sub((p.links||[]).map((l,i)=>`<a href="${escH(l)}" target="_blank" rel="noopener" style="color:var(--az)">🔗 Ver pieza${p.links.length>1?' '+(i+1):''}</a>`).join(' · ')):sub('Sin pieza adjunta todavía')),
-    `<button class="btn bve bsm" onclick="aprobY(()=>cambiarEstadoPub('${p.id}','aprobado'))">👍 Aprobar</button><button class="btn bgh bsm" onclick="aprobY(()=>cambiarEstadoPub('${p.id}','produccion'))">↩ Devolver</button>`,
-    p.fecha&&p.fecha<hoy()?alerta('La fecha de publicación ya pasó.'):'')).join('');
+    `<button class="btn bve bsm" onclick="aprobarPubAq('${p.id}')">👍 Aprobar y programar</button><button class="btn bgh bsm" onclick="aprobY(()=>cambiarEstadoPub('${p.id}','produccion'))">↩ Devolver</button>`,
+    `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--bo);font-size:12px">
+      <span style="color:var(--tm)">Sale en el calendario el</span>
+      <input type="date" class="fc" id="apF-${p.id}" value="${p.fecha||''}" style="width:auto;padding:4px 8px;font-size:12px">
+      <input type="time" class="fc" id="apH-${p.id}" value="${p.hora||''}" style="width:auto;padding:4px 8px;font-size:12px">
+      <select class="fc" id="apT-${p.id}" style="width:auto;padding:4px 8px;font-size:12px">${PUB_TIPOS.map(t=>`<option${t===(p.tipo||'Post')?' selected':''}>${t}</option>`).join('')}</select>
+      ${['ig','tt','yt','fb','rd','tv','pr'].filter(k=>k!=='fb'||(p.plataformas||[]).includes('fb')).map(k=>`<label style="display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" class="apP-${p.id}" value="${k}"${(p.plataformas||[]).includes(k)?' checked':''}> ${PLAT[k]}</label>`).join('')}
+    </div>`+(p.fecha&&p.fecha<hoy()?alerta('La fecha de publicación ya pasó: elige una nueva antes de aprobar.'):''))).join('');
 
   const sem=alertasHorasExtra(E.horasExtra);
   const horas=q.horas.map(h=>{const s=sem.find(a=>a.miembro===h.miembro&&a.lunes===lunesDe(h.fecha));return fila(
