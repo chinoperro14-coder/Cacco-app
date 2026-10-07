@@ -1065,6 +1065,18 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <div class="mpie"><button class="btn bgh" onclick="cerM('mH')">Cancelar</button><button class="btn bna" onclick="guardarH()">Guardar</button></div>
 </div></div>
 
+<!-- MODAL ANULAR PERMISO -->
+<div class="mov" id="mAnular"><div class="mo" style="max-width:460px">
+  <div class="mcab"><div class="mtit">🚫 Anular solicitud de permiso</div><button class="mx" onclick="cerM('mAnular')">×</button></div>
+  <div class="mbody">
+    <input type="hidden" id="anId">
+    <div id="anTxt" style="font-size:13px;color:var(--tm);line-height:1.5;margin-bottom:12px"></div>
+    <div class="fg"><label class="fl">Motivo de la anulación *</label><textarea class="fc" id="anMot" placeholder="ej. Ya no necesito el permiso"></textarea>
+      <div id="anErr" style="display:none;font-size:12px;color:var(--ro);margin-top:4px">Escribe el motivo de la anulación.</div></div>
+  </div>
+  <div class="mpie"><button class="btn bgh" onclick="cerM('mAnular')">Volver</button><button class="btn bpe" onclick="confirmarAnular()">🚫 Anular solicitud</button></div>
+</div></div>
+
 <!-- MODAL TIEMPO COMPENSATORIO -->
 <div class="mov" id="mComp"><div class="mo">
   <div class="mcab"><div class="mtit" id="mCompTit">Solicitud de tiempo compensatorio</div><button class="mx" onclick="cerM('mComp')">×</button></div>
@@ -4477,9 +4489,18 @@ function puedeAnularPer(p){
 function anularPer(id){
   const p=(E.permisos||[]).find(x=>x.id===id);if(!p)return;
   if(!puedeAnularPer(p)){alert('No puedes anular esta solicitud.');return;}
-  const motivo=prompt(`Anular la solicitud de permiso de ${p.miembro} (${fmt(p.desdeF)}).\n\nNo se borra: queda en el historial como «Anulada» y deja de contar en las 144 h.\n\nMotivo de la anulación:`,'');
-  if(motivo===null)return;
-  if(!motivo.trim()){alert('Escribe el motivo de la anulación.');return;}
+  // Ventana propia para el motivo (prompt() del navegador no funciona en todos los visores)
+  document.getElementById('anId').value=id;
+  document.getElementById('anTxt').textContent=`Solicitud de permiso de ${p.miembro} (${fmt(p.desdeF)}). No se borra: queda en el historial como «Anulada» y deja de contar en las 144 h.`;
+  document.getElementById('anMot').value='';document.getElementById('anErr').style.display='none';
+  abrirM('mAnular');setTimeout(()=>document.getElementById('anMot').focus(),50);
+}
+function confirmarAnular(){
+  const p=(E.permisos||[]).find(x=>x.id===document.getElementById('anId').value);if(!p)return;
+  if(!puedeAnularPer(p)){alert('No puedes anular esta solicitud.');return;}
+  const motivo=document.getElementById('anMot').value;
+  if(!motivo.trim()){document.getElementById('anErr').style.display='block';return;}
+  cerM('mAnular');
   p.aprobacion='Anulado';p.anuladoPor=uAct?.nombre;p.fechaAnul=hoy();p.motivoAnul=motivo.trim();
   reg('Permiso anulado',`${p.miembro} — ${MOTIVOS_PER[p.motivo-1]} — ${fmt(p.desdeF)} — por ${uAct?.nombre}: ${p.motivoAnul}`);
   if(p.miembro!==uAct?.nombre)addNotif('🚫',`Permiso anulado: ${p.miembro}`,`${MOTIVOS_PER[p.motivo-1]} · ${fmt(p.desdeF)} · ${p.motivoAnul}`);
