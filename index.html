@@ -1084,6 +1084,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       <div class="fg"><label class="fl">Hasta las</label><input type="time" class="fc" id="cHH" onchange="calcComp()"></div>
     </div>
     <div id="cSaldo" style="font-size:13px;line-height:1.55;margin:-2px 0 12px;padding:10px 12px;border-radius:8px;background:var(--su);border:1px solid var(--bo)"></div>
+    <div id="cAnticipo" class="al alam" style="display:none;margin:0 0 12px;font-size:12.5px;line-height:1.5"></div>
     <div id="cTareas" class="al alam" style="display:none;margin:0 0 12px;font-size:12.5px;line-height:1.5"></div>
     <div class="fg"><label class="fl">Motivo *</label><textarea class="fc" id="cMot" placeholder="ej. Días libres por las horas de Sabores de Colón"></textarea></div>
   </div>
@@ -3842,6 +3843,15 @@ function dispComp(nombre,salvoId){
   const ya=prev&&esComp(prev)&&prev.aprobacion==='Aprobado'?parseFloat(prev.horas||0):0;
   return {saldo:saldoComp(nombre).saldo,pend,disp:saldoComp(nombre).saldo-pend+ya};
 }
+// El compensatorio se pide con 7 a 10 días de anticipación: aviso (no bloquea) si se pide tarde
+const ANTICIPO_COMP=7;
+const diasEntre=(a,b)=>{const u=x=>{const [y,m,d]=x.split('-').map(Number);return Date.UTC(y,m-1,d);};return Math.round((u(b)-u(a))/864e5);};
+function avisoAnticipoComp(fecha,pedido){
+  if(!fecha)return '';const d=diasEntre(pedido||hoy(),fecha);
+  if(d>=ANTICIPO_COMP)return '';
+  return d<0?`Se pidió ${-d} día${d===-1?'':'s'} después de la fecha de inicio. El tiempo compensatorio debe pedirse con 7 a 10 días de anticipación.`
+    :`Se pide con ${d===0?'0 días (el mismo día)':d+' día'+(d===1?'':'s')} de anticipación. El tiempo compensatorio debe pedirse con 7 a 10 días de anticipación.`;
+}
 // Día hábil siguiente (lunes a viernes, sin feriados)
 function siguienteHabil(f){const [a,m,d]=f.split('-').map(Number),x=new Date(a,m-1,d);
   do{x.setDate(x.getDate()+1);}while(x.getDay()===0||x.getDay()===6||esFeriado(ymd(x)));return ymd(x);}
@@ -3919,6 +3929,7 @@ function renderComp(){
       </div>
       <div style="font-size:13px;color:var(--tm);margin-bottom:6px;line-height:1.5">${escH(h.actividad||'')}</div>
       ${compDiaCompleto(h)&&h.aprobacion!=='Rechazado'?`<div style="font-size:12px;color:var(--az);margin-bottom:4px">↩️ Regresa el ${fmt(regresoComp(h))}${h.aprobacion==='Aprobado'?' · sin acceso al sistema mientras tanto':''}</div>`:''}
+      ${h.aprobacion!=='Rechazado'&&h.creado&&avisoAnticipoComp(h.fecha,h.creado)?`<div class="al alam" style="font-size:12px;line-height:1.45;margin:6px 0 0;padding:6px 10px">⏰ Pedido tarde: ${(()=>{const d=diasEntre(h.creado,h.fecha);return d<0?'después de la fecha de inicio':'con '+d+' día'+(d===1?'':'s')+' de anticipación';})()} (deben ser 7 a 10).</div>`:''}
       ${tp.length?`<div class="al alam" style="font-size:12px;line-height:1.45;margin:6px 0 0;padding:6px 10px">⚠️ ${tp.length} tarea${tp.length===1?'':'s'} pendiente${tp.length===1?'':'s'} hasta su regreso</div>`:''}
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-top:8px">
         <span style="font-size:11px;color:var(--tm)">📅 ${fmt(h.fecha)}${h.fechaFin&&h.fechaFin!==h.fecha?' al '+fmt(h.fechaFin):''}${h.desde&&h.hasta?` · 🕒 ${h.desde}–${h.hasta}`:''}</span>
@@ -3974,6 +3985,8 @@ function calcComp(){
     (c.f&&c.tot>0?`<br>${c.tot>=HORAS_DIA-1e-9?`↩️ Regresas el <b>${fmt(c.reg)}</b>. Mientras tanto no tendrás acceso al sistema.`:'Es parte de un día: sigues con acceso al sistema.'}`:'')+
     (c.f&&c.ff>c.f?`<br><span style="color:var(--tm)">Del ${fmt(c.f)} al ${fmt(c.ff)} hay ${diasHabiles(c.f,c.ff)} día(s) hábil(es).</span>`:'');
   document.getElementById('cGuardar').disabled=queda<-1e-9;
+  const prevC=c.id?E.horasExtra.find(x=>x.id===c.id):null,ant=avisoAnticipoComp(c.f,prevC?.creado),ab=document.getElementById('cAnticipo');
+  ab.style.display=ant?'block':'none';ab.textContent=ant?'⏰ '+ant:'';
   // Aviso de tareas pendientes antes de irse
   const tp=c.f?tareasPendComp(c.m,c.tot>=HORAS_DIA-1e-9?c.ff:c.f):[],tb=document.getElementById('cTareas');
   if(tp.length){
@@ -3991,6 +4004,8 @@ function guardarComp(){
   if(niv==='colaborador'&&c.m!==uAct?.nombre){alert('Solo puede solicitar su propio tiempo compensatorio.');return;}
   const d=dispComp(c.m,c.id);
   if(c.tot>d.disp+1e-9){alert(`${c.m} solo tiene ${fmtSaldo(Math.max(0,d.disp))} disponibles${d.pend?` (ya hay ${fmtSaldo(d.pend)} pedidas y pendientes)`:''}. El saldo nunca puede quedar en negativo.`);return;}
+  const prevA=c.id?E.horasExtra.find(x=>x.id===c.id):null,ant=avisoAnticipoComp(c.f,prevA?.creado);
+  if(ant&&!prevA&&!confirm(`⏰ ${ant}\n\n¿Enviar la solicitud de todos modos?`))return;
   const tp=tareasPendComp(c.m,c.tot>=HORAS_DIA-1e-9?c.ff:c.f);
   if(tp.length&&!confirm(`${c.m===uAct?.nombre?'Tienes':c.m+' tiene'} ${tp.length} tarea(s) pendiente(s) antes del regreso:\n\n`+tp.slice(0,8).map(x=>`• ${x.t.titulo} (${x.sec}${x.f?' · '+fmt(x.f):''})`).join('\n')+(tp.length>8?`\n… y ${tp.length-8} más`:'')+'\n\n¿Enviar la solicitud de todos modos?'))return;
   const prev=c.id?E.horasExtra.find(x=>x.id===c.id):null;
@@ -4551,9 +4566,9 @@ solicito el uso de ${campoF(cant,150)} (horas/días) del tiempo compensatorio qu
 <p class="just" style="margin-top:22px">Dicho tiempo lo haré efectivo el ${campoF(dia,90)} de ${campoF(mes,150)} de ${campoF(d2.a,80)} desde las<br>
 ${campoF(de,90)} horas hasta las ${campoF(ha,90)} horas.</p>
 <div class="firmas" style="margin-top:60px">
-${firmaFila('',fCorta(r.creado||r.fecha),'Firma del Servidor Público Solicitante',false)}
+${firmaFila('','','Firma del Servidor Público Solicitante',false)}
 <div style="height:30px"></div>
-${firmaFila('Aprobado',r.aprobacion==='Aprobado'?fCorta(r.fechaAprob):'','Firma del Superior Inmediato',false)}
+${firmaFila('Aprobado','','Firma del Superior Inmediato',false)}
 <div style="height:30px"></div>
 ${firmaFila('Enterado','','Firma del Jefe de la OIRH',false)}
 </div>`;
@@ -4631,6 +4646,7 @@ function renderAprob(){
     sub(`📅 ${fmt(h.fecha)}${h.fechaFin&&h.fechaFin!==h.fecha?' al '+fmt(h.fechaFin):''}${h.desde&&h.hasta?' · 🕒 '+h.desde+'–'+h.hasta:''} · Saldo aprobado: ${fmtSaldo(sc)}`)+sub(escH(h.actividad||'')),
     `<button class="btn bve bsm" onclick="aprobY(()=>aprobarH('${h.id}',true))">✅ Aprobar</button><button class="btn bpe bsm" onclick="aprobY(()=>aprobarH('${h.id}',false))">❌ Rechazar</button><button class="btn bgh bsm" onclick="solCompDoc('${h.id}')">📄 Formulario</button>`,
     (n>sc+1e-9?alerta(`Pide más de lo que tiene en su saldo aprobado (${fmtSaldo(sc)}). No se puede aprobar: el saldo nunca queda en negativo.`):'')
+    +(()=>{const a=avisoAnticipoComp(h.fecha,h.creado);return a?alerta(a):'';})()
     +(()=>{const tp=tareasPendComp(h.miembro,h.fechaFin||h.fecha);return tp.length?alerta(`Tiene ${tp.length} tarea${tp.length===1?'':'s'} pendiente${tp.length===1?'':'s'} hasta su regreso: `+tp.slice(0,4).map(x=>`${x.t.titulo} (${x.sec}${x.f?', '+fmt(x.f):''})`).join('; ')+(tp.length>4?'…':'')):'';})());}).join('');
 
   const pers=q.permisos.map(p=>fila(
