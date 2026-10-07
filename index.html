@@ -598,6 +598,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <button class="ni" onclick="goV('asigVarias',this)"><span class="ico">🔁</span>Tareas Recurrentes</button>
   <button class="ni" onclick="goV('calendario',this)"><span class="ico">📅</span>Calendario</button>
   <button class="ni" onclick="goV('horasExtra',this)"><span class="ico">⏱️</span>Horas Extras<span class="ct" id="ctH">0</span></button>
+  <button class="ni" onclick="goV('permisos',this)"><span class="ico">📝</span>Permisos<span class="ct" id="ctP">0</span></button>
   <button class="ni" onclick="goV('equipo',this)"><span class="ico">👥</span>Equipo</button>
   <div class="nsep">Coordinación</div>
   <button class="ni nle ned oculto" onclick="goV('reportes',this)"><span class="ico">📊</span>Reportes</button>
@@ -687,6 +688,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     </div>
   </div>
   <div id="alHE" class="al alam oculto">⏱️ <span id="txHE"></span></div>
+  <div id="regHE" class="al alam" style="display:none;font-size:13px;line-height:1.5"></div>
   <div class="sg" style="grid-template-columns:repeat(3,1fr)">
     <div class="stat sna"><div class="slbl">Registros</div><div class="snum" id="heTot">0</div></div>
     <div class="stat sve"><div class="slbl">Saldo compensatorio</div><div class="snum" id="heApr">0</div><div class="ssub" id="heAprSub">horas disponibles</div></div>
@@ -696,6 +698,28 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <div class="hegrid" id="gridHE"></div>
   <div id="vacHE" style="padding:48px 20px;text-align:center;color:var(--tm);display:none">
     <div style="font-size:36px;margin-bottom:10px">⏱️</div><div style="font-size:14px;font-weight:500">Sin horas extras registradas.</div>
+  </div>
+</div>
+
+<!-- PERMISOS -->
+<div id="vPermisos" class="oculto">
+  <div class="sh2">
+    <div class="stit">Permisos</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn bna bsm nhe oculto" onclick="abrirMPer()">+ Solicitar permiso</button>
+    </div>
+  </div>
+  <div id="alPer" class="al alam oculto">📝 <span id="txPer"></span></div>
+  <div id="regPer" class="al alam" style="display:none;font-size:13px;line-height:1.5"></div>
+  <div class="sg" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat sna"><div class="slbl">Solicitudes</div><div class="snum" id="perTot">0</div><div class="ssub" id="perTotSub">este año</div></div>
+    <div class="stat sve"><div class="slbl">Tiempo en permisos</div><div class="snum" id="perUso">0</div><div class="ssub" id="perUsoSub">aprobado este año</div></div>
+    <div class="stat sam"><div class="slbl">Pendientes</div><div class="snum" id="perPen">0</div></div>
+  </div>
+  <div id="perResumen" style="display:none;margin-bottom:18px"></div>
+  <div class="hegrid" id="gridPer"></div>
+  <div id="vacPer" style="padding:48px 20px;text-align:center;color:var(--tm);display:none">
+    <div style="font-size:36px;margin-bottom:10px">📝</div><div style="font-size:14px;font-weight:500">Sin solicitudes de permiso.</div>
   </div>
 </div>
 
@@ -904,7 +928,10 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       <div class="fg"><label class="fl">Puesto según RRHH</label><input type="text" class="fc" id="pPuesto" placeholder="ej. Promotor Cultural"></div>
       <div class="fg"><label class="fl">N.º de posición</label><input type="text" class="fc" id="pPosicion" inputmode="numeric" placeholder="ej. 4156"></div>
     </div>
-    <div class="fg"><label class="fl">Unidad administrativa</label><input type="text" class="fc" id="pUnidad" placeholder="ej. Centro de Arte y Cultura de Colón"></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Cédula</label><input type="text" class="fc" id="pCedula" placeholder="ej. 3-123-4567"></div>
+      <div class="fg"><label class="fl">Unidad administrativa</label><input type="text" class="fc" id="pUnidad" placeholder="ej. Centro de Arte y Cultura de Colón"></div>
+    </div>
     <div class="fg"><label class="fl">Correo de contacto</label><input type="email" class="fc" id="pCorreo" placeholder="Si es distinto al de inicio de sesión (minutas, avisos)"></div>
     <div style="font-size:12px;color:var(--tm);margin:-4px 0 14px">Puesto, unidad y posición se usan en el formulario de horas extra de la OIRH.</div>
     <button class="btn bna" onclick="guardarPerfil()">Guardar cambios</button>
@@ -984,22 +1011,63 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       <select class="fc" id="hTipo" onchange="tipoHCambio()"><option value="extra">⏱️ Horas extra (suman al saldo)</option><option value="compensatorio">🌴 Tiempo compensatorio usado (descuenta del saldo)</option></select>
     </div>
     <div class="fr">
-      <div class="fg"><label class="fl">Fecha *</label><input type="date" class="fc" id="hFecha" onchange="calcHorasH()"></div>
+      <div class="fg"><label class="fl" id="hFechaLbl">Fecha *</label><input type="date" class="fc" id="hFecha" onchange="fechaHCambio()"></div>
+      <div class="fg hSoloComp" style="display:none"><label class="fl">Hasta (si son varios días)</label><input type="date" class="fc" id="hFechaFin" onchange="calcCompH()"></div>
       <div class="fg hSoloExtra"><label class="fl">Tipo de día</label><div style="display:flex;align-items:center;gap:8px;min-height:38px"><span id="hTipoDia" class="bg bgr">—</span><label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" id="hFeriado" onchange="calcHorasH()"> Feriado</label></div></div>
     </div>
     <div class="fr">
-      <div class="fg hSoloExtra"><label class="fl">Entrada *</label><input type="time" class="fc" id="hDesde" onchange="calcHorasH()"></div>
-      <div class="fg hSoloExtra"><label class="fl">Salida *</label><input type="time" class="fc" id="hHasta" onchange="calcHorasH()"></div>
-      <div class="fg"><label class="fl" id="hHorasLbl">Horas extra</label><input type="number" class="fc" id="hHoras" min="0" max="24" step="0.25"></div>
+      <div class="fg"><label class="fl" id="hDesdeLbl">Entrada *</label><input type="time" class="fc" id="hDesde" onchange="calcHorasH()"></div>
+      <div class="fg"><label class="fl" id="hHastaLbl">Salida *</label><input type="time" class="fc" id="hHasta" onchange="calcHorasH()"></div>
+      <div class="fg hSoloComp" style="display:none"><label class="fl">Días a usar</label><input type="number" class="fc" id="hDias" min="0" max="60" step="0.5" placeholder="0" oninput="calcCompH()"></div>
+      <div class="fg hSoloComp" style="display:none"><label class="fl">Horas a usar</label><input type="number" class="fc" id="hHorasC" min="0" max="23.75" step="0.25" placeholder="0" oninput="this.dataset.auto='';calcCompH()"></div>
+      <div class="fg hSoloExtra"><label class="fl" id="hHorasLbl">Horas extra</label><input type="number" class="fc" id="hHoras" min="0" max="24" step="0.25"></div>
     </div>
     <div style="font-size:12px;color:var(--tm);margin:-4px 0 12px;line-height:1.5" id="hSaldoInfo"></div>
-    <div class="hSoloExtra" style="font-size:12px;color:var(--tm);margin:-4px 0 12px;line-height:1.5" id="hRegla">Día laboral: cuenta solo lo trabajado antes de 8:00 a. m. o después de 4:00 p. m. Sábado, domingo o feriado: cuenta toda la jornada.</div>
+    <div class="hSoloExtra" style="font-size:12px;color:var(--tm);margin:-4px 0 12px;line-height:1.5" id="hRegla">Día laboral: cuenta lo trabajado antes de 8:00 a. m. o después de 4:00 p. m., siempre que sea 1 hora o más (Reglamento Interno, art. 74). Sábado, domingo o feriado: cuenta toda la jornada.</div>
+    <div class="hSoloExtra al alam" id="hAvisoReg" style="display:none;margin:-4px 0 12px;font-size:12.5px;line-height:1.5"></div>
     <div class="fg"><label class="fl" id="hActLbl">Actividad *</label><textarea class="fc" id="hAct" placeholder="Describa la actividad realizada..."></textarea></div>
     <div class="fg" id="hAproGrupo" style="display:none"><label class="fl">Aprobación</label>
       <select class="fc" id="hApro"><option value="Pendiente">⏳ Pendiente</option><option value="Aprobado">✅ Aprobado</option><option value="Rechazado">❌ Rechazado</option></select>
     </div>
   </div>
   <div class="mpie"><button class="btn bgh" onclick="cerM('mH')">Cancelar</button><button class="btn bna" onclick="guardarH()">Guardar</button></div>
+</div></div>
+
+<!-- MODAL PERMISO -->
+<div class="mov" id="mPer"><div class="mo">
+  <div class="mcab"><div class="mtit" id="mPerTit">Solicitud de permiso</div><button class="mx" onclick="cerM('mPer')">×</button></div>
+  <div class="mbody">
+    <input type="hidden" id="perId">
+    <div class="fg" id="perMiemGrupo"><label class="fl">Servidor público *</label><select class="fc" id="perMiem" onchange="perCambio()"></select></div>
+    <div class="fg"><label class="fl">Motivo *</label><select class="fc" id="perMot" onchange="perCambio()"></select></div>
+    <div class="fr" id="perDueloGrupo" style="display:none">
+      <div class="fg"><label class="fl">Parentesco *</label><select class="fc" id="perPar" onchange="perTxt()"><option value="">— Elegir —</option></select></div>
+      <div class="fg"><label class="fl">&nbsp;</label><label style="display:flex;align-items:center;gap:6px;font-size:13px;min-height:38px;cursor:pointer"><input type="checkbox" id="perLejos" onchange="perTxt()"> Debe trasladarse lejos (+3 días)</label></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Desde el día *</label><input type="date" class="fc" id="perDF" onchange="calcPer()"></div>
+      <div class="fg"><label class="fl">A la(s)</label><input type="time" class="fc" id="perDH" value="08:00" onchange="calcPer()"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Hasta el día *</label><input type="date" class="fc" id="perHF" onchange="calcPer()"></div>
+      <div class="fg"><label class="fl">A la(s)</label><input type="time" class="fc" id="perHH" value="16:00" onchange="calcPer()"></div>
+    </div>
+    <div class="fl" style="margin-bottom:6px">Tiempo utilizado</div>
+    <div class="fr" style="grid-template-columns:1fr 1fr 1fr">
+      <div class="fg"><label class="fl">Días</label><input type="number" class="fc" id="perD" min="0" step="1" oninput="perTxt()"></div>
+      <div class="fg"><label class="fl">Horas</label><input type="number" class="fc" id="perH" min="0" max="7" step="1" oninput="perTxt()"></div>
+      <div class="fg"><label class="fl">Minutos</label><input type="number" class="fc" id="perM" min="0" max="59" step="5" oninput="perTxt()"></div>
+    </div>
+    <div style="font-size:12px;color:var(--tm);margin:-4px 0 12px;line-height:1.5" id="perInfo"></div>
+    <div class="fg"><label class="fl">Detalle (opcional)</label><textarea class="fc" id="perDet" placeholder="ej. Cita médica en la Policlínica"></textarea></div>
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;margin:-4px 0 12px;cursor:pointer"><input type="checkbox" id="perComp" onchange="perTxt()"> Presentó comprobante (certificado médico, constancia, acta, etc.)</label>
+    <div id="perAlertas" class="al alam" style="display:none;margin-bottom:10px;font-size:12.5px;line-height:1.5"></div>
+    <div id="perFaltan" class="al alam" style="display:none;margin-bottom:10px"></div>
+    <div class="fg" id="perAproGrupo" style="display:none"><label class="fl">Aprobación</label>
+      <select class="fc" id="perApro"><option value="Pendiente">⏳ Pendiente</option><option value="Aprobado">✅ Aprobado</option><option value="Rechazado">❌ Rechazado</option></select>
+    </div>
+  </div>
+  <div class="mpie"><button class="btn bgh" onclick="cerM('mPer')">Cancelar</button><button class="btn bna" onclick="guardarPer()">Guardar</button></div>
 </div></div>
 
 <!-- MODAL FORMULARIO OIRH -->
@@ -1051,7 +1119,10 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       <div class="fg"><label class="fl">Puesto según RRHH</label><input type="text" class="fc" id="eqPuesto" placeholder="ej. Promotor Cultural"></div>
       <div class="fg"><label class="fl">N.º de posición</label><input type="text" class="fc" id="eqPosicion" inputmode="numeric" placeholder="ej. 4156"></div>
     </div>
-    <div class="fg"><label class="fl">Unidad administrativa</label><input type="text" class="fc" id="eqUnidad" placeholder="ej. Centro de Arte y Cultura de Colón"></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Cédula</label><input type="text" class="fc" id="eqCedula" placeholder="ej. 3-123-4567"></div>
+      <div class="fg"><label class="fl">Unidad administrativa</label><input type="text" class="fc" id="eqUnidad" placeholder="ej. Centro de Arte y Cultura de Colón"></div>
+    </div>
     <div class="fg"><label class="fl">Correo de contacto</label><input type="email" class="fc" id="eqCorreo" placeholder="Si es distinto al de inicio de sesión (minutas, avisos)"></div>
     <div class="fg"><label class="fl">Secciones del equipo</label>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
@@ -1225,7 +1296,7 @@ const EQ_DEF=[
 // ════════════════════════
 //  ESTADO
 // ════════════════════════
-let E={tareas:[],horasExtra:[],equipo:[],bitacora:[],notifs:[],etiquetas:[...ETIQ_DEF],historico:[],publicaciones:[],asigVarias:[]};
+let E={tareas:[],horasExtra:[],permisos:[],equipo:[],bitacora:[],notifs:[],etiquetas:[...ETIQ_DEF],historico:[],publicaciones:[],asigVarias:[]};
 let uAct=null,niv=null,fCat='todos',nivelTxt=0,repP='semanal',repOffset=0;
 let etiqSel=[];
 let expandidas=new Set();
@@ -1323,7 +1394,7 @@ function mergeArrById(base,mine,theirs){
 // Fusiona el estado completo E
 function mergeE(base,mine,theirs){
   const out={...theirs};// campos sueltos → del servidor
-  ['tareas','equipo','publicaciones','horasExtra','bitacora','historico','asigVarias','notifs'].forEach(k=>{
+  ['tareas','equipo','publicaciones','horasExtra','permisos','bitacora','historico','asigVarias','notifs'].forEach(k=>{
     out[k]=mergeArrById(base?.[k],mine?.[k],theirs?.[k]);
   });
   out.etiquetas=[...new Set([...(mine?.etiquetas||[]),...(theirs?.etiquetas||[])])];
@@ -1375,6 +1446,7 @@ async function cargar(){
           if(!E.equipo)E.equipo=[];
           if(!E.publicaciones)E.publicaciones=[];
           if(!E.asigVarias)E.asigVarias=[];
+          if(!E.permisos)E.permisos=[];
           // Migrate old t.publicacion / e.publicacion to E.publicaciones[]
           E.tareas.forEach(t=>{
             if(t.publicacion?.fecha){
@@ -1549,7 +1621,7 @@ function limpNotifs(){E.notifs=[];renderNotifs();document.getElementById('notifP
 // ════════════════════════
 //  NAVEGACIÓN
 // ════════════════════════
-const VISTAS=['Tareas','Calendario','HorasExtra','Equipo','Reportes','Historico','Bitacora','Perfil','CalPub','Asignaciones','AsigVarias'];
+const VISTAS=['Tareas','Calendario','HorasExtra','Permisos','Equipo','Reportes','Historico','Bitacora','Perfil','CalPub','Asignaciones','AsigVarias'];
 function goV(v,el){
   cerrarSid();
   if(v==='reportes'&&!puede('verReportes')){alert('Sin permiso.');return;}
@@ -1563,6 +1635,7 @@ function goV(v,el){
   if(v==='bitacora')renderBit();
   if(v==='calendario')renderCal();
   if(v==='equipo')renderEquipo();
+  if(v==='permisos')renderPermisos();
   if(v==='historico')renderHist();
   if(v==='perfil')renderPerfil();
   if(v==='calPub'){renderCalPub();localStorage.setItem('cacco_calPubVisto','1');document.querySelectorAll('.new-tag').forEach(el=>el.style.display='none');}
@@ -1578,8 +1651,8 @@ function filtraCat(c,el){
   goV('tareas',document.querySelector('.ni[onclick*="tareas"]'));
   renderTareas();
 }
-function renderTodo(){renderTareas();renderHoras();renderEquipo();actuCts();if(!document.getElementById('vAsignaciones')?.classList.contains('oculto'))renderAsig();}
-function actuCts(){document.getElementById('ctT').textContent=E.tareas.filter(t=>!t.borrador).length;document.getElementById('ctH').textContent=E.horasExtra.length;}
+function renderTodo(){renderTareas();renderHoras();if(!document.getElementById('vPermisos')?.classList.contains('oculto'))renderPermisos();renderEquipo();actuCts();if(!document.getElementById('vAsignaciones')?.classList.contains('oculto'))renderAsig();}
+function actuCts(){document.getElementById('ctT').textContent=E.tareas.filter(t=>!t.borrador).length;document.getElementById('ctH').textContent=E.horasExtra.length;const cp=document.getElementById('ctP');if(cp)cp.textContent=(E.permisos||[]).filter(x=>x.aprobacion==='Pendiente'&&(niv!=='colaborador'||x.miembro===uAct?.nombre)).length;}
 
 // ════════════════════════
 //  TAREAS
@@ -3554,9 +3627,10 @@ function renderHoras(){
   const apr=hs.filter(h=>h.aprobacion==='Aprobado'),pen=hs.filter(h=>h.aprobacion==='Pendiente');
   document.getElementById('heTot').textContent=hs.length;
   const acum=apr.filter(h=>!esComp(h)).reduce((s,h)=>s+parseFloat(h.horas||0),0),usad=apr.filter(esComp).reduce((s,h)=>s+parseFloat(h.horas||0),0);
-  document.getElementById('heApr').textContent=(acum-usad).toFixed(1);
-  document.getElementById('heAprSub').textContent=`${acum.toFixed(1)} acumuladas · ${usad.toFixed(1)} usadas`;
+  document.getElementById('heApr').textContent=fmtD(acum-usad);
+  document.getElementById('heAprSub').textContent=`${Math.abs(acum-usad)>=HORAS_DIA?fmtH(acum-usad)+' · ':''}${fmtH(acum)} acumuladas · ${fmtH(usad)} usadas · 8 h = 1 día`;
   document.getElementById('hePen').textContent=pen.length;
+  panelAlertas('regHE',alertasHorasExtra(hs).map(a=>a.texto));
   const alHE=document.getElementById('alHE');
   if(puede('aprobarHora')&&pen.length){alHE.classList.remove('oculto');document.getElementById('txHE').textContent=`${pen.length} hora(s) pendiente(s) de aprobación.`;}
   else alHE.classList.add('oculto');
@@ -3565,7 +3639,7 @@ function renderHoras(){
   const resDiv=document.getElementById('heResumen');
   if(resDiv&&niv!=='colaborador'&&niv!=='lector'&&apr.length){
     const porP={};apr.forEach(h=>{if(!porP[h.miembro])porP[h.miembro]=0;porP[h.miembro]+=(esComp(h)?-1:1)*parseFloat(h.horas||0);});
-    const items=Object.entries(porP).sort((a,b)=>b[1]-a[1]).map(([nom,hrs])=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--su);border:1px solid var(--bo);border-radius:8px"><div style="flex:1;font-size:13px;font-weight:600">${rAv(nom,'',22,8)} ${nom}</div><div style="font-size:14px;font-weight:800;color:var(--na)">${hrs.toFixed(1)} hrs</div></div>`).join('');
+    const items=Object.entries(porP).sort((a,b)=>b[1]-a[1]).map(([nom,hrs])=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--su);border:1px solid var(--bo);border-radius:8px"><div style="flex:1;font-size:13px;font-weight:600">${rAv(nom,'',22,8)} ${nom}</div><div style="text-align:right"><div style="font-size:14px;font-weight:800;color:var(--na)">${fmtD(hrs)}</div>${Math.abs(hrs)>=HORAS_DIA?`<div style="font-size:11px;color:var(--tm)">${fmtH(hrs)}</div>`:''}</div></div>`).join('');
     resDiv.style.display='block';
     resDiv.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Saldo compensatorio por persona</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px">${items}</div>`;
   } else if(resDiv){resDiv.style.display='none';}
@@ -3593,12 +3667,12 @@ function renderHoras(){
     return`<div class="hecard">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
         <div style="display:flex;align-items:center;gap:9px;font-size:14px;font-weight:700">${rAv(h.miembro,'',30,11)} ${h.miembro}</div>
-        <div style="text-align:right"><div style="font-size:26px;font-weight:800;color:${esComp(h)?'var(--az)':'var(--na)'};line-height:1">${esComp(h)?'−':''}${h.horas}</div><div style="font-size:11px;color:var(--tm)">${esComp(h)?'h compensatorio':'horas'}</div></div>
+        <div style="text-align:right"><div style="font-size:${esComp(h)?20:26}px;font-weight:800;color:${esComp(h)?'var(--az)':'var(--na)'};line-height:1">${esComp(h)?'−'+fmtD(parseFloat(h.horas||0)):h.horas}</div><div style="font-size:11px;color:var(--tm)">${esComp(h)?'compensatorio'+(parseFloat(h.horas||0)>=HORAS_DIA?' · '+fmtH(parseFloat(h.horas||0)):''):'horas'}</div></div>
       </div>
       <div style="font-size:13px;color:var(--tm);margin-bottom:12px;line-height:1.5">${h.actividad}</div>
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
-        <span style="font-size:11px;color:var(--tm)">📅 ${fmt(h.fecha)}${h.desde&&h.hasta?` · 🕒 ${h.desde}–${h.hasta}`:''}${h.feriado?' · Feriado':h.tipoDia==='sabado'?' · Sábado':h.tipoDia==='domingo'?' · Domingo':''}</span>
-        <div style="display:flex;gap:5px;flex-wrap:wrap">${btnApro}</div>
+        <span style="font-size:11px;color:var(--tm)">📅 ${fmt(h.fecha)}${h.fechaFin&&h.fechaFin!==h.fecha?' al '+fmt(h.fechaFin):''}${h.desde&&h.hasta?` · 🕒 ${h.desde}–${h.hasta}`:''}${h.feriado?' · Feriado':h.tipoDia==='sabado'?' · Sábado':h.tipoDia==='domingo'?' · Domingo':''}</span>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">${btnApro}${esComp(h)?`<button class="btn bgh bsm" onclick="solCompDoc('${h.id}')">📄 Formulario</button>`:''}</div>
       </div>
       ${btnAdmin}
     </div>`;
@@ -3627,6 +3701,12 @@ function abrirMH(id){
   document.getElementById('hFeriado').checked=!!h?.feriado;
   document.getElementById('hTipo').value=h&&esComp(h)?'compensatorio':'extra';
   document.getElementById('hHoras').value=h?.horas??'';
+  // Compensatorio: la persona decide cuántos días (8 h c/u) y horas usa
+  const hn=h&&esComp(h)?parseFloat(h.horas||0):0,hd=Math.floor(hn/HORAS_DIA+1e-9);
+  document.getElementById('hFechaFin').value=h?.fechaFin||'';
+  document.getElementById('hDias').value=hn?hd:'';
+  document.getElementById('hHorasC').dataset.auto='';
+  document.getElementById('hHorasC').value=hn?Math.round((hn-hd*HORAS_DIA)*100)/100:'';
   // Las horas salen de entrada/salida; solo quien aprueba puede ajustarlas a mano
   document.getElementById('hHoras').readOnly=!puede('aprobarHora');
   calcHorasH(true);
@@ -3637,6 +3717,7 @@ function abrirMH(id){
   // Nadie (salvo el Líder) aprueba sus propias horas
   sel.onchange=()=>{ag.style.display=puede('aprobarHora')&&(sel.value!==uAct?.nombre||niv==='lider')?'block':'none';tipoHCambio();};
   sel.onchange();
+  avisoRegH();
   abrirM('mH');
 }
 
@@ -3651,6 +3732,36 @@ function saldoComp(nombre,hasta){// solo lo aprobado; 'hasta' (AAAA-MM-DD) es in
   return {acum,usadas,saldo:acum-usadas};
 }
 const fmtH=n=>{const t=Math.round(Math.abs(n)*60),hh=Math.floor(t/60),mm=t%60;return (n<0?'−':'')+hh+' h'+(mm?' '+mm+' min':'');};
+// Cada 8 h acumuladas equivalen a un día de trabajo
+const HORAS_DIA=8;
+const fmtD=n=>{const a=Math.round(Math.abs(n)*60)/60,d=Math.floor(a/HORAS_DIA+1e-9),r=a-d*HORAS_DIA;
+  if(!d)return fmtH(n);
+  return (n<0?'−':'')+d+(d===1?' día':' días')+(r>1e-9?' y '+fmtH(r):'');};
+const fmtSaldo=n=>Math.abs(n)>=HORAS_DIA?`${fmtD(n)} (${fmtH(n)})`:fmtH(n);
+// Feriados nacionales de Panamá (días de fiesta o duelo nacional): fijos + martes de carnaval y viernes santo
+const ymd=x=>`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;
+const FERIADOS_FIJOS={'01-01':'Año Nuevo','01-09':'Día de los Mártires','05-01':'Día del Trabajador','11-03':'Separación de Panamá de Colombia','11-05':'Día de Colón','11-10':'Primer Grito de Independencia','11-28':'Independencia de España','12-08':'Día de las Madres','12-20':'Duelo nacional','12-25':'Navidad'};
+const _fer={};
+function feriadosDe(a){
+  if(_fer[a])return _fer[a];
+  // Domingo de Pascua (algoritmo de Gauss/Meeus)
+  const A=a%19,B=Math.floor(a/100),C=a%100,D=Math.floor(B/4),F=B%4,G=Math.floor((B+8)/25),H=Math.floor((B-G+1)/3),I=(19*A+B-D-H+15)%30,K=Math.floor(C/4),L=C%4,M=(32+2*F+2*K-I-L)%7,N=Math.floor((A+11*I+22*M)/451);
+  const mes=Math.floor((I+M-7*N+114)/31),dia=((I+M-7*N+114)%31)+1,pas=new Date(a,mes-1,dia);
+  const r={};Object.entries(FERIADOS_FIJOS).forEach(([k,v])=>r[a+'-'+k]=v);
+  const mas=n=>{const x=new Date(pas);x.setDate(x.getDate()+n);return ymd(x);};
+  r[mas(-47)]='Martes de Carnaval';r[mas(-2)]='Viernes Santo';
+  return _fer[a]=r;
+}
+const nombreFeriado=f=>f?feriadosDe(+f.slice(0,4))[f]||'':'';
+const esFeriado=f=>!!nombreFeriado(f);
+// Días laborables (lunes a viernes que no son feriado) entre dos fechas AAAA-MM-DD, ambas incluidas
+function diasHabiles(ini,fin){
+  if(!ini||!fin||fin<ini)return 0;
+  const [a,m,d]=ini.split('-').map(Number);
+  const x=new Date(a,m-1,d);let n=0;
+  for(let i=0;ymd(x)<=fin&&i<400;i++,x.setDate(x.getDate()+1))if(x.getDay()%6&&!esFeriado(ymd(x)))n++;
+  return n;
+}
 
 // Tipo de día de una fecha AAAA-MM-DD (sin desfase de zona horaria)
 function tipoDiaH(f){
@@ -3665,29 +3776,82 @@ function horasFueraH(fecha,desde,hasta,feriado){
   const min=t=>{const [h,m]=t.split(':').map(Number);return h*60+m;};
   let ini=min(desde),fin=min(hasta);if(fin<=ini)fin+=1440;
   let total=fin-ini;
-  if(tipoDiaH(fecha)==='laboral'&&!feriado)total-=Math.max(0,Math.min(fin,960)-Math.max(ini,480));
+  if(tipoDiaH(fecha)==='laboral'&&!feriado){
+    // Reglamento Interno, art. 74: se reconoce si se laboró 1 hora o más antes del inicio o después de la salida
+    const antes=Math.max(0,Math.min(fin,480)-ini),despues=Math.max(0,fin-Math.max(ini,960));
+    total=(antes>=60?antes:0)+(despues>=60?despues:0);
+  }
   return Math.round(total/15)/4;
 }
 function tipoHCambio(){
   const comp=document.getElementById('hTipo').value==='compensatorio';
   document.querySelectorAll('#mH .hSoloExtra').forEach(el=>el.style.display=comp?'none':'');
+  document.querySelectorAll('#mH .hSoloComp').forEach(el=>el.style.display=comp?'':'none');
   document.getElementById('hHorasLbl').textContent=comp?'Horas a descontar *':'Horas extra';
   document.getElementById('hActLbl').textContent=comp?'Motivo *':'Actividad *';
   document.getElementById('hAct').placeholder=comp?'ej. Día libre por las horas de Sabores de Colón':'Describa la actividad realizada...';
-  // En compensatorio las horas se escriben a mano (8 h = jornada completa)
   document.getElementById('hHoras').readOnly=!comp&&!puede('aprobarHora');
+  document.getElementById('hFechaLbl').textContent=comp?'Desde *':'Fecha *';
+  document.getElementById('hDesdeLbl').textContent=comp?'Desde las (opcional)':'Entrada *';
+  document.getElementById('hHastaLbl').textContent=comp?'Hasta las (opcional)':'Salida *';
+  if(comp){calcCompH();return;}
+  document.getElementById('hSaldoInfo').textContent='';
+}
+// Compensatorio: cada quien escribe cuántos días (8 h c/u) y horas usa; el total es lo que se descuenta
+function calcCompH(){
+  if(document.getElementById('hTipo').value!=='compensatorio')return;
+  const n=id=>Math.max(0,parseFloat(document.getElementById(id).value)||0);
+  // Si puso horario de un solo día y aún no escribió cuánto usa, se sugiere lo que cae en la jornada (8:00–16:00)
+  const de=document.getElementById('hDesde').value,ha=document.getElementById('hHasta').value,hc=document.getElementById('hHorasC');
+  if(de&&ha&&ha>de&&!document.getElementById('hDias').value&&(!hc.value||hc.dataset.auto==='1')){
+    const mm=t=>{const [a,b]=t.split(':').map(Number);return a*60+b;};
+    const v=Math.max(0,Math.min(mm(ha),960)-Math.max(mm(de),480))/60;
+    if(v>0){hc.value=Math.round(v*4)/4;hc.dataset.auto='1';}
+  }
+  const tot=n('hDias')*HORAS_DIA+n('hHorasC');
+  document.getElementById('hHoras').value=tot>0?tot:'';
+  const f=document.getElementById('hFecha').value,ff=document.getElementById('hFechaFin').value;
   const m=document.getElementById('hMiem').value,inf=document.getElementById('hSaldoInfo');
-  if(comp&&m){const sc=saldoComp(m);inf.textContent=`Saldo aprobado de ${m}: ${fmtH(sc.saldo)}. Una jornada completa son 8 h.`;}
-  else inf.textContent='';
+  const lv=f&&ff&&ff>f?` Del ${fmt(f)} al ${fmt(ff)} hay ${diasHabiles(f,ff)} día(s) de lunes a viernes.`:'';
+  inf.textContent=(m?`Saldo aprobado de ${m}: ${fmtSaldo(saldoComp(m).saldo)}.`:'')+(tot>0?` Vas a usar ${fmtSaldo(tot)}.`:'')+lv+' Un día de trabajo son 8 h.';
+}
+// Al cambiar la fecha se marca solo si es feriado nacional
+function fechaHCambio(){
+  document.getElementById('hFeriado').checked=esFeriado(document.getElementById('hFecha').value);
+  calcHorasH();
+}
+// Horas extra de una persona en la semana (lunes a domingo) de una fecha
+function lunesDe(f){const [a,m,d]=f.split('-').map(Number),x=new Date(a,m-1,d);x.setDate(x.getDate()-((x.getDay()+6)%7));return ymd(x);}
+function horasSemana(nombre,f,salvoId){
+  const l=lunesDe(f),[a,m,d]=l.split('-').map(Number),y=new Date(a,m-1,d+6),dom=ymd(y);
+  return E.horasExtra.filter(h=>h.miembro===nombre&&!esComp(h)&&h.aprobacion!=='Rechazado'&&h.id!==salvoId&&h.fecha>=l&&h.fecha<=dom).reduce((t,h)=>t+parseFloat(h.horas||0),0);
+}
+const TOPE_SEMANA=40*0.25;// art. 75: 25 % de la jornada ordinaria de 40 h semanales
+function avisoRegH(){
+  const el=document.getElementById('hAvisoReg');if(!el)return;
+  const out=[],f=document.getElementById('hFecha').value,de=document.getElementById('hDesde').value,ha=document.getElementById('hHasta').value,fer=document.getElementById('hFeriado').checked;
+  const nf=nombreFeriado(f);if(nf)out.push(`📅 ${fmt(f)} es feriado (${nf}): cuenta toda la jornada.`);
+  if(f&&de&&ha&&tipoDiaH(f)==='laboral'&&!fer){
+    const mm=t=>{const [x,y]=t.split(':').map(Number);return x*60+y;};let i=mm(de),e=mm(ha);if(e<=i)e+=1440;
+    const antes=Math.max(0,Math.min(e,480)-i),despues=Math.max(0,e-Math.max(i,960));
+    if(antes>0&&antes<60)out.push(`No se reconocen los ${antes} min antes de las 8:00 a. m.: el art. 74 pide 1 hora o más.`);
+    if(despues>0&&despues<60)out.push(`No se reconocen los ${despues} min después de las 4:00 p. m.: el art. 74 pide 1 hora o más.`);
+  }
+  const m=document.getElementById('hMiem').value,h=parseFloat(document.getElementById('hHoras').value)||0;
+  if(f&&m&&h>0){const sem=horasSemana(m,f,document.getElementById('hId').value)+h;
+    if(sem>TOPE_SEMANA)out.push(`Con este registro ${m} suma ${fmtH(sem)} extra esa semana. El art. 75 limita el tiempo extraordinario al 25 % de la jornada (${TOPE_SEMANA} h por semana); pasar de ahí requiere aprobación del director.`);}
+  el.innerHTML=out.map(t=>'⚠️ '+escH(t)).join('<br>');el.style.display=out.length?'block':'none';
 }
 function calcHorasH(soloEtiqueta){
   const f=document.getElementById('hFecha').value,fer=document.getElementById('hFeriado').checked;
   const td=tipoDiaH(f),el=document.getElementById('hTipoDia');
-  el.textContent=fer?'Feriado':({laboral:'Día laboral',sabado:'Sábado',domingo:'Domingo'}[td]||'—');
+  el.textContent=fer?(nombreFeriado(f)||'Feriado'):({laboral:'Día laboral',sabado:'Sábado',domingo:'Domingo'}[td]||'—');
   el.className='bg '+(fer||td==='sabado'||td==='domingo'?'bnar':'bgr');
-  if(soloEtiqueta===true||document.getElementById('hTipo').value==='compensatorio')return;
+  if(document.getElementById('hTipo').value==='compensatorio'){if(soloEtiqueta!==true)calcCompH();return;}
+  if(soloEtiqueta===true)return;
   const hrs=horasFueraH(f,document.getElementById('hDesde').value,document.getElementById('hHasta').value,fer);
   if(hrs!==null)document.getElementById('hHoras').value=hrs;
+  avisoRegH();
 }
 
 function guardarH(){
@@ -3697,13 +3861,16 @@ function guardarH(){
   const prev=id?E.horasExtra.find(x=>x.id===id):null;
   const comp=document.getElementById('hTipo').value==='compensatorio';
   // Entrada y salida son obligatorias en horas extra nuevas (los registros anteriores pueden no tenerlas)
-  if(!m||!f||h===''||!a||(!comp&&!prev&&(!de||!ha))){alert(comp?'Complete fecha, horas y motivo.':'Complete todos los campos, incluidas la hora de entrada y de salida.');return;}
-  if(!(parseFloat(h)>0)){alert(comp?'Indique cuántas horas se descuentan.':'Con ese horario no hay horas fuera del horario laboral (8:00 a. m. a 4:00 p. m.).');return;}
+  const ffin=comp?document.getElementById('hFechaFin').value:'';
+  if(ffin&&f&&ffin<f){alert('La fecha «Hasta» no puede ser anterior a «Desde».');return;}
+  if(comp&&de&&ha&&(!ffin||ffin===f)&&ha<=de){alert('La hora «Hasta las» debe ser posterior a «Desde las».');return;}
+  if(!m||!f||h===''||!a||(!comp&&!prev&&(!de||!ha))){alert(comp?'Complete la fecha, cuántos días u horas va a usar y el motivo.':'Complete todos los campos, incluidas la hora de entrada y de salida.');return;}
+  if(!(parseFloat(h)>0)){alert(comp?'Indique cuántos días u horas va a usar.':'Con ese horario no hay horas fuera del horario laboral (8:00 a. m. a 4:00 p. m.).');return;}
   if(comp){
     // No se puede usar más de lo que hay: saldo aprobado menos lo ya pedido y pendiente
     const pedido=E.horasExtra.filter(x=>x.id!==id&&x.miembro===m&&esComp(x)&&x.aprobacion==='Pendiente').reduce((t,x)=>t+parseFloat(x.horas||0),0);
     const disp=saldoComp(m).saldo-pedido+(prev&&esComp(prev)&&prev.aprobacion==='Aprobado'?parseFloat(prev.horas||0):0);
-    if(parseFloat(h)>disp+1e-9){alert(`${m} solo tiene ${fmtH(Math.max(0,disp))} disponibles${pedido?` (ya hay ${fmtH(pedido)} pedidas y pendientes)`:''}.`);return;}
+    if(parseFloat(h)>disp+1e-9){alert(`${m} solo tiene ${fmtSaldo(Math.max(0,disp))} disponibles${pedido?` (ya hay ${fmtSaldo(pedido)} pedidas y pendientes)`:''}.`);return;}
   }
   // Colaborador solo puede registrar las suyas
   if(niv==='colaborador'&&m!==uAct?.nombre){alert('Solo puede registrar sus propias horas.');return;}
@@ -3711,9 +3878,10 @@ function guardarH(){
   let apro=puede('aprobarHora')&&!propia?document.getElementById('hApro').value:'Pendiente';
   // Editar un registro propio ya aprobado no lo vuelve a dejar pendiente si no cambiaron las horas
   if(propia&&prev&&prev.aprobacion!=='Pendiente'&&parseFloat(h)===parseFloat(prev.horas))apro=prev.aprobacion;
-  const r={...(prev||{}),id:id||gId(),tipo:comp?'compensatorio':'extra',miembro:m,fecha:f,desde:comp?'':de,hasta:comp?'':ha,feriado:comp?false:fer,tipoDia:tipoDiaH(f),horas:parseFloat(h),actividad:a,aprobacion:apro,registradoPor:prev?.registradoPor||uAct?.nombre};
-  if(apro!=='Pendiente'&&apro!==prev?.aprobacion)r.aprobadoPor=uAct?.nombre;
-  if(apro==='Pendiente')delete r.aprobadoPor;
+  const r={...(prev||{}),id:id||gId(),tipo:comp?'compensatorio':'extra',miembro:m,fecha:f,desde:de,hasta:ha,feriado:comp?false:fer,tipoDia:tipoDiaH(f),horas:parseFloat(h),actividad:a,aprobacion:apro,registradoPor:prev?.registradoPor||uAct?.nombre,creado:prev?.creado||hoy()};
+  if(comp&&ffin&&ffin!==f)r.fechaFin=ffin;else delete r.fechaFin;
+  if(apro!=='Pendiente'&&apro!==prev?.aprobacion){r.aprobadoPor=uAct?.nombre;r.fechaAprob=hoy();}
+  if(apro==='Pendiente'){delete r.aprobadoPor;delete r.fechaAprob;}
   if(id){const i=E.horasExtra.findIndex(h=>h.id===id);if(i>=0)E.horasExtra[i]=r;reg('Hora editada',`${m} — ${h} hrs`);}
   else{E.horasExtra.unshift(r);reg(comp?'Compensatorio solicitado':'Hora registrada',`${m} — ${h} hrs`);if(apro==='Pendiente')addNotif(comp?'🌴':'⏱️',`${comp?'Solicitud de compensatorio':'Solicitud de horas'}: ${m}`,'Pendiente de aprobación');}
   guardar();cerM('mH');renderHoras();
@@ -3723,7 +3891,7 @@ function aprobarH(id,ok){
   if(!puede('aprobarHora')){alert('Sin permiso.');return;}
   const h=E.horasExtra.find(h=>h.id===id);if(!h)return;
   if(h.miembro===uAct?.nombre&&niv!=='lider'){alert('Sus propias horas las aprueba otra persona.');return;}
-  h.aprobacion=ok?'Aprobado':'Rechazado';h.aprobadoPor=uAct?.nombre;
+  h.aprobacion=ok?'Aprobado':'Rechazado';h.aprobadoPor=uAct?.nombre;h.fechaAprob=hoy();
   reg(ok?'Hora aprobada':'Hora rechazada',`${h.miembro} — ${h.horas} hrs`);
   addNotif(ok?'✅':'❌',`Horas ${ok?'aprobadas':'rechazadas'}: ${h.miembro}`,`${h.horas} hrs`);
   guardar();renderHoras();
@@ -3736,6 +3904,355 @@ function elimH(id){
   reg('Hora eliminada',`${h.miembro} — ${h.horas} hrs — ${fmt(h.fecha)} — por ${uAct?.nombre}`);
   E.horasExtra=E.horasExtra.filter(h=>h.id!==id);
   guardar();renderHoras();
+}
+
+// ════════════════════════
+//  PERMISOS (formulario «Solicitud de permiso» de la OIRH)
+// ════════════════════════
+const MOTIVOS_PER=['Enfermedad del Servidor Público','Duelo','Matrimonio del Servidor Público','Nacimiento de hijo del Servidor Público','Enfermedades de parientes cercanos','Eventos académicos puntuales','Otros asuntos personales de importancia','144 horas'];
+const MIN_DIA=HORAS_DIA*60, TOPE_144=144*60;
+const escH=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const minHM=t=>{if(!t)return null;const [a,b]=t.split(':').map(Number);return a*60+b;};
+// Minutos de jornada (lunes a viernes, 8:00–16:00) entre dos momentos
+function minJornada(df,dh,hf,hh){
+  if(!df||!hf||hf<df)return 0;
+  const [a,m,d]=df.split('-').map(Number);let x=new Date(a,m-1,d),tot=0,n=0;
+  const ini=minHM(dh)??480,fin=minHM(hh)??960;
+  for(;n<400;n++,x.setDate(x.getDate()+1)){
+    const f=`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;
+    if(f>hf)break;
+    if(!(x.getDay()%6)||esFeriado(f))continue;
+    const s=f===df?Math.max(480,ini):480,e=f===hf?Math.min(960,fin):960;
+    if(e>s)tot+=e-s;
+  }
+  return tot;
+}
+const partesMin=t=>({d:Math.floor(t/MIN_DIA),h:Math.floor((t%MIN_DIA)/60),m:t%60});
+function fmtDHM(t,largo){
+  const {d,h,m}=partesMin(Math.round(t||0)),o=[];
+  if(d)o.push(d+(largo?(d===1?' día':' días'):' d'));
+  if(h)o.push(h+(largo?(h===1?' hora':' horas'):' h'));
+  if(m)o.push(m+(largo?' minutos':' min'));
+  if(largo&&o.length>1)return o.slice(0,-1).join(', ')+' y '+o[o.length-1];
+  return o.join(' ')||(largo?'0 horas':'0 h');
+}
+const minPer=p=>parseInt(p.totalMin||0);
+const anioDe=f=>(f||'').slice(0,4);
+// Art. 55: hasta 18 días (144 horas laborables) al año en permisos, sumando todos los motivos
+function uso144(nombre,anio,salvoId){
+  return (E.permisos||[]).filter(p=>p.miembro===nombre&&p.aprobacion!=='Rechazado'&&p.id!==salvoId&&anioDe(p.desdeF)===anio).reduce((t,p)=>t+minPer(p),0);
+}
+// Tope por motivo (días laborables por solicitud), art. 55
+const PARENTESCO_DUELO={p1:['Padre, madre, hermanos, hijos o cónyuge',5],p2:['Abuelos, nietos, suegros, yernos o nueras',3],p3:['Tíos, sobrinos, primos o cuñados',1]};
+const TOPE_MOTIVO={3:5,4:5,5:3,6:3,7:3};
+// Alertas del Reglamento Interno para una solicitud de permiso (r puede ser un borrador del formulario)
+function alertasPermiso(r){
+  const out=[],dias=minPer(r)/MIN_DIA,anio=anioDe(r.desdeF),otros=(E.permisos||[]).filter(p=>p.miembro===r.miembro&&p.id!==r.id&&p.aprobacion!=='Rechazado');
+  const nd=n=>`${Math.round(n*100)/100} día${n===1?'':'s'}`;
+  const usado=uso144(r.miembro,anio,r.id),tot=usado+minPer(r);
+  if(tot>TOPE_144){
+    const sc=saldoComp(r.miembro).saldo;
+    out.push(`Pasa de los 18 días (144 h) de permiso de ${anio} por ${fmtH((tot-TOPE_144)/60)}. El exceso se compensa con tiempo compensatorio o vacaciones (arts. 55 y 59). Saldo compensatorio de ${r.miembro}: ${fmtSaldo(sc)}.`);
+  }else if(tot>=TOPE_144*0.8)out.push(`Lleva ${fmtH(tot/60)} de las 144 h de permiso del año; le quedan ${fmtH((TOPE_144-tot)/60)} (art. 55).`);
+  if(r.motivo===1){
+    const enf=otros.filter(p=>p.motivo===1&&anioDe(p.desdeF)===anio).reduce((t,p)=>t+minPer(p),0)/MIN_DIA+dias;
+    if(enf>15)out.push(`Por enfermedad suma ${nd(enf)} en ${anio}; el tope es 15 días laborables (art. 55, a).`);
+    if(diasHabiles(r.desdeF,r.hastaF)>2&&!r.comprobante)out.push('Más de 2 días seguidos por enfermedad: requiere certificado médico (art. 57).');
+  }
+  if(r.motivo===2){
+    const par=PARENTESCO_DUELO[r.parentesco];
+    if(!par)out.push('Indique el parentesco: el tope del permiso por duelo depende de él (art. 55, b-d).');
+    else{const tope=par[1]+(r.lejos?3:0);if(dias>tope)out.push(`Duelo (${par[0].toLowerCase()}): hasta ${tope} día${tope===1?'':'s'} laborable${tope===1?'':'s'}${r.lejos?' contando los 3 por traslado':''}; la solicitud es de ${nd(dias)} (art. 55).`);}
+  }
+  if(TOPE_MOTIVO[r.motivo]&&dias>TOPE_MOTIVO[r.motivo])out.push(`${MOTIVOS_PER[r.motivo-1]}: hasta ${TOPE_MOTIVO[r.motivo]} días laborables; la solicitud es de ${nd(dias)} (art. 55).`);
+  if(r.motivo===3&&otros.some(p=>p.motivo===3))out.push('El permiso por matrimonio se concede una sola vez (art. 55, e) y ya hay uno registrado.');
+  // Art. 58: ausencias en lunes, viernes o junto a feriados deben justificarse y comprobarse
+  if(minPer(r)>=MIN_DIA&&!r.comprobante&&r.desdeF&&r.hastaF){
+    const [a,m,d]=r.desdeF.split('-').map(Number),x=new Date(a,m-1,d),motivos=new Set();
+    for(let i=0;ymd(x)<=r.hastaF&&i<60;i++,x.setDate(x.getDate()+1)){
+      const f=ymd(x),w=x.getDay();if(!(w%6)||esFeriado(f))continue;
+      if(w===1)motivos.add('lunes');if(w===5)motivos.add('viernes');
+      const ant=new Date(x);ant.setDate(ant.getDate()-1);const sig=new Date(x);sig.setDate(sig.getDate()+1);
+      if(esFeriado(ymd(ant))||esFeriado(ymd(sig)))motivos.add('un día junto a feriado');
+    }
+    if(motivos.size)out.push(`Incluye ${[...motivos].join(', ')}: la ausencia debe justificarse y comprobarse (art. 58).`);
+  }
+  if(r.creado&&r.desdeF&&r.creado>r.desdeF)out.push('Se registró después de iniciado el permiso. Hay que avisar al jefe a más tardar 2 horas después del inicio de labores (art. 56) y coordinarlo antes de usarlo.');
+  return out;
+}
+// Alertas de horas extra: semanas que pasan del 25 % (art. 75)
+function alertasHorasExtra(lista){
+  const sem={};
+  lista.filter(h=>!esComp(h)&&h.aprobacion!=='Rechazado'&&h.fecha).forEach(h=>{const k=h.miembro+'|'+lunesDe(h.fecha);sem[k]=(sem[k]||0)+parseFloat(h.horas||0);});
+  return Object.entries(sem).filter(([,v])=>v>TOPE_SEMANA).map(([k,v])=>{const [n,l]=k.split('|');return {miembro:n,lunes:l,texto:`${n}: ${fmtH(v)} extra en la semana del ${fmt(l)}. Pasa del 25 % de la jornada (${TOPE_SEMANA} h por semana) y requiere aprobación del director (art. 75).`};});
+}
+function panelAlertas(elId,items){
+  const el=document.getElementById(elId);if(!el)return;
+  if(!items.length){el.style.display='none';return;}
+  el.style.display='block';
+  el.innerHTML=`<div style="font-weight:700;margin-bottom:6px">⚠️ Alertas del Reglamento Interno (${items.length})</div>`+items.slice(0,30).map(t=>`<div style="margin:3px 0">• ${escH(t)}</div>`).join('')+(items.length>30?`<div>… y ${items.length-30} más</div>`:'');
+}
+// Datos de RRHH que pide el formulario y aún no están en la ficha
+function faltanFicha(p){
+  const c={cedula:'cédula',puesto:'puesto según RRHH',posicion:'n.º de posición',unidad:'unidad administrativa'};
+  return Object.keys(c).filter(k=>!(p?.[k]||'').trim()).map(k=>c[k]);
+}
+function avisoFicha(elId,nombre){
+  const el=document.getElementById(elId),p=E.equipo.find(x=>x.nombre===nombre),f=faltanFicha(p);
+  if(!f.length){el.style.display='none';return;}
+  el.style.display='block';
+  el.textContent=`Para que el formulario salga completo falta en la ficha de ${nombre}: ${f.join(', ')}. ${p?.id===uAct?.id?'Complétalo en Mi perfil.':'Se completa en Equipo.'}`;
+}
+
+function renderPermisos(){
+  if(!E.permisos)E.permisos=[];
+  const anio=hoy().slice(0,4);
+  const ps=niv==='colaborador'?E.permisos.filter(p=>p.miembro===uAct?.nombre):niv==='lector'?[]:E.permisos;
+  const pen=ps.filter(p=>p.aprobacion==='Pendiente'),delAnio=ps.filter(p=>anioDe(p.desdeF)===anio);
+  const aprAnio=delAnio.filter(p=>p.aprobacion==='Aprobado');
+  document.getElementById('perTot').textContent=delAnio.length;
+  document.getElementById('perTotSub').textContent=`en ${anio} · ${ps.length} en total`;
+  document.getElementById('perUso').textContent=fmtDHM(aprAnio.reduce((t,p)=>t+minPer(p),0));
+  document.getElementById('perUsoSub').textContent=niv==='colaborador'
+    ?`aprobado en ${anio} · 144 horas: usadas ${fmtH(uso144(uAct?.nombre,anio)/60)} de 144 h`
+    :`aprobado en ${anio} · 8 h = 1 día`;
+  document.getElementById('perPen').textContent=pen.length;
+  const al=document.getElementById('alPer');
+  if(puede('aprobarHora')&&pen.length){al.classList.remove('oculto');document.getElementById('txPer').textContent=`${pen.length} permiso(s) pendiente(s) de aprobación.`;}
+  else al.classList.add('oculto');
+  actuCts();
+  panelAlertas('regPer',ps.filter(p=>p.aprobacion!=='Rechazado'&&anioDe(p.desdeF)===anio).flatMap(p=>alertasPermiso(p).map(t=>`${p.miembro} (${fmt(p.desdeF)}): ${t}`)));
+
+  // Resumen por persona (Editor y Líder)
+  const res=document.getElementById('perResumen');
+  if(niv!=='colaborador'&&niv!=='lector'&&delAnio.length){
+    const porP={};delAnio.filter(p=>p.aprobacion==='Aprobado').forEach(p=>{porP[p.miembro]=(porP[p.miembro]||0)+minPer(p);});
+    const noms=[...new Set(delAnio.map(p=>p.miembro))];
+    res.style.display='block';
+    res.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Permisos aprobados en ${anio} por persona</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px">${
+      noms.sort().map(n=>{const u=uso144(n,anio);return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--su);border:1px solid var(--bo);border-radius:8px"><div style="flex:1;font-size:13px;font-weight:600">${rAv(n,'',22,8)} ${escH(n)}</div><div style="text-align:right"><div style="font-size:14px;font-weight:800;color:var(--na)">${fmtDHM(porP[n]||0)}</div><div style="font-size:11px;color:var(--tm)">144 h: ${fmtH(u/60)} usadas</div></div></div>`;}).join('')}</div>`;
+  }else res.style.display='none';
+
+  const grid=document.getElementById('gridPer'),vac=document.getElementById('vacPer');
+  const vis=[...ps].sort((a,b)=>(b.desdeF||'').localeCompare(a.desdeF||''));
+  if(!vis.length){grid.innerHTML='';vac.style.display='block';return;}
+  vac.style.display='none';
+  const bA={Pendiente:'bpen',Aprobado:'bapr',Rechazado:'brec'};
+  grid.innerHTML=vis.map(p=>{
+    const propia=p.miembro===uAct?.nombre;
+    const btnApro=puede('aprobarHora')&&p.aprobacion==='Pendiente'&&(!propia||niv==='lider')
+      ?`<button class="btn bve bsm" onclick="aprobarPer('${p.id}',true)">✅ Aprobar</button><button class="btn bpe bsm" onclick="aprobarPer('${p.id}',false)">❌ Rechazar</button>`
+      :`<span class="bg ${bA[p.aprobacion]||'bgr'}">${p.aprobacion}</span>`;
+    const puedeEd=niv==='lider'||(propia&&p.aprobacion==='Pendiente');
+    const rango=p.desdeF===p.hastaF?`${fmt(p.desdeF)} · ${p.desdeH||''}–${p.hastaH||''}`:`${fmt(p.desdeF)} ${p.desdeH||''} al ${fmt(p.hastaF)} ${p.hastaH||''}`;
+    return `<div class="hecard">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;gap:8px">
+        <div style="display:flex;align-items:center;gap:9px;font-size:14px;font-weight:700">${rAv(p.miembro,'',30,11)} ${escH(p.miembro)}</div>
+        <div style="text-align:right;flex:0 0 auto;max-width:45%"><div style="font-size:19px;font-weight:800;color:var(--az);line-height:1.1">${fmtDHM(minPer(p))}</div><div style="font-size:11px;color:var(--tm)">permiso</div></div>
+      </div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px">${p.motivo}. ${escH(MOTIVOS_PER[p.motivo-1]||'')}</div>
+      ${p.motivo===2&&PARENTESCO_DUELO[p.parentesco]?`<div style="font-size:12px;color:var(--tm);margin-bottom:4px">${PARENTESCO_DUELO[p.parentesco][0]}${p.lejos?' · con traslado':''}</div>`:''}
+      ${p.detalle?`<div style="font-size:13px;color:var(--tm);margin-bottom:8px;line-height:1.5">${escH(p.detalle)}</div>`:''}
+      ${p.comprobante?'<div style="font-size:12px;color:var(--tm);margin-bottom:4px">📎 Presentó comprobante</div>':''}
+      ${p.aprobacion!=='Rechazado'?alertasPermiso(p).map(t=>`<div class="al alam" style="font-size:12px;line-height:1.45;margin:6px 0 0;padding:6px 10px">⚠️ ${escH(t)}</div>`).join(''):''}
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-top:8px">
+        <span style="font-size:11px;color:var(--tm)">📅 ${rango}</span>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">${btnApro}<button class="btn bgh bsm" onclick="permisoDoc('${p.id}')">📄 Formulario</button></div>
+      </div>
+      ${puedeEd?`<div style="display:flex;gap:5px;border-top:1px solid var(--bo);padding-top:10px;margin-top:10px">
+          <button class="btn bgh bsm" style="flex:1" onclick="abrirMPer('${p.id}')">✏️ Editar</button>
+          <button class="btn bpe bsm" onclick="elimPer('${p.id}')">🗑</button></div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function abrirMPer(id){
+  if(!puede('registrarHora')){alert('Sin permiso para solicitar permisos.');return;}
+  const p=id?E.permisos.find(x=>x.id===id):null;
+  if(p&&!(niv==='lider'||(p.miembro===uAct?.nombre&&p.aprobacion==='Pendiente'))){alert('Solo el Líder puede editar un permiso ya revisado.');return;}
+  document.getElementById('mPerTit').textContent=p?'Editar solicitud de permiso':'Solicitud de permiso';
+  document.getElementById('perId').value=id||'';
+  const sel=document.getElementById('perMiem');
+  if(niv==='colaborador'){sel.innerHTML=`<option value="${escH(uAct.nombre)}">${escH(uAct.nombre)}</option>`;document.getElementById('perMiemGrupo').style.display='none';}
+  else{sel.innerHTML=E.equipo.map(x=>`<option value="${escH(x.nombre)}">${escH(x.nombre)}</option>`).join('');document.getElementById('perMiemGrupo').style.display='block';}
+  sel.value=p?.miembro||uAct?.nombre||E.equipo[0]?.nombre||'';
+  document.getElementById('perMot').innerHTML=MOTIVOS_PER.map((m,i)=>`<option value="${i+1}">${i+1}. ${m}</option>`).join('');
+  document.getElementById('perMot').value=p?.motivo||7;
+  document.getElementById('perDF').value=p?.desdeF||hoy();
+  document.getElementById('perDH').value=p?.desdeH||'08:00';
+  document.getElementById('perHF').value=p?.hastaF||p?.desdeF||hoy();
+  document.getElementById('perHH').value=p?.hastaH||'16:00';
+  document.getElementById('perDet').value=p?.detalle||'';
+  document.getElementById('perPar').innerHTML='<option value="">— Elegir —</option>'+Object.entries(PARENTESCO_DUELO).map(([k,v])=>`<option value="${k}">${v[0]} (hasta ${v[1]} día${v[1]===1?'':'s'})</option>`).join('');
+  document.getElementById('perPar').value=p?.parentesco||'';
+  document.getElementById('perLejos').checked=!!p?.lejos;
+  document.getElementById('perComp').checked=!!p?.comprobante;
+  document.getElementById('perApro').value=p?.aprobacion||'Pendiente';
+  if(p){const t=partesMin(minPer(p));document.getElementById('perD').value=t.d;document.getElementById('perH').value=t.h;document.getElementById('perM').value=t.m;perCambio(true);}
+  else{perCambio();}
+  abrirM('mPer');
+}
+function perCambio(sinCalcular){
+  const m=document.getElementById('perMiem').value;
+  document.getElementById('perAproGrupo').style.display=puede('aprobarHora')&&(m!==uAct?.nombre||niv==='lider')?'block':'none';
+  avisoFicha('perFaltan',m);
+  if(sinCalcular===true)perTxt();else calcPer();
+}
+// El tiempo utilizado se calcula solo con la jornada (lunes a viernes, 8:00 a 4:00); se puede corregir a mano
+function calcPer(){
+  const df=document.getElementById('perDF'),hf=document.getElementById('perHF');
+  if(df.value&&(!hf.value||hf.value<df.value))hf.value=df.value;
+  const t=partesMin(minJornada(df.value,document.getElementById('perDH').value,hf.value,document.getElementById('perHH').value));
+  document.getElementById('perD').value=t.d;document.getElementById('perH').value=t.h;document.getElementById('perM').value=t.m;
+  perTxt();
+}
+function perBorrador(){
+  const id=document.getElementById('perId').value,prev=id?E.permisos.find(x=>x.id===id):null;
+  return {id,miembro:document.getElementById('perMiem').value,motivo:parseInt(document.getElementById('perMot').value),
+    desdeF:document.getElementById('perDF').value,desdeH:document.getElementById('perDH').value,hastaF:document.getElementById('perHF').value,hastaH:document.getElementById('perHH').value,
+    totalMin:perTotalMin(),parentesco:document.getElementById('perPar').value,lejos:document.getElementById('perLejos').checked,comprobante:document.getElementById('perComp').checked,creado:prev?.creado||hoy()};
+}
+function perTotalMin(){
+  const n=id=>Math.max(0,parseInt(document.getElementById(id).value)||0);
+  return n('perD')*MIN_DIA+n('perH')*60+n('perM');
+}
+function perTxt(){
+  const tot=perTotalMin(),m=document.getElementById('perMiem').value,mot=parseInt(document.getElementById('perMot').value);
+  document.getElementById('perDueloGrupo').style.display=mot===2?'':'none';
+  const a=(document.getElementById('perDF').value||hoy()).slice(0,4),u=uso144(m,a,document.getElementById('perId').value);
+  document.getElementById('perInfo').textContent=`Tiempo utilizado: ${fmtDHM(tot,true)}. Se calcula con la jornada de lunes a viernes de 8:00 a. m. a 4:00 p. m., sin feriados (8 h = 1 día); puedes corregirlo. Permisos de ${m} en ${a}: ${fmtH(u/60)} usadas de 144 h (18 días, art. 55); con esta quedarían ${fmtH(Math.max(0,TOPE_144-u-tot)/60)}.`;
+  const al=alertasPermiso(perBorrador()),el=document.getElementById('perAlertas');
+  el.innerHTML=al.map(t=>'⚠️ '+escH(t)).join('<br>');el.style.display=al.length?'block':'none';
+}
+function guardarPer(){
+  const id=document.getElementById('perId').value,prev=id?E.permisos.find(x=>x.id===id):null;
+  const m=document.getElementById('perMiem').value,mot=parseInt(document.getElementById('perMot').value);
+  const df=document.getElementById('perDF').value,dh=document.getElementById('perDH').value,hf=document.getElementById('perHF').value,hh=document.getElementById('perHH').value;
+  const tot=perTotalMin();
+  if(!m||!mot||!df||!hf){alert('Complete el motivo y las fechas.');return;}
+  if(hf<df||(hf===df&&dh&&hh&&hh<=dh)){alert('El final del permiso debe ser posterior al inicio.');return;}
+  if(!(tot>0)){alert('Indique el tiempo utilizado (días, horas o minutos).');return;}
+  if(niv==='colaborador'&&m!==uAct?.nombre){alert('Solo puede solicitar sus propios permisos.');return;}
+  if(mot===2&&!document.getElementById('perPar').value){alert('Indique el parentesco para el permiso por duelo.');return;}
+  const al=alertasPermiso(perBorrador());
+  if(al.length&&!confirm('Esta solicitud tiene alertas del Reglamento Interno:\n\n• '+al.join('\n• ')+'\n\n¿Guardarla de todas formas?'))return;
+  const propia=m===uAct?.nombre&&niv!=='lider';
+  let apro=puede('aprobarHora')&&!propia?document.getElementById('perApro').value:'Pendiente';
+  const t=partesMin(tot);
+  const r={...(prev||{}),id:id||gId(),miembro:m,motivo:mot,desdeF:df,desdeH:dh,hastaF:hf,hastaH:hh,dias:t.d,horas:t.h,minutos:t.m,totalMin:tot,
+    detalle:document.getElementById('perDet').value.trim(),parentesco:mot===2?document.getElementById('perPar').value:'',lejos:mot===2&&document.getElementById('perLejos').checked,comprobante:document.getElementById('perComp').checked,aprobacion:apro,registradoPor:prev?.registradoPor||uAct?.nombre,creado:prev?.creado||hoy()};
+  if(apro!=='Pendiente'&&apro!==prev?.aprobacion){r.aprobadoPor=uAct?.nombre;r.fechaAprob=hoy();}
+  if(apro==='Pendiente'){delete r.aprobadoPor;delete r.fechaAprob;}
+  if(prev){const i=E.permisos.findIndex(x=>x.id===id);if(i>=0)E.permisos[i]=r;reg('Permiso editado',`${m} — ${MOTIVOS_PER[mot-1]} — ${fmtDHM(tot)}`);}
+  else{E.permisos.unshift(r);reg('Permiso solicitado',`${m} — ${MOTIVOS_PER[mot-1]} — ${fmtDHM(tot)}`);if(apro==='Pendiente')addNotif('📝',`Solicitud de permiso: ${m}`,`${MOTIVOS_PER[mot-1]} · ${fmt(df)}`);}
+  guardar();cerM('mPer');renderPermisos();
+}
+function aprobarPer(id,ok){
+  if(!puede('aprobarHora')){alert('Sin permiso.');return;}
+  const p=E.permisos.find(x=>x.id===id);if(!p)return;
+  if(p.miembro===uAct?.nombre&&niv!=='lider'){alert('Sus propios permisos los aprueba otra persona.');return;}
+  p.aprobacion=ok?'Aprobado':'Rechazado';p.aprobadoPor=uAct?.nombre;p.fechaAprob=hoy();
+  reg(ok?'Permiso aprobado':'Permiso rechazado',`${p.miembro} — ${MOTIVOS_PER[p.motivo-1]}`);
+  addNotif(ok?'✅':'❌',`Permiso ${ok?'aprobado':'rechazado'}: ${p.miembro}`,`${MOTIVOS_PER[p.motivo-1]} · ${fmt(p.desdeF)}`);
+  guardar();renderPermisos();
+}
+function elimPer(id){
+  const p=E.permisos.find(x=>x.id===id);if(!p)return;
+  if(!(niv==='lider'||(p.miembro===uAct?.nombre&&p.aprobacion==='Pendiente'))){alert('Solo el Líder puede eliminar un permiso ya revisado.');return;}
+  if(!confirm(`¿Eliminar la solicitud de permiso de ${p.miembro} (${fmt(p.desdeF)})?`))return;
+  E.permisos=E.permisos.filter(x=>x.id!==id);
+  reg('Permiso eliminado',`${p.miembro} — ${MOTIVOS_PER[p.motivo-1]} — ${fmt(p.desdeF)} — por ${uAct?.nombre}`);
+  guardar();renderPermisos();
+}
+
+// ── Formularios impresos de la OIRH (carta vertical, iguales al papel) ──
+const MESES_L=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const fParts=f=>{if(!f)return {d:'',m:'',a:''};const [a,m,d]=f.split('-').map(Number);return {d:String(d),m:MESES_L[m-1],a:String(a)};};
+const fCorta=f=>{if(!f)return '';const [a,m,d]=f.split('-');return `${d}/${m}/${a}`;};
+const campoF=(v,w)=>`<span class="f" style="min-width:${w}px">${escH(v)||'&nbsp;'}</span>`;
+function docOirh(titulo,cuerpo,archivo,tituloVisor){
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>${escH(titulo)}</title>
+<style>
+@page{size:letter portrait;margin:12mm 20mm}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Times New Roman',Times,serif;font-size:15px;color:#000;background:#fff;padding:24px;max-width:780px;margin:0 auto}
+.logo{display:block;margin:0 auto 16px;width:160px;height:auto}
+.tit{text-align:center;font-weight:700;font-size:15px;line-height:1.5;margin-bottom:26px}
+p{line-height:1.95;margin-bottom:12px}
+.just{text-align:justify}
+.f{display:inline-block;border-bottom:1px solid #000;text-align:center;padding:0 4px;line-height:1.3;vertical-align:baseline}
+ol.mot{list-style:none;margin:4px 0 16px 28px}ol.mot li{line-height:1.85;display:flex;gap:10px;align-items:center}
+.box{display:inline-block;width:13px;height:13px;border:1.4px solid #000;text-align:center;font-size:12px;line-height:11px;font-weight:700}
+.firmas{margin-top:26px}
+.fila{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px;gap:30px}
+.fila .izq{flex:0 0 42%}.fila .der{flex:0 0 46%;text-align:center}
+.lbl{font-weight:700;display:block;margin-bottom:4px}
+.lin{border-top:1px solid #000;padding-top:3px}
+.nota{font-weight:700;font-style:italic;text-align:justify;font-size:13px;line-height:1.35;margin-top:14px}
+.pie{font-size:10px;color:#666;margin-top:26px}
+@media print{body{padding:0;max-width:none}.pie{display:none}}
+</style></head><body>
+<img class="logo" src="${LOGO_MICULTURA}" alt="Gobierno Nacional · Con paso firme · Ministerio de Cultura">
+${cuerpo}
+</body></html>`;
+  mostrarDocumento(html,tituloVisor,archivo);
+}
+function firmaFila(etq,fecha,label,conLinea){
+  return `<div class="fila"><div class="izq">${etq?`<span class="lbl">${etq}</span>`:''}Fecha ${campoF(fecha,190)}</div><div class="der"><div class="${conLinea?'lin':''}">${label}</div></div></div>`;
+}
+function permisoDoc(id){
+  const r=E.permisos.find(x=>x.id===id);if(!r)return;
+  if(niv==='colaborador'&&r.miembro!==uAct?.nombre){alert('Sin permiso.');return;}
+  const p=E.equipo.find(x=>x.nombre===r.miembro)||{nombre:r.miembro};
+  const d1=fParts(r.desdeF),d2=fParts(r.hastaF);
+  const t=partesMin(minPer(r));
+  const cuerpo=`<div class="tit">OFICINA INSTITUCIONAL DE RECURSOS HUMANOS<br>SOLICITUD DE PERMISO</div>
+<p>Por este medio yo ${campoF(p.nombre,430)}<br>
+Servidor Público con cédula No. ${campoF(p.cedula,150)} que actualmente desempeño el puesto<br>
+de ${campoF(p.puesto,310)}, con la Posición No. ${campoF(p.posicion,90)}, en la Unidad<br>
+Administrativa ${campoF(p.unidad,330)}, solicito permiso para<br>
+ausentarme de mi puesto de trabajo por motivos:</p>
+<ol class="mot">${MOTIVOS_PER.map((m,i)=>`<li><span>${i+1}.</span><span class="box">${r.motivo===i+1?'X':''}</span><span>${m}</span></li>`).join('')}</ol>
+<p>Desde la(s) ${campoF(r.desdeH,80)}, hora(s) del día ${campoF(d1.d,50)} de ${campoF(d1.m,130)} de ${campoF(d1.a,70)},<br>
+hasta la(s) ${campoF(r.hastaH,80)} hora(s) del día ${campoF(d2.d,50)} de ${campoF(d2.m,130)} de ${campoF(d2.a,70)}.</p>
+<p><b>Tiempo utilizado:</b> ${campoF(String(t.d),70)} <b>días</b> ${campoF(String(t.h),70)} <b>horas</b> ${campoF(String(t.m),70)} <b>minutos</b></p>
+<div class="firmas">
+${firmaFila('',fCorta(r.creado),'Firma del Servidor Público',true)}
+${firmaFila('Aprobado',r.aprobacion==='Aprobado'?fCorta(r.fechaAprob):'','Firma del Superior Inmediato',true)}
+${firmaFila('Enterado','','Firma del Jefe de la OIRH',true)}
+</div>
+<p class="nota">El Servidor Público debe coordinar con su Superior Inmediato la solicitud de los permisos antes de utilizarlos. El Servidor Público que se ausente del puesto de trabajo durante las horas laborables debe registrar la hora de salida.</p>
+${r.detalle?`<p class="pie">Detalle registrado en el dashboard: ${escH(r.detalle)} · Estado: ${escH(r.aprobacion)}</p>`:''}`;
+  reg('Formulario de permiso',`${r.miembro} — ${fmt(r.desdeF)}`);
+  docOirh(`Solicitud de permiso — ${r.miembro}`,cuerpo,`Solicitud_Permiso_${r.miembro.replace(/\s+/g,'_')}_${r.desdeF}.html`,`📄 Solicitud de permiso — ${r.miembro}`);
+}
+function solCompDoc(id){
+  const r=E.horasExtra.find(x=>x.id===id);if(!r||!esComp(r))return;
+  if(niv==='colaborador'&&r.miembro!==uAct?.nombre){alert('Sin permiso.');return;}
+  const p=E.equipo.find(x=>x.nombre===r.miembro)||{nombre:r.miembro};
+  const n=parseFloat(r.horas||0),d1=fParts(r.fecha),d2=fParts(r.fechaFin||r.fecha);
+  // Cantidad en horas/días, tal como la pide el formulario
+  const cant=n>=HORAS_DIA?fmtD(n).replace(/ h( |$)/g,' horas$1').replace(' min',' minutos'):fmtH(n).replace(/ h( |$)/g,' horas$1').replace(' min',' minutos');
+  let dia=d1.d,mes=d1.m;
+  if(r.fechaFin&&r.fechaFin!==r.fecha)dia=d1.m===d2.m&&d1.a===d2.a?`${d1.d} al ${d2.d}`:`${d1.d} de ${d1.m} al ${d2.d}`,mes=d2.m;
+  const de=r.desde||(n>=HORAS_DIA?'08:00':''),ha=r.hasta||(n>=HORAS_DIA?'16:00':'');
+  const cuerpo=`<div class="tit">OFICINA INSTITUCIONAL DE RECURSOS HUMANOS<br>SOLICITUD DE USO DE TIEMPO COMPENSATORIO</div>
+<p class="just">Por este medio yo, ${campoF(p.nombre,400)},<br>
+Servidor Público con cédula No. ${campoF(p.cedula,130)}, que actualmente ocupo el puesto de<br>
+${campoF(p.puesto,330)}, con la Posición No. ${campoF(p.posicion,120)},<br>
+en la Unidad Administrativa ${campoF(p.unidad,380)},<br>
+solicito el uso de ${campoF(cant,150)} (horas/días) del tiempo compensatorio que tengo acumulado en virtud de haber laborado en jornada extraordinaria.</p>
+<p class="just" style="margin-top:22px">Dicho tiempo lo haré efectivo el ${campoF(dia,90)} de ${campoF(mes,150)} de ${campoF(d2.a,80)} desde las<br>
+${campoF(de,90)} horas hasta las ${campoF(ha,90)} horas.</p>
+<div class="firmas" style="margin-top:60px">
+${firmaFila('',fCorta(r.creado||r.fecha),'Firma del Servidor Público Solicitante',false)}
+<div style="height:30px"></div>
+${firmaFila('Aprobado',r.aprobacion==='Aprobado'?fCorta(r.fechaAprob):'','Firma del Superior Inmediato',false)}
+<div style="height:30px"></div>
+${firmaFila('Enterado','','Firma del Jefe de la OIRH',false)}
+</div>`;
+  reg('Formulario de compensatorio',`${r.miembro} — ${fmt(r.fecha)}`);
+  docOirh(`Uso de tiempo compensatorio — ${r.miembro}`,cuerpo,`Solicitud_Compensatorio_${r.miembro.replace(/\s+/g,'_')}_${r.fecha}.html`,`📄 Uso de tiempo compensatorio — ${r.miembro}`);
 }
 
 // ════════════════════════
@@ -3778,7 +4295,7 @@ function renderEquipo(){
         <div><div style="font-size:20px;font-weight:800;color:var(--na)">${mt.length}</div><div style="font-size:10px;color:var(--tm)">Asignadas</div></div>
         <div><div style="font-size:20px;font-weight:800;color:var(--ve)">${comp}</div><div style="font-size:10px;color:var(--tm)">Completadas</div></div>
         <div><div style="font-size:20px;font-weight:800;color:var(--am)">${pen}</div><div style="font-size:10px;color:var(--tm)">Pendientes</div></div>
-        <div><div style="font-size:20px;font-weight:800;color:var(--az)">${mh.toFixed(1)}</div><div style="font-size:10px;color:var(--tm)">Saldo hrs</div></div>
+        <div><div style="font-size:20px;font-weight:800;color:var(--az)">${fmtD(mh)}</div><div style="font-size:10px;color:var(--tm)">Saldo compensatorio</div></div>
       </div>
       <div style="margin-top:10px">
         <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--tm);margin-bottom:3px"><span>Progreso general</span><span>${pct}%</span></div>
@@ -3804,6 +4321,7 @@ function abrirMEq(id){
   document.getElementById('eqPuesto').value=p?.puesto||'';
   document.getElementById('eqPosicion').value=p?.posicion||'';
   document.getElementById('eqUnidad').value=p?.unidad||'';
+  document.getElementById('eqCedula').value=p?.cedula||'';
   document.getElementById('eqCorreo').value=p?.correo||'';
   document.getElementById('eqNivel').value=p?.nivel||'colaborador';
   document.getElementById('eqIng').value=p?.ingreso||hoy();
@@ -3830,7 +4348,7 @@ async function guardarEq(){
   // Conserva cualquier otro campo de la ficha que este formulario no muestra
   const prev=E.equipo.find(e=>e.id===id)||{};
   const p={...prev,id,nombre:n,cargo:document.getElementById('eqCargo').value.trim(),email,nivel,
-    puesto:document.getElementById('eqPuesto').value.trim(),posicion:document.getElementById('eqPosicion').value.trim(),unidad:document.getElementById('eqUnidad').value.trim(),correo:document.getElementById('eqCorreo').value.trim().toLowerCase(),ingreso:document.getElementById('eqIng').value,foto:document.getElementById('eqFoto').value.trim(),cats,secciones};
+    puesto:document.getElementById('eqPuesto').value.trim(),posicion:document.getElementById('eqPosicion').value.trim(),unidad:document.getElementById('eqUnidad').value.trim(),cedula:document.getElementById('eqCedula').value.trim(),correo:document.getElementById('eqCorreo').value.trim().toLowerCase(),ingreso:document.getElementById('eqIng').value,foto:document.getElementById('eqFoto').value.trim(),cats,secciones};
 
   // Sincronizar credenciales en el servidor
   if(password||!E.equipo.find(e=>e.id===id)){
@@ -3878,7 +4396,7 @@ function renderPerfil(){
     <div style="display:flex;gap:20px;flex-wrap:wrap">
       <div style="font-size:12px;color:var(--tm)"><strong style="display:block;font-size:16px;color:var(--tx)">${mt.length}</strong>Tareas en mis categorías</div>
       <div style="font-size:12px;color:var(--tm)"><strong style="display:block;font-size:16px;color:var(--tx)">${mt.filter(t=>eglobal(t)==='Completada').length}</strong>Completadas</div>
-      <div style="font-size:12px;color:var(--tm)"><strong style="display:block;font-size:16px;color:var(--tx)">${mh.toFixed(1)} hrs</strong>Saldo compensatorio</div>
+      <div style="font-size:12px;color:var(--tm)"><strong style="display:block;font-size:16px;color:var(--tx)">${fmtSaldo(mh)}</strong>Saldo compensatorio</div>
     </div></div>`;
   document.getElementById('pNom').value=u.nombre||'';
   document.getElementById('pCargo').value=u.cargo||'';
@@ -3886,6 +4404,7 @@ function renderPerfil(){
   document.getElementById('pPuesto').value=u.puesto||'';
   document.getElementById('pPosicion').value=u.posicion||'';
   document.getElementById('pUnidad').value=u.unidad||'';
+  document.getElementById('pCedula').value=u.cedula||'';
   document.getElementById('pCorreo').value=u.correo||'';
 }
 
@@ -3897,6 +4416,7 @@ function guardarPerfil(){
   p.puesto=document.getElementById('pPuesto').value.trim();
   p.posicion=document.getElementById('pPosicion').value.trim();
   p.unidad=document.getElementById('pUnidad').value.trim();
+  p.cedula=document.getElementById('pCedula').value.trim();
   p.correo=document.getElementById('pCorreo').value.trim().toLowerCase();
   uAct=p;reg('Perfil actualizado',p.nombre);guardar();renderPerfil();
   document.getElementById('hdrNom').textContent=p.nombre.split(' ')[0];
@@ -4829,19 +5349,19 @@ function generarRepComp(){
     if(sel===''&&!regs.length&&!s0)return '';// en el reporte de todo el equipo se omite a quien no tiene nada
     const tE=ext.reduce((t,h)=>t+parseFloat(h.horas||0),0),tU=usa.reduce((t,h)=>t+parseFloat(h.horas||0),0);
     const filasE=ext.map(h=>`<tr><td>${fmt(h.fecha)}</td><td>${h.feriado?'Feriado':dia(h.fecha)}</td><td>${h.desde&&h.hasta?h.desde+'–'+h.hasta:'—'}</td><td>${esc(h.actividad)}</td><td class="n">${fmtH(parseFloat(h.horas||0))}</td><td>${esc(h.aprobadoPor||'—')}</td></tr>`).join('');
-    const filasU=usa.map(h=>`<tr><td>${fmt(h.fecha)}</td><td>${dia(h.fecha)}</td><td colspan="2">${esc(h.actividad)}</td><td class="n">${fmtH(parseFloat(h.horas||0))}</td><td>${esc(h.aprobadoPor||'—')}</td></tr>`).join('');
+    const filasU=usa.map(h=>`<tr><td>${fmt(h.fecha)}${h.fechaFin&&h.fechaFin!==h.fecha?' al '+fmt(h.fechaFin):''}</td><td>${h.fechaFin&&h.fechaFin!==h.fecha?dia(h.fecha)+' a '+dia(h.fechaFin).toLowerCase():dia(h.fecha)}</td><td colspan="2">${esc(h.actividad)}</td><td class="n">${fmtSaldo(parseFloat(h.horas||0))}</td><td>${esc(h.aprobadoPor||'—')}</td></tr>`).join('');
     return `<section class="persona">
 <table class="datos"><tr><th>Colaborador(a)</th><td>${esc(p.nombre)}</td><th>Cargo</th><td>${esc(p.cargo||'—')}</td></tr>
 <tr><th>Puesto según RRHH</th><td>${esc(p.puesto||'—')}</td><th>N.º de posición</th><td>${esc(p.posicion||'—')}</td></tr></table>
-<table class="resumen"><tr><td>Saldo al ${fmt(antes(ini))}</td><td class="n">${fmtH(s0)}</td></tr>
-<tr><td>(+) Horas extra acreditadas en el período</td><td class="n">${fmtH(tE)}</td></tr>
-<tr><td>(−) Tiempo compensatorio usado en el período</td><td class="n">${fmtH(tU)}</td></tr>
-<tr class="tot"><td>Saldo al ${fmt(fin)}</td><td class="n">${fmtH(s0+tE-tU)}</td></tr></table>
+<table class="resumen"><tr><td>Saldo al ${fmt(antes(ini))}</td><td class="n">${fmtSaldo(s0)}</td></tr>
+<tr><td>(+) Horas extra acreditadas en el período</td><td class="n">${fmtSaldo(tE)}</td></tr>
+<tr><td>(−) Tiempo compensatorio usado en el período</td><td class="n">${fmtSaldo(tU)}</td></tr>
+<tr class="tot"><td>Saldo al ${fmt(fin)}</td><td class="n">${fmtSaldo(s0+tE-tU)}</td></tr></table>
 <h3>Horas extra acreditadas</h3>
 ${filasE?`<table><thead><tr><th>Fecha</th><th>Día</th><th>Horario</th><th>Actividad</th><th class="n">Horas</th><th>Aprobó</th></tr></thead><tbody>${filasE}</tbody></table>`:'<p class="vacio">Sin horas extra aprobadas en el período.</p>'}
 <h3>Tiempo compensatorio usado</h3>
-${filasU?`<table><thead><tr><th>Fecha</th><th>Día</th><th colspan="2">Motivo</th><th class="n">Horas</th><th>Aprobó</th></tr></thead><tbody>${filasU}</tbody></table>`:'<p class="vacio">No usó tiempo compensatorio en el período.</p>'}
-${pend.length?`<p class="nota">Hay ${pend.length} registro(s) pendiente(s) de aprobación en el período (${fmtH(pend.reduce((t,h)=>t+(esComp(h)?-1:1)*parseFloat(h.horas||0),0))}). No se cuentan en el saldo.</p>`:''}
+${filasU?`<table><thead><tr><th>Fecha</th><th>Día</th><th colspan="2">Motivo</th><th class="n">Tiempo</th><th>Aprobó</th></tr></thead><tbody>${filasU}</tbody></table>`:'<p class="vacio">No usó tiempo compensatorio en el período.</p>'}
+${pend.length?`<p class="nota">Hay ${pend.length} registro(s) pendiente(s) de aprobación en el período (${fmtSaldo(pend.reduce((t,h)=>t+(esComp(h)?-1:1)*parseFloat(h.horas||0),0))}). No se cuentan en el saldo.</p>`:''}
 <div class="firma"><div><div class="linea">Colaborador(a)</div></div><div><div class="linea">Jefe(a) inmediato(a)</div></div><div><div class="linea">Recursos Humanos</div></div></div>
 </section>`;}).filter(Boolean);
   if(!secciones.length){alert('No hay horas registradas para ese período.');return;}
@@ -4869,7 +5389,7 @@ h3{font-size:13px;margin:16px 0 6px;color:#333}
 <div class="hdr"><div><h1>Reporte de tiempo compensatorio</h1><div class="sub">CACCO · Equipo de Comunicaciones · Período: ${rangoLbl}</div></div>
 <div class="meta">Generado el ${fmt(hoy())}<br>por ${esc(uAct?.nombre||'')}</div></div>
 ${secciones.join('')}
-<p style="font-size:10.5px;color:#777;margin-top:8px">Horas extra: en día laboral cuentan solo las trabajadas antes de 8:00 a. m. o después de 4:00 p. m.; en sábado, domingo o feriado cuenta toda la jornada. Solo se incluyen registros aprobados.</p>
+<p style="font-size:10.5px;color:#777;margin-top:8px">Horas extra: en día laboral cuentan solo las trabajadas antes de 8:00 a. m. o después de 4:00 p. m.; en sábado, domingo o feriado cuenta toda la jornada. Cada 8 h equivalen a un día de trabajo. Solo se incluyen registros aprobados.</p>
 </body></html>`;
   cerM('mRepComp');
   reg('Reporte compensatorio',`${sel||'Todo el equipo'} — ${rangoLbl}`);
@@ -5581,6 +6101,7 @@ function refrescarVistaAbierta(){
   try{
     if(vis('vTareas'))renderTareas();
     if(vis('vHorasExtra'))renderHoras();
+    if(vis('vPermisos'))renderPermisos();
     if(vis('vEquipo'))renderEquipo();
     if(vis('vCalendario'))renderCal();
     if(vis('vAsignaciones'))renderAsig();
