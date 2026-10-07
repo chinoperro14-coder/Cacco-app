@@ -90,6 +90,30 @@ function soloLider(req, res, next) {
   next();
 }
 
+// Tiempo compensatorio: quien está fuera (aprobado, un día completo o más) no entra ni guarda
+// hasta su fecha de regreso. El Líder siempre puede entrar, para que nunca falte quien administre.
+const hoyPanama = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Panama" }).format(new Date());
+function siguienteDiaSemana(f) {
+  const d = new Date(f + "T12:00:00Z");
+  do { d.setUTCDate(d.getUTCDate() + 1); } while ([0, 6].includes(d.getUTCDay()));
+  return d.toISOString().slice(0, 10);
+}
+async function regresoSiAusente(userId, nivel) {
+  if (nivel === "lider") return null;
+  const data = await leerData();
+  const yo = (data.equipo || []).find(p => p.id === userId);
+  if (!yo) return null;
+  const f = hoyPanama();
+  for (const h of data.horasExtra || []) {
+    if (h.tipo !== "compensatorio" || h.miembro !== yo.nombre || h.aprobacion !== "Aprobado") continue;
+    if (!(parseFloat(h.horas || 0) >= 8 - 1e-9)) continue;
+    const regreso = h.regreso || siguienteDiaSemana(h.fechaFin || h.fecha);
+    if (h.fecha <= f && f < regreso) return regreso;
+  }
+  return null;
+}
+const msgAusente = r => `🌴 Estás de tiempo compensatorio. Tu acceso se habilita el ${r.split("-").reverse().join("/")}.`;
+
 // ════════════════════════
 //  RUTA PRINCIPAL
 // ════════════════════════
@@ -108,6 +132,8 @@ app.post("/api/login", async (req, res) => {
     if (!user) return res.status(401).json({ error: "Usuario no encontrado" });
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(401).json({ error: "Contraseña incorrecta" });
+    const regreso = await regresoSiAusente(user.id, user.nivel);
+    if (regreso) return res.status(403).json({ error: msgAusente(regreso) });
     const expira = recordar ? "30d" : "8h";
     const token = jwt.sign({ id: user.id, email: user.email, nivel: user.nivel }, JWT_SECRET, { expiresIn: expira });
     res.json({ token, userId: user.id });
@@ -138,7 +164,11 @@ async function conservarPermisos(nuevo) {
   return nuevo;
 }
 app.post("/api/data", verificarToken, async (req, res) => {
-  try { await escribirData(await conservarPermisos(req.body)); res.json({ ok: true }); }
+  try {
+    const regreso = await regresoSiAusente(req.usuario?.id, req.usuario?.nivel);
+    if (regreso) return res.status(403).json({ error: msgAusente(regreso) });
+    await escribirData(await conservarPermisos(req.body)); res.json({ ok: true });
+  }
   catch { res.status(500).json({ error: "No se pudo guardar" }); }
 });
 
