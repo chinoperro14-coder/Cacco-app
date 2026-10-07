@@ -1030,7 +1030,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       <div class="fg"><label class="fl" id="hHastaLbl">Salida *</label><input type="time" class="fc" id="hHasta" onchange="calcHorasH()"></div>
       <div class="fg hSoloComp" style="display:none"><label class="fl">Días a usar</label><input type="number" class="fc" id="hDias" min="0" max="60" step="0.5" placeholder="0" oninput="calcCompH()"></div>
       <div class="fg hSoloComp" style="display:none"><label class="fl">Horas a usar</label><input type="number" class="fc" id="hHorasC" min="0" max="23.75" step="0.25" placeholder="0" oninput="this.dataset.auto='';calcCompH()"></div>
-      <div class="fg hSoloExtra"><label class="fl" id="hHorasLbl">Horas extra</label><input type="number" class="fc" id="hHoras" min="0" max="24" step="0.25"></div>
+      <div class="fg hSoloExtra"><label class="fl" id="hHorasLbl">Horas extra</label><input type="number" class="fc" id="hHoras" min="0" max="24" step="0.25" readonly tabindex="-1" style="background:var(--su);cursor:not-allowed" title="Se calcula solo con la entrada y la salida"><div style="font-size:11px;color:var(--tm);margin-top:3px">🔒 Se calcula solo con la entrada y la salida; no se puede corregir a mano.</div></div>
     </div>
     <div style="font-size:12px;color:var(--tm);margin:-4px 0 12px;line-height:1.5" id="hSaldoInfo"></div>
     <div class="hSoloExtra" style="font-size:12px;color:var(--tm);margin:-4px 0 12px;line-height:1.5" id="hRegla">Día laboral: cuenta lo trabajado antes de 8:00 a. m. o después de 4:00 p. m., siempre que sea 1 hora o más (Reglamento Interno, art. 74). Sábado, domingo o feriado: cuenta toda la jornada.</div>
@@ -3761,8 +3761,7 @@ function abrirMH(id){
   document.getElementById('hDias').value=hn?hd:'';
   document.getElementById('hHorasC').dataset.auto='';
   document.getElementById('hHorasC').value=hn?Math.round((hn-hd*HORAS_DIA)*100)/100:'';
-  // Las horas salen de entrada/salida; solo quien aprueba puede ajustarlas a mano
-  document.getElementById('hHoras').readOnly=!puede('aprobarHora');
+  // Las horas extra salen siempre de entrada/salida; nadie las corrige a mano (por las variaciones)
   calcHorasH(true);
   document.getElementById('hAct').value=h?.actividad||'';
   // Solo Editor y Líder ven el selector de aprobación
@@ -3844,7 +3843,6 @@ function tipoHCambio(){
   document.getElementById('hHorasLbl').textContent=comp?'Horas a descontar *':'Horas extra';
   document.getElementById('hActLbl').textContent=comp?'Motivo *':'Actividad *';
   document.getElementById('hAct').placeholder=comp?'ej. Día libre por las horas de Sabores de Colón':'Describa la actividad realizada...';
-  document.getElementById('hHoras').readOnly=!comp&&!puede('aprobarHora');
   document.getElementById('hFechaLbl').textContent=comp?'Desde *':'Fecha *';
   document.getElementById('hDesdeLbl').textContent=comp?'Desde las (opcional)':'Entrada *';
   document.getElementById('hHastaLbl').textContent=comp?'Hasta las (opcional)':'Salida *';
@@ -3909,11 +3907,15 @@ function calcHorasH(soloEtiqueta){
 }
 
 function guardarH(){
-  const m=document.getElementById('hMiem').value,f=document.getElementById('hFecha').value,h=document.getElementById('hHoras').value,a=document.getElementById('hAct').value.trim();
+  let h=document.getElementById('hHoras').value;
+  const m=document.getElementById('hMiem').value,f=document.getElementById('hFecha').value,a=document.getElementById('hAct').value.trim();
   const de=document.getElementById('hDesde').value,ha=document.getElementById('hHasta').value,fer=document.getElementById('hFeriado').checked;
   const id=document.getElementById('hId').value;
   const prev=id?E.horasExtra.find(x=>x.id===id):null;
   const comp=document.getElementById('hTipo').value==='compensatorio';
+  // Horas extra: el total se recalcula aquí con entrada y salida, no se toma lo escrito en el campo.
+  // Solo un registro antiguo sin horario conserva sus horas.
+  if(!comp){const auto=de&&ha?horasFueraH(f,de,ha,fer):null;h=auto!==null?String(auto):(prev&&!prev.desde&&!prev.hasta?String(prev.horas??''):'');}
   // Entrada y salida son obligatorias en horas extra nuevas (los registros anteriores pueden no tenerlas)
   const ffin=comp?document.getElementById('hFechaFin').value:'';
   if(ffin&&f&&ffin<f){alert('La fecha «Hasta» no puede ser anterior a «Desde».');return;}
