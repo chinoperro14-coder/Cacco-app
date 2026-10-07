@@ -1406,7 +1406,8 @@ function puede(accion){
 //  UTILS
 // ════════════════════════
 const gId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2);
-const hoy=()=>new Date().toISOString().split('T')[0];
+// Fecha de hoy en Panamá (antes usaba UTC: desde las 7 p. m. ya era «mañana»)
+const hoy=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Panama'}).format(new Date());
 const fmt=f=>f?new Date(f+'T00:00:00').toLocaleDateString('es-PA',{day:'2-digit',month:'short',year:'numeric'}):'—';
 const dH=f=>f?Math.ceil((new Date(f+'T00:00:00')-new Date(hoy()+'T00:00:00'))/86400000):null;
 function cAv(n){let h=0;for(let c of(n||'?'))h=(h*31+c.charCodeAt(0))&0xffff;return COLORS[h%COLORS.length];}
@@ -1485,6 +1486,8 @@ async function ejecutarGuardado(){
     // 1) traer lo último del servidor y fusionar antes de escribir
     const res=await fetch('/api/data',{headers:{'Authorization':'Bearer '+token}});
     if(res.status===401){sesionExpirada();_guardando=false;return;}
+    // Sin la versión del servidor no se escribe nada (evita pisar los datos de todos); se reintenta luego
+    if(!res.ok){_guardando=false;setTimeout(guardar,5000);return;}
     if(res.ok){
       const theirs=await res.json();
       if(theirs&&Object.keys(theirs).length&&Ebase){
@@ -1495,7 +1498,11 @@ async function ejecutarGuardado(){
       }
     }
     // 2) escribir el resultado fusionado
-    await fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(E)});
+    const pr=await fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(E)});
+    if(pr.status===403){// el servidor rechazó el cambio: se avisa y se vuelve a lo que hay guardado
+      const j=await pr.json().catch(()=>({}));alert(j.error||'No tienes permiso para guardar ese cambio.');
+      _guardando=false;await cargar();refrescarVistaAbierta();return;}
+    if(!pr.ok){_guardando=false;setTimeout(guardar,5000);return;}
     Ebase=snap(E);
   }catch(e){}
   _guardando=false;
