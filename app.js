@@ -232,6 +232,8 @@ app.post("/api/users", verificarToken, soloLider, async (req, res) => {
     const existe = users.find(u => u.id === id);
     if (!existe && !password)
       return res.status(400).json({ error: "Contraseña requerida para usuario nuevo" });
+    if (password && String(password).length < 8)
+      return res.status(400).json({ error: "La contraseña debe tener al menos 8 caracteres" });
     const hashed = password ? await bcrypt.hash(password, 10) : existe?.password;
     await escribirUser({ id, email: email.toLowerCase().trim(), password: hashed, nivel });
     res.json({ ok: true });
@@ -247,8 +249,8 @@ app.post("/api/change-password", verificarToken, async (req, res) => {
   const { passwordActual, passwordNueva } = req.body;
   if (!passwordActual || !passwordNueva)
     return res.status(400).json({ error: "Ambas contraseñas requeridas" });
-  if (passwordNueva.length < 4)
-    return res.status(400).json({ error: "Mínimo 4 caracteres" });
+  if (passwordNueva.length < 8)
+    return res.status(400).json({ error: "Mínimo 8 caracteres" });
   try {
     const users = await leerUsers();
     const user  = users.find(u => u.id === req.usuario.id);
