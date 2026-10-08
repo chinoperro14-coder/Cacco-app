@@ -82,8 +82,6 @@ body.osc .mov{background:rgba(0,0,0,.6);}
 body.osc .t-topbar{filter:saturate(.75) brightness(.9);}
 body.osc .fc{background:var(--su2);color:var(--tx);border-color:var(--bo);}
 body.osc .tint{background:color-mix(in srgb,var(--sc) 18%,var(--su))!important;}
-body.hc{--tx:#000;--fo:#fff;--su:#fff;--su2:#f0f0f0;--bo:#000;--tm:#333;}
-body.osc.hc{--tx:#fff;--fo:#000;--su:#000;--su2:#111;--bo:#fff;--tm:#ccc;}
 *{margin:0;padding:0;box-sizing:border-box;}html{font-size:15px;}
 body{font-family:'Inter',sans-serif;background:var(--fo);color:var(--tx);min-height:100vh;transition:background .2s,color .2s;line-height:1.6;}
 :focus-visible{outline:3px solid var(--na);outline-offset:2px;border-radius:4px;}
@@ -458,7 +456,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   .hdep{display:none;}
   .hmb{display:flex!important;}
   /* Ocultar botones que sobran en móvil */
-  #btnHC,#btnSync,.acb[onclick*="ajTxt"]{display:none!important;}
+  #btnSync,.acb[onclick*="ajTxt"]{display:none!important;}
   /* Salir — compacto */
   .btn.bbl.bsm[onclick*="cerrarSes"]{padding:4px 8px;font-size:10px;}
   /* Avatar nombre oculto */
@@ -676,8 +674,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   </div>
   <div class="hr">
     <div style="display:flex;gap:4px">
-      <button class="acb" onclick="togOsc()" id="btnOsc" title="Modo oscuro" aria-label="Modo oscuro">🌙</button>
-      <button class="acb" onclick="togHC()" id="btnHC" title="Alto contraste" aria-label="Alto contraste">🔳</button>
+      <button class="acb" onclick="togOsc()" id="btnOsc" title="Modo noche" aria-label="Modo noche">🌙</button>
       <button class="acb" onclick="ajTxt(1)" title="Letra más grande" aria-label="Letra más grande">A+</button>
       <button class="acb" onclick="ajTxt(-1)" title="Letra más pequeña" aria-label="Letra más pequeña">A−</button>
     </div>
@@ -1681,7 +1678,6 @@ async function cargar(){
 //  ACCESIBILIDAD
 // ════════════════════════
 function togOsc(){document.body.classList.toggle('osc');document.getElementById('btnOsc').classList.toggle('on');}
-function togHC(){document.body.classList.toggle('hc');document.getElementById('btnHC').classList.toggle('on');}
 function ajTxt(d){nivelTxt=Math.max(-1,Math.min(2,nivelTxt+d));document.body.classList.remove('tg','txl');if(nivelTxt===1)document.body.classList.add('tg');if(nivelTxt===2)document.body.classList.add('txl');}
 
 // ════════════════════════
