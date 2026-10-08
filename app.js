@@ -22,7 +22,7 @@ app.use(express.json({ limit: "5mb" }));
 // Solo se publica la interfaz y sus imágenes; nunca data.json, users.json, el código del servidor ni archivos ocultos.
 const EXT_PUBLICAS = new Set([".png", ".jpg", ".jpeg", ".svg", ".ico", ".webp", ".woff", ".woff2"]);
 app.use((req, res, next) => {
-  if (req.path === "/" || req.path.startsWith("/api/")) return next();
+  if (req.path === "/" || req.path === "/pedido" || req.path.startsWith("/api/")) return next();
   const ext = path.extname(req.path).toLowerCase();
   const oculto = req.path.split("/").some(seg => seg.startsWith(".") || seg === "node_modules" || seg === "backups");
   if (EXT_PUBLICAS.has(ext) && !oculto) return next();
@@ -131,6 +131,40 @@ const msgAusente = r => `🌴 Estás de tiempo compensatorio. Tu acceso se habil
 //  RUTA PRINCIPAL
 // ════════════════════════
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "index.html")));
+app.get("/pedido", (req, res) => res.sendFile(path.join(__dirname, "pedido.html")));
+
+// ════════════════════════
+//  PEDIDOS DE OTRAS ÁREAS (formulario público, sin sesión)
+// ════════════════════════
+// Cada pedido entra como borrador de tarea. Como el formulario es público, se limita cuántos
+// pedidos puede enviar cada conexión y cuántos borradores de pedidos pueden esperar revisión.
+const { pedidoATarea, siguienteFolio } = require("./pedidos");
+const PEDIDOS_POR_HORA = 5, PEDIDOS_SIN_REVISAR = 40;
+const enviosPorIp = new Map();
+app.post("/api/pedidos", async (req, res) => {
+  // Render agrega la IP real al final de X-Forwarded-For (lo anterior lo puede escribir cualquiera)
+  const ip = String(req.headers["x-forwarded-for"] || "").split(",").pop().trim() || req.ip;
+  const ahora = Date.now(), recientes = (enviosPorIp.get(ip) || []).filter(t => ahora - t < 3600e3);
+  if (recientes.length >= PEDIDOS_POR_HORA)
+    return res.status(429).json({ error: "Ya enviaste varios pedidos en la última hora. Si es urgente, escribe directamente al equipo de Comunicaciones." });
+  try {
+    const data = await leerData();
+    data.tareas = data.tareas || []; data.pedidos = data.pedidos || []; data.notifs = data.notifs || [];
+    if (data.tareas.filter(t => t && t.borrador && t.pedido).length >= PEDIDOS_SIN_REVISAR)
+      return res.status(503).json({ error: "Hay muchos pedidos esperando revisión. Escribe directamente al equipo de Comunicaciones." });
+    const folio = siguienteFolio(data.pedidos);
+    const r = pedidoATarea(req.body, { hoy: hoyPanama(), folio, id: () => Date.now().toString(36) + require("crypto").randomBytes(6).toString("hex") });
+    if (r.error) return res.status(400).json({ error: r.error });
+    data.tareas.unshift(r.tarea);
+    data.pedidos.unshift(r.registro);
+    const hora = new Date().toLocaleTimeString("es-PA", { timeZone: "America/Panama", hour: "2-digit", minute: "2-digit" });
+    data.notifs.unshift({ id: r.tarea.id + "n", ico: "📨", txt: `Pedido ${folio} de ${r.registro.area}: ${r.tarea.titulo}`, sub: "Formulario de pedidos", ts: hora });
+    data.notifs = data.notifs.slice(0, 50);
+    await escribirData(data);
+    enviosPorIp.set(ip, [...recientes, ahora]);
+    res.json({ ok: true, folio });
+  } catch { res.status(500).json({ error: "No se pudo enviar el pedido. Intenta de nuevo en unos minutos." }); }
+});
 
 // ════════════════════════
 //  LOGIN
