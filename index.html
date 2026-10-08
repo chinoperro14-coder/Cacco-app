@@ -7,7 +7,80 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 :root{--na:#E35205;--na2:#c44604;--nas:#fff4ee;--nab:#fcd9c4;--fo:#f5f4f2;--su:#ffffff;--su2:#f0eeeb;--bo:#e2ddd8;--tx:#1a1816;--tm:#6b6258;--ve:#166534;--ves:#dcfce7;--az:#1e40af;--azs:#dbeafe;--ro:#991b1b;--ros:#fee2e2;--am:#92400e;--ams:#fef3c7;--mo:#5b21b6;--mos:#ede9fe;--r:10px;--rs:6px;--sh:0 1px 3px rgba(0,0,0,.07),0 4px 12px rgba(0,0,0,.05);--shm:0 4px 16px rgba(0,0,0,.10),0 1px 4px rgba(0,0,0,.06);}
-body.osc{--fo:#111113;--su:#1e1e21;--su2:#28282d;--bo:#3a3a42;--tx:#f0f0f5;--tm:#9999aa;--nas:#2c1400;--nab:#7a3500;--ve:#4ade80;--ves:#0d2e1a;--az:#60a5fa;--azs:#1a2e4a;--ro:#f87171;--ros:#2e0e0e;--am:#fbbf24;--ams:#2e1e00;--mo:#c084fc;--mos:#1e1030;}
+body.osc{--na:#f2722f;--na2:#ff8a4f;--nas:#2d1d13;--nab:#5c3218;--fo:#141210;--su:#1d1a17;--su2:#27231f;--bo:#36302a;--tx:#ede7e0;--tm:#a69d93;--ve:#62d394;--ves:#15281d;--az:#82b6ff;--azs:#172338;--ro:#ff8f86;--ros:#351a1a;--am:#f3c35e;--ams:#2f2513;--mo:#c8a4ff;--mos:#241b35;--sh:0 1px 2px rgba(0,0,0,.35);--shm:0 10px 30px rgba(0,0,0,.55);color-scheme:dark;}
+/* Modo oscuro: colores escritos a mano en la página se pasan a tonos oscuros */
+body.osc [style*="background:#fff;" i],body.osc [style$="background:#fff" i]{background:var(--su)!important;}
+body.osc [style*="background:#fafafa;" i],body.osc [style$="background:#fafafa" i]{background:var(--su)!important;}
+body.osc [style*="background:#f9fafb;" i],body.osc [style$="background:#f9fafb" i]{background:var(--su)!important;}
+body.osc [style*="background:#f5f5f5;" i],body.osc [style$="background:#f5f5f5" i]{background:var(--su2)!important;}
+body.osc [style*="background:#f3f4f6;" i],body.osc [style$="background:#f3f4f6" i]{background:var(--su2)!important;}
+body.osc [style*="background:#eee;" i],body.osc [style$="background:#eee" i]{background:var(--su2)!important;}
+body.osc [style*="background:#fff8e1" i]{background:color-mix(in srgb,#fff8e1 14%,var(--su))!important;}
+body.osc [style*="background:#fff5f5" i]{background:color-mix(in srgb,#fff5f5 14%,var(--su))!important;}
+body.osc [style*="background:#fef2f2" i]{background:color-mix(in srgb,#fef2f2 14%,var(--su))!important;}
+body.osc [style*="background:#fef3c7" i]{background:color-mix(in srgb,#fef3c7 14%,var(--su))!important;}
+body.osc [style*="background:#cffafe" i]{background:color-mix(in srgb,#cffafe 14%,var(--su))!important;}
+body.osc [style*="background:#e8f5e9" i]{background:color-mix(in srgb,#e8f5e9 14%,var(--su))!important;}
+body.osc [style*="background:#e1f5ee" i]{background:color-mix(in srgb,#e1f5ee 14%,var(--su))!important;}
+body.osc [style*="background:#faeeda" i]{background:color-mix(in srgb,#faeeda 14%,var(--su))!important;}
+body.osc [style*="background:#e6f1fb" i]{background:color-mix(in srgb,#e6f1fb 14%,var(--su))!important;}
+body.osc [style*="background:#e3f2fd" i]{background:color-mix(in srgb,#e3f2fd 14%,var(--su))!important;}
+body.osc [style*="background:#eeedfe" i]{background:color-mix(in srgb,#eeedfe 14%,var(--su))!important;}
+body.osc [style*="background:#faece7" i]{background:color-mix(in srgb,#faece7 14%,var(--su))!important;}
+body.osc [style*="background:#ede9fe" i]{background:color-mix(in srgb,#ede9fe 14%,var(--su))!important;}
+body.osc [style*="background:#ede7f6" i]{background:color-mix(in srgb,#ede7f6 14%,var(--su))!important;}
+body.osc [style*="background:#fee2e2" i]{background:color-mix(in srgb,#fee2e2 14%,var(--su))!important;}
+body.osc [style*="background:#dbeafe" i]{background:color-mix(in srgb,#dbeafe 14%,var(--su))!important;}
+body.osc [style*="background:#fff0f5" i]{background:color-mix(in srgb,#fff0f5 14%,var(--su))!important;}
+body.osc [style*="background:#e8f0fe" i]{background:color-mix(in srgb,#e8f0fe 14%,var(--su))!important;}
+body.osc [style*="background:#f0f0f0" i]{background:color-mix(in srgb,#f0f0f0 14%,var(--su))!important;}
+body.osc [style*="background:#fff4ee" i]{background:color-mix(in srgb,#fff4ee 14%,var(--su))!important;}
+body.osc [style*="background:#fff0f0" i]{background:color-mix(in srgb,#fff0f0 14%,var(--su))!important;}
+body.osc [style*="background:#fff0e8" i]{background:color-mix(in srgb,#fff0e8 14%,var(--su))!important;}
+body.osc [style*="background:#eff6ff" i]{background:color-mix(in srgb,#eff6ff 14%,var(--su))!important;}
+body.osc [style*="color:#000;" i],body.osc [style$="color:#000" i]{color:var(--tx)!important;}
+body.osc [style*="color:#1a1a1a;" i],body.osc [style$="color:#1a1a1a" i]{color:var(--tx)!important;}
+body.osc [style*="color:#333;" i],body.osc [style$="color:#333" i]{color:var(--tx)!important;}
+body.osc [style*="color:#444;" i],body.osc [style$="color:#444" i]{color:var(--tm)!important;}
+body.osc [style*="color:#555;" i],body.osc [style$="color:#555" i]{color:var(--tm)!important;}
+body.osc [style*="color:#666;" i],body.osc [style$="color:#666" i]{color:var(--tm)!important;}
+body.osc [style*="color:#777;" i],body.osc [style$="color:#777" i]{color:var(--tm)!important;}
+body.osc [style*="color:#888;" i],body.osc [style$="color:#888" i]{color:var(--tm)!important;}
+body.osc [style*="color:#6b7280;" i],body.osc [style$="color:#6b7280" i]{color:var(--tm)!important;}
+body.osc [style*="color:#6a1b9a" i]{color:color-mix(in srgb,#6a1b9a 50%,#fff)!important;}
+body.osc [style*="color:#991b1b" i]{color:color-mix(in srgb,#991b1b 50%,#fff)!important;}
+body.osc [style*="color:#534ab7" i]{color:color-mix(in srgb,#534ab7 50%,#fff)!important;}
+body.osc [style*="color:#993c1d" i]{color:color-mix(in srgb,#993c1d 50%,#fff)!important;}
+body.osc [style*="color:#166534" i]{color:color-mix(in srgb,#166534 50%,#fff)!important;}
+body.osc [style*="color:#92400e" i]{color:color-mix(in srgb,#92400e 50%,#fff)!important;}
+body.osc [style*="color:#854f0b" i]{color:color-mix(in srgb,#854f0b 50%,#fff)!important;}
+body.osc [style*="color:#185fa5" i]{color:color-mix(in srgb,#185fa5 50%,#fff)!important;}
+body.osc [style*="color:#1d4ed8" i]{color:color-mix(in srgb,#1d4ed8 50%,#fff)!important;}
+body.osc [style*="color:#0f6e56" i]{color:color-mix(in srgb,#0f6e56 50%,#fff)!important;}
+body.osc [style*="color:#7c3aed" i]{color:color-mix(in srgb,#7c3aed 50%,#fff)!important;}
+body.osc [style*="color:#2e7d32" i]{color:color-mix(in srgb,#2e7d32 50%,#fff)!important;}
+body.osc [style*="color:#0e7490" i]{color:color-mix(in srgb,#0e7490 50%,#fff)!important;}
+body.osc [style*="color:#2563eb" i]{color:color-mix(in srgb,#2563eb 50%,#fff)!important;}
+body.osc [style*="color:#b45309" i]{color:color-mix(in srgb,#b45309 50%,#fff)!important;}
+body.osc [style*="color:#dc2626" i]{color:color-mix(in srgb,#dc2626 50%,#fff)!important;}
+body.osc [style*="color:#16a34a" i]{color:color-mix(in srgb,#16a34a 50%,#fff)!important;}
+body.osc [style*="color:#f57f17" i]{color:color-mix(in srgb,#f57f17 50%,#fff)!important;}
+body.osc [style*="color:#c13584" i]{color:color-mix(in srgb,#c13584 50%,#fff)!important;}
+body.osc [style*="color:#1877f2" i]{color:color-mix(in srgb,#1877f2 50%,#fff)!important;}
+body.osc [style*="color:#1b5e20" i]{color:color-mix(in srgb,#1b5e20 50%,#fff)!important;}
+body.osc [style*="color:#4527a0" i]{color:color-mix(in srgb,#4527a0 50%,#fff)!important;}
+/* Modo oscuro: encabezado sobrio con acento naranja en vez de barra naranja completa */
+body.osc header{background:var(--su);box-shadow:inset 0 -2px 0 var(--na);}
+body.osc .horg{color:var(--tx);}body.osc .hdep{color:var(--tm);}body.osc .hmb{color:var(--tx);}
+body.osc .acb,body.osc .nb,body.osc .uch{background:var(--su2);color:var(--tx);}
+body.osc .acb:hover,body.osc .nb:hover,body.osc .uch:hover{background:var(--bo);}
+body.osc .acb.on{background:var(--nab);color:#fff;}
+body.osc .uch .unom{color:var(--tx);}body.osc .ndot{background:var(--na);}
+body.osc .bna{color:#1b0e06;}body.osc .bna:hover:not(:disabled){color:#1b0e06;}
+body.osc .toast{background:#2c2722;color:var(--tx);border:1px solid var(--bo);}
+body.osc .mov{background:rgba(0,0,0,.6);}
+body.osc .t-topbar{filter:saturate(.75) brightness(.9);}
+body.osc .fc{background:var(--su2);color:var(--tx);border-color:var(--bo);}
 body.osc .tint{background:color-mix(in srgb,var(--sc) 18%,var(--su))!important;}
 body.hc{--tx:#000;--fo:#fff;--su:#fff;--su2:#f0f0f0;--bo:#000;--tm:#333;}
 body.osc.hc{--tx:#fff;--fo:#000;--su:#000;--su2:#111;--bo:#fff;--tm:#ccc;}
@@ -118,6 +191,28 @@ textarea.fc{resize:vertical;min-height:80px;}
 /* MODALES */
 .mov{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:500;padding:20px;backdrop-filter:blur(2px);}
 .mov.on{display:flex;}
+.hp-inp{display:none!important;}.hp-inp.hp-ver{display:block!important;margin-top:6px;}
+.hp-top{display:flex;align-items:center;gap:6px;}
+.hp-b{width:38px;height:40px;border-radius:var(--rs);border:1.5px solid var(--bo);background:var(--su2);color:var(--tx);font-size:18px;font-weight:700;cursor:pointer;flex-shrink:0;}
+.hp-b:hover{border-color:var(--na);}
+.hp-v{flex:1;min-width:0;height:40px;border-radius:var(--rs);border:1.5px solid var(--bo);background:var(--su);color:var(--tx);font:700 16px 'Inter',sans-serif;cursor:pointer;}
+.hp-v.vac{color:var(--tm);font-weight:500;font-size:14px;}
+.hp-ch{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;}
+.hp-c{font:600 12px 'Inter',sans-serif;padding:5px 10px;border-radius:16px;border:1px solid var(--bo);background:var(--su2);color:var(--tx);cursor:pointer;}
+.hp-c.on{background:var(--na);border-color:var(--na);color:#fff;}
+body.osc .hp-c.on{color:#1b0e06;}
+.hbar{margin:-2px 0 14px;}
+.hb-pista{position:relative;height:28px;border-radius:7px;background:var(--su2);overflow:hidden;border:1px solid var(--bo);}
+.hb-lab{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(135deg,transparent 0 6px,color-mix(in srgb,var(--tm) 14%,transparent) 6px 12px);}
+.hb-seg{position:absolute;top:3px;bottom:3px;border-radius:4px;}
+.hb-seg.si{background:var(--na);}
+.hb-seg.jor{background:color-mix(in srgb,var(--tm) 35%,transparent);}
+.hb-seg.no{background:repeating-linear-gradient(135deg,var(--tm) 0 3px,transparent 3px 6px);opacity:.6;}
+.hb-ax{position:relative;height:16px;font-size:10px;color:var(--tm);margin-top:3px;}
+.hb-ax span{position:absolute;transform:translateX(-50%);white-space:nowrap;}
+.hb-tot{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px;font-size:13px;}
+.hb-tot b{font-size:18px;color:var(--na);}
+.hb-nota{font-size:11.5px;color:var(--tm);margin-top:2px;line-height:1.45;}
 .fhint{font-size:11px;color:var(--tm);margin-top:3px;}.fhint:empty{display:none;}
 #toasts{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:700;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;width:calc(100% - 32px);max-width:440px;}
 .toast{pointer-events:auto;background:var(--tx);color:var(--su);border-radius:10px;padding:11px 16px;font-size:13px;line-height:1.5;box-shadow:0 8px 24px rgba(0,0,0,.25);white-space:pre-line;border-left:4px solid var(--na);cursor:pointer;width:100%;animation:tIn .18s ease-out;}
@@ -223,9 +318,9 @@ textarea.fc{resize:vertical;min-height:80px;}
 .hitem:last-child{border-bottom:none;}
 /* PERMISO BADGE */
 .pnivel{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;}
-.pnivel.lider{background:#fff0ee;color:#b91c1c;border:1px solid #fca5a5;}
-.pnivel.editor{background:#fef9c3;color:#854d0e;border:1px solid #fde047;}
-.pnivel.colaborador{background:#dcfce7;color:#166534;border:1px solid #86efac;}
+.pnivel.lider{background:var(--nas);color:var(--na);border:1px solid var(--nab);}
+.pnivel.editor{background:var(--ams);color:var(--am);border:1px solid color-mix(in srgb,var(--am) 35%,transparent);}
+.pnivel.colaborador{background:var(--ves);color:var(--ve);border:1px solid color-mix(in srgb,var(--ve) 35%,transparent);}
 .pnivel.lector{background:var(--su2);color:var(--tm);border:1px solid var(--bo);}
 /* UTILS */
 .oculto{display:none!important;}
@@ -1057,10 +1152,11 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       <div class="fg"><label class="fl" id="hHastaLbl">Salida *</label><input type="time" class="fc" id="hHasta" onchange="calcHorasH()"></div>
       <div class="fg hSoloComp" style="display:none"><label class="fl">Días a usar</label><input type="number" class="fc" id="hDias" min="0" max="60" step="0.5" placeholder="0" oninput="calcCompH()"></div>
       <div class="fg hSoloComp" style="display:none"><label class="fl">Horas a usar</label><input type="number" class="fc" id="hHorasC" min="0" max="23.75" step="0.25" placeholder="0" oninput="this.dataset.auto='';calcCompH()"></div>
-      <div class="fg hSoloExtra"><label class="fl" id="hHorasLbl">Horas extra</label><input type="number" class="fc" id="hHoras" min="0" max="24" step="0.25" readonly tabindex="-1" style="background:var(--su);cursor:not-allowed" title="Se calcula solo con la entrada y la salida"><div style="font-size:11px;color:var(--tm);margin-top:3px">🔒 Se calcula solo con la entrada y la salida; no se puede corregir a mano.</div></div>
+      <div class="fg" style="display:none" id="hHorasGrupo"><label class="fl" id="hHorasLbl">Horas extra</label><input type="number" class="fc" id="hHoras" min="0" max="24" step="0.25" readonly tabindex="-1" style="background:var(--su);cursor:not-allowed" title="Se calcula solo con la entrada y la salida"><div style="font-size:11px;color:var(--tm);margin-top:3px">🔒 Se calcula solo con la entrada y la salida; no se puede corregir a mano.</div></div>
     </div>
+    <div class="hSoloExtra hbar" id="hBarra"></div>
     <div style="font-size:12px;color:var(--tm);margin:-4px 0 12px;line-height:1.5" id="hSaldoInfo"></div>
-    <div class="hSoloExtra" style="font-size:12px;color:var(--tm);margin:-4px 0 12px;line-height:1.5" id="hRegla">Día laboral: cuenta lo trabajado antes de 8:00 a. m. o después de 4:00 p. m., siempre que sea 1 hora o más (Reglamento Interno, art. 74). Sábado, domingo o feriado: cuenta toda la jornada.</div>
+    <div class="hSoloExtra" style="font-size:12px;color:var(--tm);margin:-4px 0 12px;line-height:1.5" id="hRegla">Día laboral: cuenta lo trabajado antes de las 8:00 a. m. o después de las 4:00 p. m., si son 1 hora o más (art. 74). Sábado, domingo o feriado: cuenta toda la jornada.</div>
     <div class="hSoloExtra al alam" id="hAvisoReg" style="display:none;margin:-4px 0 12px;font-size:12.5px;line-height:1.5"></div>
     <div class="fg"><label class="fl" id="hActLbl">Actividad *</label><textarea class="fc" id="hAct" placeholder="Describe la actividad realizada…"></textarea></div>
     <div class="fg" id="hAproGrupo" style="display:none"><label class="fl">Aprobación</label>
@@ -4212,6 +4308,7 @@ function calcHorasH(soloEtiqueta){
   const td=tipoDiaH(f),el=document.getElementById('hTipoDia');
   el.textContent=fer?(nombreFeriado(f)||'Feriado'):({laboral:'Día laboral',sabado:'Sábado',domingo:'Domingo'}[td]||'—');
   el.className='bg '+(fer||td==='sabado'||td==='domingo'?'bnar':'bgr');
+  barraH();
   if(document.getElementById('hTipo').value==='compensatorio'){if(soloEtiqueta!==true)calcCompH();return;}
   if(soloEtiqueta===true)return;
   const hrs=horasFueraH(f,document.getElementById('hDesde').value,document.getElementById('hHasta').value,fer);
@@ -6076,6 +6173,10 @@ function dlgOk(){
   if(o.campo.req&&!v){const e=document.getElementById('dlgErr');e.textContent=o.campo.err||'Este dato es obligatorio.';e.style.display='block';return;}
   dlgFin(v);
 }
+// (se inicia cuando ya cargó todo el script)
+setTimeout(()=>[['hDesde',['06:00','07:00','08:00','16:00','17:00']],['hHasta',['16:00','18:00','19:00','20:00','21:00','22:00']],
+ ['cDH',['08:00','10:00','12:00','13:00','14:00']],['cHH',['10:00','12:00','13:00','14:00','16:00']],
+ ['perDH',['08:00','09:00','10:00','12:00','13:00','14:00']],['perHH',['10:00','12:00','13:00','14:00','15:00','16:00']]].forEach(([id,c])=>selectorHora(id,c)),0);
 document.getElementById('dlgTxt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();dlgOk();}});
 // Pide un texto; devuelve el texto (puede ser '') o null si se cancela
 const pedirTexto=(tit,msg,campo,ok)=>dialogo({tit,msg,campo,ok});
@@ -6092,7 +6193,54 @@ function pistaFecha(inp){
   h.textContent=v?new Date(v+'T12:00:00').toLocaleDateString('es-PA',{weekday:'long',day:'numeric',month:'long',year:'numeric'}):'';
 }
 ['input','change'].forEach(ev=>document.addEventListener(ev,e=>{if(e.target?.type==='date')pistaFecha(e.target);}));
-function abrirM(id){const m=document.getElementById(id);m.classList.add('on');setTimeout(()=>m.querySelectorAll('input[type=date]').forEach(pistaFecha),0);}
+function abrirM(id){const m=document.getElementById(id);m.classList.add('on');setTimeout(()=>{m.querySelectorAll('input[type=date]').forEach(pistaFecha);m.querySelectorAll('input.hp-inp').forEach(hpRefrescar);},0);}
+
+// ── Selector de hora: botones con las horas más comunes y ±15 min (reemplaza el reloj del navegador).
+// El campo original sigue existiendo (oculto) y guarda el valor, así el resto del código no cambia.
+const minHora=t=>{const [h,m]=(t||'').split(':').map(Number);return h*60+m;};
+const txtHora=v=>{if(!v)return '';const m=((minHora(v)%1440)+1440)%1440,h=Math.floor(m/60),mm=m%60;return `${h%12||12}:${String(mm).padStart(2,'0')} ${h<12?'a. m.':'p. m.'}`;};
+const valHora=m=>{m=((m%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');};
+function selectorHora(id,chips){
+  const inp=document.getElementById(id);if(!inp||inp.dataset.hp)return;inp.dataset.hp='1';
+  const w=document.createElement('div');w.className='hp';
+  w.innerHTML=`<div class="hp-top"><button type="button" class="hp-b" data-d="-15" title="15 minutos antes" aria-label="15 minutos antes">−</button><button type="button" class="hp-v" title="Escribir otra hora"></button><button type="button" class="hp-b" data-d="15" title="15 minutos después" aria-label="15 minutos después">+</button></div>
+    <div class="hp-ch">${chips.map(c=>`<button type="button" class="hp-c" data-v="${c}">${txtHora(c)}</button>`).join('')}</div>`;
+  inp.after(w);inp.classList.add('hp-inp');
+  w.querySelectorAll('.hp-b').forEach(b=>b.onclick=()=>hpPoner(inp,valHora(minHora(inp.value||chips[Math.floor(chips.length/2)]||'08:00')+(inp.value?+b.dataset.d:0))));
+  w.querySelectorAll('.hp-c').forEach(b=>b.onclick=()=>hpPoner(inp,b.dataset.v));
+  w.querySelector('.hp-v').onclick=()=>{inp.classList.toggle('hp-ver');if(inp.classList.contains('hp-ver')){inp.focus();try{inp.showPicker?.();}catch(e){}}};
+  ['input','change'].forEach(ev=>inp.addEventListener(ev,()=>hpRefrescar(inp)));
+  hpRefrescar(inp);
+}
+function hpPoner(inp,v){inp.value=v;inp.dispatchEvent(new Event('change',{bubbles:true}));hpRefrescar(inp);}
+function hpRefrescar(inp){
+  const w=inp.nextElementSibling;if(!w||!w.classList.contains('hp'))return;
+  const v=w.querySelector('.hp-v');v.textContent=inp.value?txtHora(inp.value):'Elegir hora';v.classList.toggle('vac',!inp.value);
+  w.querySelectorAll('.hp-c').forEach(c=>c.classList.toggle('on',c.dataset.v===inp.value));
+  if(inp.id==='hDesde'||inp.id==='hHasta')barraH();
+}
+// Barra del día en Horas Extras: muestra qué parte cuenta como extra (art. 74) y el total calculado
+function barraH(){
+  const box=document.getElementById('hBarra');if(!box)return;
+  const f=document.getElementById('hFecha').value,de=document.getElementById('hDesde').value,ha=document.getElementById('hHasta').value,fer=document.getElementById('hFeriado').checked;
+  const laboral=tipoDiaH(f)==='laboral'&&!fer;
+  if(!de||!ha){const ant=parseFloat(document.getElementById('hHoras').value);box.innerHTML=`<div class="hb-nota">${ant>0&&document.getElementById('hId').value?`Registro anterior sin horario: ${fmtH(ant)}. Si marcas entrada y salida, el total se recalcula.`:'Marca la entrada y la salida: aquí verás qué parte cuenta como hora extra.'}</div>`;return;}
+  let ini=minHora(de),fin=minHora(ha);const sig=fin<=ini;if(sig)fin+=1440;
+  const A=Math.min(300,ini),B=Math.max(1440,fin),pc=m=>((m-A)/(B-A)*100).toFixed(2)+'%',w=(x,y)=>((y-x)/(B-A)*100).toFixed(2)+'%';
+  const seg=(x,y,c,t)=>y>x?`<div class="hb-seg ${c}" style="left:${pc(x)};width:${w(x,y)}" title="${t}"></div>`:'';
+  let segs='',nota=[];
+  if(!laboral)segs=seg(ini,fin,'si','Cuenta toda la jornada');
+  else{
+    const a=[ini,Math.min(fin,480)],d=[Math.max(ini,960),fin],j=[Math.max(ini,480),Math.min(fin,960)];
+    segs+=seg(j[0],j[1],'jor','Horario regular (8:00 a 4:00)');
+    [[a,'antes de las 8:00 a. m.'],[d,'después de las 4:00 p. m.']].forEach(([[x,y],t])=>{if(y>x){const ok=y-x>=60;segs+=seg(x,y,ok?'si':'no',ok?'Cuenta':'No cuenta: menos de 1 h');if(!ok)nota.push(`Los ${y-x} min ${t} no cuentan porque son menos de 1 hora (art. 74).`);}});
+  }
+  const hrs=horasFueraH(f,de,ha,fer)||0;
+  const ax=[[A,txtHora(valHora(A))],...(laboral?[[480,'8:00 a. m.'],[960,'4:00 p. m.']]:[]),[B,txtHora(valHora(B))]].map(([m,t],i,arr)=>`<span style="left:${pc(m)};${i===0?'transform:none':i===arr.length-1?'transform:translateX(-100%)':''}">${t}</span>`).join('');
+  box.innerHTML=`<div class="hb-tot"><span>Horas extra: <b>${hrs>0?fmtH(hrs):'0 h'}</b></span><span style="font-size:11px;color:var(--tm)">🔒 cálculo automático${sig?' · sale al día siguiente':''}</span></div>
+    <div class="hb-pista">${laboral?`<div class="hb-lab" style="left:${pc(480)};width:${w(480,960)}"></div>`:''}${segs}</div><div class="hb-ax">${ax}</div>
+    ${!laboral?`<div class="hb-nota">${fer?'Feriado':'Fin de semana'}: cuenta toda la jornada.</div>`:''}${nota.map(n=>`<div class="hb-nota">${n}</div>`).join('')}`;
+}
 function cerM(id){document.getElementById(id).classList.remove('on');}
 document.querySelectorAll('.mov').forEach(o=>o.addEventListener('click',e=>{if(e.target!==o)return;if(o.id==='mDlg')dlgFin(null);else o.classList.remove('on');}));
 document.addEventListener('keydown',e=>{
