@@ -24,7 +24,7 @@ const EXT_PUBLICAS = new Set([".png", ".jpg", ".jpeg", ".svg", ".ico", ".webp", 
 app.use((req, res, next) => {
   if (req.path === "/" || req.path === "/pedido" || req.path.startsWith("/api/")) return next();
   const ext = path.extname(req.path).toLowerCase();
-  const oculto = req.path.split("/").some(seg => seg.startsWith(".") || seg === "node_modules" || seg === "backups");
+  const oculto = req.path.split("/").some(seg => seg.startsWith(".") || seg === "node_modules" || seg === "backups" || seg === "adjuntos");
   if (EXT_PUBLICAS.has(ext) && !oculto) return next();
   res.status(404).end();
 });
@@ -252,6 +252,159 @@ app.post("/api/data", verificarToken, async (req, res) => {
     await escribirData(await conservarPermisos(aplicarReglasRol(req.body, actual, req.usuario?.nivel), actual)); res.json({ ok: true });
   }
   catch { res.status(500).json({ error: "No se pudo guardar" }); }
+});
+
+// ════════════════════════
+//  ADJUNTOS
+// ════════════════════════
+// Archivos del equipo (logos, plantillas, formularios, documentos). Van en MongoDB (GridFS), aparte del
+// documento de datos para no inflarlo; sin MongoDB, en la carpeta adjuntos/ y adjuntos.json.
+// No entran en el respaldo de /api/data. Lo pesado (videos, álbumes) se guarda como enlace a Drive.
+const ADJ_MAX = 10 * 1024 * 1024, ADJ_TOTAL = 400 * 1024 * 1024;
+const ADJ_CATS = ["Marca y logos", "Plantillas", "Formularios", "Documentos", "Fotos", "Otros"];
+const ADJ_TIPOS = {
+  pdf: "application/pdf", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", gif: "image/gif",
+  heic: "image/heic", svg: "image/svg+xml", ai: "application/postscript", eps: "application/postscript", psd: "image/vnd.adobe.photoshop",
+  doc: "application/msword", docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  xls: "application/vnd.ms-excel", xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ppt: "application/vnd.ms-powerpoint", pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  txt: "text/plain; charset=utf-8", csv: "text/csv; charset=utf-8", zip: "application/zip", mp3: "audio/mpeg", m4a: "audio/mp4",
+};
+const ADJ_EN_LINEA = new Set(["pdf", "png", "jpg", "jpeg", "webp", "gif"]);   // se abren en el navegador; el resto se descarga
+const AdjuntoSchema = new mongoose.Schema({ _id: String, meta: mongoose.Schema.Types.Mixed, fileId: mongoose.Schema.Types.ObjectId });
+const AdjuntoModel = mongoose.models.AppAdjunto || mongoose.model("AppAdjunto", AdjuntoSchema);
+const ADJ_DIR = path.join(__dirname, "adjuntos"), ADJ_FILE = path.join(__dirname, "adjuntos.json");
+const bucketAdj = () => new mongoose.mongo.GridFSBucket(mongoose.connection.db, { bucketName: "adjuntos" });
+
+async function listarAdj() {
+  if (!MONGO_URI) return leerJSONLocal(ADJ_FILE, []);
+  return (await AdjuntoModel.find({}).lean()).map(d => d.meta);
+}
+async function guardarAdj(meta, buf) {
+  if (!MONGO_URI) {
+    if (buf) { fs.mkdirSync(ADJ_DIR, { recursive: true }); fs.writeFileSync(path.join(ADJ_DIR, meta.id), buf); }
+    const arr = leerJSONLocal(ADJ_FILE, []).filter(a => a.id !== meta.id);
+    fs.writeFileSync(ADJ_FILE, JSON.stringify([meta, ...arr], null, 2)); return;
+  }
+  if (!buf) { await AdjuntoModel.updateOne({ _id: meta.id }, { meta }, { upsert: true }); return; }
+  const sube = bucketAdj().openUploadStream(meta.id, { metadata: { adjunto: meta.id } });
+  await new Promise((ok, mal) => sube.once("finish", ok).once("error", mal).end(buf));
+  await AdjuntoModel.create({ _id: meta.id, meta, fileId: sube.id });
+}
+async function borrarAdj(id) {
+  if (!MONGO_URI) {
+    fs.rmSync(path.join(ADJ_DIR, id), { force: true });
+    fs.writeFileSync(ADJ_FILE, JSON.stringify(leerJSONLocal(ADJ_FILE, []).filter(a => a.id !== id), null, 2)); return;
+  }
+  const doc = await AdjuntoModel.findById(id).lean();
+  if (doc?.fileId) await bucketAdj().delete(doc.fileId).catch(() => {});
+  await AdjuntoModel.deleteOne({ _id: id });
+}
+async function leerArchivoAdj(id) {
+  if (!MONGO_URI) { const f = path.join(ADJ_DIR, id); return fs.existsSync(f) ? fs.createReadStream(f) : null; }
+  const doc = await AdjuntoModel.findById(id).lean();
+  return doc?.fileId ? bucketAdj().openDownloadStream(doc.fileId) : null;
+}
+
+const textoAdj = (v, max) => String(v == null ? "" : v).replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
+function metaEditable(b) {
+  const categoria = ADJ_CATS.includes(b.categoria) ? b.categoria : "Otros";
+  return { nombre: textoAdj(b.nombre, 120), categoria, tareaId: textoAdj(b.tareaId, 40), nota: textoAdj(b.nota, 300) };
+}
+// Quien sube puede editar o borrar lo suyo; Líder y Editor, cualquier adjunto.
+const puedeTocarAdj = (u, a) => ["lider", "editor"].includes(u?.nivel) || a?.subidoPorId === u?.id;
+async function escritorAdj(req, res) {
+  if (req.usuario?.nivel === "lector") { res.status(403).json({ error: "Solo lectura" }); return null; }
+  const regreso = await regresoSiAusente(req.usuario?.id, req.usuario?.nivel);
+  if (regreso) { res.status(403).json({ error: msgAusente(regreso) }); return null; }
+  const data = await leerData();
+  return (data.equipo || []).find(p => p.id === req.usuario?.id)?.nombre || req.usuario?.email || "—";
+}
+// Cada archivo se abre con un enlace firmado de pocas horas: así sirve en <img>, en otra pestaña o en el celular sin enviar la sesión.
+const conEnlaceAdj = a => a.enlace ? a : { ...a, url: `/api/adjuntos/${encodeURIComponent(a.id)}/archivo?t=${jwt.sign({ adj: a.id }, JWT_SECRET, { expiresIn: "12h" })}` };
+
+app.get("/api/adjuntos", verificarToken, async (req, res) => {
+  try {
+    const lista = await listarAdj();
+    res.json({ adjuntos: lista.map(conEnlaceAdj), usado: lista.reduce((s, a) => s + (a.tamano || 0), 0), limite: ADJ_TOTAL, maximo: ADJ_MAX, categorias: ADJ_CATS });
+  } catch { res.status(500).json({ error: "No se pudieron leer los adjuntos" }); }
+});
+const cuerpoArchivo = (req, res, next) => express.raw({ type: () => true, limit: ADJ_MAX })(req, res, err =>
+  err ? res.status(err.type === "entity.too.large" ? 413 : 400).json({ error: err.type === "entity.too.large" ? "El archivo pasa de 10 MB. Súbelo a Drive y agrega el enlace." : "No se pudo leer el archivo." }) : next());
+app.post("/api/adjuntos/archivo", verificarToken, cuerpoArchivo, async (req, res) => {
+  try {
+    const autor = await escritorAdj(req, res); if (!autor) return;
+    const archivo = textoAdj(req.query.archivo, 160), ext = path.extname(archivo).slice(1).toLowerCase();
+    if (!ADJ_TIPOS[ext]) return res.status(400).json({ error: `No se aceptan archivos .${ext || "sin extensión"}. Usa PDF, imágenes, Word, Excel, PowerPoint, Illustrator, Photoshop, ZIP o audio.` });
+    const buf = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
+    if (!buf.length) return res.status(400).json({ error: "El archivo está vacío." });
+    const lista = await listarAdj(), usado = lista.reduce((s, a) => s + (a.tamano || 0), 0);
+    if (usado + buf.length > ADJ_TOTAL) return res.status(413).json({ error: "Se llenó el espacio de adjuntos (400 MB). Borra archivos que ya no se usan o guarda los grandes en Drive como enlace." });
+    const m = metaEditable({ ...req.query, nombre: req.query.nombre || archivo.replace(/\.[^.]+$/, "") });
+    const meta = { id: Date.now().toString(36) + require("crypto").randomBytes(4).toString("hex"), ...m, nombre: m.nombre || archivo,
+      archivo, ext, tamano: buf.length, subidoPor: autor, subidoPorId: req.usuario.id, subidoEn: hoyPanama() };
+    await guardarAdj(meta, buf);
+    res.json({ ok: true, adjunto: conEnlaceAdj(meta) });
+  } catch { res.status(500).json({ error: "No se pudo guardar el archivo. Intenta de nuevo." }); }
+});
+app.post("/api/adjuntos/enlace", verificarToken, async (req, res) => {
+  try {
+    const autor = await escritorAdj(req, res); if (!autor) return;
+    const enlace = textoAdj(req.body?.enlace, 600);
+    if (!/^https?:\/\/[^\s]+\.[^\s]+/i.test(enlace)) return res.status(400).json({ error: "Pega un enlace completo, que empiece con https://" });
+    const m = metaEditable(req.body || {});
+    if (!m.nombre) return res.status(400).json({ error: "Escribe un nombre para el enlace." });
+    const meta = { id: Date.now().toString(36) + require("crypto").randomBytes(4).toString("hex"), ...m, enlace,
+      subidoPor: autor, subidoPorId: req.usuario.id, subidoEn: hoyPanama() };
+    await guardarAdj(meta);
+    res.json({ ok: true, adjunto: meta });
+  } catch { res.status(500).json({ error: "No se pudo guardar el enlace." }); }
+});
+app.patch("/api/adjuntos/:id", verificarToken, async (req, res) => {
+  try {
+    if (!await escritorAdj(req, res)) return;
+    const a = (await listarAdj()).find(x => x.id === req.params.id);
+    if (!a) return res.status(404).json({ error: "Ese adjunto ya no existe." });
+    if (!puedeTocarAdj(req.usuario, a)) return res.status(403).json({ error: "Solo quien lo subió, el Editor o el Líder pueden cambiarlo." });
+    const m = metaEditable({ ...a, ...req.body });
+    if (!m.nombre) return res.status(400).json({ error: "Escribe un nombre." });
+    const meta = { ...a, ...m };
+    if (a.enlace && req.body?.enlace !== undefined) {
+      const enlace = textoAdj(req.body.enlace, 600);
+      if (!/^https?:\/\/[^\s]+\.[^\s]+/i.test(enlace)) return res.status(400).json({ error: "Pega un enlace completo, que empiece con https://" });
+      meta.enlace = enlace;
+    }
+    await guardarAdj(meta);
+    res.json({ ok: true, adjunto: conEnlaceAdj(meta) });
+  } catch { res.status(500).json({ error: "No se pudo guardar el cambio." }); }
+});
+app.delete("/api/adjuntos/:id", verificarToken, async (req, res) => {
+  try {
+    if (!await escritorAdj(req, res)) return;
+    const a = (await listarAdj()).find(x => x.id === req.params.id);
+    if (!a) return res.json({ ok: true });
+    if (!puedeTocarAdj(req.usuario, a)) return res.status(403).json({ error: "Solo quien lo subió, el Editor o el Líder pueden borrarlo." });
+    await borrarAdj(a.id);
+    res.json({ ok: true });
+  } catch { res.status(500).json({ error: "No se pudo borrar." }); }
+});
+app.get("/api/adjuntos/:id/archivo", async (req, res) => {
+  try {
+    let ok = false;
+    try { ok = jwt.verify(String(req.query.t || ""), JWT_SECRET).adj === req.params.id; } catch {}
+    if (!ok) return res.status(401).send("Este enlace venció. Vuelve a abrir el archivo desde el dashboard.");
+    const a = (await listarAdj()).find(x => x.id === req.params.id && !x.enlace);
+    const flujo = a && await leerArchivoAdj(a.id);
+    if (!flujo) return res.status(404).send("Ese archivo ya no existe.");
+    const ascii = a.archivo.normalize("NFD").replace(/[^\w.\- ]/g, "_");
+    res.set({
+      "Content-Type": ADJ_TIPOS[a.ext] || "application/octet-stream",
+      "Content-Disposition": `${ADJ_EN_LINEA.has(a.ext) ? "inline" : "attachment"}; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(a.archivo)}`,
+      "X-Content-Type-Options": "nosniff", "Cache-Control": "private, max-age=3600",
+    });
+    if (a.tamano) res.set("Content-Length", String(a.tamano));
+    flujo.on("error", () => res.destroy()).pipe(res);
+  } catch { res.status(500).send("No se pudo abrir el archivo."); }
 });
 
 // ════════════════════════

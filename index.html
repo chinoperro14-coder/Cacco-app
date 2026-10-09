@@ -634,6 +634,28 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 /* PRENSA */
 .np-m{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px;cursor:pointer;border-bottom:1px solid var(--bo);}
 .np-m:last-child{border-bottom:none;}
+.adj-bar{display:inline-block;vertical-align:middle;width:90px;height:6px;border-radius:3px;background:var(--bo);overflow:hidden;margin-left:6px}
+.adj-bar span{display:block;height:100%;border-radius:3px}
+.adj-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.adj-chip{font:inherit;font-size:12px;font-weight:600;padding:5px 11px;border-radius:16px;border:1.5px solid var(--bo);background:var(--su);color:var(--tx);cursor:pointer}
+.adj-chip span{color:var(--tm);font-weight:500;margin-left:2px}
+.adj-chip.on{border-color:var(--na);background:var(--nas,#fff4ee);color:var(--na)}
+.adj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.adj-card{display:flex;gap:12px;background:var(--su);border:1px solid var(--bo);border-radius:var(--r);padding:12px;box-shadow:var(--sh)}
+.adj-prev{flex-shrink:0;width:64px;height:64px;border-radius:8px;background:var(--fo);border:1px solid var(--bo);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;text-decoration:none;color:var(--tm)}
+.adj-prev img{width:100%;height:100%;object-fit:cover}
+.adj-prev span{font-size:26px;line-height:1}
+.adj-prev b{font-size:9px;letter-spacing:.5px;margin-top:3px}
+.adj-info{flex:1;min-width:0}
+.adj-nom{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adj-zona{display:block;border:2px dashed var(--bo);border-radius:10px;padding:18px 14px;text-align:center;font-size:13px;cursor:pointer;color:var(--tx)}
+.adj-zona:hover,.adj-zona.sobre{border-color:var(--na);background:var(--nas,#fff4ee)}
+.adj-fi{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--bo);border-radius:8px;margin-top:6px;font-size:13px}
+.adj-fi.mal{border-color:var(--ro);background:var(--ros)}
+.adj-fi.mal .md-s{color:var(--ro);font-weight:600}
+.adj-mini{display:inline-flex;align-items:center;gap:5px;max-width:100%;padding:4px 10px;border:1px solid var(--bo);border-radius:14px;font-size:12px;color:var(--tx);text-decoration:none;background:var(--fo)}
+.adj-mini:hover{border-color:var(--na)}
+#vAdjuntos.sobre{outline:2px dashed var(--na);outline-offset:6px;border-radius:var(--r)}
 </style>
 </head>
 <body>
@@ -741,6 +763,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <button class="ni" onclick="goV('compensatorio',this)"><span class="ico">🌴</span>Compensatorio<span class="ct" id="ctC">0</span></button>
   <button class="ni" onclick="goV('permisos',this)"><span class="ico">📝</span>Permisos<span class="ct" id="ctP">0</span></button>
   <button class="ni" onclick="goV('equipo',this)"><span class="ico">👥</span>Equipo</button>
+  <button class="ni npriv" onclick="goV('adjuntos',this)"><span class="ico">📎</span>Adjuntos</button>
   <div class="nsep ned oculto">Coordinación</div>
   <button class="ni nle ned oculto" onclick="goV('reportes',this)"><span class="ico">📊</span>Reportes</button>
   <button class="ni nle oculto" onclick="goV('historico',this)"><span class="ico">🗂️</span>Histórico</button>
@@ -1114,6 +1137,18 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <button class="rtab" id="prTabDir" onclick="prTab='dir';renderPrensa()">Directorio de medios</button>
   </div>
   <div id="prCont"></div>
+</div>
+
+<!-- ADJUNTOS -->
+<div id="vAdjuntos" class="oculto" ondragover="if(event.dataTransfer?.types?.includes('Files')){event.preventDefault();this.classList.add('sobre')}" ondragleave="if(!this.contains(event.relatedTarget))this.classList.remove('sobre')" ondrop="adjSoltarVista(event)">
+  <div class="sh2">
+    <div><div class="stit">📎 Adjuntos</div><div style="font-size:13px;color:var(--tm);margin-top:3px" id="adjUso">Logos, plantillas, formularios y documentos del equipo</div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap" id="adjSubir">
+      <button class="btn bgh bsm" onclick="abrirMAdj({modo:'enlace'})">🔗 Enlace</button>
+      <button class="btn bna bsm" onclick="abrirMAdj()">+ Subir archivo</button>
+    </div>
+  </div>
+  <div id="adjCont"></div>
 </div>
 
 <!-- PERFIL -->
@@ -1522,6 +1557,35 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <div class="fg"><label class="fl">Notas</label><textarea class="fc" id="meNotas" rows="2" placeholder="ej. Prefiere recibir notas por WhatsApp antes de las 10 a. m."></textarea></div>
   </div>
   <div class="mpie"><button class="btn bgh" id="meElim" style="margin-right:auto;color:var(--ro);display:none" onclick="elimMedio()">🗑 Eliminar</button><button class="btn bgh" onclick="cerM('mMedio')">Cancelar</button><button class="btn bna" onclick="guardarMedio()">Guardar</button></div>
+</div></div>
+
+<!-- MODAL ADJUNTO -->
+<div class="mov" id="mAdj"><div class="mo">
+  <div class="mcab"><div class="mtit" id="mAdjTit">Agregar adjunto</div><button class="mx" onclick="cerM('mAdj')">×</button></div>
+  <div class="mbody">
+    <input type="hidden" id="adjId">
+    <div class="rtabs" id="adjTabs" style="margin-bottom:14px">
+      <button class="rtab on" id="adjTabArch" onclick="adjSetModo('archivo')">📄 Archivo</button>
+      <button class="rtab" id="adjTabEnl" onclick="adjSetModo('enlace')">🔗 Enlace de Drive</button>
+    </div>
+    <div class="fg" id="adjZona">
+      <label class="adj-zona" ondragover="event.preventDefault();this.classList.add('sobre')" ondragleave="this.classList.remove('sobre')" ondrop="adjSoltarZona(event)">
+        <input type="file" id="adjFile" multiple style="display:none" onchange="adjElegir(this.files)">
+        <span id="adjZonaTxt"></span>
+      </label>
+      <div id="adjSel"></div>
+    </div>
+    <div class="fg" id="adjActual" style="font-size:13px;color:var(--tm)"></div>
+    <div class="fg" id="adjEnlBlk"><label class="fl">Enlace *</label><input type="url" class="fc" id="adjEnl" placeholder="https://drive.google.com/…"><div class="md-s" style="margin-top:4px">Para videos, álbumes de fotos o lo que pase de 10 MB. Revisa que el enlace esté compartido con el equipo.</div></div>
+    <div class="fg" id="adjNomBlk"><label class="fl">Nombre</label><input type="text" class="fc" id="adjNom" maxlength="120"></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Categoría</label><select class="fc" id="adjCatSel" onchange="adjCatTocada=true"></select></div>
+      <div class="fg"><label class="fl">Tarea relacionada</label><select class="fc" id="adjTarea"></select></div>
+    </div>
+    <div class="fg"><label class="fl">Nota</label><input type="text" class="fc" id="adjNota" maxlength="300" placeholder="ej. Versión aprobada por Dirección"></div>
+    <div id="adjProg" style="font-size:13px;color:var(--na);font-weight:600"></div>
+  </div>
+  <div class="mpie"><button class="btn bgh" id="adjElim" style="margin-right:auto;color:var(--ro);display:none" onclick="elimAdj()">🗑 Borrar</button><button class="btn bgh" onclick="cerM('mAdj')">Cancelar</button><button class="btn bna" id="adjOk" onclick="guardarAdj()">Subir</button></div>
 </div></div>
 
 <!-- MODAL NOTA DE PRENSA ENVIADA -->
@@ -1953,9 +2017,11 @@ function iniciarApp(){
 
   renderTodo();
   irInicio();
+  cargarAdj();
 }
 
 function cerrarSes(){
+  ADJ.lista=[];ADJ.cargado=false;
   uAct=null;niv=null;expandidas.clear();
   localStorage.removeItem('cacco_token');
   document.getElementById('appMain').classList.add('oculto');
@@ -1976,14 +2042,14 @@ function limpNotifs(){E.notifs=[];renderNotifs();document.getElementById('notifP
 // ════════════════════════
 //  NAVEGACIÓN
 // ════════════════════════
-const VISTAS=['MiDia','Prensa','Tareas','Aprobaciones','Calendario','HorasExtra','Compensatorio','Permisos','Equipo','Reportes','Historico','Bitacora','Perfil','CalPub','Asignaciones','AsigVarias'];
+const VISTAS=['MiDia','Prensa','Adjuntos','Tareas','Aprobaciones','Calendario','HorasExtra','Compensatorio','Permisos','Equipo','Reportes','Historico','Bitacora','Perfil','CalPub','Asignaciones','AsigVarias'];
 function goV(v,el){
   cerrarSid();
   if(v==='reportes'&&!puede('verReportes')){alert('Sin permiso.');return;}
   if(v==='historico'&&!puede('verReportes')){alert('Sin permiso.');return;}
   if(v==='bitacora'&&!puede('verBitacora')){alert('Sin permiso.');return;}
   if(v==='aprobaciones'&&!puede('aprobarHora')){alert('Sin permiso.');return;}
-  if((v==='prensa'||v==='miDia')&&niv==='lector'){alert('Sin permiso.');return;}
+  if((v==='prensa'||v==='miDia'||v==='adjuntos')&&niv==='lector'){alert('Sin permiso.');return;}
   VISTAS.forEach(n=>document.getElementById('v'+n).classList.add('oculto'));
   document.getElementById('v'+v.charAt(0).toUpperCase()+v.slice(1)).classList.remove('oculto');
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
@@ -1991,6 +2057,7 @@ function goV(v,el){
   if(v==='reportes')generarRep();
   if(v==='miDia')renderMiDia();
   if(v==='prensa')renderPrensa();
+  if(v==='adjuntos'){renderAdjuntos();cargarAdj();}
   if(v==='bitacora')renderBit();
   if(v==='calendario')renderCal();
   if(v==='equipo')renderEquipo();
@@ -2621,6 +2688,7 @@ function renderTareas(){
           ${etiqH}
           ${!abierta&&ents.length?entHTML:''}
           ${pubsBadge}
+          ${!abierta&&adjDeTarea(t.id).length?`<span class="bg bgr" style="font-size:10px">📎 ${adjDeTarea(t.id).length}</span>`:''}
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <div class="tprog" style="width:100px"><div class="tpfill" style="width:${pct}%;background:${cardColor}"></div></div>
@@ -2632,6 +2700,7 @@ function renderTareas(){
         ${seccionesHTML}
         ${abierta?entHTML:''}
         ${pubsBlockHTML}
+        ${abierta?adjBloqueTarea(t):''}
         ${acciones}
       </div>
     </div>`;
@@ -7548,6 +7617,178 @@ ${gente.length?tabla(['Persona','<span class="n">Áreas completadas</span>','<sp
 <div class="firmas"><div>Elaborado por<br>Jefatura de Comunicaciones</div><div>Recibido por<br>Dirección</div></div>
 </body></html>`;
   mostrarDocumento(html,`📄 Informe mensual · ${Mes}`,`Informe_Comunicaciones_CACCO_${ym}.html`);
+}
+
+// ════════════════════════
+//  ADJUNTOS
+// ════════════════════════
+// Archivos y enlaces del equipo. Viven en el servidor aparte de los datos (/api/adjuntos), no en E.
+const ADJ={lista:[],usado:0,limite:400*1048576,maximo:10*1048576,cats:['Marca y logos','Plantillas','Formularios','Documentos','Fotos','Otros'],cargado:false};
+const ADJ_EXT=['pdf','png','jpg','jpeg','webp','gif','heic','svg','ai','eps','psd','doc','docx','xls','xlsx','ppt','pptx','txt','csv','zip','mp3','m4a'];
+const ADJ_IMG=['png','jpg','jpeg','webp','gif'];
+const ADJ_CAT_ICO={'Marca y logos':'🎨','Plantillas':'🧩','Formularios':'📝','Documentos':'📄','Fotos':'🖼️','Otros':'📦'};
+let adjBusca='',adjCat='',adjArchivos=[],adjModo='archivo',adjCatTocada=false;
+const fmtTam=b=>!b?'':b<1048576?Math.max(1,Math.round(b/1024))+' KB':(b/1048576).toFixed(b<10485760?1:0).replace('.',',')+' MB';
+function adjIco(a){
+  if(a.enlace){const u=a.enlace.toLowerCase();return u.includes('drive.google')||u.includes('docs.google')?'🟢':u.includes('dropbox')?'🔷':u.includes('wetransfer')?'📤':u.includes('youtu')?'▶️':'🔗';}
+  const e=a.ext||'';
+  return e==='pdf'?'📕':ADJ_IMG.includes(e)||e==='heic'?'🖼️':['ai','eps','psd','svg'].includes(e)?'🎨':['doc','docx','txt'].includes(e)?'📘':['xls','xlsx','csv'].includes(e)?'📗':['ppt','pptx'].includes(e)?'📙':e==='zip'?'🗜️':['mp3','m4a'].includes(e)?'🎵':'📄';
+}
+const adjDeTarea=id=>ADJ.lista.filter(a=>a.tareaId===id);
+const puedeSubirAdj=()=>!!uAct&&niv!=='lector';
+const puedeTocarAdj=a=>['lider','editor'].includes(niv)||a.subidoPorId===uAct?.id;
+const adjHref=a=>a.enlace?enlace(a.enlace):a.url||'#';
+async function adjApi(url,opt={}){
+  const r=await fetch(url,{...opt,headers:{...(opt.headers||{}),'Authorization':'Bearer '+getToken()}});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(j.error||(r.status===413?'El archivo pasa de 10 MB. Súbelo a Drive y agrega el enlace.':'No se pudo completar. Revisa tu conexión e intenta de nuevo.'));
+  return j;
+}
+async function cargarAdj(){
+  if(!getToken()||niv==='lector')return;
+  try{
+    const j=await adjApi('/api/adjuntos');
+    Object.assign(ADJ,{lista:j.adjuntos||[],usado:j.usado||0,limite:j.limite||ADJ.limite,maximo:j.maximo||ADJ.maximo,cats:j.categorias||ADJ.cats,cargado:true});
+  }catch(e){ADJ.error=e.message;}
+  if(visible('vAdjuntos'))renderAdjuntos();
+  if(visible('vTareas')&&expandidas.size)renderTareas();
+}
+function renderAdjuntos(){
+  const cont=document.getElementById('adjCont');if(!cont)return;
+  document.getElementById('adjSubir').style.display=puedeSubirAdj()?'':'none';
+  const pct=Math.min(100,Math.round(ADJ.usado/ADJ.limite*100));
+  document.getElementById('adjUso').innerHTML=ADJ.cargado?`${plu(ADJ.lista.filter(a=>!a.enlace).length,'archivo','archivos')} y ${plu(ADJ.lista.filter(a=>a.enlace).length,'enlace','enlaces')} · ${fmtTam(ADJ.usado)||'0 MB'} de ${fmtTam(ADJ.limite)} usados
+    <span class="adj-bar"><span style="width:${pct}%;background:${pct>=90?'var(--ro)':pct>=70?'var(--am)':'var(--ve)'}"></span></span>`:'';
+  if(!ADJ.cargado){cont.innerHTML=`<div style="padding:36px 20px;text-align:center;color:var(--tm);font-size:13px">${ADJ.error?escH(ADJ.error):'Cargando adjuntos…'}</div>`;return;}
+  const cuenta=c=>ADJ.lista.filter(a=>a.categoria===c).length;
+  const q=adjBusca.trim().toLowerCase();
+  const tarea=id=>id&&E.tareas.find(t=>t.id===id);
+  const vis=ADJ.lista.filter(a=>(!adjCat||a.categoria===adjCat)&&(!q||[a.nombre,a.archivo,a.nota,a.subidoPor,a.categoria,tarea(a.tareaId)?.titulo].join(' ').toLowerCase().includes(q)))
+    .sort((a,b)=>(b.subidoEn||'').localeCompare(a.subidoEn||'')||(b.id||'').localeCompare(a.id||''));
+  const chips=[['','Todos',ADJ.lista.length],...ADJ.cats.map(c=>[c,`${ADJ_CAT_ICO[c]||''} ${c}`,cuenta(c)])].filter(([c,,n])=>!c||n||c===adjCat)
+    .map(([c,l,n])=>`<button class="adj-chip${c===adjCat?' on':''}" onclick="adjCat='${c}';renderAdjuntos()">${l} <span>${n}</span></button>`).join('');
+  const tarj=a=>{const t=tarea(a.tareaId),img=!a.enlace&&ADJ_IMG.includes(a.ext)&&a.tamano<3145728&&a.url;
+    return `<div class="adj-card">
+      <a class="adj-prev" href="${escH(adjHref(a))}" target="_blank" rel="noopener" title="Abrir">${img?`<img src="${escH(a.url)}" alt="" loading="lazy">`:`<span>${adjIco(a)}</span>${a.ext?`<b>${escH(a.ext.toUpperCase())}</b>`:''}`}</a>
+      <div class="adj-info">
+        <div class="adj-nom" title="${escH(a.archivo||a.enlace||'')}">${escH(a.nombre)}</div>
+        <div class="md-s">${ADJ_CAT_ICO[a.categoria]||''} ${escH(a.categoria)} · ${a.enlace?'Enlace':fmtTam(a.tamano)}</div>
+        <div class="md-s">${escH((a.subidoPor||'').split(' ')[0])} · ${fmt(a.subidoEn)}</div>
+        ${t?`<div class="md-s">📋 <a style="color:var(--az);cursor:pointer" onclick="irATarea('${t.id}')">${escH(t.titulo)}</a></div>`:''}
+        ${a.nota?`<div class="md-s" style="margin-top:2px">📝 ${escH(a.nota)}</div>`:''}
+        <div style="display:flex;gap:5px;margin-top:8px;flex-wrap:wrap">
+          <a class="btn bgh bsm" href="${escH(adjHref(a))}" target="_blank" rel="noopener"${!a.enlace&&a.ext&&!['pdf',...ADJ_IMG].includes(a.ext)?` download="${escH(a.archivo)}"`:''}>${a.enlace?'Abrir enlace':['pdf',...ADJ_IMG].includes(a.ext)?'Abrir':'⬇️ Descargar'}</a>
+          ${puedeTocarAdj(a)?`<button class="btn bgh bsm" onclick="abrirMAdj({id:'${a.id}'})" title="Editar">✏️</button>`:''}
+        </div>
+      </div></div>`;};
+  cont.innerHTML=`<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+      <input type="search" class="fc" placeholder="Buscar por nombre, nota, tarea o quién lo subió…" value="${escH(adjBusca)}" oninput="adjBusca=this.value;adjFiltrar()" id="adjQ" style="flex:1;min-width:200px;max-width:380px;padding:7px 12px;font-size:13px">
+    </div>
+    <div class="adj-chips">${chips}</div>
+    <div id="adjLista">${vis.length?`<div class="adj-grid">${vis.map(tarj).join('')}</div>`
+      :`<div style="padding:36px 20px;text-align:center;color:var(--tm)"><div style="font-size:34px;margin-bottom:8px">📎</div><div style="font-size:14px;font-weight:600">${ADJ.lista.length?'Nada coincide con la búsqueda.':'Todavía no hay adjuntos.'}</div>${ADJ.lista.length?'':`<div style="font-size:13px;margin-top:4px">Sube aquí logos, plantillas, formularios y documentos que el equipo usa seguido. Puedes arrastrar los archivos a esta página.</div>`}</div>`}</div>`;
+}
+let adjT;function adjFiltrar(){clearTimeout(adjT);adjT=setTimeout(()=>{renderAdjuntos();const q=document.getElementById('adjQ');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length);}},180);}
+function adjCatSugerida(f){
+  const e=(f.name.split('.').pop()||'').toLowerCase();
+  return ['ai','eps','psd','svg'].includes(e)?'Marca y logos':ADJ_IMG.includes(e)||e==='heic'?'Fotos':['ppt','pptx'].includes(e)?'Plantillas':['pdf','doc','docx','xls','xlsx','csv','txt'].includes(e)?'Documentos':'Otros';
+}
+// o: {id} para editar, {tareaId} para adjuntar a una tarea, {archivos} si llegaron arrastrados
+function abrirMAdj(o={}){
+  if(!puedeSubirAdj()){alert('Sin permiso.');return;}
+  const a=o.id?ADJ.lista.find(x=>x.id===o.id):null,$=k=>document.getElementById(k);
+  if(o.id&&!a)return;
+  $('adjId').value=a?.id||'';adjArchivos=o.archivos?[...o.archivos]:[];adjCatTocada=!!a;
+  adjModo=a?(a.enlace?'enlace':'archivo'):(o.modo||'archivo');
+  $('mAdjTit').textContent=a?(a.enlace?'Editar enlace':'Editar archivo'):o.tareaId?'Adjuntar a la tarea':'Agregar adjunto';
+  $('adjNom').value=a?.nombre||'';$('adjEnl').value=a?.enlace||'';$('adjNota').value=a?.nota||'';$('adjFile').value='';
+  $('adjCatSel').innerHTML=ADJ.cats.map(c=>`<option${c===(a?.categoria||'Documentos')?' selected':''}>${c}</option>`).join('');
+  const ts=E.tareas.filter(t=>!t.borrador).sort((x,y)=>(y.fecha||'').localeCompare(x.fecha||'')).slice(0,150),sel=a?.tareaId||o.tareaId||'';
+  $('adjTarea').innerHTML='<option value="">— Sin vincular —</option>'+ts.map(t=>`<option value="${t.id}"${t.id===sel?' selected':''}>${escH(t.titulo)}${t.fecha?' · '+fmtPubFecha(t.fecha):''}</option>`).join('');
+  $('adjTabs').style.display=a?'none':'';$('adjActual').innerHTML=a&&!a.enlace?`${adjIco(a)} ${escH(a.archivo)} · ${fmtTam(a.tamano)}`:'';
+  $('adjElim').style.display=a&&puedeTocarAdj(a)?'':'none';
+  $('adjProg').textContent='';$('adjOk').disabled=false;
+  adjPintarModo();abrirM('mAdj');
+}
+function adjSetModo(m){adjModo=m;adjPintarModo();}
+function adjPintarModo(){
+  const $=k=>document.getElementById(k),ed=!!$('adjId').value,arch=adjModo==='archivo';
+  $('adjTabArch').classList.toggle('on',arch);$('adjTabEnl').classList.toggle('on',!arch);
+  $('adjZona').style.display=arch&&!ed?'':'none';$('adjActual').style.display=arch&&ed?'':'none';$('adjEnlBlk').style.display=arch?'none':'';
+  // Con varios archivos cada uno conserva su nombre
+  $('adjNomBlk').style.display=arch&&!ed&&adjArchivos.length>1?'none':'';
+  $('adjNom').placeholder=arch?'Si lo dejas vacío, se usa el nombre del archivo':'ej. Fotos del Festival de Danza (Drive)';
+  $('adjSel').innerHTML=adjArchivos.length?adjArchivos.map((f,i)=>{const e=(f.name.split('.').pop()||'').toLowerCase(),mal=!ADJ_EXT.includes(e)?'tipo no aceptado':f.size>ADJ.maximo?'pasa de 10 MB':'';
+      return `<div class="adj-fi${mal?' mal':''}"><span>${adjIco({ext:e})}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escH(f.name)}</span><span class="md-s">${mal||fmtTam(f.size)}</span><button class="mx" style="font-size:16px" onclick="adjQuitar(${i})" title="Quitar">×</button></div>`;}).join('')
+    :'';
+  $('adjZonaTxt').innerHTML=adjArchivos.length?'➕ Agregar más archivos':'<b>Elige archivos</b> o arrástralos aquí<br><span class="md-s">PDF, imágenes, Word, Excel, PowerPoint, Illustrator, Photoshop, ZIP o audio · hasta 10 MB cada uno</span>';
+  $('adjOk').textContent=ed?'Guardar':arch?(adjArchivos.length>1?`Subir ${adjArchivos.length} archivos`:'Subir'):'Guardar enlace';
+  if(arch&&!ed&&!adjCatTocada&&adjArchivos.length)$('adjCatSel').value=adjCatSugerida(adjArchivos[0]);
+}
+function adjElegir(files){adjArchivos=[...adjArchivos,...files];document.getElementById('adjFile').value='';adjPintarModo();}
+function adjQuitar(i){adjArchivos.splice(i,1);adjPintarModo();}
+function adjSoltarZona(ev){ev.preventDefault();ev.currentTarget.classList.remove('sobre');if(ev.dataTransfer?.files?.length)adjElegir(ev.dataTransfer.files);}
+// Arrastrar archivos sobre la sección abre el formulario con ellos
+function adjSoltarVista(ev){
+  if(!ev.dataTransfer?.files?.length)return;ev.preventDefault();
+  document.getElementById('vAdjuntos').classList.remove('sobre');
+  if(document.getElementById('mAdj').classList.contains('on'))return;
+  abrirMAdj({archivos:ev.dataTransfer.files});
+}
+async function guardarAdj(){
+  const $=k=>document.getElementById(k),id=$('adjId').value,btn=$('adjOk'),prog=$('adjProg');
+  const comun={nombre:$('adjNom').value.trim(),categoria:$('adjCatSel').value,tareaId:$('adjTarea').value,nota:$('adjNota').value.trim()};
+  const enl=$('adjEnl').value.trim();
+  try{
+    btn.disabled=true;
+    if(id){
+      const a=ADJ.lista.find(x=>x.id===id);
+      if(!comun.nombre)throw new Error('Escribe un nombre.');
+      await adjApi('/api/adjuntos/'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(a?.enlace?{...comun,enlace:enl}:comun)});
+      reg('Adjunto editado',comun.nombre);
+    }else if(adjModo==='enlace'){
+      if(!/^https?:\/\//i.test(enl))throw new Error('Pega el enlace completo, que empiece con https://');
+      if(!comun.nombre)throw new Error('Escribe un nombre para el enlace.');
+      await adjApi('/api/adjuntos/enlace',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...comun,enlace:enl})});
+      reg('Enlace agregado a Adjuntos',comun.nombre);
+    }else{
+      if(!adjArchivos.length)throw new Error('Elige al menos un archivo.');
+      const malos=adjArchivos.filter(f=>!ADJ_EXT.includes((f.name.split('.').pop()||'').toLowerCase())||f.size>ADJ.maximo);
+      if(malos.length)throw new Error(`Quita ${malos.length===1?'el archivo marcado en rojo':'los archivos marcados en rojo'}: ${malos.length===1?'no se puede':'no se pueden'} subir. Lo que pase de 10 MB, súbelo a Drive y agrégalo como enlace.`);
+      const fallos=[];let n=0;
+      for(const f of adjArchivos){
+        n++;prog.textContent=adjArchivos.length>1?`Subiendo ${n} de ${adjArchivos.length}: ${f.name}…`:`Subiendo ${f.name}…`;
+        // Con varios archivos y la categoría sin tocar, cada uno va a la que le corresponde por su tipo
+        const qs=new URLSearchParams({archivo:f.name,nombre:adjArchivos.length>1?'':comun.nombre,categoria:adjArchivos.length>1&&!adjCatTocada?adjCatSugerida(f):comun.categoria,tareaId:comun.tareaId,nota:comun.nota});
+        try{await adjApi('/api/adjuntos/archivo?'+qs,{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:f});}
+        catch(e){fallos.push(`${f.name}: ${e.message}`);}
+      }
+      const ok=adjArchivos.length-fallos.length;
+      if(ok)reg('Adjunto subido',adjArchivos.length>1?plu(ok,'archivo','archivos'):(comun.nombre||adjArchivos[0].name));
+      if(fallos.length){adjArchivos=adjArchivos.filter(f=>fallos.some(x=>x.startsWith(f.name+':')));adjPintarModo();await cargarAdj();throw new Error((ok?`Se subieron ${ok}. `:'')+fallos.join(' · '));}
+    }
+    if(typeof guardar==='function')guardar();
+    cerM('mAdj');await cargarAdj();
+  }catch(e){prog.textContent='';alert(e.message);}
+  finally{btn.disabled=false;prog.textContent='';}
+}
+async function elimAdj(){
+  const id=document.getElementById('adjId').value,a=ADJ.lista.find(x=>x.id===id);if(!a)return;
+  if(!await confirmar(`«${a.nombre}» se borrará para todo el equipo.${a.enlace?' El archivo en Drive no se toca.':' No se puede recuperar.'}`,{tit:a.enlace?'Quitar enlace':'Borrar archivo',ok:'Borrar',peligro:true}))return;
+  try{await adjApi('/api/adjuntos/'+encodeURIComponent(id),{method:'DELETE'});reg('Adjunto borrado',a.nombre);guardar();cerM('mAdj');await cargarAdj();}
+  catch(e){alert(e.message);}
+}
+// Bloque dentro de la tarjeta de tarea abierta
+function adjBloqueTarea(t){
+  const as=adjDeTarea(t.id),puedeA=puedeSubirAdj();
+  if(!as.length&&!puedeA)return '';
+  return `<div style="margin-top:12px;padding:10px 12px;background:var(--su);border:1px solid var(--bo);border-radius:8px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:${as.length?'8px':'0'}">
+      <span style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px">📎 Adjuntos (${as.length})</span>
+      ${puedeA?`<button class="btn bgh bsm" style="font-size:11px;padding:2px 8px" onclick="event.stopPropagation();abrirMAdj({tareaId:'${t.id}'})">+ Adjuntar</button>`:''}
+    </div>
+    ${as.length?`<div style="display:flex;gap:6px;flex-wrap:wrap">${as.map(a=>`<a class="adj-mini" href="${escH(adjHref(a))}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="${escH(a.nota||a.archivo||a.enlace||'')}">${adjIco(a)} ${escH(a.nombre)}${a.tamano?` <span class="md-s">${fmtTam(a.tamano)}</span>`:''}</a>`).join('')}</div>`:''}
+  </div>`;
 }
 
 // ════════════════════════
