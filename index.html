@@ -951,6 +951,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       <button class="btn bpe bsm nle oculto" onclick="cerrarMes()">🗂️ Cerrar mes</button>
       <button class="btn bna bsm nle oculto" onclick="archivarRep()">📥 Archivar reporte</button>
       <button class="btn bna bsm" onclick="imprimirReporte()">🖨️ Imprimir / PDF</button>
+      <button class="btn bna bsm" onclick="abrirInfSem()">📝 Informe semanal</button>
       <button class="btn bna bsm" onclick="abrirMInf()">📄 Informe mensual para Dirección</button>
       <button class="btn bna bsm" onclick="generarRep()">🔄 Actualizar</button>
     </div>
@@ -1642,6 +1643,32 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <div class="mpie"><button class="btn bgh" onclick="cerM('mRes')">Cancelar</button><button class="btn bna" onclick="guardarRes()">Guardar</button></div>
 </div></div>
 
+<!-- MODAL INFORME SEMANAL -->
+<div class="mov" id="mInfSem"><div class="mo molg">
+  <div class="mcab"><div class="mtit">📝 Informe semanal de la jefatura</div><button class="mx" onclick="cerM('mInfSem')">×</button></div>
+  <div class="mbody">
+    <div class="al alaz" style="margin-bottom:12px;font-size:12.5px"><span>📅 Se entrega cada <b>viernes antes de las 12:00 m.d.</b> La Dirección lo unifica con el de las demás jefaturas el lunes.</span></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Semana</label><select class="fc" id="isSem" onchange="iSemCargar(this.value)"></select></div>
+      <div class="fg"><label class="fl">Jefatura responsable</label><input type="text" class="fc" id="isJefe"></div>
+    </div>
+    <div class="fg"><label class="fl">Cargo</label><input type="text" class="fc" id="isCargo"></div>
+    <div class="md-s" id="isEstado" style="margin:-4px 0 12px"></div>
+    <div class="fg"><label class="fl">1. Resumen ejecutivo (máx. 5 líneas)</label><textarea class="fc" id="is_resumen" rows="4"></textarea></div>
+    <div class="fg"><label class="fl">2. Avances de la semana · uno por línea</label><textarea class="fc" id="is_avances" rows="6"></textarea></div>
+    <div class="fg"><label class="fl">3. Actividades y proyectos en proceso</label><textarea class="fc" id="is_tabla" rows="5" style="font-size:12.5px"></textarea><div class="md-s" style="margin-top:4px">Una fila por línea: Actividad | Estado | Avance % | Fecha de cierre</div></div>
+    <div class="fg"><label class="fl">4a. Actividades no completadas y motivo</label><textarea class="fc" id="is_noComp" rows="3" placeholder="Actividad: …&#10;Motivo: …"></textarea></div>
+    <div class="fg"><label class="fl">4b. Nudos críticos o riesgos · uno por línea</label><textarea class="fc" id="is_nudos" rows="3" placeholder="ej. Dos actividades del sábado coinciden y solo hay un fotógrafo disponible."></textarea></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">5a. Recursos o apoyos necesarios</label><textarea class="fc" id="is_recursos" rows="3" placeholder="ej. Transporte para la cobertura fuera del Centro."></textarea></div>
+      <div class="fg"><label class="fl">5b. Decisiones que se piden a la Dirección</label><textarea class="fc" id="is_decisiones" rows="3" placeholder="ej. Aprobar el plan de difusión del Festival."></textarea></div>
+    </div>
+    <div class="fg"><label class="fl">6. Prioridades de la próxima semana · una por línea (hasta 3)</label><textarea class="fc" id="is_prioridades" rows="3"></textarea></div>
+    <div class="fg"><label class="fl">7. Recomendaciones u observaciones estratégicas</label><textarea class="fc" id="is_recom" rows="3"></textarea></div>
+  </div>
+  <div class="mpie"><button class="btn bgh" style="margin-right:auto" onclick="iSemRellenar()">🔄 Rellenar con el tablero</button><button class="btn bgh" onclick="iSemGuardar();cerM('mInfSem');avisar('Borrador guardado.')">Guardar borrador</button><button class="btn bna" onclick="iSemGenerar()">Generar informe</button></div>
+</div></div>
+
 <!-- MODAL INFORME MENSUAL -->
 <div class="mov" id="mInf"><div class="mo" style="max-width:440px">
   <div class="mcab"><div class="mtit">📄 Informe mensual para Dirección</div><button class="mx" onclick="cerM('mInf')">×</button></div>
@@ -1802,7 +1829,7 @@ function mergeArrById(base,mine,theirs){
 // Fusiona el estado completo E
 function mergeE(base,mine,theirs){
   const out={...theirs};// campos sueltos → del servidor
-  ['tareas','equipo','publicaciones','horasExtra','permisos','bitacora','historico','asigVarias','notifs','medios','notasPrensa','pedidos'].forEach(k=>{
+  ['tareas','equipo','publicaciones','horasExtra','permisos','bitacora','historico','asigVarias','notifs','medios','notasPrensa','pedidos','informesSem'].forEach(k=>{
     out[k]=mergeArrById(base?.[k],mine?.[k],theirs?.[k]);
   });
   out.etiquetas=[...new Set([...(mine?.etiquetas||[]),...(theirs?.etiquetas||[])])];
@@ -7148,6 +7175,10 @@ function renderMiDia(){
     const [a,m]=d.f0.split('-').map(Number),pm=new Date(a,m-2,1),ym=`${pm.getFullYear()}-${String(pm.getMonth()+1).padStart(2,'0')}`;
     inf=`<div class="al alaz" style="margin-bottom:16px;flex-wrap:wrap">📄 El informe de ${MESES_ES[pm.getMonth()]} para Dirección ya se puede generar.<span style="flex:1"></span><button class="btn bna bsm" onclick="informeMensual('${ym}')">Generar informe</button></div>`;
   }
+  // Informe semanal: jueves y viernes, hasta que se genere
+  const dsem=new Date(d.f0+'T12:00:00').getDay();
+  if(puede('verReportes')&&[4,5].includes(dsem)&&!iSemGuardado(lunesDe(d.f0))?.generado)
+    inf+=`<div class="al ${dsem===5?'alro':'alaz'}" style="margin-bottom:16px;flex-wrap:wrap">📝 ${dsem===5?'Hoy a las 12:00 m.d. vence':'Mañana a las 12:00 m.d. vence'} el informe semanal para la Dirección.<span style="flex:1"></span><button class="btn bna bsm" onclick="abrirInfSem()">Preparar informe</button></div>`;
   const hechas=d.ms.filter(x=>x.hecha&&x.f===d.f0).length;
   cont.innerHTML=inf
     +(d.atras.length?`<div class="md-box md-boxatr" style="margin-bottom:16px">${`<div class="md-h">⚠️ Atrasado <span class="md-n" style="background:var(--ros);color:var(--ro)">${d.atras.length}</span><span class="md-s" style="font-weight:500">· su fecha ya pasó</span></div>`}${d.atras.slice(0,6).map(itSec).join('')}${d.atras.length>6?vac(`… y ${d.atras.length-6} más en Tareas.`):''}</div>`:'')
@@ -7789,6 +7820,176 @@ function adjBloqueTarea(t){
     </div>
     ${as.length?`<div style="display:flex;gap:6px;flex-wrap:wrap">${as.map(a=>`<a class="adj-mini" href="${escH(adjHref(a))}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="${escH(a.nota||a.archivo||a.enlace||'')}">${adjIco(a)} ${escH(a.nombre)}${a.tamano?` <span class="md-s">${fmtTam(a.tamano)}</span>`:''}</a>`).join('')}</div>`:''}
   </div>`;
+}
+
+// ════════════════════════
+//  INFORME SEMANAL DE JEFATURA
+// ════════════════════════
+// Obligatorio cada viernes antes de las 12:00 m.d.; la Dirección lo unifica los lunes. Mismo formato que usan
+// las demás jefaturas. Las cifras y listas salen del tablero; el resumen, los riesgos y lo que se pide a la
+// Dirección los escribe la jefatura. El borrador queda guardado por semana en E.informesSem.
+const diaMes=f=>{const [,m,d]=f.split('-').map(Number);return `${d} de ${MESES_ES[m-1]}`;};
+const diaCorto=f=>{const [,m,d]=f.split('-').map(Number);return `${d} ${MESES_ES[m-1].slice(0,3)}.`;};
+const ISEM_CAMPOS=['resumen','avances','tabla','noComp','nudos','recursos','decisiones','prioridades','recom'];
+// Semana que se reporta: lunes a viernes. Los datos van de sábado a viernes para que el fin de semana anterior también cuente.
+function semanaInf(lun){
+  const vie=sumarDias(lun,4),[a]=vie.split('-').map(Number);
+  const mismoMes=lun.slice(5,7)===vie.slice(5,7);
+  return {lun,vie,ini:sumarDias(lun,-2),fin:vie,sigIni:sumarDias(lun,5),sigFin:sumarDias(lun,11),
+    txt:mismoMes?`del ${+lun.slice(8)} al ${diaMes(vie)} de ${a}`:`del ${diaMes(lun)} al ${diaMes(vie)} de ${a}`};
+}
+const iSemGuardado=lun=>(E.informesSem||[]).find(x=>x.id===lun);
+function iSemAuto(lun){
+  const s=semanaInf(lun),en=f=>!!f&&f>=s.ini&&f<=s.fin,sig=f=>!!f&&f>=s.sigIni&&f<=s.sigFin;
+  const tsem=E.tareas.filter(t=>!t.borrador&&en(t.fecha)).sort((x,y)=>(x.fecha+(x.hora||'')).localeCompare(y.fecha+(y.hora||'')));
+  const hechas=tsem.filter(t=>['Completada','Cerrada'].includes(eglobal(t)));
+  const noHechas=tsem.filter(t=>!['Completada','Cerrada'].includes(eglobal(t))&&t.fecha<hoy());
+  const secsHechas=t=>Object.entries(t.secciones||{}).filter(([,v])=>v&&v.estado==='Completada').map(([k])=>({Audiovisual:'fotos y video',Diseño:'diseño','Redes Sociales':'redes sociales',Medios:'prensa',Protocolo:'protocolo'}[k]||k.toLowerCase()));
+  const pubs=(E.publicaciones||[]).filter(p=>pubEst(p)==='publicado'&&en(fechaPublicada(p)));
+  const porRed={};pubs.forEach(p=>(p.plataformas||[]).forEach(x=>porRed[PLAT_LARGO[x]||x]=(porRed[PLAT_LARGO[x]||x]||0)+1));
+  const notas=lista('notasPrensa').filter(n=>en(n.fecha)),ap=aparicionesEn(s.ini,s.fin);
+  const peds=lista('pedidos').filter(p=>en(p.recibido)),porArea={};peds.forEach(p=>porArea[p.area]=(porArea[p.area]||0)+1);
+  const hx=E.horasExtra.filter(h=>!esComp(h)&&h.aprobacion!=='Rechazado'&&h.aprobacion!=='Anulada'&&en(h.fecha)),thx=hx.reduce((a,h)=>a+parseFloat(h.horas||0),0);
+  const prox=E.tareas.filter(t=>sig(t.fecha)&&Object.keys(t.secciones||{}).length).sort((x,y)=>{
+    const p={Alta:0,Media:1,Baja:2},cx=Object.keys(x.secciones||{}).length,cy=Object.keys(y.secciones||{}).length;
+    return (p[x.prioridad]??1)-(p[y.prioridad]??1)||cy-cx||(x.fecha+(x.hora||'')).localeCompare(y.fecha+(y.hora||''));});
+  const lst=o=>Object.entries(o).sort((x,y)=>y[1]-x[1]).map(([k,v])=>`${k} ${v}`).join(', ');
+  const nom=t=>/[«»"“”]/.test(t.titulo)?t.titulo:`«${t.titulo}»`;
+  // 1. Resumen
+  const res=[];
+  res.push(tsem.length?`Esta semana el equipo de Comunicaciones atendió ${hechas.length} de ${plu(tsem.length,'actividad programada','actividades programadas')}${hechas.length?`, entre ellas ${hechas.slice(0,3).map(nom).join(', ').replace(/, ([^,]*)$/,' y $1')}`:''}.`
+    :'Esta semana no hubo actividades asignadas en el tablero.');
+  if(pubs.length||notas.length)res.push(`Se ${pubs.length===1?'publicó':'publicaron'} ${plu(pubs.length,'pieza','piezas')} en redes${notas.length?` y se ${notas.length===1?'envió':'enviaron'} ${plu(notas.length,'nota','notas')} a medios`:''}.`);
+  if(prox.length)res.push(`Para la próxima semana se prepara la cobertura de ${prox.slice(0,2).map(nom).join(' y ')}.`);
+  // 2. Avances
+  const av=hechas.map(t=>{const sc=secsHechas(t);return `Cobertura de ${nom(t)} (${diaCorto(t.fecha)})${sc.length?': '+sc.join(', ').replace(/, ([^,]*)$/,' y $1'):''}.`;});
+  if(pubs.length)av.push(`${pubs.length===1?'Se publicó 1 pieza':`Se publicaron ${pubs.length} piezas`} en redes sociales (${lst(porRed)}).`);
+  const conRes=pubs.filter(p=>p.resultados?.alcance).sort((x,y)=>y.resultados.alcance-x.resultados.alcance);
+  if(conRes.length)av.push(`La pieza con más alcance fue ${nom(conRes[0])}, con ${nf(conRes[0].resultados.alcance)} cuentas alcanzadas${conRes[0].resultados.interacciones!=null?` y ${nf(conRes[0].resultados.interacciones)} interacciones`:''}.`);
+  if(notas.length)av.push(`${notas.length===1?'Se envió 1 nota':`Se enviaron ${notas.length} notas`} a medios${ap.length?`; el Centro salió en ${[...new Set(ap.map(x=>x.medio))].join(', ')}`:''}.`);
+  else if(ap.length)av.push(`El Centro salió en ${[...new Set(ap.map(x=>x.medio))].join(', ')}.`);
+  if(peds.length)av.push(`${peds.length===1?'Se recibió 1 pedido':`Se recibieron ${peds.length} pedidos`} de otras áreas por el formulario (${lst(porArea)}).`);
+  // 3. Tabla: lo que sigue abierto y lo de la próxima semana
+  const abiertas=E.tareas.filter(t=>!t.borrador&&t.fecha&&t.fecha>=s.ini&&t.fecha<=s.sigFin&&!tResuelta(t)).sort((x,y)=>x.fecha.localeCompare(y.fecha));
+  const borr=E.tareas.filter(t=>t.borrador&&sig(t.fecha)&&Object.keys(t.secciones||{}).length&&!abiertas.includes(t));
+  const estado=t=>{if(t.borrador)return 'Por asignar al equipo';const p=pctT(t),secs=Object.keys(t.secciones||{});
+    return p?`En producción (${secs.filter(k=>t.secciones[k]?.estado==='Completada').length} de ${secs.length} áreas listas)`:secs.some(k=>(t.secciones[k]?.responsables||[]).length)?'Equipo asignado; en preparación':'Por asignar responsables';};
+  const filas=[...abiertas,...borr].slice(0,8).map(t=>[t.titulo,estado(t),pctT(t)+'%',`${diaMes(t.fecha)} de ${t.fecha.slice(0,4)}`].join(' | '));
+  // 4a. No completadas
+  const nc=noHechas.map(t=>`Actividad: ${t.titulo} (${diaCorto(t.fecha)})\nMotivo: [motivo]`);
+  // 4b. Riesgos que salen de los datos
+  const nud=[];
+  if(thx)nud.push(`El equipo registró ${fmtH(thx)} extra esta semana por actividades fuera del horario.`);
+  const sinResp=prox.filter(t=>!t.borrador&&Object.values(t.secciones||{}).some(v=>v&&!(v.responsables||[]).length));
+  if(sinResp.length)nud.push(`${plu(sinResp.length,'actividad','actividades')} de la próxima semana todavía no ${sinResp.length===1?'tiene':'tienen'} responsable asignado.`);
+  // 6. Prioridades
+  const pri=prox.slice(0,3).map(t=>`Cobertura de ${nom(t)} (${diaCorto(t.fecha)})${t.lugar?', '+t.lugar:''}.`);
+  return {resumen:res.join(' '),avances:av.join('\n'),tabla:filas.join('\n'),noComp:nc.join('\n\n'),nudos:nud.join('\n'),recursos:'',decisiones:'',prioridades:pri.join('\n'),recom:''};
+}
+function abrirInfSem(lun){
+  if(!puede('verReportes')){alert('Sin permiso.');return;}
+  const $=k=>document.getElementById(k),lh=lunesDe(hoy());
+  lun=lun||lh;
+  $('isSem').innerHTML=[0,1,2,3].map(i=>{const l=sumarDias(lh,-7*i),s=semanaInf(l),g=iSemGuardado(l);
+    return `<option value="${l}"${l===lun?' selected':''}>${cap1(s.txt)}${i===0?' (esta semana)':''}${g?.generado?' · ✓ generado':g?' · borrador':''}</option>`;}).join('');
+  iSemCargar(lun);abrirM('mInfSem');
+}
+function iSemCargar(lun){
+  const $=k=>document.getElementById(k),g=iSemGuardado(lun),auto=iSemAuto(lun);
+  $('isJefe').value=g?.jefe||uAct?.nombre||'';$('isCargo').value=g?.cargo||uAct?.cargo||'Jefe de Comunicaciones';
+  ISEM_CAMPOS.forEach(k=>$('is_'+k).value=g?(g[k]??''):auto[k]);
+  $('isEstado').textContent=g?`Borrador guardado${g.editadoPor?' por '+nombrePila(g.editadoPor):''} el ${fmt(g.editadoEn)}. «Rellenar con el tablero» vuelve a poner las cifras y listas.`:'Las cifras y listas salen del tablero. Completa lo que está entre [corchetes] y lo que solo tú sabes.';
+}
+function iSemRellenar(){
+  const $=k=>document.getElementById(k),auto=iSemAuto($('isSem').value);
+  ['resumen','avances','tabla','noComp','prioridades'].forEach(k=>$('is_'+k).value=auto[k]);
+  if(!$('is_nudos').value.trim())$('is_nudos').value=auto.nudos;
+}
+function iSemGuardar(generado){
+  const $=k=>document.getElementById(k),lun=$('isSem').value;
+  const r={id:lun,jefe:$('isJefe').value.trim(),cargo:$('isCargo').value.trim(),editadoPor:uAct?.nombre,editadoEn:hoy()};
+  ISEM_CAMPOS.forEach(k=>r[k]=$('is_'+k).value.replace(/\s+$/,''));
+  if(!E.informesSem)E.informesSem=[];
+  const i=E.informesSem.findIndex(x=>x.id===lun),prev=i>=0?E.informesSem[i]:null;
+  r.generado=generado||!!prev?.generado;
+  if(i>=0)E.informesSem[i]=r;else E.informesSem.push(r);
+  E.informesSem=E.informesSem.sort((a,b)=>b.id.localeCompare(a.id)).slice(0,30);
+  guardar();return r;
+}
+function iSemGenerar(){
+  const r=iSemGuardar(true);if(!r.jefe){alert('Escribe el nombre de la jefatura responsable.');return;}
+  cerM('mInfSem');reg('Informe semanal generado',semanaInf(r.id).txt);
+  if(visible('vMiDia'))renderMiDia();
+  informeSemanalDoc(r);
+}
+function informeSemanalDoc(r){
+  const s=semanaInf(r.id),e=escH;
+  const lineas=t=>(t||'').split('\n').map(x=>x.trim()).filter(Boolean);
+  const vineta=t=>lineas(t).map(x=>`<p>- ${e(x.replace(/^[-•·]\s*/,''))}</p>`).join('');
+  const parrafos=t=>(t||'').split(/\n\s*\n/).map(b=>b.trim()).filter(Boolean).map(b=>`<p>${b.split('\n').map(e).join('<br>')}</p>`).join('');
+  const nada='<p class="nada">Sin novedades.</p>';
+  const filas=lineas(r.tabla).map(l=>{const c=l.split('|').map(x=>x.trim());while(c.length<4)c.push('');return `<tr><td>${e(c[0])}</td><td>${e(c[1])}</td><td class="c">${e(c[2])}</td><td>${e(c.slice(3).join(' | '))}</td></tr>`;}).join('');
+  const envio=cap1(fmtFechaLarga(hoy())).replace(/,/g,'');
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Informe semanal · Comunicaciones · ${e(s.txt)}</title>
+<style>
+@page{size:letter portrait;margin:22mm 25mm}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;background:#fff;padding:36px;max-width:760px;margin:0 auto;line-height:1.38}
+p{margin:0 0 7pt}
+.t{text-align:center;margin-bottom:3pt}.t2{text-align:center;margin-bottom:18pt}
+.h{margin-top:12pt}
+.lim{display:inline-block;background:#e8392b;padding:1px 2px;margin-bottom:12pt}
+table{width:100%;border-collapse:collapse;margin:4pt 0 12pt;font-size:10pt}
+th,td{border:1px solid #000;padding:5px 6px;vertical-align:top;text-align:left}
+th{background:#d9d9d9;font-weight:700}
+td.c{text-align:center;white-space:nowrap}
+.nada{color:#555}
+.firma{margin-top:30pt}.firma p{margin:0}
+.nota{font-size:9pt;margin-top:22pt}
+@media print{body{padding:0;max-width:none}tr{break-inside:avoid}.h{break-after:avoid}}
+</style></head><body>
+<p class="t">INFORME SEMANAL | JEFATURA DE COMUNICACIONES</p>
+<p class="t2">Centro de Arte y Cultura de Colón</p>
+<p>DATOS GENERALES</p>
+<p>Departamento / Área: Comunicaciones</p>
+<p>Jefatura responsable: ${e(r.jefe)}</p>
+<p>Semana que se reporta: ${e(s.txt)}</p>
+<p>Fecha y hora de envío: ${e(envio)}</p>
+<p class="lim">Fecha y hora límite: Viernes - 12:00 m.d. (sin excepción)</p>
+<p class="h">1. RESUMEN EJECUTIVO (máx. 5 líneas)</p>
+${parrafos(r.resumen)||nada}
+<p class="h">2. AVANCES DE LA SEMANA</p>
+${vineta(r.avances)||nada}
+<p class="h">3. ACTIVIDADES Y PROYECTOS EN PROCESO</p>
+${filas?`<table><thead><tr><th style="width:34%">Actividad / Proyecto</th><th style="width:34%">Estado actual</th><th style="width:12%">Avance (%)</th><th>Fecha estimada de cierre</th></tr></thead><tbody>${filas}</tbody></table>`:nada}
+<p class="h">4. PENDIENTES Y DESAFÍOS</p>
+<p>a. Actividades no completadas</p>
+${parrafos(r.noComp)||nada}
+<p>b. Nudos críticos / riesgos</p>
+${vineta(r.nudos)||nada}
+<p class="h">5. NECESIDADES Y ACCIONES REQUERIDAS</p>
+<p>a. Recursos o apoyos necesarios</p>
+${vineta(r.recursos)||nada}
+<p>b. Apoyo o decisiones requeridas de la Dirección</p>
+${vineta(r.decisiones)||nada}
+<p class="h">6. PRIORIDADES Y PLAN DE TRABAJO | PRÓXIMA SEMANA</p>
+${lineas(r.prioridades).map((x,i)=>`<p>Prioridad ${i+1}: ${e(x.replace(/^(prioridad\s*\d+\s*:\s*|[-•·]\s*)/i,''))}</p>`).join('')||nada}
+<p class="h">7. RECOMENDACIONES / OBSERVACIONES ESTRATÉGICAS</p>
+${parrafos(r.recom)||nada}
+<div class="firma"><p>${e(r.jefe)}</p><p>${e(r.cargo||'Jefe de Comunicaciones')}</p><p>Nombre y firma de la jefatura responsable</p></div>
+<p class="nota">Nota: Este informe será consolidado por el Asistente Ejecutivo de la Dirección en un Informe Unificado de Avance presentado los lunes a las 8:00 a.m. al director. Recordar que tienen hasta las 12:00 m.d. de los viernes para enviar su informe y el Asistente Ejecutivo pueda unificar.</p>
+</body></html>`;
+  mostrarDocumento(html,`📝 Informe semanal · ${s.txt}`,`Informe_semanal_Comunicaciones_${s.lun}.html`);
+  // Para pegarlo en la plantilla de Pages o Word con su formato
+  const bar=document.getElementById('repPrintBtn')?.parentElement;
+  if(bar&&!document.getElementById('repCopiarBtn')){
+    const b=document.createElement('button');b.id='repCopiarBtn';b.textContent='📋 Copiar texto';
+    b.style.cssText='padding:8px 14px;background:#166534;color:#fff;border:none;border-radius:8px;cursor:pointer';
+    b.onclick=async()=>{const fd=document.getElementById('repFrame').contentWindow.document;
+      try{await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([fd.documentElement.outerHTML],{type:'text/html'}),'text/plain':new Blob([fd.body.innerText],{type:'text/plain'})})]);avisar('✅ Copiado. Pégalo en Pages o Word.');}
+      catch{try{await navigator.clipboard.writeText(fd.body.innerText);avisar('✅ Texto copiado.');}catch{avisar('No se pudo copiar: selecciona el texto del documento y cópialo.');}}};
+    bar.insertBefore(b,document.getElementById('repDescBtn'));
+  }
 }
 
 // ════════════════════════
