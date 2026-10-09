@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es-PA">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pedidos a Comunicaciones · CACCO</title>
+<meta name="robots" content="noindex">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+:root{--na:#E35205;--na2:#c44604;--nas:#fff4ee;--fo:#f5f4f2;--su:#fff;--bo:#e2ddd8;--tx:#1a1816;--tm:#6b6258;--ro:#991b1b;--ros:#fee2e2;--ve:#166534;--ves:#dcfce7;--r:12px}
+@media (prefers-color-scheme:dark){:root{--na:#f2722f;--na2:#ff8a4f;--nas:#2d1d13;--fo:#141210;--su:#1d1a17;--bo:#36302a;--tx:#ede7e0;--tm:#a69d93;--ro:#ff8f86;--ros:#351a1a;--ve:#62d394;--ves:#15281d}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--fo);color:var(--tx);line-height:1.55;min-height:100vh}
+header{background:var(--na);color:#fff;padding:18px 16px 22px}
+.hin{max-width:640px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.hin img{width:44px;height:44px;border-radius:50%;object-fit:cover;background:#fff}
+.hin h1{font-size:19px;font-weight:800;line-height:1.25}
+.hin p{font-size:13px;opacity:.9}
+main{max-width:640px;margin:-10px auto 40px;padding:0 16px}
+.card{background:var(--su);border:1px solid var(--bo);border-radius:var(--r);padding:20px 18px;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+.intro{font-size:14px;color:var(--tm);margin-bottom:18px}
+fieldset{border:0;margin-bottom:18px}
+legend,.lbl{display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tm);margin-bottom:6px}
+.req{color:var(--na)}
+input[type=text],input[type=tel],input[type=date],input[type=time],select,textarea{width:100%;font:inherit;font-size:15px;color:var(--tx);background:var(--su);border:1.5px solid var(--bo);border-radius:8px;padding:10px 12px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--na);box-shadow:0 0 0 3px color-mix(in srgb,var(--na) 20%,transparent)}
+textarea{min-height:110px;resize:vertical}
+.fila{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fila3{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:12px}
+@media (max-width:520px){.fila,.fila3{grid-template-columns:1fr}}
+.campo{margin-bottom:14px}
+.ayuda{font-size:12px;color:var(--tm);margin-top:4px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips label{display:flex;align-items:center;gap:6px;padding:8px 12px;border:1.5px solid var(--bo);border-radius:20px;font-size:14px;cursor:pointer;user-select:none}
+.chips input{accent-color:var(--na)}
+.chips label:has(input:checked){border-color:var(--na);background:var(--nas);font-weight:600}
+.serv{display:flex;flex-direction:column;gap:8px}
+.serv label{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1.5px solid var(--bo);border-radius:10px;cursor:pointer;font-size:14px}
+.serv label:has(input:checked){border-color:var(--na);background:var(--nas);font-weight:600}
+.serv input{width:18px;height:18px;accent-color:var(--na);flex-shrink:0}
+.serv .ico{font-size:18px}
+.trampa{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.err{display:none;background:var(--ros);color:var(--ro);border-radius:8px;padding:10px 12px;font-size:14px;margin-bottom:14px}
+button{font:inherit;font-weight:700;font-size:16px;border:0;border-radius:10px;padding:13px 18px;cursor:pointer}
+.enviar{width:100%;background:var(--na);color:#fff}
+.enviar:hover{background:var(--na2)}
+.enviar:disabled{opacity:.6;cursor:wait}
+.ok{display:none;text-align:center}
+.ok .big{font-size:44px;margin-bottom:6px}
+.ok h2{font-size:20px;margin-bottom:6px}
+.ok .folio{display:inline-block;background:var(--ves);color:var(--ve);font-weight:800;font-size:18px;border-radius:8px;padding:4px 14px;margin:8px 0 12px}
+.ok p{font-size:14px;color:var(--tm);margin-bottom:10px}
+.resumen{text-align:left;font-size:14px;background:var(--fo);border-radius:8px;padding:12px 14px;margin:12px 0 16px;color:var(--tx)}
+.otro{background:transparent;color:var(--na);border:1.5px solid var(--na)}
+footer{text-align:center;font-size:12px;color:var(--tm);padding:0 16px 30px}
+</style>
+</head>
+<body>
+<header><div class="hin">
+  <img src="/caccoisotipo.png" alt="" onerror="this.style.display='none'">
+  <div><h1>Pedidos al equipo de Comunicaciones</h1><p>Centro de Arte y Cultura de Colón</p></div>
+</div></header>
+<main>
+<div class="card">
+<form id="f" novalidate>
+  <p class="intro">Pide aquí cobertura, diseño o difusión para tu actividad. El equipo revisa cada pedido y te contacta para confirmar. Mientras antes lo envíes, mejor: lo ideal es con una semana o más.</p>
+
+  <fieldset>
+    <legend>Tu área <span class="req">*</span></legend>
+    <div class="chips" id="areas"></div>
+    <input type="text" id="areaOtra" placeholder="¿Cuál área?" style="display:none;margin-top:8px" maxlength="60">
+  </fieldset>
+
+  <div class="fila">
+    <div class="campo"><label class="lbl" for="nombre">Tu nombre <span class="req">*</span></label><input type="text" id="nombre" maxlength="80" autocomplete="name"></div>
+    <div class="campo"><label class="lbl" for="contacto">Teléfono o correo <span class="req">*</span></label><input type="text" id="contacto" maxlength="120" autocomplete="tel"></div>
+  </div>
+
+  <div class="campo"><label class="lbl" for="actividad">Nombre de la actividad <span class="req">*</span></label><input type="text" id="actividad" maxlength="140" placeholder="ej. Concierto de la Banda Juvenil"></div>
+  <div class="fila3">
+    <div class="campo"><label class="lbl" for="fecha">Fecha <span class="req">*</span></label><input type="date" id="fecha"></div>
+    <div class="campo"><label class="lbl" for="hora">Empieza</label><input type="time" id="hora"></div>
+    <div class="campo"><label class="lbl" for="horaFin">Termina</label><input type="time" id="horaFin"></div>
+  </div>
+  <div class="campo"><label class="lbl" for="lugar">Lugar</label><input type="text" id="lugar" maxlength="120" placeholder="ej. Teatro del CACCO"></div>
+
+  <fieldset>
+    <legend>¿Qué necesitas? <span class="req">*</span></legend>
+    <div class="serv" id="servicios"></div>
+  </fieldset>
+  <div class="campo" id="entregaBlk" style="display:none"><label class="lbl" for="entrega">¿Para cuándo necesitas el diseño?</label><input type="date" id="entrega"><div class="ayuda">Si es para promocionar la actividad, conviene tenerlo al menos 10 días antes.</div></div>
+
+  <div class="campo"><label class="lbl" for="descripcion">Detalles</label><textarea id="descripcion" maxlength="1500" placeholder="Quiénes participan, a qué público va, invitados especiales, textos o logos que deben aparecer…"></textarea></div>
+  <div class="trampa" aria-hidden="true"><label>Web<input type="text" id="web" tabindex="-1" autocomplete="off"></label></div>
+
+  <div class="err" id="err" role="alert"></div>
+  <button type="submit" class="enviar" id="btn">Enviar pedido</button>
+</form>
+
+<div class="ok" id="ok" role="status">
+  <div class="big">✅</div>
+  <h2>Recibimos tu pedido</h2>
+  <div class="folio" id="okFolio"></div>
+  <div class="resumen" id="okRes"></div>
+  <p>Guarda este número. El equipo de Comunicaciones lo revisa y te contacta para confirmar lo que se puede cubrir.</p>
+  <button class="otro" onclick="location.reload()">Hacer otro pedido</button>
+</div>
+</div>
+</main>
+<footer>Uso interno del Centro de Arte y Cultura de Colón.</footer>
+<script>
+const AREAS=['Dirección','Programación','Educación','Administración','Otra'];
+const SERV={cobertura:['📸','Cobertura de fotos y video'],diseno:['🎨','Diseño de una pieza (afiche, arte, invitación)'],difusion:['📱','Difusión en redes sociales'],prensa:['📰','Prensa, radio o TV'],protocolo:['🎤','Protocolo (maestro de ceremonia, logística)']};
+const $=id=>document.getElementById(id);
+$('areas').innerHTML=AREAS.map(a=>`<label><input type="radio" name="area" value="${a}"> ${a}</label>`).join('');
+$('servicios').innerHTML=Object.entries(SERV).map(([k,[i,l]])=>`<label><input type="checkbox" name="serv" value="${k}"><span class="ico">${i}</span>${l}</label>`).join('');
+const hoyPa=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Panama'}).format(new Date());
+$('fecha').min=hoyPa;$('entrega').min=hoyPa;
+document.addEventListener('change',e=>{
+  if(e.target.name==='area'){$('areaOtra').style.display=e.target.value==='Otra'?'block':'none';if(e.target.value==='Otra')$('areaOtra').focus();}
+  if(e.target.name==='serv')$('entregaBlk').style.display=document.querySelector('input[value=diseno]').checked?'block':'none';
+});
+const fLarga=f=>f?new Date(f+'T12:00:00').toLocaleDateString('es-PA',{weekday:'long',day:'numeric',month:'long'}):'';
+const hTxt=h=>{if(!h)return'';const [a,m]=h.split(':').map(Number);return `${a%12||12}:${String(m).padStart(2,'0')} ${a<12?'a. m.':'p. m.'}`;};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+$('f').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const body={area:document.querySelector('input[name=area]:checked')?.value||'',areaOtra:$('areaOtra').value,nombre:$('nombre').value,contacto:$('contacto').value,
+    actividad:$('actividad').value,fecha:$('fecha').value,hora:$('hora').value,horaFin:$('horaFin').value,lugar:$('lugar').value,
+    servicios:[...document.querySelectorAll('input[name=serv]:checked')].map(x=>x.value),entrega:$('entrega').value,descripcion:$('descripcion').value,web:$('web').value};
+  const err=$('err'),btn=$('btn');err.style.display='none';btn.disabled=true;btn.textContent='Enviando…';
+  try{
+    const r=await fetch('/api/pedidos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(j.error||'No se pudo enviar el pedido. Intenta de nuevo.');
+    $('okFolio').textContent='Pedido '+j.folio;
+    $('okRes').innerHTML=`<strong>${esc(body.actividad)}</strong><br>📅 ${esc(fLarga(body.fecha))}${body.hora?' · '+hTxt(body.hora):''}${body.horaFin?' a '+hTxt(body.horaFin):''}${body.lugar?'<br>📍 '+esc(body.lugar):''}<br>🧰 ${body.servicios.map(k=>SERV[k][1]).join('; ')}`;
+    $('f').style.display='none';$('ok').style.display='block';window.scrollTo(0,0);
+  }catch(x){err.textContent=x.message;err.style.display='block';err.scrollIntoView({block:'center',behavior:'smooth'});}
+  btn.disabled=false;btn.textContent='Enviar pedido';
+});
+</script>
+</body>
+</html>
