@@ -15,7 +15,7 @@
   // Preguntas que salen al marcar cada servicio: [clave, etiqueta en la nota, largo máximo]
   const PREGUNTAS = {
     cobertura: [["llegada", "Llegada del equipo", 5], ["momentos", "Momentos clave", 300], ["invitados", "Invitados importantes", 300]],
-    diseno:    [["pieza", "Pieza", 120], ["formato", "Medidas o red", 120], ["textos", "Textos", 1000]],
+    diseno:    [["nombre", "Nombre de la pieza", 120], ["tipo", "Tipo", 60], ["formato", "Formatos", 300], ["textos", "Textos", 1000]],
     difusion:  [["desde", "Publicar desde", 10], ["publico", "Público", 200]],
     prensa:    [["vocero", "Vocero", 120], ["voceroContacto", "Contacto del vocero", 120]],
     protocolo: [["programa", "Programa", 1000], ["invitados", "Invitados a mencionar", 300]],
@@ -116,7 +116,8 @@
       if (r.desde && !esFecha(r.desde)) delete r.desde;
       if (Object.keys(r).length) detalles[k] = r;
     });
-    const fuera = fueraDeHorario(fecha, hora, horaFin);
+    // El horario solo importa cuando el equipo tiene que estar en la actividad (cobertura); un diseño no depende de él
+    const fuera = servicios.includes("cobertura") ? fueraDeHorario(fecha, hora, horaFin) : null;
 
     const nomArea = area === "Otra" ? areaOtra : area;
     const secciones = {};

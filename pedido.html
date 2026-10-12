@@ -182,13 +182,17 @@ $('areas').innerHTML=AREAS.map(a=>`<label><input type="radio" name="area" value=
 // Preguntas de cada servicio: [clave, etiqueta, tipo, ayuda]
 const PREG={
   cobertura:[['llegada','¿A qué hora debe llegar el equipo?','time'],['momentos','Momentos clave que no se pueden perder','text','ej. palabras de la directora, entrega de certificados'],['invitados','Invitados importantes','text','ej. ministra, alcalde, embajador']],
-  diseno:[['_entrega','¿Para cuándo necesitas el diseño?','entrega'],['pieza','¿Qué pieza necesitas?','text','ej. afiche, invitación digital, banner'],['formato','Medidas o red donde se usa','text','ej. Instagram cuadrado, afiche 11×17, pantalla'],['textos','Textos que deben aparecer','area','Título, fecha, hora, lugar, organizadores…']],
+  diseno:[['nombre','Nombre de la pieza','text','ej. Afiche Gala de Danza'],
+    ['tipo','Tipo de pieza','uno',['Afiche','Invitación','Post para redes','Historia','Banner o lona','Certificado','Video corto','Otro']],
+    ['formato','Formatos (marca los que necesites)','varios',['Redes cuadrado (1080×1080)','Redes vertical (1080×1350)','Historia o reel (1080×1920)','Impreso tamaño carta','Impreso 11×17','Pantalla horizontal (16:9)','Otro (explícalo en Textos)']],
+    ['_entrega','¿Para cuándo necesitas el diseño?','entrega'],['textos','Textos que deben aparecer','area','Título, fecha, hora, lugar, organizadores…']],
   difusion:[['desde','¿Desde cuándo publicar?','date'],['publico','¿A qué público va dirigido?','text','ej. jóvenes de Colón, familias, artistas']],
   prensa:[['vocero','Vocero o persona a entrevistar','text','Nombre y cargo'],['voceroContacto','Contacto del vocero','text','Teléfono o correo']],
   protocolo:[['programa','Programa o guion de la actividad','area','Orden del acto, quién habla y cuándo'],['invitados','Invitados especiales a mencionar','text','Nombres y cargos']]
 };
 const campoPreg=(k,[c,l,t,ph])=>{
   if(t==='entrega')return`<div class="campo"><label class="lbl" for="entrega">${l}</label><input type="date" id="entrega"><div class="ayuda">Si es para promocionar la actividad, conviene tenerlo al menos 10 días antes.</div><div class="aviso" id="avDis"></div></div>`;
+  if(t==='uno'||t==='varios')return`<div class="campo"><span class="lbl">${l}</span><div class="chips" id="d-${k}-${c}">${ph.map(o=>`<label><input type="${t==='uno'?'radio':'checkbox'}" name="d-${k}-${c}" value="${o}"> ${o}</label>`).join('')}</div></div>`;
   const id=`d-${k}-${c}`,attr=`id="${id}" ${ph?`placeholder="${ph}"`:''}`;
   const inp=t==='area'?`<textarea ${attr} maxlength="1000"></textarea>`:t==='time'?`<input type="time" ${attr}>`:t==='date'?`<input type="date" ${attr}>`:`<input type="text" ${attr} maxlength="300">`;
   return`<div class="campo"><label class="lbl" for="${id}">${l}</label>${inp}</div>`;
@@ -200,7 +204,7 @@ const hoyPa=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Panama'}).format(
 $('fecha').min=hoyPa;$('entrega').min=hoyPa;
 document.addEventListener('change',e=>{
   if(e.target.name==='area'){$('areaOtra').style.display=e.target.value==='Otra'?'block':'none';if(e.target.value==='Otra')$('areaOtra').focus();}
-  if(e.target.name==='serv'){$('pg-'+e.target.value).style.display=e.target.checked?'block':'none';avisos();}
+  if(e.target.name==='serv'){$('pg-'+e.target.value).style.display=e.target.checked?'block':'none';avisos();revisarHorario();}
   if(e.target.id==='soyYo')copiarFocal();
 });
 // Días de aviso: con menos de 7 (o 10 para un diseño) se advierte, pero se puede enviar igual
@@ -224,11 +228,13 @@ function fueraLocal(f,h,hf){// igual que en el servidor: lunes a viernes de 8:00
 let tHor=null,claveMala='';
 function revisarHorario(){
   clearTimeout(tHor);
-  const f=$('fecha').value,h=$('hora').value,hf=$('horaFin').value,fu=fueraLocal(f,h,hf),af=$('avFuera');
+  // Solo cuando piden cobertura: el equipo tiene que estar ahí. Un diseño no depende del horario.
+  const cob=document.querySelector('input[name=serv][value=cobertura]').checked;
+  const f=$('fecha').value,h=$('hora').value,hf=$('horaFin').value,fu=cob?fueraLocal(f,h,hf):null,af=$('avFuera');
   af.innerHTML=fu?`🌙 <b>Fuera del horario laboral</b> (${fu}). El horario del equipo es de lunes a viernes, de 8:00 a. m. a 4:00 p. m. Lo que quede fuera se cubre con horas extra, que luego el equipo toma como tiempo compensatorio. Tenlo en cuenta al planificar.`:'';
   af.style.display=fu?'block':'none';
   const ac=$('avChoque'),cl=$('clave').value.trim();
-  if(!f||!h||!cl||cl===claveMala){ac.style.display='none';return;}
+  if(!cob||!f||!h||!cl||cl===claveMala){ac.style.display='none';return;}
   tHor=setTimeout(async()=>{
     try{
       const r=await fetch('/api/pedidos/horario',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clave:cl,fecha:f,hora:h,horaFin:hf})});
@@ -268,10 +274,13 @@ function repetir(i){
   ['nombre','contacto','actividad','hora','horaFin','lugar','descripcion','material'].forEach(k=>{if($(k))$(k).value=b[k]||'';});
   const pf=b.puntoFocal||{};$('pfNombre').value=pf.nombre||'';$('pfCargo').value=pf.cargo||'';$('pfTel').value=pf.telefono||'';$('pfCorreo').value=pf.correo||'';$('soyYo').checked=false;
   document.querySelectorAll('input[name=serv]').forEach(c=>{c.checked=(b.servicios||[]).includes(c.value);$('pg-'+c.value).style.display=c.checked?'block':'none';});
-  Object.entries(PREG).forEach(([k,qs])=>qs.forEach(([c,,t])=>{const el=$(`d-${k}-${c}`);if(el)el.value=t==='date'?'':(b.detalles?.[k]?.[c]||'');}));
+  Object.entries(PREG).forEach(([k,qs])=>qs.forEach(([c,,t])=>{if(c[0]!=='_')ponPreg(k,c,t==='date'?'':b.detalles?.[k]?.[c]);}));
   $('fecha').value='';$('entrega').value='';
   avisos();revisarHorario();$('fecha').focus();
 }
+// Valor de una pregunta (texto, hora, fecha u opciones marcadas) y cómo volver a ponerlo
+function valPreg(k,c){const el=$(`d-${k}-${c}`);if(!el)return'';if(el.classList.contains('chips'))return[...el.querySelectorAll('input:checked')].map(x=>x.value).join(', ');return el.value;}
+function ponPreg(k,c,v){const el=$(`d-${k}-${c}`);if(!el)return;if(el.classList.contains('chips')){const vs=String(v||'').split(', ');el.querySelectorAll('input').forEach(x=>x.checked=vs.includes(x.value));}else el.value=v||'';}
 // ── Resumen para compartir ──
 let resumenTxt='';
 function compartirWA(){window.open('https://wa.me/?text='+encodeURIComponent(resumenTxt),'_blank','noopener');}
@@ -321,7 +330,7 @@ $('f').addEventListener('submit',async e=>{
     actividad:$('actividad').value,fecha:$('fecha').value,hora:$('hora').value,horaFin:$('horaFin').value,lugar:$('lugar').value,
     puntoFocal:{nombre:$('pfNombre').value,cargo:$('pfCargo').value,telefono:$('pfTel').value,correo:$('pfCorreo').value},
     servicios:[...document.querySelectorAll('input[name=serv]:checked')].map(x=>x.value),clave:$('clave').value.trim(),entrega:$('entrega').value,material:$('material').value.trim(),descripcion:$('descripcion').value,web:$('web').value,
-    detalles:Object.fromEntries(Object.entries(PREG).map(([k,qs])=>[k,Object.fromEntries(qs.filter(([c])=>c[0]!=='_').map(([c])=>[c,$(`d-${k}-${c}`).value]))]))};
+    detalles:Object.fromEntries(Object.entries(PREG).map(([k,qs])=>[k,Object.fromEntries(qs.filter(([c])=>c[0]!=='_').map(([c])=>[c,valPreg(k,c)]))]))};
   const err=$('err'),btn=$('btn');err.style.display='none';btn.disabled=true;btn.textContent='Enviando…';
   try{
     const r=await fetch('/api/pedidos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
