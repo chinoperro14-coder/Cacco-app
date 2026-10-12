@@ -938,6 +938,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <div class="stit">Equipo de Comunicaciones</div>
     <button class="btn bna bsm nle oculto" onclick="abrirMEq()">+ Agregar persona</button>
   </div>
+  <div id="actEq" class="oculto" style="background:var(--su2);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;line-height:1.6"></div>
   <div class="eqgrid" id="gridEq"></div>
   <div id="vacEq" style="padding:48px 20px;text-align:center;color:var(--tm);display:none">
     <div style="font-size:36px;margin-bottom:10px">👥</div><div style="font-size:14px;font-weight:500">Sin personas en el equipo.</div>
@@ -2095,7 +2096,7 @@ function goV(v,el){
   if(v==='adjuntos'){renderAdjuntos();cargarAdj();}
   if(v==='bitacora')renderBit();
   if(v==='calendario')renderCal();
-  if(v==='equipo')renderEquipo();
+  if(v==='equipo'){renderEquipo();cargarActividad();}
   if(v==='permisos')renderPermisos();
   if(v==='compensatorio')renderComp();
   if(v==='aprobaciones')renderAprob();
@@ -5289,7 +5290,7 @@ function renderAprob(){
 function renderEquipo(){
   const grid=document.getElementById('gridEq'),vac=document.getElementById('vacEq');
   if(!E.equipo.length){grid.innerHTML='';vac.style.display='block';return;}
-  vac.style.display='none';
+  vac.style.display='none';renderActEq();
   grid.innerHTML=[...equipoReal(),...E.equipo.filter(esSistema)].map(p=>{
     // Tareas donde esta persona es responsable (nuevo modelo) o tenía la categoría (viejo)
     const mt=E.tareas.filter(t=>{
@@ -5311,6 +5312,7 @@ function renderEquipo(){
           <div>
             <div style="font-weight:800;font-size:15px">${escH(p.nombre)}</div>
             <div style="font-size:12px;color:var(--tm);margin-top:2px">${escH(p.cargo||'Sin cargo')}</div>
+            ${(()=>{const a=!esSistema(p)&&actInfo(p.id);return a?`<div style="font-size:11px;font-weight:600;color:${a.col};margin-top:3px">● ${a.txt}</div>`:'';})()}
             ${(()=>{const a=ausenciaComp(p.nombre);return a?`<div style="font-size:11px;font-weight:700;color:var(--az);margin-top:3px">🌴 De compensatorio · regresa el ${fmt(a.regreso)}</div>`:'';})()}
             ${p.puesto||p.posicion?`<div style="font-size:11px;color:var(--tm);margin-top:2px">RRHH: ${p.puesto||'—'}${p.posicion?` · Posición ${p.posicion}`:''}</div>`:''}
             <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
@@ -8208,6 +8210,42 @@ function iniciarPolling(){
   setInterval(()=>{if(uAct&&getToken()&&!hayModalAbierto()&&!_guardando)sincronizar();},7000);
   // Al volver a la pestaña, refrescar de inmediato
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&uAct&&getToken()&&!hayModalAbierto()&&!_guardando)sincronizar();});
+  // Última actividad: abrir el tablero o tocarlo (como mucho un aviso cada 5 min); una pestaña olvidada no cuenta
+  let ultLatido=0;
+  const latido=()=>{if(document.hidden||!uAct||!getToken()||Date.now()-ultLatido<300e3)return;ultLatido=Date.now();
+    fetch('/api/actividad',{method:'POST',headers:{'Authorization':'Bearer '+getToken()}}).catch(()=>{});};
+  ['pointerdown','keydown'].forEach(ev=>document.addEventListener(ev,latido,{passive:true}));
+  latido();
+}
+
+// ── Última actividad de cada persona (solo Líder y Editor) ──
+let ACT=null,actCargada=0;
+async function cargarActividad(){
+  if(!['lider','editor'].includes(niv)||!getToken()||Date.now()-actCargada<60e3)return;
+  actCargada=Date.now();
+  try{const r=await fetch('/api/actividad',{headers:{'Authorization':'Bearer '+getToken()}});if(r.ok){ACT=await r.json();if(visible('vEquipo'))renderEquipo();}}catch{}
+}
+const fPA=(d,o)=>new Intl.DateTimeFormat('es-PA',{timeZone:'America/Panama',...o}).format(d);
+function actInfo(id){
+  if(!ACT)return null;
+  const iso=ACT[id];
+  if(!iso)return{dias:Infinity,nunca:true,txt:'Aún sin registro de uso',col:'var(--tm)'};
+  const d=new Date(iso),dia=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Panama'}).format(d);
+  const dias=Math.round((new Date(hoy()+'T12:00:00')-new Date(dia+'T12:00:00'))/864e5);
+  const hora=fPA(d,{hour:'numeric',minute:'2-digit'});
+  const txt=dias<=0?`Activo hoy, ${hora}`:dias===1?`Activo ayer, ${hora}`:dias<7?`Activo hace ${dias} días`:`Sin entrar desde el ${fmt(dia)}`;
+  return{dias,txt,col:dias<=1?'var(--ve)':dias<7?'var(--am)':'var(--ro)'};
+}
+function renderActEq(){
+  const box=document.getElementById('actEq');if(!box)return;
+  if(!ACT||!['lider','editor'].includes(niv)){box.classList.add('oculto');return;}
+  const gente=equipoReal().map(p=>({p,a:actInfo(p.id)}));
+  const semana=gente.filter(x=>x.a.dias<7),hoyN=gente.filter(x=>x.a.dias<=0).length,lejos=gente.filter(x=>x.a.dias>=7&&!x.a.nunca),nunca=gente.filter(x=>x.a.nunca);
+  const nom=l=>l.map(x=>escH(x.p.nombre.split(' ')[0])).join(', ');
+  box.innerHTML=`<b>👥 Uso del tablero:</b> ${hoyN} de ${plu(gente.length,'persona','personas')} hoy · ${semana.length} en los últimos 7 días`+
+    (lejos.length?`<br><span style="color:var(--ro)">Sin entrar en 7 días o más: ${nom(lejos)}</span>`:'')+
+    (nunca.length?`<br><span style="color:var(--tm)">Aún sin registro (se cuenta desde el 12 oct): ${nom(nunca)}</span>`:'');
+  box.classList.remove('oculto');
 }
 
 // ════════════════════════
