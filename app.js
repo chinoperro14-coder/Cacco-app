@@ -141,6 +141,25 @@ app.get("/pedido", (req, res) => res.sendFile(path.join(__dirname, "pedido.html"
 const { pedidoATarea, siguienteFolio } = require("./pedidos");
 const PEDIDOS_POR_HORA = 5, PEDIDOS_SIN_REVISAR = 40;
 const enviosPorIp = new Map();
+// Clave de acceso del formulario: la comparten las jefaturas; Líder y Editor la ven y la cambian.
+// Vive en data.config y solo se cambia por /api/pedidos/clave (nunca con un guardado normal).
+const clavesFallidas = new Map(), CLAVE_FALLOS_POR_HORA = 10;
+const puedeClave = u => ["lider", "editor"].includes(u?.nivel);
+app.get("/api/pedidos/clave", verificarToken, async (req, res) => {
+  if (!puedeClave(req.usuario)) return res.status(403).json({ error: "Sin permiso" });
+  try { res.json({ clave: (await leerData()).config?.clavePedidos || "" }); }
+  catch { res.status(500).json({ error: "No se pudo leer la clave" }); }
+});
+app.post("/api/pedidos/clave", verificarToken, async (req, res) => {
+  if (!puedeClave(req.usuario)) return res.status(403).json({ error: "Sin permiso" });
+  const clave = String(req.body?.clave || "").trim();
+  if (!/^[\p{L}\p{N}-]{4,30}$/u.test(clave)) return res.status(400).json({ error: "La clave debe tener de 4 a 30 letras o números, sin espacios." });
+  try {
+    const data = await leerData();
+    data.config = { ...(data.config || {}), clavePedidos: clave };
+    await escribirData(data); res.json({ ok: true, clave });
+  } catch { res.status(500).json({ error: "No se pudo guardar la clave" }); }
+});
 app.post("/api/pedidos", async (req, res) => {
   // Render agrega la IP real al final de X-Forwarded-For (lo anterior lo puede escribir cualquiera)
   const ip = String(req.headers["x-forwarded-for"] || "").split(",").pop().trim() || req.ip;
@@ -148,7 +167,16 @@ app.post("/api/pedidos", async (req, res) => {
   if (recientes.length >= PEDIDOS_POR_HORA)
     return res.status(429).json({ error: "Ya enviaste varios pedidos en la última hora. Si es urgente, escribe directamente al equipo de Comunicaciones." });
   try {
+    const fallas = (clavesFallidas.get(ip) || []).filter(t => ahora - t < 3600e3);
+    if (fallas.length >= CLAVE_FALLOS_POR_HORA)
+      return res.status(429).json({ error: "Demasiados intentos con una clave incorrecta. Intenta de nuevo en una hora." });
     const data = await leerData();
+    const clave = data.config?.clavePedidos;
+    if (!clave) return res.status(403).json({ error: "El formulario todavía no está activo. Pide la clave al equipo de Comunicaciones." });
+    if (String(req.body?.clave || "").trim().toLowerCase() !== clave.toLowerCase()) {
+      clavesFallidas.set(ip, [...fallas, ahora]);
+      return res.status(403).json({ error: "La clave de acceso no es correcta. Pídela a tu jefatura o al equipo de Comunicaciones.", clave: true });
+    }
     data.tareas = data.tareas || []; data.pedidos = data.pedidos || []; data.notifs = data.notifs || [];
     if (data.tareas.filter(t => t && t.borrador && t.pedido).length >= PEDIDOS_SIN_REVISAR)
       return res.status(503).json({ error: "Hay muchos pedidos esperando revisión. Escribe directamente al equipo de Comunicaciones." });
@@ -201,7 +229,11 @@ app.get("/api/data/public", async (req, res) => {
   catch { res.status(500).json({ error: "Error leyendo datos" }); }
 });
 app.get("/api/data", verificarToken, async (req, res) => {
-  try { res.json(await leerData()); }
+  try {
+    const d = await leerData();
+    if (d.config && !puedeClave(req.usuario)) d.config = { ...d.config, clavePedidos: undefined };
+    res.json(d);
+  }
   catch { res.status(500).json({ error: "Error leyendo datos" }); }
 });
 // Las solicitudes de permiso no se borran: si un guardado omite alguna que ya existe, se conserva.
@@ -249,7 +281,9 @@ app.post("/api/data", verificarToken, async (req, res) => {
     const regreso = await regresoSiAusente(req.usuario?.id, req.usuario?.nivel);
     if (regreso) return res.status(403).json({ error: msgAusente(regreso) });
     const actual = await leerData();
-    await escribirData(await conservarPermisos(aplicarReglasRol(req.body, actual, req.usuario?.nivel), actual)); res.json({ ok: true });
+    const nuevo = await conservarPermisos(aplicarReglasRol(req.body, actual, req.usuario?.nivel), actual);
+    if (nuevo && typeof nuevo === "object") { if (actual.config) nuevo.config = actual.config; else delete nuevo.config; }   // la clave solo cambia por su ruta
+    await escribirData(nuevo); res.json({ ok: true });
   }
   catch { res.status(500).json({ error: "No se pudo guardar" }); }
 });

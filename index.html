@@ -7535,10 +7535,14 @@ function elimSalida(){
 const linkPedidos=()=>location.origin+'/pedido';
 const pedidoTxt=t=>t.pedido?`📨 ${escH(t.pedido.folio||'Pedido')} de ${escH(t.pedido.area)} · ${escH(t.pedido.solicitante)}`:'';
 async function compartirPedidos(){
-  const url=linkPedidos();
-  const v=await dialogo({tit:'🔗 Formulario de pedidos',msg:'Compártelo con Dirección, Programación, Educación y las demás áreas. Cada pedido llega como borrador a Tareas y a Aprobaciones, con la fecha, el lugar y el contacto de quien lo pide.',campo:{label:'Enlace',val:url},ok:'Copiar enlace',no:'Cerrar'});
+  const url=linkPedidos(),api=(m,b)=>fetch('/api/pedidos/clave',{method:m,headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()},body:b?JSON.stringify(b):undefined}).then(async r=>{const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'No se pudo.');return j;});
+  let clave='';try{clave=(await api('GET')).clave;}catch(e){avisar(e.message);return;}
+  const v=await dialogo({tit:'🔗 Formulario de pedidos',msg:`Comparte el enlace y la clave con las jefaturas. Cada pedido llega como borrador a Tareas.\n\nEnlace: ${url}\n\n${clave?'Si la clave se filtra, escribe una nueva aquí: la anterior deja de funcionar al guardar.':'El formulario no recibe pedidos hasta que definas una clave.'}`,campo:{label:'Clave de acceso',val:clave,ph:'ej. CACCO2026'},ok:'Guardar y copiar',no:'Cerrar'});
   if(v===null)return;
-  try{await navigator.clipboard.writeText(url);avisar('✅ Enlace copiado.');}catch{avisar('Copia el enlace: '+url);}
+  const nueva=String(v).trim();
+  if(nueva!==clave){try{clave=(await api('POST',{clave:nueva})).clave;reg('Clave del formulario de pedidos cambiada','');}catch(e){avisar(e.message);return;}}
+  const txt=`Formulario de pedidos a Comunicaciones: ${url}\nClave de acceso: ${clave}`;
+  try{await navigator.clipboard.writeText(txt);avisar('✅ Enlace y clave copiados.');}catch{avisar(txt);}
 }
 
 // ════════════════════════

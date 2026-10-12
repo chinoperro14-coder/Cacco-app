@@ -65,6 +65,8 @@ footer{text-align:center;font-size:12px;color:var(--tm);padding:0 16px 30px}
 <form id="f" novalidate>
   <p class="intro">Pide aquí cobertura, diseño o difusión para tu actividad. El equipo revisa cada pedido y te contacta para confirmar. Mientras antes lo envíes, mejor: lo ideal es con una semana o más.</p>
 
+  <div class="campo"><label class="lbl" for="clave">Clave de acceso <span class="req">*</span></label><input type="text" id="clave" maxlength="30" autocomplete="off" autocapitalize="none" spellcheck="false"><div class="ayuda">La tiene tu jefatura. Este navegador la recuerda para la próxima vez.</div></div>
+
   <fieldset>
     <legend>Tu área <span class="req">*</span></legend>
     <div class="chips" id="areas"></div>
@@ -114,6 +116,7 @@ const SERV={cobertura:['📸','Cobertura de fotos y video'],diseno:['🎨','Dise
 const $=id=>document.getElementById(id);
 $('areas').innerHTML=AREAS.map(a=>`<label><input type="radio" name="area" value="${a}"> ${a}</label>`).join('');
 $('servicios').innerHTML=Object.entries(SERV).map(([k,[i,l]])=>`<label><input type="checkbox" name="serv" value="${k}"><span class="ico">${i}</span>${l}</label>`).join('');
+try{$('clave').value=localStorage.getItem('cacco_clave_pedidos')||'';}catch{}
 const hoyPa=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Panama'}).format(new Date());
 $('fecha').min=hoyPa;$('entrega').min=hoyPa;
 document.addEventListener('change',e=>{
@@ -127,12 +130,13 @@ $('f').addEventListener('submit',async e=>{
   e.preventDefault();
   const body={area:document.querySelector('input[name=area]:checked')?.value||'',areaOtra:$('areaOtra').value,nombre:$('nombre').value,contacto:$('contacto').value,
     actividad:$('actividad').value,fecha:$('fecha').value,hora:$('hora').value,horaFin:$('horaFin').value,lugar:$('lugar').value,
-    servicios:[...document.querySelectorAll('input[name=serv]:checked')].map(x=>x.value),entrega:$('entrega').value,descripcion:$('descripcion').value,web:$('web').value};
+    servicios:[...document.querySelectorAll('input[name=serv]:checked')].map(x=>x.value),clave:$('clave').value.trim(),entrega:$('entrega').value,descripcion:$('descripcion').value,web:$('web').value};
   const err=$('err'),btn=$('btn');err.style.display='none';btn.disabled=true;btn.textContent='Enviando…';
   try{
     const r=await fetch('/api/pedidos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const j=await r.json().catch(()=>({}));
-    if(!r.ok)throw new Error(j.error||'No se pudo enviar el pedido. Intenta de nuevo.');
+    if(!r.ok){if(j.clave){try{localStorage.removeItem('cacco_clave_pedidos');}catch{}setTimeout(()=>$('clave').focus(),50);}throw new Error(j.error||'No se pudo enviar el pedido. Intenta de nuevo.');}
+    try{localStorage.setItem('cacco_clave_pedidos',body.clave);}catch{}
     $('okFolio').textContent='Pedido '+j.folio;
     $('okRes').innerHTML=`<strong>${esc(body.actividad)}</strong><br>📅 ${esc(fLarga(body.fecha))}${body.hora?' · '+hTxt(body.hora):''}${body.horaFin?' a '+hTxt(body.horaFin):''}${body.lugar?'<br>📍 '+esc(body.lugar):''}<br>🧰 ${body.servicios.map(k=>SERV[k][1]).join('; ')}`;
     $('f').style.display='none';$('ok').style.display='block';window.scrollTo(0,0);
