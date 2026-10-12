@@ -139,6 +139,8 @@ header{background:var(--na);height:60px;display:flex;align-items:center;justify-
 .nsep{font-size:10px;font-weight:700;color:var(--tm);letter-spacing:1px;text-transform:uppercase;padding:14px 8px 5px;}
 .ni{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:7px;font-size:13px;font-weight:500;color:var(--tm);cursor:pointer;transition:all .12s;border:none;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif;}
 .ni:hover{background:var(--nas);color:var(--na);}.ni.on{background:var(--nas);color:var(--na);font-weight:700;}
+@keyframes tcFlash{0%,40%{box-shadow:0 0 0 3px var(--na)}100%{box-shadow:0 0 0 0 transparent}}
+.tc-flash{animation:tcFlash 2.2s ease-out}
 .ni .ico{font-size:14px;width:18px;text-align:center;flex-shrink:0;}
 .ni .ct{margin-left:auto;font-size:11px;background:var(--su2);border:1px solid var(--bo);padding:1px 7px;border-radius:20px;font-weight:600;}
 .ni.on .ct{background:var(--na);color:#fff;border-color:var(--na);}
@@ -758,7 +760,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <button class="ni ned oculto" onclick="goV('aprobaciones',this)"><span class="ico">✅</span>Aprobaciones<span class="ct" id="ctA">0</span></button>
   <button class="ni" onclick="goV('asignaciones',this)"><span class="ico">☀️</span>Parte Diario</button>
   <button class="ni" onclick="goV('asigVarias',this)"><span class="ico">🔁</span>Tareas Recurrentes</button>
-  <button class="ni" onclick="goV('calendario',this)"><span class="ico">📅</span>Calendario</button>
+  <button class="ni" onclick="goV('calendario',this)"><span class="ico">🗓️</span>Calendario</button>
   <button class="ni" onclick="goV('horasExtra',this)"><span class="ico">⏱️</span>Horas Extras<span class="ct" id="ctH">0</span></button>
   <button class="ni" onclick="goV('compensatorio',this)"><span class="ico">🌴</span>Compensatorio<span class="ct" id="ctC">0</span></button>
   <button class="ni" onclick="goV('permisos',this)"><span class="ico">📝</span>Permisos<span class="ct" id="ctP">0</span></button>
@@ -778,7 +780,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <button class="nfilt" onclick="filtraCat('Medios',this)"><span class="ico">📡</span>Medios</button>
   </div>
   <div class="nsep">Publicaciones</div>
-  <button class="ni new-item" onclick="goV('calPub',this)"><span class="ico">🗓️</span>Cal. Publicaciones<span class="new-tag">NUEVO</span></button>
+  <button class="ni new-item" onclick="goV('calPub',this)"><span class="ico">📣</span>Cal. Publicaciones<span class="new-tag">NUEVO</span></button>
   <button class="ni npriv" onclick="goV('prensa',this)"><span class="ico">📰</span>Prensa</button>
 </nav>
 
@@ -843,8 +845,8 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 <div id="vCalendario" class="oculto">
   <div class="sh2">
     <div>
-      <div class="stit">📅 Calendario</div>
-      <div style="font-size:13px;color:var(--tm);margin-top:3px">Tareas por fecha límite y tareas recurrentes (en morado) · <a onclick="goV('calPub',document.querySelector('.ni[onclick*=calPub]'))" style="color:var(--na);font-weight:600;cursor:pointer">🗓️ Ver Cal. de Publicaciones →</a></div>
+      <div class="stit">🗓️ Calendario</div>
+      <div style="font-size:13px;color:var(--tm);margin-top:3px">Tareas por fecha límite y tareas recurrentes (en morado) · <a onclick="goV('calPub',document.querySelector('.ni[onclick*=calPub]'))" style="color:var(--na);font-weight:600;cursor:pointer">📣 Ver Cal. de Publicaciones →</a></div>
     </div>
     <div style="display:flex;align-items:center;gap:10px">
       <button class="btn bgh bsm" onclick="mesAnt()">← Anterior</button>
@@ -1085,9 +1087,9 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 <div id="vCalPub" class="oculto">
   <div class="sh2">
     <div>
-      <div class="stit">🗓️ Calendario de Publicaciones</div>
+      <div class="stit">📣 Calendario de Publicaciones</div>
       <div style="font-size:13px;color:var(--tm);margin-top:3px" id="calPubTit"></div>
-      <div style="font-size:13px;color:var(--tm);margin-top:2px">Redes sociales y medios (prensa, radio, TV) · <a onclick="goV('calendario',document.querySelector('.ni[onclick*=calendario]'))" style="color:var(--na);font-weight:600;cursor:pointer">📅 Ver Calendario de tareas →</a></div>
+      <div style="font-size:13px;color:var(--tm);margin-top:2px">Redes sociales y medios (prensa, radio, TV) · <a onclick="goV('calendario',document.querySelector('.ni[onclick*=calendario]'))" style="color:var(--na);font-weight:600;cursor:pointer">🗓️ Ver Calendario de tareas →</a></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <div style="display:flex;gap:2px;background:var(--su2);border:1px solid var(--bo);border-radius:7px;padding:2px">
@@ -1457,7 +1459,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 <div class="mo">
   <div class="mcab">
     <div>
-      <div class="mtit" id="mProgModalTit">📅 Nueva publicación</div>
+      <div class="mtit" id="mProgModalTit">🗓️ Nueva publicación</div>
       <div style="font-size:12px;color:var(--tm);margin-top:3px" id="mProgSub"></div>
     </div>
     <button class="mx" onclick="cerM('mProg')">×</button>
@@ -1647,7 +1649,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 <div class="mov" id="mInfSem"><div class="mo molg">
   <div class="mcab"><div class="mtit">📝 Informe semanal de la jefatura</div><button class="mx" onclick="cerM('mInfSem')">×</button></div>
   <div class="mbody">
-    <div class="al alaz" style="margin-bottom:12px;font-size:12.5px"><span>📅 Se entrega cada <b>viernes antes de las 12:00 m.d.</b> La Dirección lo unifica con el de las demás jefaturas el lunes.</span></div>
+    <div class="al alaz" style="margin-bottom:12px;font-size:12.5px"><span>🗓️ Se entrega cada <b>viernes antes de las 12:00 m.d.</b> La Dirección lo unifica con el de las demás jefaturas el lunes.</span></div>
     <div class="fr">
       <div class="fg"><label class="fl">Semana</label><select class="fc" id="isSem" onchange="iSemCargar(this.value)"></select></div>
       <div class="fg"><label class="fl">Jefatura responsable</label><input type="text" class="fc" id="isJefe"></div>
@@ -2394,7 +2396,7 @@ function renderTareas(){
             <div>
               <div style="font-size:13px;font-weight:700;color:var(--tx)">${sec}</div>
               <div style="font-size:11px;color:var(--tm)">👤 ${respNames}${sv.completadoPor?` · ✅ ${sv.completadoPor} · ${fmt(sv.completadoEn)}`:''}</div>
-              ${sv.fecha?`<div style="font-size:11px;color:${sInfo.color||'var(--na)'};font-weight:600;margin-top:2px">📅 Entrega: ${fmt(sv.fecha)}${sv.hora?` · ${sv.hora}`:''}</div>`:''}
+              ${sv.fecha?`<div style="font-size:11px;color:${sInfo.color||'var(--na)'};font-weight:600;margin-top:2px">🗓️ Entrega: ${fmt(sv.fecha)}${sv.hora?` · ${sv.hora}`:''}</div>`:''}
               ${resumenUnid}
               ${(sv.completadaTarde||sv.notaRetraso)?`<div style="font-size:11px;color:#dc2626;margin-top:2px">⏰ Completada con retraso${sv.notaRetraso?` — ${sv.notaRetraso}`:''}</div>`:''}
               ${noCump&&!tieneUnid?`<div style="font-size:11px;color:#dc2626;margin-top:2px">🚫 No cumplida${sv.noCumplidaPor?` · ${sv.noCumplidaPor}`:''}${sv.noCumplidaEn?` · ${fmt(sv.noCumplidaEn)}`:''} — ${sv.motivoNoCumplida||''}</div>`:''}
@@ -2593,8 +2595,8 @@ function renderTareas(){
         const entItems=secEnts.map(e=>{
           const pub=(E.publicaciones||[]).find(p=>p.entId===e.id&&p.tareaId===t.id);
           const progEl=pub
-            ?`<div class="prog-badge" onclick="event.stopPropagation();programarEntregable('${t.id}','${e.id}')">📅 ${fmtPubFecha(pub.fecha)} · ${pub.hora}</div>`
-            :(canAddEnt?`<button class="btn-prog" onclick="event.stopPropagation();programarEntregable('${t.id}','${e.id}')">📅 Programar</button>`:'');
+            ?`<div class="prog-badge" onclick="event.stopPropagation();programarEntregable('${t.id}','${e.id}')">🗓️ ${fmtPubFecha(pub.fecha)} · ${pub.hora}</div>`
+            :(canAddEnt?`<button class="btn-prog" onclick="event.stopPropagation();programarEntregable('${t.id}','${e.id}')">🗓️ Programar</button>`:'');
           return`<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--fo);border:1px solid var(--bo);border-radius:var(--rs);margin-bottom:4px;font-size:12px;flex-wrap:wrap">
             <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🔗 <a href="${(e.url||'').startsWith('http')?e.url:'https://'+(e.url||'')}" target="_blank" style="color:var(--az)" onclick="event.stopPropagation()">${e.nombre}</a></span>
             <span style="color:var(--tm);font-size:11px;white-space:nowrap">${e.subidoPor||''}</span>
@@ -2649,7 +2651,7 @@ function renderTareas(){
     }
 
     const etiqH=(t.etiquetas||[]).map(e=>`<span class="bg bmor">${e}</span>`).join('');
-    const notaPreview=t.notas?`<div style="font-size:12px;color:var(--tm);margin-top:3px;word-break:break-word">📝 ${t.notas}</div>`:'';
+    const notaPreview=t.notas?`<div style="font-size:12px;color:var(--tm);margin-top:3px;word-break:break-word">📝 ${t.notas.replace(/📅/g,'🗓️')}</div>`:'';
     const acciones=abierta&&(puedeEditarT(t)||puede('eliminarTarea')||puede('crearTarea'))?`<div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
       ${puedeEditarT(t)?`<button class="btn bna bsm" onclick="event.stopPropagation();editT('${t.id}')">✏️ Editar</button>`:''}
       ${puede('crearTarea')?`<button class="btn bgh bsm" onclick="event.stopPropagation();duplT('${t.id}')">📋 Duplicar</button>`:''}
@@ -2658,7 +2660,7 @@ function renderTareas(){
 
     // Publications block
     const taskPubs=(E.publicaciones||[]).filter(p=>p.tareaId===t.id);
-    const pubsBadge=(!abierta&&taskPubs.length)?`<span class="bg bgr" style="font-size:10px">📅 ${taskPubs.filter(p=>pubEst(p)==='publicado').length}/${taskPubs.length} publicadas</span>`:'';
+    const pubsBadge=(!abierta&&taskPubs.length)?`<span class="bg bgr" style="font-size:10px">🗓️ ${taskPubs.filter(p=>pubEst(p)==='publicado').length}/${taskPubs.length} publicadas</span>`:'';
     let pubsBlockHTML='';
     if(abierta){
       const canProg=puede('marcarAvance');
@@ -2678,7 +2680,7 @@ function renderTareas(){
       }).join('');
       pubsBlockHTML=`<div style="margin-top:12px;border:1px solid var(--bo);border-radius:var(--r);overflow:hidden">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--su);border-bottom:1px solid var(--bo)">
-          <span style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px">📅 Publicaciones (${taskPubs.length})</span>
+          <span style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px">🗓️ Publicaciones (${taskPubs.length})</span>
           ${canProg?`<button class="btn bna bsm" style="font-size:11px;padding:2px 8px" onclick="event.stopPropagation();nuevaPublicacion(null,'${t.id}')">+ Programar</button>`:''}
         </div>
         ${taskPubs.length?pubRows:`<div style="padding:10px 12px;font-size:12px;color:var(--tm)">Sin publicaciones aún.</div>`}
@@ -2698,7 +2700,7 @@ function renderTareas(){
           <span class="t-ico" style="font-size:17px;flex-shrink:0">${secIco}</span>
           <div style="min-width:0">
             <div class="t-tit" style="font-size:14px;font-weight:700;color:#fff;white-space:normal;word-break:break-word">${t.titulo}${t.recurrencia&&t.recurrencia!=='ninguna'?' 🔁':''}</div>
-            ${t.notas&&abierta?`<div style="font-size:11px;color:rgba(255,255,255,.82);margin-top:1px;word-break:break-word">📝 ${t.notas}</div>`:''}
+            ${t.notas&&abierta?`<div style="font-size:11px;color:rgba(255,255,255,.82);margin-top:1px;word-break:break-word">📝 ${t.notas.replace(/📅/g,'🗓️')}</div>`:''}
           </div>
         </div>
         <div class="t-badges" style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:10px">
@@ -2710,7 +2712,7 @@ function renderTareas(){
         <div class="t-badges-row" style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
           <span class="bg ${bEst[eg]||'bgr'}">${eg}</span>
           ${t.prioridad?`<span class="bg ${bPri[t.prioridad]||'bgr'}">${escH(t.prioridad)}</span>`:''}
-          ${t.fecha?`<span class="bg bgr" style="${vencida?'color:var(--ro);font-weight:700':''}">${vencida?'⚠️ ':'📅 '}${fmt(t.fecha)}</span>`:''}
+          ${t.fecha?`<span class="bg bgr" style="${vencida?'color:var(--ro);font-weight:700':''}">${vencida?'⚠️ ':'🗓️ '}${fmt(t.fecha)}</span>`:''}
           ${t.lugar?`<span class="bg bgr">📍 ${t.lugar}</span>`:''}
           ${etiqH}
           ${!abierta&&ents.length?entHTML:''}
@@ -2745,8 +2747,8 @@ function renderTareas(){
   const mkHdrT=(lbl,col,bg,n)=>`<div class="tint" style="--sc:${col};display:flex;align-items:center;gap:8px;margin:16px 0 8px;padding:7px 12px;background:${bg};border-left:4px solid ${col};border-radius:0 var(--rs) var(--rs) 0"><span style="font-size:13px;font-weight:700;color:${col}">${lbl}</span><span style="font-size:11px;background:${col};color:#fff;padding:1px 7px;border-radius:10px;font-weight:700">${n}</span></div>`;
   let htmlOut='';
   if(vencidts.length){htmlOut+=mkHdrT('⚠️ Vencidas','#dc2626','#fee2e2',vencidts.length);htmlOut+=vencidts.map(renderTCard).join('');}
-  if(dehoyts.length){htmlOut+=mkHdrT('📅 Hoy — '+fmt(hh),'#E35205','#FFF0E8',dehoyts.length);htmlOut+=dehoyts.map(renderTCard).join('');}
-  Object.keys(byFch).sort().forEach(f=>{htmlOut+=mkHdrT('📅 '+fmt(f),'#2563eb','#EFF6FF',byFch[f].length);htmlOut+=byFch[f].map(renderTCard).join('');});
+  if(dehoyts.length){htmlOut+=mkHdrT('🗓️ Hoy — '+fmt(hh),'#E35205','#FFF0E8',dehoyts.length);htmlOut+=dehoyts.map(renderTCard).join('');}
+  Object.keys(byFch).sort().forEach(f=>{htmlOut+=mkHdrT('🗓️ '+fmt(f),'#2563eb','#EFF6FF',byFch[f].length);htmlOut+=byFch[f].map(renderTCard).join('');});
   if(sfechts.length){htmlOut+=mkHdrT('📌 Sin fecha','#888','#f5f5f5',sfechts.length);htmlOut+=sfechts.map(renderTCard).join('');}
   if(compts.length){htmlOut+=mkHdrT('✅ Completadas','#16a34a','#DCFCE7',compts.length);htmlOut+=compts.map(renderTCard).join('');}
   if(cerradts.length){htmlOut+=mkHdrT('🚫 Cerradas / No cumplidas','#6b7280','#f3f4f6',cerradts.length);htmlOut+=cerradts.map(renderTCard).join('');}
@@ -2760,16 +2762,17 @@ function renderBorradores(lista){
     .sort((a,b)=>(a.fecha||'9999').localeCompare(b.fecha||'9999'));
   if(!borradores.length)return false;
   const nivelDe=t=>((t.notas||'').match(/NIVEL SUGERIDO: ([^\n(]+)/)||[])[1]||'';
-  const borHtml=borradores.map(t=>`
-      <div style="padding:10px 14px;border:1px dashed var(--na);border-radius:var(--r);background:var(--su);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+  const borHtml=borradores.map(t=>{const ab=expandidas.has(t.id);return`
+      <div id="tc-${t.id}" style="padding:10px 14px;border:1px dashed var(--na);border-radius:var(--r);background:var(--su);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         ${puede('descartarBorrador')?`<input type="checkbox" class="borSel" value="${t.id}" onchange="borSelCambio()" style="width:18px;height:18px;cursor:pointer" title="Seleccionar">`:''}
         <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:700;color:var(--tx)">${t.titulo||'(Sin título)'}</div>
-          <div style="font-size:11px;color:var(--tm);margin-top:2px">📝 Borrador · ${t.fecha?'📅 '+fmt(t.fecha)+(t.hora?' '+t.hora:'')+' · ':''}${nivelDe(t)?nivelDe(t).trim()+' · ':''}${t.pedido?pedidoTxt(t):escH(t.creadaPor||'?')}</div>
+          <div onclick="togT('${t.id}')" title="${ab?'Ocultar':'Ver'} detalle" style="font-size:13px;font-weight:700;color:var(--tx);cursor:pointer">${ab?'▾':'▸'} ${t.titulo||'(Sin título)'}</div>
+          <div style="font-size:11px;color:var(--tm);margin-top:2px">📝 Borrador · ${t.fecha?'🗓️ '+fmt(t.fecha)+(t.hora?' '+t.hora:'')+' · ':''}${nivelDe(t)?nivelDe(t).trim()+' · ':''}${t.pedido?pedidoTxt(t):escH(t.creadaPor||'?')}</div>
         </div>
         ${puede('editarTarea')?`<button class="btn bna bsm" onclick="abrirMT('${t.id}')">✏️ Completar</button>`:''}
         ${puede('descartarBorrador')?`<button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro)" onclick="descartarBorr(['${t.id}'])">🗑 Descartar</button>`:''}
-      </div>`).join('');
+        ${ab?`<div style="flex-basis:100%;font-size:12.5px;line-height:1.5;color:var(--tx);background:var(--su2);border-radius:6px;padding:10px 12px;white-space:pre-wrap;max-height:340px;overflow:auto">${t.lugar?`📍 ${escH(t.lugar)}\n`:''}${escH((t.notas||'Sin más detalles.').replace(/📅/g,'🗓️'))}</div>`:''}
+      </div>`;}).join('');
   const pd=puede('descartarBorrador'),nc=borradores.filter(t=>/No cubrir/.test(nivelDe(t)));
   lista.innerHTML+=`<div style="margin-top:20px">
       <div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px">
@@ -2808,15 +2811,26 @@ function togT(id){
   renderTareas();
 }
 
-// Desde calendario — navega y expande
+// Desde calendario (o Mi día) — abre la tarea en Tareas, desplegada y resaltada
 function irATarea(id){
+  const t=E.tareas.find(x=>x.id===id);
   expandidas.clear();expandidas.add(id);
+  // Si un filtro la esconde, se limpian los filtros para que aparezca
+  if(t&&!t.borrador&&!getTareas().some(x=>x.id===id)){
+    const fe=document.getElementById('filtEst'),sm=document.getElementById('soloMias'),bq=document.getElementById('busqTarea');
+    if(fe)fe.value='todos';if(sm)sm.checked=false;if(bq)bq.value='';
+    fCat='todos';document.querySelectorAll('.nfilt').forEach(n=>n.classList.toggle('on',/'todos'/.test(n.getAttribute('onclick')||'')));
+  }
   VISTAS.forEach(n=>document.getElementById('v'+n).classList.add('oculto'));
   document.getElementById('vTareas').classList.remove('oculto');
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
   document.querySelector('.ni[onclick*="tareas"]').classList.add('on');
   renderTareas();
-  setTimeout(()=>{const el=document.getElementById('tc-'+id);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},80);
+  setTimeout(()=>{
+    const el=document.getElementById('tc-'+id);if(!el)return;
+    el.scrollIntoView({behavior:'smooth',block:'center'});
+    el.classList.remove('tc-flash');void el.offsetWidth;el.classList.add('tc-flash');
+  },80);
 }
 
 function editT(id){abrirMT(id);}
@@ -2887,7 +2901,7 @@ function renderSeccionesModal(t){
       :'+ Incluir';
     // Fecha y hora de entrega propias de la sección (opcionales) — fila compacta
     const fechaBlk=`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;padding:7px 10px;background:var(--fo);border:1px dashed var(--bo);border-radius:8px">
-        <span style="font-size:12px;font-weight:600;color:var(--tx)">📅 Entrega</span>
+        <span style="font-size:12px;font-weight:600;color:var(--tx)">🗓️ Entrega</span>
         <input type="date" class="fc" id="secfecha-${key}" value="${sv?.fecha||''}" style="flex:1;min-width:120px;font-size:12px;padding:4px 8px">
         <input type="time" class="fc" id="sechora-${key}" value="${sv?.hora||''}" style="width:108px;font-size:12px;padding:4px 8px">
         <span style="font-size:10px;color:var(--tm);flex-basis:100%;margin-top:1px">Opcional — vacío = usa la fecha general de la tarea</span>
@@ -3624,7 +3638,7 @@ function setTipoProg(v){
 function nuevaPublicacion(fechaPreset,tareaId){
   if(!puede('marcarAvance')){alert('Sin permiso.');return;}
   mProgId=null;mProgTareaId=tareaId||null;mProgEntId=null;
-  document.getElementById('mProgModalTit').textContent='📅 Nueva publicación';
+  document.getElementById('mProgModalTit').textContent='🗓️ Nueva publicación';
   document.getElementById('mProgSub').textContent='';
   document.getElementById('mProgTituloBlk').style.display='block';
   document.getElementById('mProgContexto').style.display='none';
@@ -3659,7 +3673,7 @@ function editarPub(id){
   if(!puede('marcarAvance')){alert('Sin permiso.');return;}
   const pub=(E.publicaciones||[]).find(p=>p.id===id);if(!pub)return;
   mProgId=id;mProgTareaId=pub.tareaId||null;mProgEntId=pub.entId||null;
-  document.getElementById('mProgModalTit').textContent='📅 Editar publicación';
+  document.getElementById('mProgModalTit').textContent='🗓️ Editar publicación';
   document.getElementById('mProgSub').textContent='';
   document.getElementById('mProgTituloBlk').style.display='block';
   document.getElementById('mProgContexto').style.display='none';
@@ -3707,7 +3721,7 @@ function programarEntregable(tareaId,entId){
   const t=E.tareas.find(t=>t.id===tareaId);if(!t)return;
   const e=(t.entregables||[]).find(e=>e.id===entId);if(!e)return;
   mProgId=null;mProgTareaId=tareaId;mProgEntId=entId;
-  document.getElementById('mProgModalTit').textContent='📅 Programar publicación';
+  document.getElementById('mProgModalTit').textContent='🗓️ Programar publicación';
   document.getElementById('mProgSub').textContent=e.nombre;
   document.getElementById('mProgTituloBlk').style.display='none';
   document.getElementById('mProgContexto').style.display='block';
@@ -3871,7 +3885,7 @@ function renderPendientesPub(){
         <div style="font-size:11px;color:var(--tm);margin-top:2px">📋 ${p.tareaTit}</div>
       </div>
       <a href="${p.url.startsWith('http')?p.url:'https://'+p.url}" target="_blank" class="btn bgh bsm" style="flex-shrink:0">Ver</a>
-      ${canProg?`<button class="btn-prog" onclick="programarEntregable('${p.tareaId}','${p.entId}')">📅 Programar</button>`:''}
+      ${canProg?`<button class="btn-prog" onclick="programarEntregable('${p.tareaId}','${p.entId}')">🗓️ Programar</button>`:''}
     </div>`).join('');
   el.innerHTML=`
     <div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">
@@ -4230,7 +4244,7 @@ function renderHoras(){
       </div>
       <div style="font-size:13px;color:var(--tm);margin-bottom:12px;line-height:1.5">${escH(h.actividad||'')}</div>
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
-        <span style="font-size:11px;color:var(--tm)">📅 ${fmt(h.fecha)}${h.fechaFin&&h.fechaFin!==h.fecha?' al '+fmt(h.fechaFin):''}${h.desde&&h.hasta?` · 🕒 ${h.desde}–${h.hasta}`:''}${h.feriado?' · Feriado':h.tipoDia==='sabado'?' · Sábado':h.tipoDia==='domingo'?' · Domingo':''}</span>
+        <span style="font-size:11px;color:var(--tm)">🗓️ ${fmt(h.fecha)}${h.fechaFin&&h.fechaFin!==h.fecha?' al '+fmt(h.fechaFin):''}${h.desde&&h.hasta?` · 🕒 ${h.desde}–${h.hasta}`:''}${h.feriado?' · Feriado':h.tipoDia==='sabado'?' · Sábado':h.tipoDia==='domingo'?' · Domingo':''}</span>
         <div style="display:flex;gap:5px;flex-wrap:wrap">${btnApro}${esComp(h)?`<button class="btn bgh bsm" onclick="solCompDoc('${h.id}')">📄 Formulario</button>`:''}</div>
       </div>
       ${btnAdmin}
@@ -4391,7 +4405,7 @@ function renderComp(){
       ${h.aprobacion!=='Rechazado'&&h.creado&&avisoAnticipoComp(h.fecha,h.creado)?`<div class="al alam" style="font-size:12px;line-height:1.45;margin:6px 0 0;padding:6px 10px">⏰ Pedido tarde: ${(()=>{const d=diasEntre(h.creado,h.fecha);return d<0?'después de la fecha de inicio':d===0?'el mismo día':'con '+plu(d,'día','días')+' de anticipación';})()} (deben ser 7 a 10).</div>`:''}
       ${tp.length?`<div class="al alam" style="font-size:12px;line-height:1.45;margin:6px 0 0;padding:6px 10px">⚠️ ${tp.length} tarea${tp.length===1?'':'s'} pendiente${tp.length===1?'':'s'} hasta su regreso</div>`:''}
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-top:8px">
-        <span style="font-size:11px;color:var(--tm)">📅 ${fmt(h.fecha)}${h.fechaFin&&h.fechaFin!==h.fecha?' al '+fmt(h.fechaFin):''}${h.desde&&h.hasta?` · 🕒 ${h.desde}–${h.hasta}`:''}</span>
+        <span style="font-size:11px;color:var(--tm)">🗓️ ${fmt(h.fecha)}${h.fechaFin&&h.fechaFin!==h.fecha?' al '+fmt(h.fechaFin):''}${h.desde&&h.hasta?` · 🕒 ${h.desde}–${h.hasta}`:''}</span>
         <div style="display:flex;gap:5px;flex-wrap:wrap">${btnApro}<button class="btn bgh bsm" onclick="solCompDoc('${h.id}')">📄 Formulario</button></div>
       </div>
       ${puedeEd?`<div style="display:flex;gap:5px;border-top:1px solid var(--bo);padding-top:10px;margin-top:10px">
@@ -4583,7 +4597,7 @@ const TOPE_SEMANA=40*0.25;// art. 75: 25 % de la jornada ordinaria de 40 h seman
 function avisoRegH(){
   const el=document.getElementById('hAvisoReg');if(!el)return;
   const out=[],f=document.getElementById('hFecha').value,de=document.getElementById('hDesde').value,ha=document.getElementById('hHasta').value,fer=document.getElementById('hFeriado').checked;
-  const nf=nombreFeriado(f);if(nf)out.push(`📅 ${fmt(f)} es feriado (${nf}): cuenta toda la jornada.`);
+  const nf=nombreFeriado(f);if(nf)out.push(`🗓️ ${fmt(f)} es feriado (${nf}): cuenta toda la jornada.`);
   if(f&&de&&ha&&tipoDiaH(f)==='laboral'&&!fer){
     const mm=t=>{const [x,y]=t.split(':').map(Number);return x*60+y;};let i=mm(de),e=mm(ha);if(e<=i)e+=1440;
     const antes=Math.max(0,Math.min(e,480)-i),despues=Math.max(0,e-Math.max(i,960));
@@ -4826,7 +4840,7 @@ function renderPermisos(){
       ${p.aprobacion==='Anulado'?`<div style="font-size:12px;color:var(--ro);margin-bottom:4px">🚫 Anulada por ${escH(p.anuladoPor||'?')}${p.fechaAnul?' el '+fmt(p.fechaAnul):''}${p.motivoAnul?': '+escH(p.motivoAnul):''}</div>`:''}
       ${perVigente(p)?alertasPermiso(p).map(t=>`<div class="al alam" style="font-size:12px;line-height:1.45;margin:6px 0 0;padding:6px 10px">⚠️ ${escH(t)}</div>`).join(''):''}
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-top:8px">
-        <span style="font-size:11px;color:var(--tm)">📅 ${rango}</span>
+        <span style="font-size:11px;color:var(--tm)">🗓️ ${rango}</span>
         <div style="display:flex;gap:5px;flex-wrap:wrap">${btnApro}<button class="btn bgh bsm" onclick="permisoDoc('${p.id}')">📄 Formulario</button></div>
       </div>
       ${puedeEd||puedeAnularPer(p)?`<div style="display:flex;gap:5px;border-top:1px solid var(--bo);padding-top:10px;margin-top:10px">
@@ -5099,7 +5113,7 @@ function renderAprob(){
 
   const pubs=q.pubs.map(p=>fila(
     `<div style="font-size:14px;font-weight:700">${escH(p.titulo||'(Sin título)')} ${pubTipoBadge(p)} ${pubBadge(p)}</div>`+
-    sub(`📅 ${fmt(p.fecha)}${p.hora?' · '+p.hora:''} · ${(p.plataformas||[]).map(x=>PLAT[x]||x).join(', ')||'Sin plataforma'}${p.responsableNombre?' · '+escH(p.responsableNombre):''}`)+
+    sub(`🗓️ ${fmt(p.fecha)}${p.hora?' · '+p.hora:''} · ${(p.plataformas||[]).map(x=>PLAT[x]||x).join(', ')||'Sin plataforma'}${p.responsableNombre?' · '+escH(p.responsableNombre):''}`)+
     (p.copy?sub('✍️ '+escH(p.copy.length>220?p.copy.slice(0,220)+'…':p.copy)):'')+
     ((p.links||[]).length?sub((p.links||[]).map((l,i)=>`<a href="${escH(l)}" target="_blank" rel="noopener" style="color:var(--az)">🔗 Ver pieza${p.links.length>1?' '+(i+1):''}</a>`).join(' · ')):sub('Sin pieza adjunta todavía')),
     `<button class="btn bve bsm" onclick="aprobarPubAq('${p.id}')">👍 Aprobar y programar</button><button class="btn bgh bsm" onclick="aprobY(()=>cambiarEstadoPub('${p.id}','produccion'))">↩ Devolver</button>`,
@@ -5114,13 +5128,13 @@ function renderAprob(){
   const sem=alertasHorasExtra(E.horasExtra);
   const horas=q.horas.map(h=>{const s=sem.find(a=>a.miembro===h.miembro&&a.lunes===lunesDe(h.fecha));return fila(
     `<div style="font-size:14px;font-weight:700">${rAv(h.miembro,'',22,8)} ${escH(h.miembro)} · <span style="color:var(--na)">${fmtH(parseFloat(h.horas||0))}</span></div>`+
-    sub(`📅 ${fmt(h.fecha)}${h.desde&&h.hasta?' · 🕒 '+h.desde+'–'+h.hasta:''}${h.feriado?' · Feriado':h.tipoDia==='sabado'?' · Sábado':h.tipoDia==='domingo'?' · Domingo':''}`)+sub(escH(h.actividad||'')),
+    sub(`🗓️ ${fmt(h.fecha)}${h.desde&&h.hasta?' · 🕒 '+h.desde+'–'+h.hasta:''}${h.feriado?' · Feriado':h.tipoDia==='sabado'?' · Sábado':h.tipoDia==='domingo'?' · Domingo':''}`)+sub(escH(h.actividad||'')),
     `<button class="btn bve bsm" onclick="aprobY(()=>aprobarH('${h.id}',true))">✅ Aprobar</button><button class="btn bpe bsm" onclick="aprobY(()=>aprobarH('${h.id}',false))">❌ Rechazar</button>`,
     s?alerta(s.texto):'');}).join('');
 
   const comp=q.comp.map(h=>{const sc=saldoComp(h.miembro).saldo,n=parseFloat(h.horas||0);return fila(
     `<div style="font-size:14px;font-weight:700">${rAv(h.miembro,'',22,8)} ${escH(h.miembro)} · <span style="color:var(--az)">−${fmtD(n)}</span></div>`+
-    sub(`📅 ${fmt(h.fecha)}${h.fechaFin&&h.fechaFin!==h.fecha?' al '+fmt(h.fechaFin):''}${h.desde&&h.hasta?' · 🕒 '+h.desde+'–'+h.hasta:''} · Saldo aprobado: ${fmtSaldo(sc)}`)+sub(escH(h.actividad||'')),
+    sub(`🗓️ ${fmt(h.fecha)}${h.fechaFin&&h.fechaFin!==h.fecha?' al '+fmt(h.fechaFin):''}${h.desde&&h.hasta?' · 🕒 '+h.desde+'–'+h.hasta:''} · Saldo aprobado: ${fmtSaldo(sc)}`)+sub(escH(h.actividad||'')),
     (n>sc+1e-9?`<button class="btn bve bsm" disabled title="Pide más de su saldo aprobado" style="opacity:.45;cursor:not-allowed">✅ Aprobar</button>`:`<button class="btn bve bsm" onclick="aprobY(()=>aprobarH('${h.id}',true))">✅ Aprobar</button>`)+`<button class="btn bpe bsm" onclick="aprobY(()=>aprobarH('${h.id}',false))">❌ Rechazar</button><button class="btn bgh bsm" onclick="solCompDoc('${h.id}')">📄 Formulario</button>`,
     (n>sc+1e-9?alerta(`Pide ${fmtSaldo(n)} y su saldo aprobado es ${fmtSaldo(Math.max(0,sc))}. Solo se puede rechazar o esperar a que se aprueben más horas extra.`):'')
     +(()=>{const a=avisoAnticipoComp(h.fecha,h.creado);return a?alerta(a):'';})()
@@ -5129,12 +5143,12 @@ function renderAprob(){
   const pers=q.permisos.map(p=>fila(
     `<div style="font-size:14px;font-weight:700">${rAv(p.miembro,'',22,8)} ${escH(p.miembro)} · <span style="color:var(--az)">${fmtDHM(minPer(p))}</span></div>`+
     sub(`${p.motivo}. ${escH(MOTIVOS_PER[p.motivo-1]||'')}${p.motivo===2&&PARENTESCO_DUELO[p.parentesco]?' · '+PARENTESCO_DUELO[p.parentesco][0]:''}`)+
-    sub(`📅 ${p.desdeF===p.hastaF?`${fmt(p.desdeF)} · ${p.desdeH||''}–${p.hastaH||''}`:`${fmt(p.desdeF)} ${p.desdeH||''} al ${fmt(p.hastaF)} ${p.hastaH||''}`}${p.comprobante?' · 📎 Con comprobante':''}`)+(p.detalle?sub(escH(p.detalle)):''),
+    sub(`🗓️ ${p.desdeF===p.hastaF?`${fmt(p.desdeF)} · ${p.desdeH||''}–${p.hastaH||''}`:`${fmt(p.desdeF)} ${p.desdeH||''} al ${fmt(p.hastaF)} ${p.hastaH||''}`}${p.comprobante?' · 📎 Con comprobante':''}`)+(p.detalle?sub(escH(p.detalle)):''),
     `<button class="btn bve bsm" onclick="aprobY(()=>aprobarPer('${p.id}',true))">✅ Aprobar</button><button class="btn bpe bsm" onclick="aprobY(()=>aprobarPer('${p.id}',false))">❌ Rechazar</button><button class="btn bgh bsm" onclick="permisoDoc('${p.id}')">📄 Formulario</button>`,
     alertasPermiso(p).map(alerta).join(''))).join('');
 
   const MAXB=12,bors=q.borradores.slice(0,MAXB).map(t=>fila(
-    `<div style="font-size:14px;font-weight:700">${escH(t.titulo||'(Sin título)')}</div>`+sub(`📝 Borrador${t.fecha?' · 📅 '+fmt(t.fecha)+(t.hora?' '+t.hora:''):''}${t.pedido?' · '+pedidoTxt(t)+' · '+escH(t.pedido.contacto):t.creadaPor?' · '+escH(t.creadaPor):''}`),
+    `<div style="font-size:14px;font-weight:700">${escH(t.titulo||'(Sin título)')}</div>`+sub(`📝 Borrador${t.fecha?' · 🗓️ '+fmt(t.fecha)+(t.hora?' '+t.hora:''):''}${t.pedido?' · '+pedidoTxt(t)+' · '+escH(t.pedido.contacto):t.creadaPor?' · '+escH(t.creadaPor):''}`),
     `<button class="btn bna bsm" onclick="abrirMT('${t.id}')">✏️ Completar y publicar</button>`+(puede('descartarBorrador')?`<button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro)" onclick="descartarBorr(['${t.id}'])">🗑 Descartar</button>`:''))).join('')
     +(q.borradores.length>MAXB?`<div style="font-size:12px;color:var(--tm)">… y ${q.borradores.length-MAXB} más en <a style="color:var(--az);cursor:pointer" onclick="goV('tareas',document.querySelector('[onclick*=&quot;goV(\\'tareas\\'&quot;]'))">Tareas</a>.</div>`:'');
 
@@ -5558,7 +5572,7 @@ function generarRep(){
   // Actividades del período por sección
   const periodoLbl=repP==='semanal'?'Esta semana':repP==='mensual'?'Este mes':'Hoy';
   if(tsPer.length){
-    html+=`<div class="rblk"><div class="rbtit">📅 ${periodoLbl} — Actividades realizadas</div>`;
+    html+=`<div class="rblk"><div class="rbtit">🗓️ ${periodoLbl} — Actividades realizadas</div>`;
     secMetrics.forEach(m=>{
       html+=`<div style="margin-bottom:16px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
@@ -5606,7 +5620,7 @@ function generarRep(){
             <span style="flex-shrink:0;margin-top:1px">⏳</span>
             <div style="flex:1;min-width:0">
               <div style="font-size:13px;font-weight:600">${t.titulo}</div>
-              <div style="font-size:11px;color:var(--tm);margin-top:1px">📅 ${fmt(t.fecha)}${t.hora?' · 🕐 '+t.hora:''}${t.lugar?' · 📍 '+t.lugar:''}</div>
+              <div style="font-size:11px;color:var(--tm);margin-top:1px">🗓️ ${fmt(t.fecha)}${t.hora?' · 🕐 '+t.hora:''}${t.lugar?' · 📍 '+t.lugar:''}</div>
               ${resps?`<div style="font-size:11px;color:var(--na);margin-top:1px">👤 ${resps}</div>`:''}
               ${av>0?`<div style="margin-top:4px"><div class="pbar" style="height:4px"><div class="pfill" style="width:${av}%;background:var(--na)"></div></div><span style="font-size:10px;color:var(--tm)">${av}% completado</span></div>`:''}
             </div>
@@ -5699,7 +5713,7 @@ function generarRep(){
   let texto=`REPORTE ${pl.toUpperCase()} — CACCO\nPeríodo: ${rangoLbl}\n${'═'.repeat(50)}\n\n${sem}\n\n`;
   texto+=`📈 RESUMEN\n  Tareas: ${total} · ✅ ${comp} (${pct}%) · 🔄 ${prog} · ⚠️ ${venc.length}\n\n`;
   if(tsPer.length){
-    texto+=`📅 ACTIVIDADES ${periodoLbl.toUpperCase()}\n`;
+    texto+=`🗓️ ACTIVIDADES ${periodoLbl.toUpperCase()}\n`;
     secMetrics.forEach(m=>{
       texto+=`\n${m.ico} ${m.sec.toUpperCase()} — ${m.sm2} ${m.cc}/${m.casig} (${m.pp}%)\n`;
       m.tc.forEach(t=>{
@@ -6051,7 +6065,7 @@ ${nocRows?`<div class="sec-title" style="color:#dc2626;border-color:#fca5a5">�
 <table><thead><tr><th>Tarea / Área / Responsable</th><th>Fecha</th><th>Motivo</th></tr></thead>
 <tbody>${nocRows}</tbody></table>`:''}
 
-${pubRows?`<div class="sec-title">📅 Publicaciones del Período <span style="text-transform:none;letter-spacing:0;font-weight:600;color:#16a34a">· ${pubOk} publicadas</span> <span style="text-transform:none;letter-spacing:0;font-weight:400;color:#888">de ${pubsPer.length}</span></div>
+${pubRows?`<div class="sec-title">🗓️ Publicaciones del Período <span style="text-transform:none;letter-spacing:0;font-weight:600;color:#16a34a">· ${pubOk} publicadas</span> <span style="text-transform:none;letter-spacing:0;font-weight:400;color:#888">de ${pubsPer.length}</span></div>
 <table><thead><tr><th>Publicación</th><th>Plataformas</th><th>Fecha</th><th>Estado</th></tr></thead>
 <tbody>${pubRows}</tbody></table>`:''}
 
@@ -6341,7 +6355,7 @@ function renderHist(){
   cont.innerHTML=`<div class="ttop"><div class="ttit">Reportes archivados (${E.historico.length})</div></div>`+
     E.historico.slice().reverse().map(h=>`<div class="hitem">
       <div>
-        <div style="font-weight:700;font-size:14px">📅 ${h.mes}</div>
+        <div style="font-weight:700;font-size:14px">🗓️ ${h.mes}</div>
         <div style="font-size:12px;color:var(--tm);margin-top:3px">Archivado: ${fmt(h.fecha)}${h.hora?' a las '+h.hora:''} · ${h.tareasCompletadas}/${h.tareasTotales} tareas (${h.pct}%) · Por ${h.archivadoPor||'—'}</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
@@ -6699,7 +6713,7 @@ function renderAsig(){
 
     const pubsHTML=pubLines.length
       ?`<div style="margin-top:8px;border-top:1px solid var(--bo);padding-top:8px">
-          <div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">📅 Publicaciones hoy</div>
+          <div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">🗓️ Publicaciones hoy</div>
           ${pubLines.map(p=>`<div style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0">
             <span style="font-weight:700;color:var(--na);min-width:40px">${p.hora}</span>
             <span style="color:var(--tm)">${p.plats}</span>
@@ -6742,7 +6756,7 @@ function renderAsig(){
   // Resumen
   html+=`<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--tm);padding:8px 0">
     <span>📋 <strong>${totalTareas}</strong> asignaciones activas</span>
-    <span>📅 <strong>${totalPubs}</strong> publicaciones hoy</span>
+    <span>🗓️ <strong>${totalPubs}</strong> publicaciones hoy</span>
     <span>👥 <strong>${personas.length}</strong> ${personas.length===1?'persona':'personas'}</span>
   </div>`;
 
@@ -7054,7 +7068,7 @@ function generarTxtInforme(fecha){
 
   const pubs=(E.publicaciones||[]).filter(p=>p.fecha===fecha).sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
   if(pubs.length){
-    txt+=`📅 Publicaciones\n`;
+    txt+=`🗓️ Publicaciones\n`;
     pubs.forEach(p=>{
       const plats=(p.plataformas||[]).map(pl=>PLAT_WA[pl]||pl).join('/');
       txt+=`${p.hora||'—'} ${plats} — ${p.titulo||p.nombre||'—'} ${p.estado==='publicado'?'✅':'⏳'}\n`;
@@ -7171,7 +7185,7 @@ function renderMiDia(){
       ${ed?`<div class="md-ac"><button class="btn bna bsm" onclick="abrirRes('${p.id}')">📈 Anotar resultados</button></div>`:''}</div></div>`).join('')+(rp.length>5?vac(`… y ${rp.length-5} más.`):'');
 
   const man=[...d.manana.map(x=>lineaMan(x.h?txtHora(x.h):'—',escH(x.t.titulo),`${SECCIONES[x.sec]?.ico||''} ${x.sec}${x.t.lugar?' · '+escH(x.t.lugar):''}`,`irATarea('${x.t.id}')`)),
-    ...d.pubsMan.map(p=>lineaMan(p.hora?txtHora(p.hora):'—',escH(p.titulo||'—'),`📅 ${(p.plataformas||[]).map(x=>PLAT_WA[x]||x).join(', ')}`,`verPubEnCal('${p.id}')`))];
+    ...d.pubsMan.map(p=>lineaMan(p.hora?txtHora(p.hora):'—',escH(p.titulo||'—'),`🗓️ ${(p.plataformas||[]).map(x=>PLAT_WA[x]||x).join(', ')}`,`verPubEnCal('${p.id}')`))];
 
   // Informe del mes anterior: recordatorio la primera semana del mes
   let inf='';
