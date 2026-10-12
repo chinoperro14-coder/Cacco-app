@@ -2,7 +2,8 @@
 // Convierte un pedido en un borrador de tarea. Lo usa el servidor (app.js) y también la página de prueba,
 // por eso no depende de Node ni del navegador.
 (function (raiz) {
-  const AREAS = ["Administración", "Comunicaciones", "Dirección", "Desarrollo Social", "Coordinación de Arte y Cultura", "Educación Artística y Cultural", "Otra"];
+  // Comunicaciones no aparece: es el equipo que recibe los pedidos
+  const AREAS = ["Administración", "Dirección", "Desarrollo Social", "Coordinación de Arte y Cultura", "Educación Artística y Cultural", "Otra"];
   const SERVICIOS = {
     cobertura: { lbl: "Cobertura de fotos y video", secs: ["Audiovisual"] },
     diseno:    { lbl: "Diseño de una pieza (afiche, arte, invitación)", secs: ["Diseño"] },
@@ -10,6 +11,49 @@
     prensa:    { lbl: "Prensa, radio o TV", secs: ["Medios"] },
     protocolo: { lbl: "Protocolo (maestro de ceremonia, logística)", secs: ["Protocolo"] },
   };
+
+  // Preguntas que salen al marcar cada servicio: [clave, etiqueta en la nota, largo máximo]
+  const PREGUNTAS = {
+    cobertura: [["llegada", "Llegada del equipo", 5], ["momentos", "Momentos clave", 300], ["invitados", "Invitados importantes", 300]],
+    diseno:    [["pieza", "Pieza", 120], ["formato", "Medidas o red", 120], ["textos", "Textos", 1000]],
+    difusion:  [["desde", "Publicar desde", 10], ["publico", "Público", 200]],
+    prensa:    [["vocero", "Vocero", 120], ["voceroContacto", "Contacto del vocero", 120]],
+    protocolo: [["programa", "Programa", 1000], ["invitados", "Invitados a mencionar", 300]],
+  };
+  const SERV_ICO = { cobertura: "📸", diseno: "🎨", difusion: "📱", prensa: "📰", protocolo: "🎤" };
+
+  // Horario laboral: lunes a viernes de 8:00 a 16:00. Lo de fuera se cubre con horas extra (tiempo compensatorio).
+  const INI_LAB = 8 * 60, FIN_LAB = 16 * 60, DURACION_SUP = 120;
+  const minutos = h => { const [a, m] = String(h).split(":").map(Number); return a * 60 + m; };
+  const finDeSemana = f => [0, 6].includes(new Date(f + "T12:00:00Z").getUTCDay());
+  // Rango en minutos de una actividad; sin hora de fin se suponen 2 horas (y si termina «antes» de empezar, cruza la medianoche)
+  function rango(hora, horaFin) {
+    if (!esHora(hora)) return null;
+    const i = minutos(hora); let f = esHora(horaFin) ? minutos(horaFin) : i + DURACION_SUP;
+    if (f <= i) f += 24 * 60;
+    return [i, f];
+  }
+  // ¿Cae fuera del horario laboral? Devuelve null o el motivo
+  function fueraDeHorario(fecha, hora, horaFin) {
+    if (!esFecha(fecha)) return null;
+    if (finDeSemana(fecha)) return "fin de semana";
+    const r = rango(hora, horaFin); if (!r) return null;
+    if (r[0] < INI_LAB) return "antes de las 8:00 a. m.";
+    if (r[1] > FIN_LAB) return "después de las 4:00 p. m.";
+    return null;
+  }
+  // Actividades del equipo que chocan con ese horario, solo dentro del horario laboral de un día de semana.
+  // No cuenta los borradores marcados «No cubrir». Devuelve rangos [ini, fin] en «HH:MM» (nunca títulos).
+  function choquesHorario(tareas, fecha, hora, horaFin) {
+    if (!esFecha(fecha) || finDeSemana(fecha)) return [];
+    const r = rango(hora, horaFin); if (!r) return [];
+    const a = Math.max(r[0], INI_LAB), b = Math.min(r[1], FIN_LAB);
+    if (a >= b) return [];
+    const hhmm = m => String(Math.floor(m / 60) % 24).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
+    return (tareas || []).filter(t => t && t.fecha === fecha && !(t.borrador && /No cubrir/i.test(t.notas || "")))
+      .map(t => rango(t.hora, t.horaFin)).filter(x => x && x[0] < b && x[1] > a)
+      .sort((x, y) => x[0] - y[0]).map(x => [hhmm(x[0]), hhmm(x[1])]);
+  }
 
   // Lo que llega del formulario público se muestra luego dentro del dashboard: se quitan los caracteres
   // que permitirían inyectar HTML o cortar atributos, y se limita el largo de cada campo.
@@ -58,6 +102,21 @@
     if (horaFin && !esHora(horaFin)) return { error: "La hora de fin no es válida." };
     if (entrega && (!esFecha(entrega) || entrega < ctx.hoy)) return { error: "La fecha de entrega del diseño no es válida." };
     if (material === null) return { error: "El enlace al material no es válido: cópialo completo, empezando por https://" };
+    const pf = b.puntoFocal && typeof b.puntoFocal === "object" ? b.puntoFocal : {};
+    const focal = { nombre: limpiar(pf.nombre, 80), cargo: limpiar(pf.cargo, 80), telefono: limpiar(pf.telefono, 40), correo: limpiar(pf.correo, 120) };
+    if (!focal.nombre) return { error: "Escribe el nombre del punto focal de la actividad." };
+    if (!focal.telefono) return { error: "Escribe el teléfono del punto focal." };
+    // Respuestas de cada servicio marcado
+    const det = b.detalles && typeof b.detalles === "object" ? b.detalles : {};
+    const detalles = {};
+    servicios.forEach(k => {
+      const r = {};
+      (PREGUNTAS[k] || []).forEach(([c, , max]) => { const v = limpiar(det[k] && det[k][c], max, max > 300); if (v) r[c] = v; });
+      if (r.llegada && !esHora(r.llegada)) delete r.llegada;
+      if (r.desde && !esFecha(r.desde)) delete r.desde;
+      if (Object.keys(r).length) detalles[k] = r;
+    });
+    const fuera = fueraDeHorario(fecha, hora, horaFin);
 
     const nomArea = area === "Otra" ? areaOtra : area;
     const secciones = {};
@@ -65,15 +124,23 @@
       secciones[s] = { responsables: [], estado: "Pendiente", completadoPor: null, completadoEn: null, fecha: null, hora: null };
     }));
     if (secciones["Diseño"] && entrega) secciones["Diseño"].fecha = entrega;
+    const valor = (k, c, v) => c === "desde" ? fechaLarga(v) : v.replace(/\n/g, "\n     ");
+    const bloques = servicios.filter(k => detalles[k]).map(k =>
+      `${SERV_ICO[k]} ${SERVICIOS[k].lbl}:\n` + (PREGUNTAS[k] || []).filter(([c]) => detalles[k][c]).map(([c, et]) => `   • ${et}: ${valor(k, c, detalles[k][c])}`).join("\n"));
     const notas = [
       `📨 Pedido ${ctx.folio} de ${nomArea}, recibido el ${fechaLarga(ctx.hoy)} por el formulario de pedidos.`,
       `👤 Lo pide: ${nombre} · ${contacto}`,
+      `📍 Punto focal: ${focal.nombre}${focal.cargo ? ` (${focal.cargo})` : ""} · ${focal.telefono}${focal.correo ? ` · ${focal.correo}` : ""}`,
       `🧰 Necesita: ${servicios.map(k => SERVICIOS[k].lbl).join("; ")}.`,
+      fuera ? `🌙 Fuera del horario laboral (${fuera}): se cubre con horas extra (tiempo compensatorio).` : "",
       entrega ? `🎨 Diseño para el ${fechaLarga(entrega)}.` : "",
       material ? `🔗 Material: ${material}` : "",
+      bloques.length ? `\n${bloques.join("\n")}` : "",
       descripcion ? `\n${descripcion}` : "",
     ].filter(Boolean).join("\n");
-    const pedido = { folio: ctx.folio, area: nomArea, solicitante: nombre, contacto, servicios, recibido: ctx.hoy, ...(material ? { material } : {}), ...(entrega ? { entrega } : {}) };
+    const pedido = { folio: ctx.folio, area: nomArea, solicitante: nombre, contacto, servicios, recibido: ctx.hoy, puntoFocal: focal,
+      ...(Object.keys(detalles).length ? { detalles } : {}), ...(fuera ? { fueraHorario: fuera } : {}),
+      ...(material ? { material } : {}), ...(entrega ? { entrega } : {}) };
     const tarea = {
       id: ctx.id(), titulo, borrador: true, etiquetas: [], prioridad: "Media", fecha, hora, horaFin, lugar, notas,
       recurrencia: "ninguna", secciones, entregables: [], creadaEn: ctx.hoy, creadaPor: "Formulario de pedidos", creadoPorId: "pedidos", pedido,
@@ -133,6 +200,6 @@
   const normFolio = f => { const n = String(f || "").match(/\d+/); return n ? "P-" + String(parseInt(n[0], 10)).padStart(4, "0") : ""; };
   const siguienteFolio = registros => "P-" + String((registros || []).length + 1).padStart(4, "0");
 
-  const api = { AREAS, SERVICIOS, limpiar, pedidoATarea, siguienteFolio, buscarDuplicado, unirPedido, estadoPedido, normFolio };
+  const api = { AREAS, SERVICIOS, PREGUNTAS, fueraDeHorario, choquesHorario, limpiar, pedidoATarea, siguienteFolio, buscarDuplicado, unirPedido, estadoPedido, normFolio };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else raiz.CaccoPedidos = api;
 })(this);

@@ -169,7 +169,7 @@ app.get("/pedido", enviarPagina("pedido.html"));
 // ════════════════════════
 // Cada pedido entra como borrador de tarea. Como el formulario es público, se limita cuántos
 // pedidos puede enviar cada conexión y cuántos borradores de pedidos pueden esperar revisión.
-const { pedidoATarea, siguienteFolio, buscarDuplicado, unirPedido, estadoPedido, normFolio } = require("./pedidos");
+const { pedidoATarea, siguienteFolio, buscarDuplicado, unirPedido, estadoPedido, normFolio, fueraDeHorario, choquesHorario } = require("./pedidos");
 const PEDIDOS_POR_HORA = 5, PEDIDOS_SIN_REVISAR = 40;
 const enviosPorIp = new Map();
 // Clave de acceso del formulario: la comparten las jefaturas; Líder y Editor la ven y la cambian.
@@ -226,6 +226,22 @@ app.post("/api/pedidos", async (req, res) => {
     enviosPorIp.set(ip, [...recientes, ahora]);
     res.json({ ok: true, folio, unido: !!existente });
   } catch { res.status(500).json({ error: "No se pudo enviar el pedido. Intenta de nuevo en unos minutos." }); }
+});
+// Mientras llena el formulario, la oficina ve si su horario choca con otras actividades del equipo
+// (solo dentro del horario laboral) o si cae fuera de él. Pide la misma clave y nunca devuelve títulos.
+app.post("/api/pedidos/horario", async (req, res) => {
+  const ip = String(req.headers["x-forwarded-for"] || "").split(",").pop().trim() || req.ip;
+  const ahora = Date.now(), fallas = (clavesFallidas.get(ip) || []).filter(t => ahora - t < 3600e3);
+  if (fallas.length >= CLAVE_FALLOS_POR_HORA) return res.status(429).json({ error: "Demasiados intentos." });
+  try {
+    const data = await leerData(), clave = data.config?.clavePedidos;
+    if (!clave || String(req.body?.clave || "").trim().toLowerCase() !== clave.toLowerCase()) {
+      if (clave) clavesFallidas.set(ip, [...fallas, ahora]);
+      return res.status(403).json({ error: "Clave no válida", clave: true });
+    }
+    const { fecha, hora, horaFin } = req.body || {};
+    res.json({ fuera: fueraDeHorario(fecha, hora, horaFin), choques: choquesHorario(data.tareas, fecha, hora, horaFin) });
+  } catch { res.status(500).json({ error: "No se pudo revisar el horario" }); }
 });
 // La oficina consulta en qué va su pedido con el folio y la misma clave del formulario
 app.post("/api/pedidos/estado", async (req, res) => {
