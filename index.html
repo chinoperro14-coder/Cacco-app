@@ -2846,7 +2846,9 @@ function renderPedidos(lista){
         </div>
         <div onclick="togT('${t.id}')" style="font-size:14px;font-weight:700;color:var(--tx);cursor:pointer" title="${ab?'Ocultar':'Ver'} detalle">${ab?'▾':'▸'} ${escH(t.titulo||'(Sin título)')}</div>
         <div style="font-size:12px;color:var(--tm);margin-top:2px">${t.fecha?'🗓️ '+fmt(t.fecha):''}${t.hora?' · '+txtHora(t.hora):''}${t.horaFin?' a '+txtHora(t.horaFin):''}${t.lugar?' · 📍 '+escH(t.lugar):''}</div>
-        <div style="font-size:12px;color:var(--tm);margin-top:2px">👤 ${escH(p.solicitante||'')} · ${escH(p.contacto||'')}</div>
+        <div style="font-size:12px;color:var(--tm);margin-top:2px">👤 Pide: ${escH(p.solicitante||'')} · ${escH(p.contacto||'')}</div>
+        ${p.puntoFocal?.nombre?`<div style="font-size:12px;color:var(--tm);margin-top:2px">📍 Punto focal: <b style="color:var(--tx)">${escH(p.puntoFocal.nombre)}</b>${p.puntoFocal.cargo?` (${escH(p.puntoFocal.cargo)})`:''} · ${escH(p.puntoFocal.telefono||'')}${p.puntoFocal.correo?` · ${escH(p.puntoFocal.correo)}`:''}</div>`:''}
+        ${p.fueraHorario?`<div style="font-size:11px;font-weight:700;color:var(--az);margin-top:4px">🌙 Fuera del horario laboral (${escH(p.fueraHorario)}): horas extra / compensatorio</div>`:''}
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">${(p.servicios||[]).map(k=>`<span style="font-size:11px;background:var(--su2);padding:2px 8px;border-radius:10px">${SERV_PED[k]||escH(k)}</span>`).join('')}${p.material?`<a href="${escH(p.material)}" target="_blank" rel="noopener" style="font-size:11px;font-weight:600;color:var(--az);padding:2px 4px">🔗 Ver material</a>`:''}</div>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">

@@ -35,10 +35,10 @@ textarea{min-height:110px;resize:vertical}
 .chips input{accent-color:var(--na)}
 .chips label:has(input:checked){border-color:var(--na);background:var(--nas);font-weight:600}
 .serv{display:flex;flex-direction:column;gap:8px}
-.serv label{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1.5px solid var(--bo);border-radius:10px;cursor:pointer;font-size:14px}
-.serv label:has(input:checked){border-color:var(--na);background:var(--nas);font-weight:600}
-.serv input{width:18px;height:18px;accent-color:var(--na);flex-shrink:0}
-.serv .ico{font-size:18px}
+.serv>label{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1.5px solid var(--bo);border-radius:10px;cursor:pointer;font-size:14px}
+.serv>label:has(input:checked){border-color:var(--na);background:var(--nas);font-weight:600}
+.serv>label input{width:18px;height:18px;accent-color:var(--na);flex-shrink:0}
+.serv>label .ico{font-size:18px}
 .trampa{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 .err{display:none;background:var(--ros);color:var(--ro);border-radius:8px;padding:10px 12px;font-size:14px;margin-bottom:14px}
 button{font:inherit;font-weight:700;font-size:16px;border:0;border-radius:10px;padding:13px 18px;cursor:pointer}
@@ -68,6 +68,21 @@ input[type=url]{width:100%;font:inherit;font-size:15px;color:var(--tx);backgroun
 .est ul{list-style:none;margin-top:6px}
 .est li{font-size:14px;padding:6px 0;border-top:1px solid var(--bo);display:flex;justify-content:space-between;gap:10px}
 .est li span:last-child{color:var(--tm);text-align:right}
+.sec{font-size:13px;font-weight:800;color:var(--tx);margin:22px 0 10px;padding-top:16px;border-top:1px solid var(--bo)}
+.sec small{display:block;font-size:12px;font-weight:500;color:var(--tm);margin-top:2px}
+.preg{margin:-2px 0 10px 28px;padding:12px 12px 2px;border-left:3px solid var(--na);background:var(--fo);border-radius:0 8px 8px 0;display:none}
+.preg .campo{margin-bottom:10px}
+.preg textarea{min-height:70px}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:10px;cursor:pointer}
+.chk input{width:17px;height:17px;accent-color:var(--na)}
+.repetir{display:none;margin-bottom:16px}
+.repetir select{font-size:14px}
+.av2{display:none;border-radius:8px;padding:9px 12px;font-size:13px;margin:-6px 0 14px}
+.av-choque{background:#fef3c7;color:#92400e}
+.av-fuera{background:#e0e7ff;color:#3730a3}
+@media (prefers-color-scheme:dark){.av-choque{background:#2f2513;color:#f3c35e}.av-fuera{background:#1e1b4b;color:#c7d2fe}}
+.compartir{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:0 0 14px}
+.wa{background:#16a34a;color:#fff}
 footer{text-align:center;font-size:12px;color:var(--tm);padding:0 16px 30px}
 </style>
 </head>
@@ -93,8 +108,11 @@ footer{text-align:center;font-size:12px;color:var(--tm);padding:0 16px 30px}
 <form id="f" novalidate>
   <p class="intro">Pide aquí cobertura, diseño o difusión para tu actividad. El equipo revisa cada pedido y te contacta para confirmar. Mientras antes lo envíes, mejor: lo ideal es con una semana o más.</p>
 
+  <div class="repetir" id="repBlk"><label class="lbl" for="repSel">↻ Repetir un pedido anterior</label><select id="repSel" onchange="repetir(this.value)"><option value="">Elige uno para copiar sus datos…</option></select><div class="ayuda">Copia todo menos la fecha. Revisa y cambia lo que haga falta.</div></div>
+
   <div class="campo"><label class="lbl" for="clave">Clave de acceso <span class="req">*</span></label><input type="text" id="clave" maxlength="30" autocomplete="off" autocapitalize="none" spellcheck="false"><div class="ayuda">La tiene tu jefatura. Este navegador la recuerda para la próxima vez.</div></div>
 
+  <div class="sec">1. Quién pide<small>Tu oficina y tus datos se recuerdan en este aparato para la próxima vez.</small></div>
   <fieldset>
     <legend>Tu oficina <span class="req">*</span></legend>
     <div class="chips" id="areas"></div>
@@ -106,6 +124,18 @@ footer{text-align:center;font-size:12px;color:var(--tm);padding:0 16px 30px}
     <div class="campo"><label class="lbl" for="contacto">Teléfono o correo <span class="req">*</span></label><input type="text" id="contacto" maxlength="120" autocomplete="tel"></div>
   </div>
 
+  <div class="sec">2. Punto focal de la actividad<small>La persona con quien el equipo coordina y a quien busca el día de la actividad.</small></div>
+  <label class="chk"><input type="checkbox" id="soyYo"> Soy yo</label>
+  <div class="fila">
+    <div class="campo"><label class="lbl" for="pfNombre">Nombre <span class="req">*</span></label><input type="text" id="pfNombre" maxlength="80"></div>
+    <div class="campo"><label class="lbl" for="pfCargo">Cargo</label><input type="text" id="pfCargo" maxlength="80" placeholder="ej. Coordinadora de Danza"></div>
+  </div>
+  <div class="fila">
+    <div class="campo"><label class="lbl" for="pfTel">Teléfono <span class="req">*</span></label><input type="tel" id="pfTel" maxlength="40" placeholder="ej. 6000-0000"></div>
+    <div class="campo"><label class="lbl" for="pfCorreo">Correo</label><input type="text" id="pfCorreo" maxlength="120" inputmode="email" autocapitalize="none"></div>
+  </div>
+
+  <div class="sec">3. La actividad</div>
   <div class="campo"><label class="lbl" for="actividad">Nombre de la actividad <span class="req">*</span></label><input type="text" id="actividad" maxlength="140" placeholder="ej. Concierto de la Banda Juvenil"></div>
   <div class="fila3">
     <div class="campo"><label class="lbl" for="fecha">Fecha <span class="req">*</span></label><input type="date" id="fecha"></div>
@@ -113,15 +143,17 @@ footer{text-align:center;font-size:12px;color:var(--tm);padding:0 16px 30px}
     <div class="campo"><label class="lbl" for="horaFin">Termina</label><input type="time" id="horaFin"></div>
   </div>
   <div class="aviso" id="avFecha" style="margin:-6px 0 14px"></div>
+  <div class="av2 av-choque" id="avChoque"></div>
+  <div class="av2 av-fuera" id="avFuera"></div>
   <div class="campo"><label class="lbl" for="lugar">Lugar</label><input type="text" id="lugar" maxlength="120" placeholder="ej. Teatro del CACCO"></div>
 
+  <div class="sec">4. Qué necesitas<small>Al marcar cada servicio salen unas preguntas cortas, para que el equipo no tenga que llamarte.</small></div>
   <fieldset>
-    <legend>¿Qué necesitas? <span class="req">*</span></legend>
+    <legend>Servicios <span class="req">*</span></legend>
     <div class="serv" id="servicios"></div>
   </fieldset>
-  <div class="campo" id="entregaBlk" style="display:none"><label class="lbl" for="entrega">¿Para cuándo necesitas el diseño?</label><input type="date" id="entrega"><div class="ayuda">Si es para promocionar la actividad, conviene tenerlo al menos 10 días antes.</div><div class="aviso" id="avDis"></div></div>
 
-  <div class="campo"><label class="lbl" for="descripcion">Detalles</label><textarea id="descripcion" maxlength="1500" placeholder="Quiénes participan, a qué público va, invitados especiales, textos o logos que deben aparecer…"></textarea></div>
+  <div class="campo"><label class="lbl" for="descripcion">Algo más que debamos saber</label><textarea id="descripcion" maxlength="1500" placeholder="Quiénes participan, de qué trata, cualquier detalle que ayude…"></textarea></div>
   <div class="campo"><label class="lbl" for="material">Enlace al material <span style="text-transform:none;letter-spacing:0;font-weight:500">(opcional)</span></label><input type="url" id="material" maxlength="300" placeholder="https://drive.google.com/…" autocomplete="off"><div class="ayuda">Logos, textos, fotos o referencias en Drive, Dropbox o similar. Que el enlace esté abierto para quien lo tenga.</div></div>
   <div class="trampa" aria-hidden="true"><label>Web<input type="text" id="web" tabindex="-1" autocomplete="off"></label></div>
 
@@ -135,6 +167,7 @@ footer{text-align:center;font-size:12px;color:var(--tm);padding:0 16px 30px}
   <div class="folio" id="okFolio"></div>
   <div class="resumen" id="okRes"></div>
   <p id="okUnido" style="display:none"></p>
+  <div class="compartir"><button class="wa" onclick="compartirWA()">📲 Enviar por WhatsApp</button><button class="otro" onclick="copiarResumen(this)">📋 Copiar resumen</button></div>
   <p>Guarda este número. Con él puedes ver en qué va tu pedido en la pestaña «Consultar un pedido». El equipo de Comunicaciones lo revisa y te contacta para confirmar lo que se puede cubrir.</p>
   <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="otro" onclick="verTab('c');consultar(ultimoFolio)">🔎 Ver estado</button><button class="otro" onclick="location.href='/pedido'">Hacer otro pedido</button></div>
 </div>
@@ -142,18 +175,37 @@ footer{text-align:center;font-size:12px;color:var(--tm);padding:0 16px 30px}
 </main>
 <footer>Uso interno del Centro de Arte y Cultura de Colón.</footer>
 <script>
-const AREAS=['Administración','Comunicaciones','Dirección','Desarrollo Social','Coordinación de Arte y Cultura','Educación Artística y Cultural','Otra'];
+const AREAS=['Administración','Dirección','Desarrollo Social','Coordinación de Arte y Cultura','Educación Artística y Cultural','Otra'];
 const SERV={cobertura:['📸','Cobertura de fotos y video'],diseno:['🎨','Diseño de una pieza (afiche, arte, invitación)'],difusion:['📱','Difusión en redes sociales'],prensa:['📰','Prensa, radio o TV'],protocolo:['🎤','Protocolo (maestro de ceremonia, logística)']};
 const $=id=>document.getElementById(id);
 $('areas').innerHTML=AREAS.map(a=>`<label><input type="radio" name="area" value="${a}"> ${a}</label>`).join('');
-$('servicios').innerHTML=Object.entries(SERV).map(([k,[i,l]])=>`<label><input type="checkbox" name="serv" value="${k}"><span class="ico">${i}</span>${l}</label>`).join('');
+// Preguntas de cada servicio: [clave, etiqueta, tipo, ayuda]
+const PREG={
+  cobertura:[['llegada','¿A qué hora debe llegar el equipo?','time'],['momentos','Momentos clave que no se pueden perder','text','ej. palabras de la directora, entrega de certificados'],['invitados','Invitados importantes','text','ej. ministra, alcalde, embajador']],
+  diseno:[['nombre','Nombre de la pieza','text','ej. Afiche Gala de Danza'],
+    ['tipo','Tipo de pieza','uno',['Afiche','Invitación','Post para redes','Historia','Banner o lona','Certificado','Video corto','Otro']],
+    ['formato','Formatos (marca los que necesites)','varios',['Redes cuadrado (1080×1080)','Redes vertical (1080×1350)','Historia o reel (1080×1920)','Impreso tamaño carta','Impreso 11×17','Pantalla horizontal (16:9)','Otro (explícalo en Textos)']],
+    ['_entrega','¿Para cuándo necesitas el diseño?','entrega'],['textos','Textos que deben aparecer','area','Título, fecha, hora, lugar, organizadores…']],
+  difusion:[['desde','¿Desde cuándo publicar?','date'],['publico','¿A qué público va dirigido?','text','ej. jóvenes de Colón, familias, artistas']],
+  prensa:[['vocero','Vocero o persona a entrevistar','text','Nombre y cargo'],['voceroContacto','Contacto del vocero','text','Teléfono o correo']],
+  protocolo:[['programa','Programa o guion de la actividad','area','Orden del acto, quién habla y cuándo'],['invitados','Invitados especiales a mencionar','text','Nombres y cargos']]
+};
+const campoPreg=(k,[c,l,t,ph])=>{
+  if(t==='entrega')return`<div class="campo"><label class="lbl" for="entrega">${l}</label><input type="date" id="entrega"><div class="ayuda">Si es para promocionar la actividad, conviene tenerlo al menos 10 días antes.</div><div class="aviso" id="avDis"></div></div>`;
+  if(t==='uno'||t==='varios')return`<div class="campo"><span class="lbl">${l}</span><div class="chips" id="d-${k}-${c}">${ph.map(o=>`<label><input type="${t==='uno'?'radio':'checkbox'}" name="d-${k}-${c}" value="${o}"> ${o}</label>`).join('')}</div></div>`;
+  const id=`d-${k}-${c}`,attr=`id="${id}" ${ph?`placeholder="${ph}"`:''}`;
+  const inp=t==='area'?`<textarea ${attr} maxlength="1000"></textarea>`:t==='time'?`<input type="time" ${attr}>`:t==='date'?`<input type="date" ${attr}>`:`<input type="text" ${attr} maxlength="300">`;
+  return`<div class="campo"><label class="lbl" for="${id}">${l}</label>${inp}</div>`;
+};
+$('servicios').innerHTML=Object.entries(SERV).map(([k,[i,l]])=>`<label><input type="checkbox" name="serv" value="${k}"><span class="ico">${i}</span>${l}</label><div class="preg" id="pg-${k}">${PREG[k].map(q=>campoPreg(k,q)).join('')}</div>`).join('');
 try{$('clave').value=localStorage.getItem('cacco_clave_pedidos')||'';}catch{}
 const qFolio=new URLSearchParams(location.search).get('folio');
 const hoyPa=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Panama'}).format(new Date());
 $('fecha').min=hoyPa;$('entrega').min=hoyPa;
 document.addEventListener('change',e=>{
   if(e.target.name==='area'){$('areaOtra').style.display=e.target.value==='Otra'?'block':'none';if(e.target.value==='Otra')$('areaOtra').focus();}
-  if(e.target.name==='serv'){$('entregaBlk').style.display=document.querySelector('input[value=diseno]').checked?'block':'none';avisos();}
+  if(e.target.name==='serv'){$('pg-'+e.target.value).style.display=e.target.checked?'block':'none';avisos();revisarHorario();}
+  if(e.target.id==='soyYo')copiarFocal();
 });
 // Días de aviso: con menos de 7 (o 10 para un diseño) se advierte, pero se puede enviar igual
 const dias=f=>f?Math.round((new Date(f+'T12:00:00')-new Date(hoyPa+'T12:00:00'))/864e5):null;
@@ -165,6 +217,77 @@ function avisos(){
   if(dis&&de!==null&&de>=0&&de<10){b.textContent=`⚠️ El diseño se necesitaría en ${pl(de)}. Lo ideal son 10 días o más; el equipo te confirmará si es posible.`;b.style.display='block';}else b.style.display='none';
 }
 ['fecha','entrega'].forEach(id=>$(id).addEventListener('input',avisos));
+// ── Horario: choques con otras actividades (solo en horario laboral) y aviso de fuera de horario ──
+const hTx=h=>{const [a,m]=h.split(':').map(Number);return `${a%12||12}:${String(m).padStart(2,'0')} ${a<12?'a. m.':'p. m.'}`;};
+function fueraLocal(f,h,hf){// igual que en el servidor: lunes a viernes de 8:00 a. m. a 4:00 p. m.
+  if(!f)return null;const d=new Date(f+'T12:00:00Z').getUTCDay();if(d===0||d===6)return 'fin de semana';
+  if(!h)return null;const mi=x=>{const [a,b]=x.split(':').map(Number);return a*60+b;};
+  const i=mi(h);let fi=hf?mi(hf):i+120;if(fi<=i)fi+=1440;
+  return i<480?'antes de las 8:00 a. m.':fi>960?'después de las 4:00 p. m.':null;
+}
+let tHor=null,claveMala='';
+function revisarHorario(){
+  clearTimeout(tHor);
+  // Solo cuando piden cobertura: el equipo tiene que estar ahí. Un diseño no depende del horario.
+  const cob=document.querySelector('input[name=serv][value=cobertura]').checked;
+  const f=$('fecha').value,h=$('hora').value,hf=$('horaFin').value,fu=cob?fueraLocal(f,h,hf):null,af=$('avFuera');
+  af.innerHTML=fu?`🌙 <b>Fuera del horario laboral</b> (${fu}). El horario del equipo es de lunes a viernes, de 8:00 a. m. a 4:00 p. m. Lo que quede fuera se cubre con horas extra, que luego el equipo toma como tiempo compensatorio. Tenlo en cuenta al planificar.`:'';
+  af.style.display=fu?'block':'none';
+  const ac=$('avChoque'),cl=$('clave').value.trim();
+  if(!cob||!f||!h||!cl||cl===claveMala){ac.style.display='none';return;}
+  tHor=setTimeout(async()=>{
+    try{
+      const r=await fetch('/api/pedidos/horario',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clave:cl,fecha:f,hora:h,horaFin:hf})});
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok){if(j.clave)claveMala=cl;ac.style.display='none';return;}
+      const n=(j.choques||[]).length;
+      ac.innerHTML=n?`⚠️ <b>En ese horario el equipo ya tiene ${n===1?'otra actividad':n+' actividades'}</b> (${j.choques.map(([a,b])=>hTx(a)+' a '+hTx(b)).join('; ')}). Puede que no alcance para cubrir todo. Si puedes mover la hora, mejor; si no, envíalo igual y el equipo te confirma.`:'';
+      ac.style.display=n?'block':'none';
+    }catch{ac.style.display='none';}
+  },400);
+}
+['fecha','hora','horaFin','clave'].forEach(id=>$(id).addEventListener('input',revisarHorario));
+// ── Punto focal: «Soy yo» copia tus datos ──
+function copiarFocal(){
+  if(!$('soyYo').checked)return;
+  const c=$('contacto').value.trim();
+  $('pfNombre').value=$('nombre').value.trim();
+  if(/@/.test(c)){$('pfCorreo').value=c;}else if(c)$('pfTel').value=c;
+}
+['nombre','contacto'].forEach(id=>$(id).addEventListener('input',copiarFocal));
+// ── Lo que este aparato recuerda: tus datos y tus pedidos anteriores (sin la clave) ──
+const leerLS=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||'null')??d;}catch{return d;}};
+const guardarLS=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}};
+function marcarArea(a,otra){
+  const r=[...document.querySelectorAll('input[name=area]')].find(x=>x.value===a);
+  if(r){r.checked=true;$('areaOtra').style.display=a==='Otra'?'block':'none';if(a==='Otra')$('areaOtra').value=otra||'';}
+}
+function cargarRecordado(){
+  const pf=leerLS('cacco_ped_perfil',null);
+  if(pf){marcarArea(pf.area,pf.areaOtra);$('nombre').value=pf.nombre||'';$('contacto').value=pf.contacto||'';}
+  const h=leerLS('cacco_ped_hist',[]);
+  if(h.length){$('repBlk').style.display='block';$('repSel').innerHTML+=h.map((x,i)=>`<option value="${i}">${esc(x.folio)} · ${esc(x.body.actividad)}</option>`).join('');}
+}
+function repetir(i){
+  const x=leerLS('cacco_ped_hist',[])[i];if(!x)return;const b=x.body;
+  marcarArea(b.area,b.areaOtra);
+  ['nombre','contacto','actividad','hora','horaFin','lugar','descripcion','material'].forEach(k=>{if($(k))$(k).value=b[k]||'';});
+  const pf=b.puntoFocal||{};$('pfNombre').value=pf.nombre||'';$('pfCargo').value=pf.cargo||'';$('pfTel').value=pf.telefono||'';$('pfCorreo').value=pf.correo||'';$('soyYo').checked=false;
+  document.querySelectorAll('input[name=serv]').forEach(c=>{c.checked=(b.servicios||[]).includes(c.value);$('pg-'+c.value).style.display=c.checked?'block':'none';});
+  Object.entries(PREG).forEach(([k,qs])=>qs.forEach(([c,,t])=>{if(c[0]!=='_')ponPreg(k,c,t==='date'?'':b.detalles?.[k]?.[c]);}));
+  $('fecha').value='';$('entrega').value='';
+  avisos();revisarHorario();$('fecha').focus();
+}
+// Valor de una pregunta (texto, hora, fecha u opciones marcadas) y cómo volver a ponerlo
+function valPreg(k,c){const el=$(`d-${k}-${c}`);if(!el)return'';if(el.classList.contains('chips'))return[...el.querySelectorAll('input:checked')].map(x=>x.value).join(', ');return el.value;}
+function ponPreg(k,c,v){const el=$(`d-${k}-${c}`);if(!el)return;if(el.classList.contains('chips')){const vs=String(v||'').split(', ');el.querySelectorAll('input').forEach(x=>x.checked=vs.includes(x.value));}else el.value=v||'';}
+// ── Resumen para compartir ──
+let resumenTxt='';
+function compartirWA(){window.open('https://wa.me/?text='+encodeURIComponent(resumenTxt),'_blank','noopener');}
+async function copiarResumen(btn){
+  try{await navigator.clipboard.writeText(resumenTxt);}catch{const t=document.createElement('textarea');t.value=resumenTxt;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();}
+  const o=btn.textContent;btn.textContent='✅ Copiado';setTimeout(()=>btn.textContent=o,1800);
+}
 // Pestañas y consulta de estado
 const misPed=()=>{try{return JSON.parse(localStorage.getItem('cacco_mis_pedidos')||'[]');}catch{return[];}};
 let ultimoFolio='';
@@ -205,7 +328,9 @@ $('f').addEventListener('submit',async e=>{
   e.preventDefault();
   const body={area:document.querySelector('input[name=area]:checked')?.value||'',areaOtra:$('areaOtra').value,nombre:$('nombre').value,contacto:$('contacto').value,
     actividad:$('actividad').value,fecha:$('fecha').value,hora:$('hora').value,horaFin:$('horaFin').value,lugar:$('lugar').value,
-    servicios:[...document.querySelectorAll('input[name=serv]:checked')].map(x=>x.value),clave:$('clave').value.trim(),entrega:$('entrega').value,material:$('material').value.trim(),descripcion:$('descripcion').value,web:$('web').value};
+    puntoFocal:{nombre:$('pfNombre').value,cargo:$('pfCargo').value,telefono:$('pfTel').value,correo:$('pfCorreo').value},
+    servicios:[...document.querySelectorAll('input[name=serv]:checked')].map(x=>x.value),clave:$('clave').value.trim(),entrega:$('entrega').value,material:$('material').value.trim(),descripcion:$('descripcion').value,web:$('web').value,
+    detalles:Object.fromEntries(Object.entries(PREG).map(([k,qs])=>[k,Object.fromEntries(qs.filter(([c])=>c[0]!=='_').map(([c])=>[c,valPreg(k,c)]))]))};
   const err=$('err'),btn=$('btn');err.style.display='none';btn.disabled=true;btn.textContent='Enviando…';
   try{
     const r=await fetch('/api/pedidos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
@@ -213,6 +338,14 @@ $('f').addEventListener('submit',async e=>{
     if(!r.ok){if(j.clave){try{localStorage.removeItem('cacco_clave_pedidos');}catch{}setTimeout(()=>$('clave').focus(),50);}throw new Error(j.error||'No se pudo enviar el pedido. Intenta de nuevo.');}
     try{localStorage.setItem('cacco_clave_pedidos',body.clave);}catch{}
     $('okFolio').textContent='Pedido '+j.folio;ultimoFolio=j.folio;
+    guardarLS('cacco_ped_perfil',{area:body.area,areaOtra:body.areaOtra,nombre:body.nombre.trim(),contacto:body.contacto.trim()});
+    const {clave:_c,web:_w,...sinClave}=body;
+    guardarLS('cacco_ped_hist',[{folio:j.folio,body:sinClave},...leerLS('cacco_ped_hist',[]).filter(x=>x.body.actividad.trim()!==body.actividad.trim())].slice(0,8));
+    const of=body.area==='Otra'?body.areaOtra.trim():body.area;
+    resumenTxt=[`📨 Pedido ${j.folio} a Comunicaciones · CACCO`,`Oficina: ${of}`,`Actividad: ${body.actividad.trim()}`,
+      `Fecha: ${fLarga(body.fecha)}${body.hora?', '+hTxt(body.hora):''}${body.horaFin?' a '+hTxt(body.horaFin):''}`,body.lugar.trim()?`Lugar: ${body.lugar.trim()}`:'',
+      `Servicios: ${body.servicios.map(k=>SERV[k][1]).join('; ')}`,`Punto focal: ${body.puntoFocal.nombre.trim()} · ${body.puntoFocal.telefono.trim()}`,
+      `Ver en qué va: ${location.origin}/pedido?folio=${j.folio}`].filter(Boolean).join('\n');
     try{localStorage.setItem('cacco_mis_pedidos',JSON.stringify([{folio:j.folio,actividad:body.actividad.trim()},...misPed().filter(p=>p.folio!==j.folio)].slice(0,8)));}catch{}
     if(j.unido){$('okUnido').textContent='ℹ️ Esta actividad ya estaba en la agenda del equipo: tu pedido se agregó a ella.';$('okUnido').style.display='block';}
     $('okRes').innerHTML=`<strong>${esc(body.actividad)}</strong><br>🗓️ ${esc(fLarga(body.fecha))}${body.hora?' · '+hTxt(body.hora):''}${body.horaFin?' a '+hTxt(body.horaFin):''}${body.lugar?'<br>📍 '+esc(body.lugar):''}<br>🧰 ${body.servicios.map(k=>SERV[k][1]).join('; ')}`;
@@ -220,6 +353,7 @@ $('f').addEventListener('submit',async e=>{
   }catch(x){err.textContent=x.message;err.style.display='block';err.scrollIntoView({block:'center',behavior:'smooth'});}
   btn.disabled=false;btn.textContent='Enviar pedido';
 });
+cargarRecordado();
 if(qFolio){verTab('c');consultar(qFolio);}
 </script>
 </body>
