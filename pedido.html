@@ -138,7 +138,7 @@ $('f').addEventListener('submit',async e=>{
     if(!r.ok){if(j.clave){try{localStorage.removeItem('cacco_clave_pedidos');}catch{}setTimeout(()=>$('clave').focus(),50);}throw new Error(j.error||'No se pudo enviar el pedido. Intenta de nuevo.');}
     try{localStorage.setItem('cacco_clave_pedidos',body.clave);}catch{}
     $('okFolio').textContent='Pedido '+j.folio;
-    $('okRes').innerHTML=`<strong>${esc(body.actividad)}</strong><br>📅 ${esc(fLarga(body.fecha))}${body.hora?' · '+hTxt(body.hora):''}${body.horaFin?' a '+hTxt(body.horaFin):''}${body.lugar?'<br>📍 '+esc(body.lugar):''}<br>🧰 ${body.servicios.map(k=>SERV[k][1]).join('; ')}`;
+    $('okRes').innerHTML=`<strong>${esc(body.actividad)}</strong><br>🗓️ ${esc(fLarga(body.fecha))}${body.hora?' · '+hTxt(body.hora):''}${body.horaFin?' a '+hTxt(body.horaFin):''}${body.lugar?'<br>📍 '+esc(body.lugar):''}<br>🧰 ${body.servicios.map(k=>SERV[k][1]).join('; ')}`;
     $('f').style.display='none';$('ok').style.display='block';window.scrollTo(0,0);
   }catch(x){err.textContent=x.message;err.style.display='block';err.scrollIntoView({block:'center',behavior:'smooth'});}
   btn.disabled=false;btn.textContent='Enviar pedido';
