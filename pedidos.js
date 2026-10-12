@@ -147,7 +147,9 @@
       recurrencia: "ninguna", secciones, entregables: [], creadaEn: ctx.hoy, creadaPor: "Formulario de pedidos", creadoPorId: "pedidos", pedido,
     };
     // El registro de pedidos no se borra al descartar el borrador: sirve para medir cuánto pide cada área
-    const registro = { id: tarea.id, tareaId: tarea.id, folio: ctx.folio, area: nomArea, claveDe: area, titulo, fecha, servicios, recibido: ctx.hoy, solicitante: nombre };
+    // Guarda el pedido tal como llegó, para el historial aunque la tarea se edite, se una a otra o se descarte
+    const registro = { id: tarea.id, tareaId: tarea.id, folio: ctx.folio, area: nomArea, claveDe: area, titulo, fecha, servicios, recibido: ctx.hoy, solicitante: nombre,
+      contacto, puntoFocal: focal, ...(hora ? { hora } : {}), ...(horaFin ? { horaFin } : {}), ...(lugar ? { lugar } : {}), nota: notas };
     return { tarea, registro, notaPedido: notas };
   }
 
@@ -166,19 +168,7 @@
   function buscarDuplicado(tareas, nueva) {
     return (tareas || []).find(t => t && t.id !== nueva.id && t.fecha === nueva.fecha && parecidos(t.titulo, nueva.titulo)) || null;
   }
-  // Une el pedido a la tarea existente sin pisar nada que alguien ya trabajó:
-  // siempre agrega la nota; en un borrador además agrega las secciones pedidas y completa datos vacíos.
-  function unirPedido(t, r) {
-    t.notas = [t.notas || "", r.notaPedido].filter(Boolean).join("\n\n");
-    if (t.borrador) {
-      t.secciones = t.secciones || {};
-      Object.entries(r.tarea.secciones).forEach(([s, sv]) => { if (!t.secciones[s]) t.secciones[s] = sv; });
-      ["hora", "horaFin", "lugar"].forEach(k => { if (!t[k] && r.tarea[k]) t[k] = r.tarea[k]; });
-    }
-    if (!t.pedido) t.pedido = r.tarea.pedido;
-    r.registro.tareaId = t.id; r.registro.unido = true;
-    return t;
-  }
+  // Ya no se une solo: el servidor solo avisa del parecido y una persona decide desde la bandeja
 
   // ── Estado que ve la oficina al consultar su folio ──
   const ESTADO_SEC = { Completada: "Lista", "En Progreso": "En curso", "No cumplida": "No se pudo", Cerrada: "Cerrada", Pendiente: "Por hacer" };
@@ -201,6 +191,6 @@
   const normFolio = f => { const n = String(f || "").match(/\d+/); return n ? "P-" + String(parseInt(n[0], 10)).padStart(4, "0") : ""; };
   const siguienteFolio = registros => "P-" + String((registros || []).length + 1).padStart(4, "0");
 
-  const api = { AREAS, SERVICIOS, PREGUNTAS, fueraDeHorario, choquesHorario, limpiar, pedidoATarea, siguienteFolio, buscarDuplicado, unirPedido, estadoPedido, normFolio };
+  const api = { AREAS, SERVICIOS, PREGUNTAS, fueraDeHorario, choquesHorario, limpiar, pedidoATarea, siguienteFolio, buscarDuplicado, estadoPedido, normFolio };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else raiz.CaccoPedidos = api;
 })(this);

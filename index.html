@@ -788,6 +788,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <button data-v="calendario" onclick="goV('calendario')">🗓️ Calendario</button>
   <button data-v="asignaciones" onclick="goV('asignaciones')">☀️ Parte Diario</button>
   <button data-v="asigVarias" onclick="goV('asigVarias')">🔁 Recurrentes</button>
+  <button data-v="pedidos" class="ned oculto" onclick="goV('pedidos')">📨 Pedidos</button>
 </div>
 <div class="subnav oculto" data-g="pubs">
   <button data-v="calPub" onclick="goV('calPub')">📣 Calendario de publicaciones</button>
@@ -1029,6 +1030,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     </select>
     <select class="fc" id="bitFiltA" style="width:auto;padding:6px 10px;font-size:12px" onchange="bitPagina=0;renderBit()">
       <option value="">Todas las acciones</option>
+      <option value="__ped">📨 Pedidos de oficinas</option>
       <option value="Tarea creada">Tarea creada</option>
       <option value="Tarea editada">Tarea editada</option>
       <option value="Tarea eliminada">Tarea eliminada</option>
@@ -1079,6 +1081,23 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <button class="btn bna bsm" onclick="abrirMAsigVar()">+ Nueva</button>
   </div>
   <div id="asigVCont"></div>
+</div>
+
+<div id="vPedidos" class="oculto">
+  <div class="sh2">
+    <div>
+      <div class="stit">📨 Pedidos de oficinas</div>
+      <div style="font-size:13px;color:var(--tm);margin-top:3px">Todo lo que llegó por el formulario, tal como lo escribió la oficina. Se conserva aunque la tarea se edite, se una a otra o se descarte.</div>
+    </div>
+    <button class="btn bgh bsm" onclick="compartirPedidos()">🔗 Formulario</button>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+    <select class="fc" id="pedFiltO" style="width:auto;padding:6px 10px;font-size:12px" onchange="renderPedHist()"><option value="">Todas las oficinas</option></select>
+    <select class="fc" id="pedFiltE" style="width:auto;padding:6px 10px;font-size:12px" onchange="renderPedHist()"><option value="">Todos los estados</option></select>
+    <input class="fc" id="pedBusq" placeholder="🔍 Buscar folio, actividad o persona" style="flex:1;min-width:180px;padding:6px 10px;font-size:12px" oninput="renderPedHist()">
+  </div>
+  <div id="pedResumen" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
+  <div id="pedHistCont"></div>
 </div>
 
 <!-- MODAL NUEVA ASIGNACIÓN VARIA -->
@@ -2129,9 +2148,9 @@ function limpNotifs(){E.notifs=[];renderNotifs();document.getElementById('notifP
 // ════════════════════════
 //  NAVEGACIÓN
 // ════════════════════════
-const VISTAS=['MiDia','Prensa','Adjuntos','Tareas','Aprobaciones','Calendario','HorasExtra','Compensatorio','Permisos','Equipo','Reportes','Historico','Bitacora','Perfil','CalPub','Asignaciones','AsigVarias'];
+const VISTAS=['Pedidos','MiDia','Prensa','Adjuntos','Tareas','Aprobaciones','Calendario','HorasExtra','Compensatorio','Permisos','Equipo','Reportes','Historico','Bitacora','Perfil','CalPub','Asignaciones','AsigVarias'];
 // Menú en 7 grupos; cada grupo con varias vistas muestra sus pestañas arriba
-const GRUPOS={miDia:['miDia'],tareas:['tareas','calendario','asignaciones','asigVarias'],pubs:['calPub','prensa'],
+const GRUPOS={miDia:['miDia'],tareas:['tareas','calendario','asignaciones','asigVarias','pedidos'],pubs:['calPub','prensa'],
   tramites:['horasExtra','compensatorio','permisos'],aprob:['aprobaciones'],reportes:['reportes'],mas:['equipo','adjuntos','historico','bitacora']};
 const grupoDe=v=>Object.keys(GRUPOS).find(g=>GRUPOS[g].includes(v));
 function marcarMenu(v){
@@ -2149,6 +2168,7 @@ function goV(v,el){
   if(v==='historico'&&!puede('verReportes')){alert('Sin permiso.');return;}
   if(v==='bitacora'&&!puede('verBitacora')){alert('Sin permiso.');return;}
   if(v==='aprobaciones'&&!puede('aprobarHora')){alert('Sin permiso.');return;}
+  if(v==='pedidos'&&!puede('editarTarea')){alert('Sin permiso.');return;}
   if((v==='prensa'||v==='miDia'||v==='adjuntos')&&niv==='lector'){alert('Sin permiso.');return;}
   VISTAS.forEach(n=>document.getElementById('v'+n).classList.add('oculto'));
   document.getElementById('v'+v.charAt(0).toUpperCase()+v.slice(1)).classList.remove('oculto');
@@ -2168,6 +2188,7 @@ function goV(v,el){
   if(v==='calPub'){renderCalPub();localStorage.setItem('cacco_calPubVisto','1');document.querySelectorAll('.new-tag').forEach(el=>el.style.display='none');}
   if(v==='asignaciones'){if(!document.getElementById('asigFecha').value)document.getElementById('asigFecha').value=hoy();renderAsig();}
   if(v==='asigVarias')renderAsigVarias();
+  if(v==='pedidos')renderPedHist();
 }
 
 function filtraCat(c,el){
@@ -2860,10 +2881,12 @@ function renderPedidos(lista){
         <div style="font-size:12px;color:var(--tm);margin-top:2px">👤 Pide: ${escH(p.solicitante||'')} · ${escH(p.contacto||'')}</div>
         ${p.puntoFocal?.nombre?`<div style="font-size:12px;color:var(--tm);margin-top:2px">📍 Punto focal: <b style="color:var(--tx)">${escH(p.puntoFocal.nombre)}</b>${p.puntoFocal.cargo?` (${escH(p.puntoFocal.cargo)})`:''} · ${escH(p.puntoFocal.telefono||'')}${p.puntoFocal.correo?` · ${escH(p.puntoFocal.correo)}`:''}</div>`:''}
         ${p.fueraHorario?`<div style="font-size:11px;font-weight:700;color:var(--az);margin-top:4px">🌙 Fuera del horario laboral (${escH(p.fueraHorario)}): horas extra / compensatorio</div>`:''}
+        ${(()=>{const o=parecidaDe(t);return o?`<div style="font-size:12px;margin-top:6px;padding:6px 10px;border-radius:6px;background:var(--ams);color:var(--tx)">🔎 Se parece a <b>${escH(o.titulo)}</b>${o.borrador?' (borrador del calendario)':''}, del mismo día. Si es la misma actividad, únelo; si no, acéptalo aparte.</div>`:'';})()}
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">${(p.servicios||[]).map(k=>`<span style="font-size:11px;background:var(--su2);padding:2px 8px;border-radius:10px">${SERV_PED[k]||escH(k)}</span>`).join('')}${p.material?`<a href="${escH(p.material)}" target="_blank" rel="noopener" style="font-size:11px;font-weight:600;color:var(--az);padding:2px 4px">🔗 Ver material</a>`:''}</div>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
         <button class="btn bna bsm" onclick="abrirMT('${t.id}')" title="Asigna responsables y publica la tarea">✅ Aceptar y asignar</button>
+        ${parecidaDe(t)?`<button class="btn bgh bsm" onclick="unirPedidoA('${t.id}')" title="Agrega los datos del pedido a la actividad que ya existe">🔗 Unir a esa actividad</button>`:''}
         ${puede('descartarBorrador')?`<button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro)" onclick="pedidoNoCubrir('${t.id}')">🚫 No se puede cubrir</button>`:''}
       </div>
       ${ab?`<div style="flex-basis:100%;font-size:12.5px;line-height:1.5;color:var(--tx);background:var(--su2);border-radius:6px;padding:10px 12px;white-space:pre-wrap;max-height:340px;overflow:auto">${escH((t.notas||'Sin más detalles.').replace(/📅/g,'🗓️'))}</div>`:''}
@@ -2873,7 +2896,7 @@ function renderPedidos(lista){
       <div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;display:flex;align-items:center;gap:6px">
         📨 Pedidos de oficinas <span style="background:var(--na);color:#fff;padding:1px 7px;border-radius:10px">${peds.length}</span>
       </div>
-      <div style="font-size:12px;color:var(--tm);margin-bottom:8px">Por revisar. Al aceptar, asignas responsables; si no se puede, el motivo le llega a la oficina cuando consulta su folio.</div>
+      <div style="font-size:12px;color:var(--tm);margin-bottom:8px">Por revisar. Al aceptar, asignas responsables; si no se puede, el motivo le llega a la oficina cuando consulta su folio. <a href="#" onclick="goV('pedidos');return false" style="color:var(--az);font-weight:600">Ver historial de pedidos ›</a></div>
       <div style="display:flex;flex-direction:column;gap:8px">${peds.map(card).join('')}</div>
     </div>`;
   return true;
@@ -2889,6 +2912,72 @@ async function pedidoNoCubrir(id){
   E.tareas=E.tareas.filter(x=>x.id!==id);expandidas.delete(id);
   reg('Pedido no cubierto',`${t.pedido.folio} "${t.titulo}" — ${m} (por ${uAct?.nombre})`);
   guardar();refrescarVistaAbierta();
+}
+// El servidor ya no une pedidos solo: avisa si hay una actividad parecida ese día y una persona decide
+const regPedido=tid=>(E.pedidos||[]).find(p=>p.tareaId===tid);
+function parecidaDe(t){
+  const r=regPedido(t.id),o=r?.parecida&&E.tareas.find(x=>x.id===r.parecida.id);
+  return o&&o.id!==t.id&&o.fecha===t.fecha?o:null;
+}
+async function unirPedidoA(id){
+  if(!puede('editarTarea')){alert('Solo Líder o Editor pueden responder pedidos.');return;}
+  const t=E.tareas.find(x=>x.id===id&&x.borrador&&x.pedido),o=t&&parecidaDe(t);if(!o)return;
+  if(!await confirmar(`Los datos del pedido ${t.pedido.folio} se agregan al final de las notas de «${o.titulo}» y el pedido sale de la bandeja. En el historial de pedidos sigue completo.`,{tit:'🔗 Unir a esa actividad',ok:'Unir'}))return;
+  const r=regPedido(id);
+  o.notas=[o.notas||'',`──────── 📨 Pedido ${t.pedido.folio} (unido por ${uAct?.nombre||''}) ────────\n${r?.nota||t.notas||''}`].filter(Boolean).join('\n\n');
+  if(o.borrador){o.secciones=o.secciones||{};Object.entries(t.secciones||{}).forEach(([k,sv])=>{if(!o.secciones[k])o.secciones[k]=sv;});['hora','horaFin','lugar'].forEach(k=>{if(!o[k]&&t[k])o[k]=t[k];});}
+  if(!o.pedido)o.pedido=t.pedido;
+  E.pedidos=(E.pedidos||[]).map(p=>p.tareaId===id?{...p,tareaId:o.id,unido:{a:o.titulo,por:uAct?.nombre||'',en:hoy()}}:p);
+  E.tareas=E.tareas.filter(x=>x.id!==id);expandidas.delete(id);
+  reg('Pedido unido a otra tarea',`${t.pedido.folio} de ${t.pedido.area}: "${t.titulo}" → "${o.titulo}" (por ${uAct?.nombre})`);
+  guardar();refrescarVistaAbierta();
+}
+// Estado de cada pedido para el historial
+const EST_PED={'Por revisar':['var(--na)','var(--nas)'],'Aceptado':['var(--az)','var(--azs)'],'Atendido':['var(--ve)','var(--ves)'],'Unido a un borrador':['var(--mo)','var(--mos)'],'No se cubre':['var(--ro)','var(--ros)'],'Descartado':['var(--tm)','var(--su2)']};
+function estPedido(p){
+  if(p.rechazo)return'No se cubre';
+  const t=E.tareas.find(x=>x.id===(p.tareaId||p.id));
+  if(!t)return'Descartado';if(t.borrador)return p.unido?'Unido a un borrador':'Por revisar';
+  return ['Completada','Cerrada'].includes(eglobal(t))?'Atendido':'Aceptado';
+}
+const pedAbiertos=new Set();
+function togPed(f){pedAbiertos.has(f)?pedAbiertos.delete(f):pedAbiertos.add(f);renderPedHist();}
+function renderPedHist(){
+  const cont=document.getElementById('pedHistCont');if(!cont)return;
+  const todos=[...(E.pedidos||[])].sort((a,b)=>(b.folio||'').localeCompare(a.folio||''));
+  const selO=document.getElementById('pedFiltO'),selE=document.getElementById('pedFiltE');
+  const llenar=(sel,vals)=>{const v=sel.value;sel.length=1;vals.forEach(x=>sel.add(new Option(x,x)));sel.value=vals.includes(v)?v:'';};
+  llenar(selO,[...new Set(todos.map(p=>p.area).filter(Boolean))].sort());llenar(selE,Object.keys(EST_PED));
+  const fo=selO.value,fe=selE.value,q=(document.getElementById('pedBusq').value||'').toLowerCase().trim();
+  const cuenta={};todos.forEach(p=>{const e=estPedido(p);cuenta[e]=(cuenta[e]||0)+1;});
+  document.getElementById('pedResumen').innerHTML=todos.length?`<span style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:12px;background:var(--su2)">${plu(todos.length,'pedido','pedidos')}</span>`+
+    Object.keys(EST_PED).filter(e=>cuenta[e]).map(e=>`<span style="font-size:12px;font-weight:600;padding:3px 10px;border-radius:12px;background:${EST_PED[e][1]};color:${EST_PED[e][0]};cursor:pointer" onclick="document.getElementById('pedFiltE').value='${e}';renderPedHist()">${e}: ${cuenta[e]}</span>`).join(''):'';
+  const lista=todos.filter(p=>(!fo||p.area===fo)&&(!fe||estPedido(p)===fe)&&(!q||[p.folio,p.titulo,p.solicitante,p.area,p.puntoFocal?.nombre].join(' ').toLowerCase().includes(q)));
+  if(!lista.length){cont.innerHTML=`<div style="text-align:center;color:var(--tm);font-size:13px;padding:30px 10px">${todos.length?'Ningún pedido coincide con el filtro.':'Todavía no ha llegado ningún pedido por el formulario.'}</div>`;return;}
+  cont.innerHTML=`<div style="display:flex;flex-direction:column;gap:8px">${lista.map(p=>{
+    const e=estPedido(p),[c,bg]=EST_PED[e],ab=pedAbiertos.has(p.folio),t=E.tareas.find(x=>x.id===p.tareaId);
+    const extra=[p.unido?`🔗 Unido a «${escH(p.unido.a)}» por ${escH(p.unido.por)} (${fmt(p.unido.en)})`:'',
+      p.aceptado?`✅ Aceptado por ${escH(p.aceptado.por)} (${fmt(p.aceptado.en)})`:'',
+      p.rechazo?`🚫 No se cubre: ${escH(p.rechazo.motivo)} · ${escH(p.rechazo.por||'')} (${fmt(p.rechazo.en)})`:''].filter(Boolean);
+    return`<div style="padding:11px 14px;border:1px solid var(--bo);border-left:4px solid ${c};border-radius:var(--r);background:var(--su)">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span style="font-size:11px;font-weight:700;background:var(--nas);color:var(--na);padding:1px 8px;border-radius:10px">${escH(p.folio||'')}</span>
+        <span style="font-size:12px;font-weight:600">${escH(p.area||'')}</span>
+        <span style="font-size:11px;font-weight:700;background:${bg};color:${c};padding:1px 8px;border-radius:10px">${e}</span>
+        <span style="font-size:11px;color:var(--tm);margin-left:auto">Llegó el ${fmt(p.recibido)}</span>
+      </div>
+      <div onclick="togPed('${escH(p.folio)}')" style="font-size:14px;font-weight:700;margin-top:4px;cursor:pointer">${ab?'▾':'▸'} ${escH(p.titulo||'(Sin título)')}</div>
+      <div style="font-size:12px;color:var(--tm);margin-top:2px">🗓️ ${fmt(p.fecha)}${p.hora?' · '+txtHora(p.hora):''}${p.horaFin?' a '+txtHora(p.horaFin):''}${p.lugar?' · 📍 '+escH(p.lugar):''} · 👤 ${escH(p.solicitante||'')}${p.contacto?' · '+escH(p.contacto):''}</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">${(p.servicios||[]).map(k=>`<span style="font-size:11px;background:var(--su2);padding:2px 8px;border-radius:10px">${SERV_PED[k]||escH(k)}</span>`).join('')}</div>
+      ${extra.length?`<div style="font-size:12px;color:var(--tm);margin-top:6px;line-height:1.5">${extra.join('<br>')}</div>`:''}
+      ${ab?`<div style="font-size:12.5px;line-height:1.5;background:var(--su2);border-radius:6px;padding:10px 12px;margin-top:8px;white-space:pre-wrap;max-height:360px;overflow:auto">${escH(p.nota||'Este pedido llegó antes de que el tablero guardara el texto completo. Los datos de arriba son los que quedaron registrados.')}</div>`:''}
+      ${t?`<div style="margin-top:8px"><button class="btn bgh bsm" onclick="abrirTareaDe('${t.id}')">${!t.borrador?'📋 Abrir la tarea':p.unido?'📝 Abrir el borrador':'📝 Ver en la bandeja'}</button></div>`:''}
+    </div>`;}).join('')}</div>`;
+}
+function abrirTareaDe(id){
+  const t=E.tareas.find(x=>x.id===id);if(!t)return;
+  const r=regPedido(id);if(t.borrador&&r&&!r.unido){irAPedidos();return;}
+  abrirMT(id);
 }
 
 // Borradores: visibles para líder y editor (pueden completarlos), y para su autor o responsables
@@ -3446,7 +3535,11 @@ function guardarT(){
     entregables:orig?.entregables||[]
   };
 
-  if(id){const i=E.tareas.findIndex(t=>t.id===id);if(i>=0)E.tareas[i]=t;reg('Tarea editada',`"${titulo}" por ${uAct?.nombre}`);}
+  if(id){const i=E.tareas.findIndex(t=>t.id===id);if(i>=0)E.tareas[i]=t;reg('Tarea editada',`"${titulo}" por ${uAct?.nombre}`);
+    if(orig?.borrador&&orig.pedido){
+      E.pedidos=(E.pedidos||[]).map(p=>p.tareaId===id&&!p.aceptado?{...p,aceptado:{por:uAct?.nombre||'',en:hoy()}}:p);
+      reg('Pedido aceptado',`${orig.pedido.folio||''} de ${orig.pedido.area||''}: "${titulo}" (por ${uAct?.nombre})`);
+    }}
   else{
     E.tareas.unshift(t);
     const secNames=Object.keys(secciones).join(', ');
@@ -6593,7 +6686,7 @@ const BIT_POR_PAG=25;
 
 function renderBit(){
   const tbody=document.getElementById('cBit'),vac=document.getElementById('vacBit');
-  const cls={'Tarea creada':'bpro','Tarea editada':'bmed','Tarea eliminada':'balt','Avance completado':'blis','Avance revertido':'bmed','Hora registrada':'bnar','Hora aprobada':'blis','Hora rechazada':'balt','Hora editada':'bmed','Hora eliminada':'balt','Persona creada':'blis','Persona editada':'bmor','Persona eliminada':'balt','Perfil actualizado':'bgr','Mes cerrado':'bnar','Bitácora limpiada':'bgr'};
+  const cls={'Tarea creada':'bpro','Tarea editada':'bmed','Tarea eliminada':'balt','Avance completado':'blis','Avance revertido':'bmed','Hora registrada':'bnar','Hora aprobada':'blis','Hora rechazada':'balt','Hora editada':'bmed','Hora eliminada':'balt','Persona creada':'blis','Persona editada':'bmor','Persona eliminada':'balt','Perfil actualizado':'bgr','Mes cerrado':'bnar','Bitácora limpiada':'bgr','Pedido recibido':'bnar','Pedido aceptado':'blis','Pedido unido a otra tarea':'bmed','Pedido no cubierto':'balt'};
 
   // Actualizar opciones de usuarios
   const selU=document.getElementById('bitFiltU');
@@ -6608,7 +6701,7 @@ function renderBit(){
 
   const filtrados=E.bitacora.filter(r=>{
     const uOk=!filtU||(r.usuario||'')=== filtU;
-    const aOk=!filtA||r.accion===filtA;
+    const aOk=!filtA||(filtA==='__ped'?/^Pedido/.test(r.accion||''):r.accion===filtA);
     const bOk=!busq||(r.detalle||'').toLowerCase().includes(busq)||(r.accion||'').toLowerCase().includes(busq)||(r.usuario||'').toLowerCase().includes(busq);
     return uOk&&aOk&&bOk;
   });

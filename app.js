@@ -169,7 +169,7 @@ app.get("/pedido", enviarPagina("pedido.html"));
 // ════════════════════════
 // Cada pedido entra como borrador de tarea. Como el formulario es público, se limita cuántos
 // pedidos puede enviar cada conexión y cuántos borradores de pedidos pueden esperar revisión.
-const { pedidoATarea, siguienteFolio, buscarDuplicado, unirPedido, estadoPedido, normFolio, fueraDeHorario, choquesHorario } = require("./pedidos");
+const { pedidoATarea, siguienteFolio, buscarDuplicado, estadoPedido, normFolio, fueraDeHorario, choquesHorario } = require("./pedidos");
 const PEDIDOS_POR_HORA = 5, PEDIDOS_SIN_REVISAR = 40;
 const enviosPorIp = new Map();
 // Claves de acceso del formulario: una por oficina. La clave dice de qué oficina viene el pedido, así que la
@@ -231,17 +231,23 @@ app.post("/api/pedidos", async (req, res) => {
     const folio = siguienteFolio(data.pedidos);
     const r = pedidoATarea({ ...req.body, area }, { hoy: hoyPanama(), folio, id: () => Date.now().toString(36) + require("crypto").randomBytes(6).toString("hex") });
     if (r.error) return res.status(400).json({ error: r.error });
-    // Si la actividad ya está en el tablero (mismo día, nombre parecido) el pedido se une a ella
-    const existente = buscarDuplicado(data.tareas, r.tarea);
-    if (existente) unirPedido(existente, r); else data.tareas.unshift(r.tarea);
+    // El pedido siempre entra aparte, a la bandeja. Si ya hay una actividad parecida ese día solo se avisa:
+    // una persona decide en la bandeja si se une a ella, para no mezclar información sin revisar.
+    const parecida = buscarDuplicado(data.tareas, r.tarea);
+    if (parecida) r.registro.parecida = { id: parecida.id, titulo: parecida.titulo };
+    data.tareas.unshift(r.tarea);
     data.pedidos.unshift(r.registro);
-    const hora = new Date().toLocaleTimeString("es-PA", { timeZone: "America/Panama", hour: "2-digit", minute: "2-digit" });
-    data.notifs.unshift({ id: r.registro.id + "n", ico: "📨", ts: hora, sub: "Formulario de pedidos",
-      txt: existente ? `Pedido ${folio} de ${r.registro.area} se unió a «${existente.titulo}»` : `Pedido ${folio} de ${r.registro.area}: ${r.tarea.titulo}` });
+    const ahoraPa = new Date(), tz = { timeZone: "America/Panama" };
+    const hora = ahoraPa.toLocaleTimeString("es-PA", { ...tz, hour: "2-digit", minute: "2-digit" });
+    data.notifs.unshift({ id: r.registro.id + "n", ico: "📨", ts: hora, sub: "Formulario de pedidos", txt: `Pedido ${folio} de ${r.registro.area}: ${r.tarea.titulo}` });
     data.notifs = data.notifs.slice(0, 50);
+    data.bitacora = [{ id: r.registro.id + "b", fecha: ahoraPa.toLocaleDateString("es-PA", { ...tz, day: "2-digit", month: "short", year: "numeric" }), hora,
+      usuario: "Formulario de pedidos", accion: "Pedido recibido",
+      detalle: `${folio} de ${r.registro.area}: "${r.tarea.titulo}" (${r.tarea.fecha}) · pide ${r.registro.solicitante}${parecida ? ` · se parece a "${parecida.titulo}"` : ""}` },
+      ...(data.bitacora || [])].slice(0, 300);
     await escribirData(data);
     enviosPorIp.set(ip, [...recientes, ahora]);
-    res.json({ ok: true, folio, unido: !!existente });
+    res.json({ ok: true, folio });
   } catch { res.status(500).json({ error: "No se pudo enviar el pedido. Intenta de nuevo en unos minutos." }); }
 });
 // Mientras llena el formulario, la oficina ve si su horario choca con otras actividades del equipo
