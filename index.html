@@ -2862,8 +2862,11 @@ function renderTareas(){
 const SERV_PED={cobertura:'📸 Fotos y video',diseno:'🎨 Diseño',difusion:'📱 Redes',prensa:'📰 Prensa',protocolo:'🎤 Protocolo'};
 function renderPedidos(lista){
   if(!puede('editarTarea'))return false;
-  const peds=E.tareas.filter(t=>t.borrador&&t.pedido).sort((a,b)=>(a.fecha||'9999').localeCompare(b.fecha||'9999'));
-  if(!peds.length)return false;
+  const peds=E.tareas.filter(esPedBandeja).sort((a,b)=>(a.fecha||'9999').localeCompare(b.fecha||'9999'));
+  // Correcciones de pedidos que ya salieron de la bandeja (aceptados, unidos o descartados)
+  const enBandeja=new Set(peds.map(t=>t.id));
+  const corrFuera=[...new Set(correccionesPend().map(x=>x.p))].filter(p=>!enBandeja.has(p.tareaId));
+  if(!peds.length&&!corrFuera.length)return false;
   const hh=hoy();
   const card=t=>{
     const p=t.pedido,ab=expandidas.has(t.id),falta=t.fecha?diasEntre(hh,t.fecha):null,aviso=t.fecha&&p.recibido?diasEntre(p.recibido,t.fecha):null;
@@ -2881,7 +2884,7 @@ function renderPedidos(lista){
         <div style="font-size:12px;color:var(--tm);margin-top:2px">👤 Pide: ${escH(p.solicitante||'')} · ${escH(p.contacto||'')}</div>
         ${p.puntoFocal?.nombre?`<div style="font-size:12px;color:var(--tm);margin-top:2px">📍 Punto focal: <b style="color:var(--tx)">${escH(p.puntoFocal.nombre)}</b>${p.puntoFocal.cargo?` (${escH(p.puntoFocal.cargo)})`:''} · ${escH(p.puntoFocal.telefono||'')}${p.puntoFocal.correo?` · ${escH(p.puntoFocal.correo)}`:''}</div>`:''}
         ${p.fueraHorario?`<div style="font-size:11px;font-weight:700;color:var(--az);margin-top:4px">🌙 Fuera del horario laboral (${escH(p.fueraHorario)}): horas extra / compensatorio</div>`:''}
-        ${(()=>{const o=parecidaDe(t);return o?`<div style="font-size:12px;margin-top:6px;padding:6px 10px;border-radius:6px;background:var(--ams);color:var(--tx)">🔎 Se parece a <b>${escH(o.titulo)}</b>${o.borrador?' (borrador del calendario)':''}, del mismo día. Si es la misma actividad, únelo; si no, acéptalo aparte.</div>`:'';})()}
+        ${(()=>{const o=parecidaDe(t);return o?`<div style="font-size:12px;margin-top:6px;padding:6px 10px;border-radius:6px;background:var(--ams);color:var(--tx)">🔎 Se parece a <b>${escH(o.titulo)}</b>${o.borrador?' (borrador del calendario)':''}, del mismo día. Si es la misma actividad, únelo (manda lo que dice la solicitud); si no, acéptalo aparte.</div>`:'';})()}
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">${(p.servicios||[]).map(k=>`<span style="font-size:11px;background:var(--su2);padding:2px 8px;border-radius:10px">${SERV_PED[k]||escH(k)}</span>`).join('')}${p.material?`<a href="${escH(p.material)}" target="_blank" rel="noopener" style="font-size:11px;font-weight:600;color:var(--az);padding:2px 4px">🔗 Ver material</a>`:''}</div>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
@@ -2889,15 +2892,27 @@ function renderPedidos(lista){
         ${parecidaDe(t)?`<button class="btn bgh bsm" onclick="unirPedidoA('${t.id}')" title="Agrega los datos del pedido a la actividad que ya existe">🔗 Unir a esa actividad</button>`:''}
         ${puede('descartarBorrador')?`<button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro)" onclick="pedidoNoCubrir('${t.id}')">🚫 No se puede cubrir</button>`:''}
       </div>
+      ${(()=>{const r=regPedido(t.id);return r?`<div style="flex-basis:100%">${htmlCorrs(r,true)}</div>`:'';})()}
       ${ab?`<div style="flex-basis:100%;font-size:12.5px;line-height:1.5;color:var(--tx);background:var(--su2);border-radius:6px;padding:10px 12px;white-space:pre-wrap;max-height:340px;overflow:auto">${escH((t.notas||'Sin más detalles.').replace(/📅/g,'🗓️'))}</div>`:''}
     </div>`;
   };
+  const cardCorr=p=>{const t=E.tareas.find(x=>x.id===p.tareaId);
+    return`<div style="padding:12px 14px;border:1px solid var(--bo);border-left:4px solid var(--am);border-radius:var(--r);background:var(--su)">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span style="font-size:11px;font-weight:700;background:var(--nas);color:var(--na);padding:1px 8px;border-radius:10px">${escH(p.folio)}</span>
+        <span style="font-size:12px;font-weight:600">${escH(p.area||'')}</span>
+        <span style="font-size:14px;font-weight:700;flex-basis:100%;margin-top:2px">${escH(t?.titulo||p.titulo)}</span>
+        <span style="font-size:12px;color:var(--tm)">${t?(t.borrador?'📝 Borrador':'📋 Tarea aceptada')+(t.fecha?' · 🗓️ '+fmt(t.fecha):''):'La tarea ya no está en el tablero'}</span>
+      </div>
+      ${htmlCorrs(p,true)}
+      ${t?`<div style="margin-top:8px"><button class="btn bna bsm" onclick="abrirMT('${t.id}')">✏️ Abrir y corregir</button></div>`:''}
+    </div>`;};
   lista.innerHTML+=`<div id="bandejaPedidos" style="margin-bottom:20px;scroll-margin-top:80px">
       <div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;display:flex;align-items:center;gap:6px">
-        📨 Pedidos de oficinas <span style="background:var(--na);color:#fff;padding:1px 7px;border-radius:10px">${peds.length}</span>
+        📨 Pedidos de oficinas <span style="background:var(--na);color:#fff;padding:1px 7px;border-radius:10px">${peds.length+corrFuera.length}</span>
       </div>
       <div style="font-size:12px;color:var(--tm);margin-bottom:8px">Por revisar. Al aceptar, asignas responsables; si no se puede, el motivo le llega a la oficina cuando consulta su folio. <a href="#" onclick="goV('pedidos');return false" style="color:var(--az);font-weight:600">Ver historial de pedidos ›</a></div>
-      <div style="display:flex;flex-direction:column;gap:8px">${peds.map(card).join('')}</div>
+      <div style="display:flex;flex-direction:column;gap:8px">${peds.map(card).join('')}${corrFuera.map(cardCorr).join('')}</div>
     </div>`;
   return true;
 }
@@ -2915,6 +2930,8 @@ async function pedidoNoCubrir(id){
 }
 // El servidor ya no une pedidos solo: avisa si hay una actividad parecida ese día y una persona decide
 const regPedido=tid=>(E.pedidos||[]).find(p=>p.tareaId===tid);
+// Borrador que vino del formulario y espera respuesta (uno unido a otra actividad ya no está en la bandeja)
+const esPedBandeja=t=>!!(t&&t.borrador&&t.pedido&&!regPedido(t.id)?.unido);
 function parecidaDe(t){
   const r=regPedido(t.id),o=r?.parecida&&E.tareas.find(x=>x.id===r.parecida.id);
   return o&&o.id!==t.id&&o.fecha===t.fecha?o:null;
@@ -2922,11 +2939,15 @@ function parecidaDe(t){
 async function unirPedidoA(id){
   if(!puede('editarTarea')){alert('Solo Líder o Editor pueden responder pedidos.');return;}
   const t=E.tareas.find(x=>x.id===id&&x.borrador&&x.pedido),o=t&&parecidaDe(t);if(!o)return;
-  if(!await confirmar(`Los datos del pedido ${t.pedido.folio} se agregan al final de las notas de «${o.titulo}» y el pedido sale de la bandeja. En el historial de pedidos sigue completo.`,{tit:'🔗 Unir a esa actividad',ok:'Unir'}))return;
+  if(!await confirmar(`Manda lo que dice la solicitud, porque viene de la fuente: «${o.titulo}» toma el nombre, la hora y el lugar del pedido ${t.pedido.folio}, y sus notas quedan debajo de las del pedido. Lo que cambie queda anotado.`,{tit:'🔗 Unir a esa actividad',ok:'Unir'}))return;
   const r=regPedido(id);
-  o.notas=[o.notas||'',`──────── 📨 Pedido ${t.pedido.folio} (unido por ${uAct?.nombre||''}) ────────\n${r?.nota||t.notas||''}`].filter(Boolean).join('\n\n');
-  if(o.borrador){o.secciones=o.secciones||{};Object.entries(t.secciones||{}).forEach(([k,sv])=>{if(!o.secciones[k])o.secciones[k]=sv;});['hora','horaFin','lugar'].forEach(k=>{if(!o[k]&&t[k])o[k]=t[k];});}
-  if(!o.pedido)o.pedido=t.pedido;
+  // Regla de Miguel: si son la misma actividad, prioriza la información de la solicitud
+  const ETQ={titulo:'Nombre',hora:'Hora',horaFin:'Hora de fin',lugar:'Lugar'},antes=[];
+  Object.keys(ETQ).forEach(k=>{if(t[k]&&t[k]!==o[k]){if(o[k])antes.push(`${ETQ[k]}: ${k.startsWith('hora')?txtHora(o[k]):o[k]}`);o[k]=t[k];}});
+  o.notas=[`🔗 Unido por ${uAct?.nombre||''} el ${fmt(hoy())}: manda lo que dice la solicitud.\n${r?.nota||t.notas||''}`,
+    antes.length?`↩️ Antes decía: ${antes.join(' · ')}`:'',o.notas?`──────── Información anterior ────────\n${o.notas}`:''].filter(Boolean).join('\n\n');
+  o.secciones=o.secciones||{};Object.entries(t.secciones||{}).forEach(([k,sv])=>{if(!o.secciones[k])o.secciones[k]=sv;});
+  o.pedido=t.pedido;
   E.pedidos=(E.pedidos||[]).map(p=>p.tareaId===id?{...p,tareaId:o.id,unido:{a:o.titulo,por:uAct?.nombre||'',en:hoy()}}:p);
   E.tareas=E.tareas.filter(x=>x.id!==id);expandidas.delete(id);
   reg('Pedido unido a otra tarea',`${t.pedido.folio} de ${t.pedido.area}: "${t.titulo}" → "${o.titulo}" (por ${uAct?.nombre})`);
@@ -2940,6 +2961,17 @@ function estPedido(p){
   if(!t)return'Descartado';if(t.borrador)return p.unido?'Unido a un borrador':'Por revisar';
   return ['Completada','Cerrada'].includes(eglobal(t))?'Atendido':'Aceptado';
 }
+// Correcciones que piden las oficinas desde /pedido → Consultar (no cambian nada solas)
+const correccionesPend=()=>(E.pedidos||[]).flatMap(p=>(p.correcciones||[]).filter(c=>c.estado==='Pendiente').map(c=>({p,c})));
+const htmlCorrs=(p,soloPend)=>(p.correcciones||[]).filter(c=>!soloPend||c.estado==='Pendiente').map(c=>`<div style="font-size:12.5px;margin-top:6px;padding:7px 10px;border-radius:6px;background:${c.estado==='Pendiente'?'var(--ams)':'var(--su2)'};color:var(--tx);display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap">
+  <div style="flex:1;min-width:200px">✏️ <b>Corrección${c.estado==='Pendiente'?' pedida':' aplicada'}</b> · ${escH(c.campos.join(', '))} · ${fmt(c.en)} por ${escH(c.nombre||'')}<br>${escH(c.texto)}${c.aplicada?`<br><span style="color:var(--tm)">Aplicada por ${escH(c.aplicada.por)} (${fmt(c.aplicada.en)})</span>`:''}</div>
+  ${c.estado==='Pendiente'&&puede('editarTarea')?`<button class="btn bgh bsm" onclick="corrAplicada('${escH(p.folio)}','${escH(c.id)}')" title="Ya corregiste la tarea">✅ Ya la apliqué</button>`:''}</div>`).join('');
+function corrAplicada(folio,cid){
+  const p=(E.pedidos||[]).find(x=>x.folio===folio),c=p&&(p.correcciones||[]).find(x=>x.id===cid);if(!c)return;
+  c.estado='Aplicada';c.aplicada={por:uAct?.nombre||'',en:hoy()};
+  reg('Pedido: corrección aplicada',`${folio} "${p.titulo}": ${c.campos.join(', ')} → ${c.texto} (por ${uAct?.nombre})`);
+  guardar();refrescarVistaAbierta();
+}
 const pedAbiertos=new Set();
 function togPed(f){pedAbiertos.has(f)?pedAbiertos.delete(f):pedAbiertos.add(f);renderPedHist();}
 function renderPedHist(){
@@ -2952,6 +2984,8 @@ function renderPedHist(){
   const cuenta={};todos.forEach(p=>{const e=estPedido(p);cuenta[e]=(cuenta[e]||0)+1;});
   document.getElementById('pedResumen').innerHTML=todos.length?`<span style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:12px;background:var(--su2)">${plu(todos.length,'pedido','pedidos')}</span>`+
     Object.keys(EST_PED).filter(e=>cuenta[e]).map(e=>`<span style="font-size:12px;font-weight:600;padding:3px 10px;border-radius:12px;background:${EST_PED[e][1]};color:${EST_PED[e][0]};cursor:pointer" onclick="document.getElementById('pedFiltE').value='${e}';renderPedHist()">${e}: ${cuenta[e]}</span>`).join(''):'';
+  const nc=correccionesPend().length;
+  if(nc)document.getElementById('pedResumen').innerHTML+=`<span style="font-size:12px;font-weight:600;padding:3px 10px;border-radius:12px;background:var(--ams);color:var(--am)">✏️ ${plu(nc,'corrección pendiente','correcciones pendientes')}</span>`;
   const lista=todos.filter(p=>(!fo||p.area===fo)&&(!fe||estPedido(p)===fe)&&(!q||[p.folio,p.titulo,p.solicitante,p.area,p.puntoFocal?.nombre].join(' ').toLowerCase().includes(q)));
   if(!lista.length){cont.innerHTML=`<div style="text-align:center;color:var(--tm);font-size:13px;padding:30px 10px">${todos.length?'Ningún pedido coincide con el filtro.':'Todavía no ha llegado ningún pedido por el formulario.'}</div>`;return;}
   cont.innerHTML=`<div style="display:flex;flex-direction:column;gap:8px">${lista.map(p=>{
@@ -2970,6 +3004,7 @@ function renderPedHist(){
       <div style="font-size:12px;color:var(--tm);margin-top:2px">🗓️ ${fmt(p.fecha)}${p.hora?' · '+txtHora(p.hora):''}${p.horaFin?' a '+txtHora(p.horaFin):''}${p.lugar?' · 📍 '+escH(p.lugar):''} · 👤 ${escH(p.solicitante||'')}${p.contacto?' · '+escH(p.contacto):''}</div>
       <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">${(p.servicios||[]).map(k=>`<span style="font-size:11px;background:var(--su2);padding:2px 8px;border-radius:10px">${SERV_PED[k]||escH(k)}</span>`).join('')}</div>
       ${extra.length?`<div style="font-size:12px;color:var(--tm);margin-top:6px;line-height:1.5">${extra.join('<br>')}</div>`:''}
+      ${htmlCorrs(p)}
       ${ab?`<div style="font-size:12.5px;line-height:1.5;background:var(--su2);border-radius:6px;padding:10px 12px;margin-top:8px;white-space:pre-wrap;max-height:360px;overflow:auto">${escH(p.nota||'Este pedido llegó antes de que el tablero guardara el texto completo. Los datos de arriba son los que quedaron registrados.')}</div>`:''}
       ${t?`<div style="margin-top:8px"><button class="btn bgh bsm" onclick="abrirTareaDe('${t.id}')">${!t.borrador?'📋 Abrir la tarea':p.unido?'📝 Abrir el borrador':'📝 Ver en la bandeja'}</button></div>`:''}
     </div>`;}).join('')}</div>`;
@@ -2982,7 +3017,7 @@ function abrirTareaDe(id){
 
 // Borradores: visibles para líder y editor (pueden completarlos), y para su autor o responsables
 function renderBorradores(lista){
-  const borradores=E.tareas.filter(t=>t.borrador&&!(t.pedido&&puede('editarTarea'))&&(puede('editarTarea')||t.creadaPor===uAct?.nombre||Object.values(t.secciones||{}).some(sv=>(sv.responsables||[]).includes(uAct?.id))))
+  const borradores=E.tareas.filter(t=>t.borrador&&!(esPedBandeja(t)&&puede('editarTarea'))&&(puede('editarTarea')||t.creadaPor===uAct?.nombre||Object.values(t.secciones||{}).some(sv=>(sv.responsables||[]).includes(uAct?.id))))
     .sort((a,b)=>(a.fecha||'9999').localeCompare(b.fecha||'9999'));
   if(!borradores.length)return false;
   const nivelDe=t=>((t.notas||'').match(/NIVEL SUGERIDO: ([^\n(]+)/)||[])[1]||'';
@@ -3034,7 +3069,7 @@ let revCola=[],revIdx=0,revVolver=false;const revVistos=new Set();
 const nivelBorr=t=>(((t.notas||'').match(/NIVEL SUGERIDO: ([^\n(]+)/)||[])[1]||'').trim();
 function colaRevision(){
   const hh=hoy();
-  return E.tareas.filter(t=>t.borrador&&!t.pedido&&!(t.fecha&&t.fecha<hh)).sort((a,b)=>((a.fecha||'9999')+(a.hora||'')).localeCompare((b.fecha||'9999')+(b.hora||''))).map(t=>t.id);
+  return E.tareas.filter(t=>t.borrador&&!esPedBandeja(t)&&!(t.fecha&&t.fecha<hh)).sort((a,b)=>((a.fecha||'9999')+(a.hora||'')).localeCompare((b.fecha||'9999')+(b.hora||''))).map(t=>t.id);
 }
 function revEmpezar(){revVistos.clear();revAbrir();}
 function revAbrir(){
@@ -7444,8 +7479,8 @@ function renderMiDia(){
   let vb,nvb=0,titVb;
   if(puede('aprobarHora')){
     titVb='Espera tu visto bueno';
-    const q=pendientesAprob(),ped=q.borradores.filter(t=>t.pedido).length;
-    const filas=[['👀','publicación por aprobar','publicaciones por aprobar',q.pubs.length],['📝','permiso','permisos',q.permisos.length],['🌴','solicitud de compensatorio','solicitudes de compensatorio',q.comp.length],['⏱️','registro de horas extra','registros de horas extra',q.horas.length],['📨','pedido de oficina por revisar','pedidos de oficinas por revisar',ped],['🗂️','borrador por revisar','borradores por revisar',q.borradores.length-ped]].filter(x=>x[3]);
+    const q=pendientesAprob(),pb=q.borradores.filter(esPedBandeja).length,ped=pb+new Set(correccionesPend().map(x=>x.p.folio)).size;
+    const filas=[['👀','publicación por aprobar','publicaciones por aprobar',q.pubs.length],['📝','permiso','permisos',q.permisos.length],['🌴','solicitud de compensatorio','solicitudes de compensatorio',q.comp.length],['⏱️','registro de horas extra','registros de horas extra',q.horas.length],['📨','pedido de oficina por revisar','pedidos de oficinas por revisar',ped],['🗂️','borrador por revisar','borradores por revisar',q.borradores.length-pb]].filter(x=>x[3]);
     nvb=filas.reduce((s,x)=>s+x[3],0);
     vb=filas.length?filas.map(([i,s1,pl,n])=>`<div class="md-li" onclick="${i==='📨'?'irAPedidos()':i==='🗂️'?"goV('tareas',navDe('tareas'));revEmpezar()":"goV('aprobaciones',navDe('aprobaciones'))"}"><span style="font-size:17px">${i}</span><span style="flex:1"><b>${n}</b> ${n===1?s1:pl}</span><span style="color:var(--tm)">›</span></div>`).join(''):vac('🎉 Todo al día.');
   }else{

@@ -169,7 +169,7 @@ app.get("/pedido", enviarPagina("pedido.html"));
 // ════════════════════════
 // Cada pedido entra como borrador de tarea. Como el formulario es público, se limita cuántos
 // pedidos puede enviar cada conexión y cuántos borradores de pedidos pueden esperar revisión.
-const { pedidoATarea, siguienteFolio, buscarDuplicado, estadoPedido, normFolio, fueraDeHorario, choquesHorario } = require("./pedidos");
+const { pedidoATarea, siguienteFolio, buscarDuplicado, estadoPedido, normFolio, nuevaCorreccion, fueraDeHorario, choquesHorario } = require("./pedidos");
 const PEDIDOS_POR_HORA = 5, PEDIDOS_SIN_REVISAR = 40;
 const enviosPorIp = new Map();
 // Claves de acceso del formulario: una por oficina. La clave dice de qué oficina viene el pedido, así que la
@@ -271,6 +271,34 @@ app.post("/api/pedidos/estado", async (req, res) => {
     if (!reg) return res.status(404).json({ error: `No encontramos el pedido ${folio || "con ese número"} de tu oficina. Revisa el folio.` });
     res.json(estadoPedido(reg, data.tareas, data.equipo));
   } catch { res.status(500).json({ error: "No se pudo consultar el pedido. Intenta de nuevo en unos minutos." }); }
+});
+
+// Si la oficina se equivocó al llenar el pedido, pide una corrección con el folio y su clave.
+// No cambia la tarea: queda en la bandeja del equipo hasta que alguien la aplica.
+app.post("/api/pedidos/correccion", async (req, res) => {
+  const ip = ipDe(req), ahora = Date.now(), recientes = (enviosPorIp.get(ip) || []).filter(t => ahora - t < 3600e3);
+  if (recientes.length >= PEDIDOS_POR_HORA)
+    return res.status(429).json({ error: "Ya enviaste varios mensajes en la última hora. Si es urgente, escribe directamente al equipo de Comunicaciones." });
+  try {
+    const data = await leerData();
+    const area = oficinaValida(req, res, data); if (!area) return;
+    const folio = normFolio(req.body?.folio);
+    const reg = folio && (data.pedidos || []).find(p => p && p.folio === folio && (p.claveDe || p.area) === area);
+    if (!reg) return res.status(404).json({ error: `No encontramos el pedido ${folio || "con ese número"} de tu oficina. Revisa el folio.` });
+    if ((reg.correcciones || []).length >= 10) return res.status(400).json({ error: "Este pedido ya tiene muchas correcciones. Escribe directamente al equipo de Comunicaciones." });
+    const ahoraPa = new Date(), tz = { timeZone: "America/Panama" };
+    const hora = ahoraPa.toLocaleTimeString("es-PA", { ...tz, hour: "2-digit", minute: "2-digit" });
+    const r = nuevaCorreccion(req.body, { hoy: hoyPanama(), hora, id: () => Date.now().toString(36) + require("crypto").randomBytes(4).toString("hex") });
+    if (r.error) return res.status(400).json({ error: r.error });
+    reg.correcciones = [...(reg.correcciones || []), r.correccion];
+    const txt = `${folio} "${reg.titulo}": ${r.correccion.campos.join(", ")} → ${r.correccion.texto}`;
+    data.notifs = [{ id: r.correccion.id + "n", ico: "✏️", ts: hora, sub: "Formulario de pedidos", txt: `Corrección pedida en ${txt}` }, ...(data.notifs || [])].slice(0, 50);
+    data.bitacora = [{ id: r.correccion.id + "b", fecha: ahoraPa.toLocaleDateString("es-PA", { ...tz, day: "2-digit", month: "short", year: "numeric" }), hora,
+      usuario: "Formulario de pedidos", accion: "Pedido: corrección pedida", detalle: `${txt} (pide ${r.correccion.nombre}, ${reg.area})` }, ...(data.bitacora || [])].slice(0, 300);
+    await escribirData(data);
+    enviosPorIp.set(ip, [...recientes, ahora]);
+    res.json({ ok: true });
+  } catch { res.status(500).json({ error: "No se pudo enviar la corrección. Intenta de nuevo en unos minutos." }); }
 });
 
 // ════════════════════════
