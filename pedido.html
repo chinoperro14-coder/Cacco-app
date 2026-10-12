@@ -52,6 +52,22 @@ button{font:inherit;font-weight:700;font-size:16px;border:0;border-radius:10px;p
 .ok p{font-size:14px;color:var(--tm);margin-bottom:10px}
 .resumen{text-align:left;font-size:14px;background:var(--fo);border-radius:8px;padding:12px 14px;margin:12px 0 16px;color:var(--tx)}
 .otro{background:transparent;color:var(--na);border:1.5px solid var(--na)}
+input[type=url]{width:100%;font:inherit;font-size:15px;color:var(--tx);background:var(--su);border:1.5px solid var(--bo);border-radius:8px;padding:10px 12px}
+.tabs{display:flex;gap:6px;margin-bottom:16px;background:var(--fo);border-radius:10px;padding:4px}
+.tabs button{flex:1;font-size:14px;padding:9px 10px;background:transparent;color:var(--tm);border-radius:8px}
+.tabs button.on{background:var(--su);color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.aviso{display:none;background:#fef3c7;color:#92400e;border-radius:8px;padding:9px 12px;font-size:13px;margin-top:8px}
+@media (prefers-color-scheme:dark){.aviso{background:#2f2513;color:#f3c35e}}
+.recientes{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.recientes button{font-size:13px;font-weight:600;padding:6px 10px;background:var(--nas);color:var(--na);border-radius:16px}
+.est{margin-top:16px;border:1px solid var(--bo);border-radius:10px;padding:14px}
+.est .tit{font-weight:700;font-size:15px}
+.est .sub{font-size:13px;color:var(--tm);margin-top:2px}
+.badge{display:inline-block;font-size:13px;font-weight:700;border-radius:14px;padding:3px 11px;margin:10px 0 6px}
+.b-rev{background:#fef3c7;color:#92400e}.b-ace{background:#dbeafe;color:#1e40af}.b-ok{background:var(--ves);color:var(--ve)}.b-no{background:var(--ros);color:var(--ro)}
+.est ul{list-style:none;margin-top:6px}
+.est li{font-size:14px;padding:6px 0;border-top:1px solid var(--bo);display:flex;justify-content:space-between;gap:10px}
+.est li span:last-child{color:var(--tm);text-align:right}
 footer{text-align:center;font-size:12px;color:var(--tm);padding:0 16px 30px}
 </style>
 </head>
@@ -62,6 +78,18 @@ footer{text-align:center;font-size:12px;color:var(--tm);padding:0 16px 30px}
 </div></header>
 <main>
 <div class="card">
+<div class="tabs" role="tablist"><button type="button" id="tabN" class="on" onclick="verTab('n')">📝 Nuevo pedido</button><button type="button" id="tabC" onclick="verTab('c')">🔎 Consultar</button></div>
+<div id="consulta" style="display:none">
+  <p class="intro">Escribe el número de folio que recibiste al enviar el pedido para ver en qué va.</p>
+  <div class="fila">
+    <div class="campo"><label class="lbl" for="cFolio">Folio</label><input type="text" id="cFolio" maxlength="12" placeholder="ej. P-0003" autocomplete="off"></div>
+    <div class="campo" id="cClaveBlk"><label class="lbl" for="cClave">Clave de acceso</label><input type="text" id="cClave" maxlength="30" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+  </div>
+  <div id="cRecientes"></div>
+  <div class="err" id="cErr" role="alert"></div>
+  <button type="button" class="enviar" id="cBtn" onclick="consultar()">Consultar</button>
+  <div id="cRes"></div>
+</div>
 <form id="f" novalidate>
   <p class="intro">Pide aquí cobertura, diseño o difusión para tu actividad. El equipo revisa cada pedido y te contacta para confirmar. Mientras antes lo envíes, mejor: lo ideal es con una semana o más.</p>
 
@@ -84,15 +112,17 @@ footer{text-align:center;font-size:12px;color:var(--tm);padding:0 16px 30px}
     <div class="campo"><label class="lbl" for="hora">Empieza</label><input type="time" id="hora"></div>
     <div class="campo"><label class="lbl" for="horaFin">Termina</label><input type="time" id="horaFin"></div>
   </div>
+  <div class="aviso" id="avFecha" style="margin:-6px 0 14px"></div>
   <div class="campo"><label class="lbl" for="lugar">Lugar</label><input type="text" id="lugar" maxlength="120" placeholder="ej. Teatro del CACCO"></div>
 
   <fieldset>
     <legend>¿Qué necesitas? <span class="req">*</span></legend>
     <div class="serv" id="servicios"></div>
   </fieldset>
-  <div class="campo" id="entregaBlk" style="display:none"><label class="lbl" for="entrega">¿Para cuándo necesitas el diseño?</label><input type="date" id="entrega"><div class="ayuda">Si es para promocionar la actividad, conviene tenerlo al menos 10 días antes.</div></div>
+  <div class="campo" id="entregaBlk" style="display:none"><label class="lbl" for="entrega">¿Para cuándo necesitas el diseño?</label><input type="date" id="entrega"><div class="ayuda">Si es para promocionar la actividad, conviene tenerlo al menos 10 días antes.</div><div class="aviso" id="avDis"></div></div>
 
   <div class="campo"><label class="lbl" for="descripcion">Detalles</label><textarea id="descripcion" maxlength="1500" placeholder="Quiénes participan, a qué público va, invitados especiales, textos o logos que deben aparecer…"></textarea></div>
+  <div class="campo"><label class="lbl" for="material">Enlace al material <span style="text-transform:none;letter-spacing:0;font-weight:500">(opcional)</span></label><input type="url" id="material" maxlength="300" placeholder="https://drive.google.com/…" autocomplete="off"><div class="ayuda">Logos, textos, fotos o referencias en Drive, Dropbox o similar. Que el enlace esté abierto para quien lo tenga.</div></div>
   <div class="trampa" aria-hidden="true"><label>Web<input type="text" id="web" tabindex="-1" autocomplete="off"></label></div>
 
   <div class="err" id="err" role="alert"></div>
@@ -104,8 +134,9 @@ footer{text-align:center;font-size:12px;color:var(--tm);padding:0 16px 30px}
   <h2>Recibimos tu pedido</h2>
   <div class="folio" id="okFolio"></div>
   <div class="resumen" id="okRes"></div>
-  <p>Guarda este número. El equipo de Comunicaciones lo revisa y te contacta para confirmar lo que se puede cubrir.</p>
-  <button class="otro" onclick="location.reload()">Hacer otro pedido</button>
+  <p id="okUnido" style="display:none"></p>
+  <p>Guarda este número. Con él puedes ver en qué va tu pedido en la pestaña «Consultar un pedido». El equipo de Comunicaciones lo revisa y te contacta para confirmar lo que se puede cubrir.</p>
+  <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="otro" onclick="verTab('c');consultar(ultimoFolio)">🔎 Ver estado</button><button class="otro" onclick="location.href='/pedido'">Hacer otro pedido</button></div>
 </div>
 </div>
 </main>
@@ -117,12 +148,56 @@ const $=id=>document.getElementById(id);
 $('areas').innerHTML=AREAS.map(a=>`<label><input type="radio" name="area" value="${a}"> ${a}</label>`).join('');
 $('servicios').innerHTML=Object.entries(SERV).map(([k,[i,l]])=>`<label><input type="checkbox" name="serv" value="${k}"><span class="ico">${i}</span>${l}</label>`).join('');
 try{$('clave').value=localStorage.getItem('cacco_clave_pedidos')||'';}catch{}
+const qFolio=new URLSearchParams(location.search).get('folio');
 const hoyPa=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Panama'}).format(new Date());
 $('fecha').min=hoyPa;$('entrega').min=hoyPa;
 document.addEventListener('change',e=>{
   if(e.target.name==='area'){$('areaOtra').style.display=e.target.value==='Otra'?'block':'none';if(e.target.value==='Otra')$('areaOtra').focus();}
-  if(e.target.name==='serv')$('entregaBlk').style.display=document.querySelector('input[value=diseno]').checked?'block':'none';
+  if(e.target.name==='serv'){$('entregaBlk').style.display=document.querySelector('input[value=diseno]').checked?'block':'none';avisos();}
 });
+// Días de aviso: con menos de 7 (o 10 para un diseño) se advierte, pero se puede enviar igual
+const dias=f=>f?Math.round((new Date(f+'T12:00:00')-new Date(hoyPa+'T12:00:00'))/864e5):null;
+const pl=n=>n===1?'1 día':n+' días';
+function avisos(){
+  const d=dias($('fecha').value),a=$('avFecha');
+  if(d!==null&&d>=0&&d<7){a.textContent=d===0?'⚠️ La actividad es hoy: es posible que no se pueda cubrir. Lo ideal es pedir con una semana o más.':`⚠️ Faltan ${pl(d)}: con tan poco tiempo puede que no se pueda cubrir todo. Lo ideal es pedir con una semana o más.`;a.style.display='block';}else a.style.display='none';
+  const dis=document.querySelector('input[value=diseno]').checked,de=dias($('entrega').value||$('fecha').value),b=$('avDis');
+  if(dis&&de!==null&&de>=0&&de<10){b.textContent=`⚠️ El diseño se necesitaría en ${pl(de)}. Lo ideal son 10 días o más; el equipo te confirmará si es posible.`;b.style.display='block';}else b.style.display='none';
+}
+['fecha','entrega'].forEach(id=>$(id).addEventListener('input',avisos));
+// Pestañas y consulta de estado
+const misPed=()=>{try{return JSON.parse(localStorage.getItem('cacco_mis_pedidos')||'[]');}catch{return[];}};
+let ultimoFolio='';
+function verTab(t){
+  $('tabN').classList.toggle('on',t==='n');$('tabC').classList.toggle('on',t==='c');
+  $('consulta').style.display=t==='c'?'block':'none';
+  const enviado=$('ok').style.display==='block';
+  $('f').style.display=t==='n'&&!enviado?'block':'none';$('ok').style.display=t==='n'&&enviado?'block':'none';
+  if(t==='c'){
+    let cl='';try{cl=localStorage.getItem('cacco_clave_pedidos')||'';}catch{}
+    if(cl&&!$('cClave').value)$('cClave').value=cl;$('cClaveBlk').style.display=cl?'none':'';
+    const m=misPed();$('cRecientes').innerHTML=m.length?`<div class="lbl" style="margin-top:2px">Tus pedidos desde este aparato</div><div class="recientes" style="margin-bottom:14px">${m.map(p=>`<button type="button" onclick="consultar('${esc(p.folio)}')" title="${esc(p.actividad)}">${esc(p.folio)} · ${esc(p.actividad.slice(0,28))}${p.actividad.length>28?'…':''}</button>`).join('')}</div>`:'';
+  }
+}
+const CLS={'En revisión':'b-rev','Aceptado':'b-ace','Atendido':'b-ok','No se puede cubrir':'b-no'};
+const EXPL={'En revisión':'El equipo todavía no lo ha revisado.','Aceptado':'El pedido fue aceptado y ya tiene equipo asignado.','Atendido':'El equipo ya completó lo que pediste.','No se puede cubrir':'El equipo no puede atender este pedido.'};
+async function consultar(folio){
+  if(folio)$('cFolio').value=folio;
+  const f=$('cFolio').value.trim(),err=$('cErr'),btn=$('cBtn');err.style.display='none';$('cRes').innerHTML='';
+  if(!f){err.textContent='Escribe el folio del pedido.';err.style.display='block';return;}
+  btn.disabled=true;btn.textContent='Consultando…';
+  try{
+    const r=await fetch('/api/pedidos/estado',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({folio:f,clave:$('cClave').value.trim()})});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok){if(j.clave){$('cClaveBlk').style.display='';try{localStorage.removeItem('cacco_clave_pedidos');}catch{}}throw new Error(j.error||'No se pudo consultar. Intenta de nuevo.');}
+    try{localStorage.setItem('cacco_clave_pedidos',$('cClave').value.trim());}catch{}
+    const det=(j.detalle||[]).map(d=>`<li><span>${esc(d.seccion)}</span><span>${esc(d.estado)}${d.responsables.length?' · '+esc(d.responsables.join(', ')):''}</span></li>`).join('');
+    $('cRes').innerHTML=`<div class="est"><div class="tit">${esc(j.folio)} · ${esc(j.actividad)}</div><div class="sub">🗓️ ${esc(fLarga(j.fecha))} · ${esc(j.oficina)}</div>
+      <span class="badge ${CLS[j.estado]||'b-rev'}">${esc(j.estado)}</span><div class="sub">${EXPL[j.estado]||''}${j.motivo?' Motivo: '+esc(j.motivo):''}</div>${det?`<ul>${det}</ul>`:''}</div>`;
+  }catch(x){err.textContent=x.message;err.style.display='block';}
+  btn.disabled=false;btn.textContent='Consultar';
+}
+$('cFolio').addEventListener('keydown',e=>{if(e.key==='Enter')consultar();});
 const fLarga=f=>f?new Date(f+'T12:00:00').toLocaleDateString('es-PA',{weekday:'long',day:'numeric',month:'long'}):'';
 const hTxt=h=>{if(!h)return'';const [a,m]=h.split(':').map(Number);return `${a%12||12}:${String(m).padStart(2,'0')} ${a<12?'a. m.':'p. m.'}`;};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -130,19 +205,22 @@ $('f').addEventListener('submit',async e=>{
   e.preventDefault();
   const body={area:document.querySelector('input[name=area]:checked')?.value||'',areaOtra:$('areaOtra').value,nombre:$('nombre').value,contacto:$('contacto').value,
     actividad:$('actividad').value,fecha:$('fecha').value,hora:$('hora').value,horaFin:$('horaFin').value,lugar:$('lugar').value,
-    servicios:[...document.querySelectorAll('input[name=serv]:checked')].map(x=>x.value),clave:$('clave').value.trim(),entrega:$('entrega').value,descripcion:$('descripcion').value,web:$('web').value};
+    servicios:[...document.querySelectorAll('input[name=serv]:checked')].map(x=>x.value),clave:$('clave').value.trim(),entrega:$('entrega').value,material:$('material').value.trim(),descripcion:$('descripcion').value,web:$('web').value};
   const err=$('err'),btn=$('btn');err.style.display='none';btn.disabled=true;btn.textContent='Enviando…';
   try{
     const r=await fetch('/api/pedidos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const j=await r.json().catch(()=>({}));
     if(!r.ok){if(j.clave){try{localStorage.removeItem('cacco_clave_pedidos');}catch{}setTimeout(()=>$('clave').focus(),50);}throw new Error(j.error||'No se pudo enviar el pedido. Intenta de nuevo.');}
     try{localStorage.setItem('cacco_clave_pedidos',body.clave);}catch{}
-    $('okFolio').textContent='Pedido '+j.folio;
+    $('okFolio').textContent='Pedido '+j.folio;ultimoFolio=j.folio;
+    try{localStorage.setItem('cacco_mis_pedidos',JSON.stringify([{folio:j.folio,actividad:body.actividad.trim()},...misPed().filter(p=>p.folio!==j.folio)].slice(0,8)));}catch{}
+    if(j.unido){$('okUnido').textContent='ℹ️ Esta actividad ya estaba en la agenda del equipo: tu pedido se agregó a ella.';$('okUnido').style.display='block';}
     $('okRes').innerHTML=`<strong>${esc(body.actividad)}</strong><br>🗓️ ${esc(fLarga(body.fecha))}${body.hora?' · '+hTxt(body.hora):''}${body.horaFin?' a '+hTxt(body.horaFin):''}${body.lugar?'<br>📍 '+esc(body.lugar):''}<br>🧰 ${body.servicios.map(k=>SERV[k][1]).join('; ')}`;
     $('f').style.display='none';$('ok').style.display='block';window.scrollTo(0,0);
   }catch(x){err.textContent=x.message;err.style.display='block';err.scrollIntoView({block:'center',behavior:'smooth'});}
   btn.disabled=false;btn.textContent='Enviar pedido';
 });
+if(qFolio){verTab('c');consultar(qFolio);}
 </script>
 </body>
 </html>
