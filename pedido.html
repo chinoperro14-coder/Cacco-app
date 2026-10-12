@@ -68,9 +68,9 @@ footer{text-align:center;font-size:12px;color:var(--tm);padding:0 16px 30px}
   <div class="campo"><label class="lbl" for="clave">Clave de acceso <span class="req">*</span></label><input type="text" id="clave" maxlength="30" autocomplete="off" autocapitalize="none" spellcheck="false"><div class="ayuda">La tiene tu jefatura. Este navegador la recuerda para la próxima vez.</div></div>
 
   <fieldset>
-    <legend>Tu área <span class="req">*</span></legend>
+    <legend>Tu oficina <span class="req">*</span></legend>
     <div class="chips" id="areas"></div>
-    <input type="text" id="areaOtra" placeholder="¿Cuál área?" style="display:none;margin-top:8px" maxlength="60">
+    <input type="text" id="areaOtra" placeholder="¿Cuál oficina?" style="display:none;margin-top:8px" maxlength="60">
   </fieldset>
 
   <div class="fila">
@@ -111,7 +111,7 @@ footer{text-align:center;font-size:12px;color:var(--tm);padding:0 16px 30px}
 </main>
 <footer>Uso interno del Centro de Arte y Cultura de Colón.</footer>
 <script>
-const AREAS=['Dirección','Programación','Educación','Administración','Otra'];
+const AREAS=['Administración','Comunicaciones','Dirección','Desarrollo Social','Coordinación de Arte y Cultura','Educación Artística y Cultural','Otra'];
 const SERV={cobertura:['📸','Cobertura de fotos y video'],diseno:['🎨','Diseño de una pieza (afiche, arte, invitación)'],difusion:['📱','Difusión en redes sociales'],prensa:['📰','Prensa, radio o TV'],protocolo:['🎤','Protocolo (maestro de ceremonia, logística)']};
 const $=id=>document.getElementById(id);
 $('areas').innerHTML=AREAS.map(a=>`<label><input type="radio" name="area" value="${a}"> ${a}</label>`).join('');

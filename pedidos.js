@@ -2,7 +2,7 @@
 // Convierte un pedido en un borrador de tarea. Lo usa el servidor (app.js) y también la página de prueba,
 // por eso no depende de Node ni del navegador.
 (function (raiz) {
-  const AREAS = ["Dirección", "Programación", "Educación", "Administración", "Otra"];
+  const AREAS = ["Administración", "Comunicaciones", "Dirección", "Desarrollo Social", "Coordinación de Arte y Cultura", "Educación Artística y Cultural", "Otra"];
   const SERVICIOS = {
     cobertura: { lbl: "Cobertura de fotos y video", secs: ["Audiovisual"] },
     diseno:    { lbl: "Diseño de una pieza (afiche, arte, invitación)", secs: ["Diseño"] },
@@ -43,8 +43,8 @@
     const servicios = (Array.isArray(b.servicios) ? b.servicios : []).filter(k => SERVICIOS[k]);
     const fecha = String(b.fecha || ""), hora = String(b.hora || ""), horaFin = String(b.horaFin || "");
     const entrega = String(b.entrega || "");
-    if (!area) return { error: "Elige el área que hace el pedido." };
-    if (area === "Otra" && !areaOtra) return { error: "Escribe el nombre de tu área." };
+    if (!area) return { error: "Elige la oficina que hace el pedido." };
+    if (area === "Otra" && !areaOtra) return { error: "Escribe el nombre de tu oficina." };
     if (!nombre) return { error: "Escribe tu nombre." };
     if (!contacto) return { error: "Escribe un teléfono o correo para contactarte." };
     if (!titulo) return { error: "Escribe el nombre de la actividad." };
