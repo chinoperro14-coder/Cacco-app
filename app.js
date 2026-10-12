@@ -38,7 +38,8 @@ const UserSchema = new mongoose.Schema({
   id:       { type: String, required: true, unique: true },
   email:    { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  nivel:    { type: String, required: true }
+  nivel:    { type: String, required: true },
+  ultimo:   { type: Date }
 });
 const DataModel = mongoose.models.AppData || mongoose.model("AppData", DataSchema);
 const UserModel = mongoose.models.AppUser || mongoose.model("AppUser", UserSchema);
@@ -101,6 +102,19 @@ function soloLider(req, res, next) {
   if (req.usuario?.nivel !== "lider")
     return res.status(403).json({ error: "Solo el Líder puede hacer esto" });
   next();
+}
+
+// Última actividad de cada persona (para ver en Equipo quién usa el tablero).
+// Cuenta entrar, guardar o usar la página; no cuenta una pestaña abierta sin tocar.
+const ultimoMarcado = new Map();
+function marcarActivo(id) {
+  if (!id) return;
+  const ahora = Date.now();
+  if (ahora - (ultimoMarcado.get(id) || 0) < 60e3) return;
+  ultimoMarcado.set(id, ahora);
+  const ultimo = new Date(ahora);
+  (MONGO_URI ? UserModel.updateOne({ id }, { $set: { ultimo } }) : leerUsers().then(us => us.some(u => u.id === id) && escribirUser({ id, ultimo: ultimo.toISOString() })))
+    .catch(() => {});
 }
 
 // Tiempo compensatorio: quien está fuera (aprobado, un día completo o más) no entra ni guarda
@@ -232,8 +246,19 @@ app.post("/api/login", async (req, res) => {
     if (regreso) return res.status(403).json({ error: msgAusente(regreso) });
     const expira = recordar ? "30d" : "8h";
     const token = jwt.sign({ id: user.id, email: user.email, nivel: user.nivel }, JWT_SECRET, { expiresIn: expira });
+    marcarActivo(user.id);
     res.json({ token, userId: user.id });
   } catch (e) { res.status(500).json({ error: "Error interno" }); }
+});
+app.post("/api/actividad", verificarToken, (req, res) => { marcarActivo(req.usuario.id); res.json({ ok: true }); });
+// Solo Líder y Editor ven cuándo usó cada quien el tablero por última vez
+app.get("/api/actividad", verificarToken, async (req, res) => {
+  if (!["lider", "editor"].includes(req.usuario?.nivel)) return res.status(403).json({ error: "Sin permiso" });
+  try {
+    const out = {};
+    for (const u of await leerUsers()) out[u.id] = u.ultimo ? new Date(u.ultimo).toISOString() : null;
+    res.json(out);
+  } catch { res.status(500).json({ error: "No se pudo leer la actividad" }); }
 });
 
 // ════════════════════════
@@ -299,6 +324,7 @@ async function conservarPermisos(nuevo, actual) {
 app.post("/api/data", verificarToken, async (req, res) => {
   try {
     if (req.usuario?.nivel === "lector") return res.status(403).json({ error: "Solo lectura" });
+    marcarActivo(req.usuario?.id);
     const regreso = await regresoSiAusente(req.usuario?.id, req.usuario?.nivel);
     if (regreso) return res.status(403).json({ error: msgAusente(regreso) });
     const actual = await leerData();
