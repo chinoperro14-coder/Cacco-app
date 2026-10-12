@@ -1682,6 +1682,17 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <div class="mpie"><button class="btn bgh" onclick="cerM('mRes')">Cancelar</button><button class="btn bna" onclick="guardarRes()">Guardar</button></div>
 </div></div>
 
+<!-- MODAL CLAVES DEL FORMULARIO DE PEDIDOS -->
+<div class="mov" id="mClaves"><div class="mo">
+  <div class="mcab"><div class="mtit">🔗 Formulario de pedidos</div><button class="mx" onclick="cerM('mClaves')">×</button></div>
+  <div class="mbody">
+    <div style="font-size:13px;color:var(--tm);margin-bottom:10px">Cada oficina tiene su clave. Con ella el pedido llega marcado con su oficina, y solo esa oficina puede consultar sus folios. Si una clave se filtra, cámbiala: las demás siguen igual.</div>
+    <div style="font-size:13px;margin-bottom:12px">Enlace: <b id="clvLink"></b></div>
+    <div id="clvFaltan" style="margin-bottom:10px"></div>
+    <div id="clvLista" style="display:flex;flex-direction:column;gap:6px"></div>
+  </div>
+</div></div>
+
 <!-- MODAL RESPALDOS (solo Líder) -->
 <div class="mov" id="mResp"><div class="mo">
   <div class="mcab"><div class="mtit">💾 Respaldos de los datos</div><button class="mx" onclick="cerM('mResp')">×</button></div>
@@ -7730,15 +7741,44 @@ function elimSalida(){
 // ════════════════════════
 const linkPedidos=()=>location.origin+'/pedido';
 const pedidoTxt=t=>t.pedido?`📨 ${escH(t.pedido.folio||'Pedido')} de ${escH(t.pedido.area)} · ${escH(t.pedido.solicitante)}`:'';
+// Una clave por oficina: la clave dice de qué oficina viene el pedido y cada oficina solo consulta sus folios
+const PREF_CLAVE={'Administración':'adm','Dirección':'dir','Desarrollo Social':'dsoc','Coordinación de Arte y Cultura':'arte','Educación Artística y Cultural':'educ','Otra':'otra'};
+let CLAVES_PED={areas:[],claves:{}};
+const apiClaves=(m,b)=>fetch('/api/pedidos/claves',{method:m,headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()},body:b?JSON.stringify(b):undefined})
+  .then(async r=>{const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'No se pudo.');return j;});
+const claveNueva=a=>(PREF_CLAVE[a]||'ofi')+'-'+String(10000+crypto.getRandomValues(new Uint32Array(1))[0]%90000);
 async function compartirPedidos(){
-  const url=linkPedidos(),api=(m,b)=>fetch('/api/pedidos/clave',{method:m,headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()},body:b?JSON.stringify(b):undefined}).then(async r=>{const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'No se pudo.');return j;});
-  let clave='';try{clave=(await api('GET')).clave;}catch(e){avisar(e.message);return;}
-  const v=await dialogo({tit:'🔗 Formulario de pedidos',msg:`Comparte el enlace y la clave con las jefaturas. Cada pedido llega a «📨 Pedidos de oficinas» en Tareas, y la oficina consulta su estado con el folio en el mismo enlace.\n\nEnlace: ${url}\n\n${clave?'Si la clave se filtra, escribe una nueva aquí: la anterior deja de funcionar al guardar.':'El formulario no recibe pedidos hasta que definas una clave.'}`,campo:{label:'Clave de acceso',val:clave,ph:'ej. CACCO2026'},ok:'Guardar y copiar',no:'Cerrar'});
-  if(v===null)return;
-  const nueva=String(v).trim();
-  if(nueva!==clave){try{clave=(await api('POST',{clave:nueva})).clave;reg('Clave del formulario de pedidos cambiada','');}catch(e){avisar(e.message);return;}}
-  const txt=`Formulario de pedidos a Comunicaciones: ${url}\nClave de acceso: ${clave}`;
-  try{await navigator.clipboard.writeText(txt);avisar('✅ Enlace y clave copiados.');}catch{avisar(txt);}
+  try{CLAVES_PED=await apiClaves('GET');}catch(e){avisar(e.message);return;}
+  pintarClaves();abrirM('mClaves');
+}
+function pintarClaves(){
+  const {areas,claves}=CLAVES_PED,faltan=areas.filter(a=>!claves[a]).length;
+  document.getElementById('clvLink').textContent=linkPedidos();
+  document.getElementById('clvFaltan').innerHTML=faltan?`<button class="btn bna bsm" onclick="generarClaves()">✨ Crear las ${faltan} que faltan</button>`:'';
+  document.getElementById('clvLista').innerHTML=areas.map(a=>{const k=claves[a]||'';return`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 10px;border:1px solid var(--bo);border-radius:8px">
+    <div style="flex:1;min-width:150px"><div style="font-weight:700;font-size:13px">${escH(a==='Otra'?'Otras oficinas':a)}</div>
+      <div style="font-size:13px;font-family:monospace;color:${k?'var(--tx)':'var(--tm)'}">${k?escH(k):'Sin clave: no puede enviar pedidos'}</div></div>
+    ${k?`<button class="btn bgh bsm" onclick="copiarClave('${escH(a)}')">📋 Copiar mensaje</button>`:''}
+    <button class="btn bgh bsm" onclick="cambiarClave('${escH(a)}')">${k?'🔄 Cambiar':'✨ Crear'}</button>
+    ${k?`<button class="btn bgh bsm" title="La oficina deja de poder enviar pedidos" onclick="quitarClave('${escH(a)}')">🚫</button>`:''}
+  </div>`;}).join('');
+}
+async function guardarClave(a,clave){
+  try{CLAVES_PED.claves=(await apiClaves('POST',{area:a,clave})).claves;reg(clave?'Clave de pedidos cambiada':'Clave de pedidos quitada',a);pintarClaves();return true;}
+  catch(e){avisar(e.message);return false;}
+}
+async function generarClaves(){for(const a of CLAVES_PED.areas)if(!CLAVES_PED.claves[a])await guardarClave(a,claveNueva(a));avisar('✅ Claves creadas. Copia el mensaje de cada oficina y envíaselo.');}
+async function cambiarClave(a){
+  const v=await dialogo({tit:`🔑 Clave de ${a==='Otra'?'otras oficinas':a}`,msg:'Puedes dejar la sugerida o escribir otra. Al guardar, la clave anterior de esta oficina deja de funcionar; las demás oficinas no se ven afectadas.',campo:{label:'Clave',val:claveNueva(a)},ok:'Guardar',no:'Cancelar'});
+  if(v===null)return;await guardarClave(a,String(v).trim());
+}
+async function quitarClave(a){
+  if(!await confirmar(`${a==='Otra'?'Las otras oficinas':a} no podrá enviar pedidos hasta que le crees una clave nueva.`,{tit:'Quitar la clave',ok:'Quitar',peligro:true}))return;
+  await guardarClave(a,'');
+}
+async function copiarClave(a){
+  const txt=`Formulario de pedidos al equipo de Comunicaciones (CACCO): ${linkPedidos()}\nClave de ${a==='Otra'?'acceso':a}: ${CLAVES_PED.claves[a]}\nCon la misma clave puedes consultar en qué va tu pedido.`;
+  try{await navigator.clipboard.writeText(txt);avisar('✅ Mensaje copiado. Pégalo en WhatsApp o en un correo para la oficina.');}catch{avisar(txt);}
 }
 
 // ════════════════════════

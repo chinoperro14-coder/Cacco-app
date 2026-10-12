@@ -68,6 +68,8 @@ input[type=url]{width:100%;font:inherit;font-size:15px;color:var(--tx);backgroun
 .est ul{list-style:none;margin-top:6px}
 .est li{font-size:14px;padding:6px 0;border-top:1px solid var(--bo);display:flex;justify-content:space-between;gap:10px}
 .est li span:last-child{color:var(--tm);text-align:right}
+.ofi{display:none;margin-top:8px;font-size:14px;font-weight:700;border-radius:8px;padding:8px 12px}
+.ofi.si{display:block;background:var(--ves);color:var(--ve)}.ofi.no{display:block;background:var(--ros);color:var(--ro)}
 .sec{font-size:13px;font-weight:800;color:var(--tx);margin:22px 0 10px;padding-top:16px;border-top:1px solid var(--bo)}
 .sec small{display:block;font-size:12px;font-weight:500;color:var(--tm);margin-top:2px}
 .preg{margin:-2px 0 10px 28px;padding:12px 12px 2px;border-left:3px solid var(--na);background:var(--fo);border-radius:0 8px 8px 0;display:none}
@@ -110,14 +112,10 @@ footer{text-align:center;font-size:12px;color:var(--tm);padding:0 16px 30px}
 
   <div class="repetir" id="repBlk"><label class="lbl" for="repSel">↻ Repetir un pedido anterior</label><select id="repSel" onchange="repetir(this.value)"><option value="">Elige uno para copiar sus datos…</option></select><div class="ayuda">Copia todo menos la fecha. Revisa y cambia lo que haga falta.</div></div>
 
-  <div class="campo"><label class="lbl" for="clave">Clave de acceso <span class="req">*</span></label><input type="text" id="clave" maxlength="30" autocomplete="off" autocapitalize="none" spellcheck="false"><div class="ayuda">La tiene tu jefatura. Este navegador la recuerda para la próxima vez.</div></div>
+  <div class="campo"><label class="lbl" for="clave">Clave de acceso <span class="req">*</span></label><input type="text" id="clave" maxlength="30" autocomplete="off" autocapitalize="none" spellcheck="false"><div class="ayuda">Cada oficina tiene su propia clave; la tiene tu jefatura. Este navegador la recuerda para la próxima vez.</div><div class="ofi" id="oficinaInfo"></div>
+    <input type="text" id="areaOtra" placeholder="¿De qué oficina o institución eres?" style="display:none;margin-top:8px" maxlength="60"></div>
 
-  <div class="sec">1. Quién pide<small>Tu oficina y tus datos se recuerdan en este aparato para la próxima vez.</small></div>
-  <fieldset>
-    <legend>Tu oficina <span class="req">*</span></legend>
-    <div class="chips" id="areas"></div>
-    <input type="text" id="areaOtra" placeholder="¿Cuál oficina?" style="display:none;margin-top:8px" maxlength="60">
-  </fieldset>
+  <div class="sec">1. Quién pide<small>Tus datos se recuerdan en este aparato para la próxima vez.</small></div>
 
   <div class="fila">
     <div class="campo"><label class="lbl" for="nombre">Tu nombre <span class="req">*</span></label><input type="text" id="nombre" maxlength="80" autocomplete="name"></div>
@@ -175,10 +173,8 @@ footer{text-align:center;font-size:12px;color:var(--tm);padding:0 16px 30px}
 </main>
 <footer>Uso interno del Centro de Arte y Cultura de Colón.</footer>
 <script>
-const AREAS=['Administración','Dirección','Desarrollo Social','Coordinación de Arte y Cultura','Educación Artística y Cultural','Otra'];
 const SERV={cobertura:['📸','Cobertura de fotos y video'],diseno:['🎨','Diseño de una pieza (afiche, arte, invitación)'],difusion:['📱','Difusión en redes sociales'],prensa:['📰','Prensa, radio o TV'],protocolo:['🎤','Protocolo (maestro de ceremonia, logística)']};
 const $=id=>document.getElementById(id);
-$('areas').innerHTML=AREAS.map(a=>`<label><input type="radio" name="area" value="${a}"> ${a}</label>`).join('');
 // Preguntas de cada servicio: [clave, etiqueta, tipo, ayuda]
 const PREG={
   cobertura:[['llegada','¿A qué hora debe llegar el equipo?','time'],['momentos','Momentos clave que no se pueden perder','text','ej. palabras de la directora, entrega de certificados'],['invitados','Invitados importantes','text','ej. ministra, alcalde, embajador']],
@@ -203,7 +199,6 @@ const qFolio=new URLSearchParams(location.search).get('folio');
 const hoyPa=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Panama'}).format(new Date());
 $('fecha').min=hoyPa;$('entrega').min=hoyPa;
 document.addEventListener('change',e=>{
-  if(e.target.name==='area'){$('areaOtra').style.display=e.target.value==='Otra'?'block':'none';if(e.target.value==='Otra')$('areaOtra').focus();}
   if(e.target.name==='serv'){$('pg-'+e.target.value).style.display=e.target.checked?'block':'none';avisos();revisarHorario();}
   if(e.target.id==='soyYo')copiarFocal();
 });
@@ -246,7 +241,7 @@ function revisarHorario(){
     }catch{ac.style.display='none';}
   },400);
 }
-['fecha','hora','horaFin','clave'].forEach(id=>$(id).addEventListener('input',revisarHorario));
+['fecha','hora','horaFin'].forEach(id=>$(id).addEventListener('input',revisarHorario));
 // ── Punto focal: «Soy yo» copia tus datos ──
 function copiarFocal(){
   if(!$('soyYo').checked)return;
@@ -258,13 +253,28 @@ function copiarFocal(){
 // ── Lo que este aparato recuerda: tus datos y tus pedidos anteriores (sin la clave) ──
 const leerLS=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||'null')??d;}catch{return d;}};
 const guardarLS=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}};
-function marcarArea(a,otra){
-  const r=[...document.querySelectorAll('input[name=area]')].find(x=>x.value===a);
-  if(r){r.checked=true;$('areaOtra').style.display=a==='Otra'?'block':'none';if(a==='Otra')$('areaOtra').value=otra||'';}
+// ── La clave dice de qué oficina es el pedido ──
+let oficina='';
+async function revisarClave(){
+  const cl=$('clave').value.trim(),info=$('oficinaInfo');oficina='';
+  if(!cl){info.className='ofi';$('areaOtra').style.display='none';return;}
+  try{
+    const r=await fetch('/api/pedidos/oficina',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clave:cl})});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok){info.textContent='❌ '+(j.error||'No se pudo revisar la clave.');info.className='ofi no';$('areaOtra').style.display='none';if(j.clave)claveMala=cl;return;}
+    oficina=j.area;claveMala='';
+    info.textContent=j.area==='Otra'?'✅ Clave para otras oficinas: escribe abajo cuál es la tuya':'✅ Pedido de: '+j.area;info.className='ofi si';
+    $('areaOtra').style.display=j.area==='Otra'?'block':'none';
+    try{localStorage.setItem('cacco_clave_pedidos',cl);}catch{}
+    revisarHorario();
+  }catch{info.className='ofi';}
 }
+$('clave').addEventListener('change',revisarClave);
+const marcarArea=(a,otra)=>{if(otra)$('areaOtra').value=otra;};
 function cargarRecordado(){
   const pf=leerLS('cacco_ped_perfil',null);
   if(pf){marcarArea(pf.area,pf.areaOtra);$('nombre').value=pf.nombre||'';$('contacto').value=pf.contacto||'';}
+  if($('clave').value.trim())revisarClave();
   const h=leerLS('cacco_ped_hist',[]);
   if(h.length){$('repBlk').style.display='block';$('repSel').innerHTML+=h.map((x,i)=>`<option value="${i}">${esc(x.folio)} · ${esc(x.body.actividad)}</option>`).join('');}
 }
@@ -326,7 +336,7 @@ const hTxt=h=>{if(!h)return'';const [a,m]=h.split(':').map(Number);return `${a%1
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 $('f').addEventListener('submit',async e=>{
   e.preventDefault();
-  const body={area:document.querySelector('input[name=area]:checked')?.value||'',areaOtra:$('areaOtra').value,nombre:$('nombre').value,contacto:$('contacto').value,
+  const body={area:oficina,areaOtra:$('areaOtra').value,nombre:$('nombre').value,contacto:$('contacto').value,
     actividad:$('actividad').value,fecha:$('fecha').value,hora:$('hora').value,horaFin:$('horaFin').value,lugar:$('lugar').value,
     puntoFocal:{nombre:$('pfNombre').value,cargo:$('pfCargo').value,telefono:$('pfTel').value,correo:$('pfCorreo').value},
     servicios:[...document.querySelectorAll('input[name=serv]:checked')].map(x=>x.value),clave:$('clave').value.trim(),entrega:$('entrega').value,material:$('material').value.trim(),descripcion:$('descripcion').value,web:$('web').value,
@@ -341,7 +351,7 @@ $('f').addEventListener('submit',async e=>{
     guardarLS('cacco_ped_perfil',{area:body.area,areaOtra:body.areaOtra,nombre:body.nombre.trim(),contacto:body.contacto.trim()});
     const {clave:_c,web:_w,...sinClave}=body;
     guardarLS('cacco_ped_hist',[{folio:j.folio,body:sinClave},...leerLS('cacco_ped_hist',[]).filter(x=>x.body.actividad.trim()!==body.actividad.trim())].slice(0,8));
-    const of=body.area==='Otra'?body.areaOtra.trim():body.area;
+    const of=oficina==='Otra'?body.areaOtra.trim():oficina;
     resumenTxt=[`📨 Pedido ${j.folio} a Comunicaciones · CACCO`,`Oficina: ${of}`,`Actividad: ${body.actividad.trim()}`,
       `Fecha: ${fLarga(body.fecha)}${body.hora?', '+hTxt(body.hora):''}${body.horaFin?' a '+hTxt(body.horaFin):''}`,body.lugar.trim()?`Lugar: ${body.lugar.trim()}`:'',
       `Servicios: ${body.servicios.map(k=>SERV[k][1]).join('; ')}`,`Punto focal: ${body.puntoFocal.nombre.trim()} · ${body.puntoFocal.telefono.trim()}`,

@@ -147,7 +147,7 @@
       recurrencia: "ninguna", secciones, entregables: [], creadaEn: ctx.hoy, creadaPor: "Formulario de pedidos", creadoPorId: "pedidos", pedido,
     };
     // El registro de pedidos no se borra al descartar el borrador: sirve para medir cuánto pide cada área
-    const registro = { id: tarea.id, tareaId: tarea.id, folio: ctx.folio, area: nomArea, titulo, fecha, servicios, recibido: ctx.hoy, solicitante: nombre };
+    const registro = { id: tarea.id, tareaId: tarea.id, folio: ctx.folio, area: nomArea, claveDe: area, titulo, fecha, servicios, recibido: ctx.hoy, solicitante: nombre };
     return { tarea, registro, notaPedido: notas };
   }
 
