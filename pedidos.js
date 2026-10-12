@@ -172,8 +172,20 @@
 
   // ── Estado que ve la oficina al consultar su folio ──
   const ESTADO_SEC = { Completada: "Lista", "En Progreso": "En curso", "No cumplida": "No se pudo", Cerrada: "Cerrada", Pendiente: "Por hacer" };
+  // Corrección que pide la oficina si se equivocó al llenar el formulario: {campos, texto, nombre}
+  const CAMPOS_CORR = ["Fecha", "Hora", "Lugar", "Nombre de la actividad", "Punto focal", "Lo que se necesita", "Otro"];
+  function nuevaCorreccion(body, ctx) {
+    const b = body && typeof body === "object" ? body : {};
+    const campos = (Array.isArray(b.campos) ? b.campos : []).filter(c => CAMPOS_CORR.includes(c));
+    const texto = limpiar(b.texto, 800, true), nombre = limpiar(b.nombre, 80);
+    if (!campos.length) return { error: "Marca qué hay que corregir." };
+    if (!texto) return { error: "Escribe cuál es el dato correcto." };
+    if (!nombre) return { error: "Escribe tu nombre." };
+    return { correccion: { id: ctx.id(), en: ctx.hoy, hora: ctx.hora, campos, texto, nombre, estado: "Pendiente" } };
+  }
   function estadoPedido(reg, tareas, equipo) {
-    const base = { folio: reg.folio, actividad: reg.titulo, fecha: reg.fecha, oficina: reg.area, recibido: reg.recibido };
+    const base = { folio: reg.folio, actividad: reg.titulo, fecha: reg.fecha, oficina: reg.area, recibido: reg.recibido,
+      correcciones: (reg.correcciones || []).map(c => ({ en: c.en, campos: c.campos, texto: c.texto, estado: c.estado })) };
     if (reg.rechazo) return { ...base, estado: "No se puede cubrir", motivo: reg.rechazo.motivo || "" };
     const t = (tareas || []).find(x => x && x.id === (reg.tareaId || reg.id));
     if (!t) return { ...base, estado: "No se puede cubrir", motivo: "" };
@@ -191,6 +203,6 @@
   const normFolio = f => { const n = String(f || "").match(/\d+/); return n ? "P-" + String(parseInt(n[0], 10)).padStart(4, "0") : ""; };
   const siguienteFolio = registros => "P-" + String((registros || []).length + 1).padStart(4, "0");
 
-  const api = { AREAS, SERVICIOS, PREGUNTAS, fueraDeHorario, choquesHorario, limpiar, pedidoATarea, siguienteFolio, buscarDuplicado, estadoPedido, normFolio };
+  const api = { AREAS, SERVICIOS, PREGUNTAS, fueraDeHorario, choquesHorario, limpiar, pedidoATarea, siguienteFolio, buscarDuplicado, estadoPedido, normFolio, CAMPOS_CORR, nuevaCorreccion };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else raiz.CaccoPedidos = api;
 })(this);
