@@ -169,95 +169,106 @@ app.get("/pedido", enviarPagina("pedido.html"));
 // ════════════════════════
 // Cada pedido entra como borrador de tarea. Como el formulario es público, se limita cuántos
 // pedidos puede enviar cada conexión y cuántos borradores de pedidos pueden esperar revisión.
-const { pedidoATarea, siguienteFolio, buscarDuplicado, unirPedido, estadoPedido, normFolio, fueraDeHorario, choquesHorario } = require("./pedidos");
+const { pedidoATarea, siguienteFolio, buscarDuplicado, estadoPedido, normFolio, fueraDeHorario, choquesHorario } = require("./pedidos");
 const PEDIDOS_POR_HORA = 5, PEDIDOS_SIN_REVISAR = 40;
 const enviosPorIp = new Map();
-// Clave de acceso del formulario: la comparten las jefaturas; Líder y Editor la ven y la cambian.
-// Vive en data.config y solo se cambia por /api/pedidos/clave (nunca con un guardado normal).
+// Claves de acceso del formulario: una por oficina. La clave dice de qué oficina viene el pedido, así que la
+// oficina no se elige a mano y cada una solo consulta sus propios folios. Líder y Editor las ven y las cambian.
+// Viven en data.config.clavesPedidos y solo se cambian por /api/pedidos/claves (nunca con un guardado normal).
+const { AREAS } = require("./pedidos");
 const clavesFallidas = new Map(), CLAVE_FALLOS_POR_HORA = 10;
 const puedeClave = u => ["lider", "editor"].includes(u?.nivel);
-app.get("/api/pedidos/clave", verificarToken, async (req, res) => {
+const ipDe = req => String(req.headers["x-forwarded-for"] || "").split(",").pop().trim() || req.ip;
+const oficinaDeClave = (data, clave) => {
+  const c = String(clave || "").trim().toLowerCase();
+  if (!c) return null;
+  return Object.entries(data.config?.clavesPedidos || {}).find(([a, k]) => AREAS.includes(a) && k && k.toLowerCase() === c)?.[0] || null;
+};
+// Revisa la clave (con límite de intentos fallidos por conexión). Devuelve la oficina, o null si ya respondió el error.
+function oficinaValida(req, res, data, msg) {
+  const ip = ipDe(req), ahora = Date.now(), fallas = (clavesFallidas.get(ip) || []).filter(t => ahora - t < 3600e3);
+  if (fallas.length >= CLAVE_FALLOS_POR_HORA) { res.status(429).json({ error: "Demasiados intentos con una clave incorrecta. Intenta de nuevo en una hora." }); return null; }
+  if (!Object.values(data.config?.clavesPedidos || {}).some(Boolean)) { res.status(403).json({ error: "El formulario todavía no está activo. Pide la clave al equipo de Comunicaciones." }); return null; }
+  const area = oficinaDeClave(data, req.body?.clave);
+  if (!area) { clavesFallidas.set(ip, [...fallas, ahora]); res.status(403).json({ error: msg || "La clave de acceso no es correcta. Pídela a tu jefatura o al equipo de Comunicaciones.", clave: true }); return null; }
+  return area;
+}
+app.get("/api/pedidos/claves", verificarToken, async (req, res) => {
   if (!puedeClave(req.usuario)) return res.status(403).json({ error: "Sin permiso" });
-  try { res.json({ clave: (await leerData()).config?.clavePedidos || "" }); }
-  catch { res.status(500).json({ error: "No se pudo leer la clave" }); }
+  try { res.json({ areas: AREAS, claves: (await leerData()).config?.clavesPedidos || {} }); }
+  catch { res.status(500).json({ error: "No se pudieron leer las claves" }); }
 });
-app.post("/api/pedidos/clave", verificarToken, async (req, res) => {
+app.post("/api/pedidos/claves", verificarToken, async (req, res) => {
   if (!puedeClave(req.usuario)) return res.status(403).json({ error: "Sin permiso" });
-  const clave = String(req.body?.clave || "").trim();
-  if (!/^[\p{L}\p{N}-]{4,30}$/u.test(clave)) return res.status(400).json({ error: "La clave debe tener de 4 a 30 letras o números, sin espacios." });
+  const area = String(req.body?.area || ""), clave = String(req.body?.clave || "").trim();
+  if (!AREAS.includes(area)) return res.status(400).json({ error: "Oficina no válida" });
+  if (clave && !/^[\p{L}\p{N}-]{4,30}$/u.test(clave)) return res.status(400).json({ error: "La clave debe tener de 4 a 30 letras o números, sin espacios." });
   try {
-    const data = await leerData();
-    data.config = { ...(data.config || {}), clavePedidos: clave };
-    await escribirData(data); res.json({ ok: true, clave });
+    const data = await leerData(), claves = { ...(data.config?.clavesPedidos || {}) };
+    if (clave && Object.entries(claves).some(([a, k]) => a !== area && k && k.toLowerCase() === clave.toLowerCase()))
+      return res.status(400).json({ error: "Esa clave ya la usa otra oficina." });
+    if (clave) claves[area] = clave; else delete claves[area];
+    data.config = { ...(data.config || {}), clavesPedidos: claves };
+    await escribirData(data); res.json({ ok: true, claves });
   } catch { res.status(500).json({ error: "No se pudo guardar la clave" }); }
+});
+// El formulario pregunta de qué oficina es la clave para mostrarlo antes de enviar
+app.post("/api/pedidos/oficina", async (req, res) => {
+  try { const area = oficinaValida(req, res, await leerData()); if (area) res.json({ area }); }
+  catch { res.status(500).json({ error: "No se pudo revisar la clave" }); }
 });
 app.post("/api/pedidos", async (req, res) => {
   // Render agrega la IP real al final de X-Forwarded-For (lo anterior lo puede escribir cualquiera)
-  const ip = String(req.headers["x-forwarded-for"] || "").split(",").pop().trim() || req.ip;
-  const ahora = Date.now(), recientes = (enviosPorIp.get(ip) || []).filter(t => ahora - t < 3600e3);
+  const ip = ipDe(req), ahora = Date.now(), recientes = (enviosPorIp.get(ip) || []).filter(t => ahora - t < 3600e3);
   if (recientes.length >= PEDIDOS_POR_HORA)
     return res.status(429).json({ error: "Ya enviaste varios pedidos en la última hora. Si es urgente, escribe directamente al equipo de Comunicaciones." });
   try {
-    const fallas = (clavesFallidas.get(ip) || []).filter(t => ahora - t < 3600e3);
-    if (fallas.length >= CLAVE_FALLOS_POR_HORA)
-      return res.status(429).json({ error: "Demasiados intentos con una clave incorrecta. Intenta de nuevo en una hora." });
     const data = await leerData();
-    const clave = data.config?.clavePedidos;
-    if (!clave) return res.status(403).json({ error: "El formulario todavía no está activo. Pide la clave al equipo de Comunicaciones." });
-    if (String(req.body?.clave || "").trim().toLowerCase() !== clave.toLowerCase()) {
-      clavesFallidas.set(ip, [...fallas, ahora]);
-      return res.status(403).json({ error: "La clave de acceso no es correcta. Pídela a tu jefatura o al equipo de Comunicaciones.", clave: true });
-    }
+    const area = oficinaValida(req, res, data); if (!area) return;
     data.tareas = data.tareas || []; data.pedidos = data.pedidos || []; data.notifs = data.notifs || [];
     if (data.tareas.filter(t => t && t.borrador && t.pedido).length >= PEDIDOS_SIN_REVISAR)
       return res.status(503).json({ error: "Hay muchos pedidos esperando revisión. Escribe directamente al equipo de Comunicaciones." });
     const folio = siguienteFolio(data.pedidos);
-    const r = pedidoATarea(req.body, { hoy: hoyPanama(), folio, id: () => Date.now().toString(36) + require("crypto").randomBytes(6).toString("hex") });
+    const r = pedidoATarea({ ...req.body, area }, { hoy: hoyPanama(), folio, id: () => Date.now().toString(36) + require("crypto").randomBytes(6).toString("hex") });
     if (r.error) return res.status(400).json({ error: r.error });
-    // Si la actividad ya está en el tablero (mismo día, nombre parecido) el pedido se une a ella
-    const existente = buscarDuplicado(data.tareas, r.tarea);
-    if (existente) unirPedido(existente, r); else data.tareas.unshift(r.tarea);
+    // El pedido siempre entra aparte, a la bandeja. Si ya hay una actividad parecida ese día solo se avisa:
+    // una persona decide en la bandeja si se une a ella, para no mezclar información sin revisar.
+    const parecida = buscarDuplicado(data.tareas, r.tarea);
+    if (parecida) r.registro.parecida = { id: parecida.id, titulo: parecida.titulo };
+    data.tareas.unshift(r.tarea);
     data.pedidos.unshift(r.registro);
-    const hora = new Date().toLocaleTimeString("es-PA", { timeZone: "America/Panama", hour: "2-digit", minute: "2-digit" });
-    data.notifs.unshift({ id: r.registro.id + "n", ico: "📨", ts: hora, sub: "Formulario de pedidos",
-      txt: existente ? `Pedido ${folio} de ${r.registro.area} se unió a «${existente.titulo}»` : `Pedido ${folio} de ${r.registro.area}: ${r.tarea.titulo}` });
+    const ahoraPa = new Date(), tz = { timeZone: "America/Panama" };
+    const hora = ahoraPa.toLocaleTimeString("es-PA", { ...tz, hour: "2-digit", minute: "2-digit" });
+    data.notifs.unshift({ id: r.registro.id + "n", ico: "📨", ts: hora, sub: "Formulario de pedidos", txt: `Pedido ${folio} de ${r.registro.area}: ${r.tarea.titulo}` });
     data.notifs = data.notifs.slice(0, 50);
+    data.bitacora = [{ id: r.registro.id + "b", fecha: ahoraPa.toLocaleDateString("es-PA", { ...tz, day: "2-digit", month: "short", year: "numeric" }), hora,
+      usuario: "Formulario de pedidos", accion: "Pedido recibido",
+      detalle: `${folio} de ${r.registro.area}: "${r.tarea.titulo}" (${r.tarea.fecha}) · pide ${r.registro.solicitante}${parecida ? ` · se parece a "${parecida.titulo}"` : ""}` },
+      ...(data.bitacora || [])].slice(0, 300);
     await escribirData(data);
     enviosPorIp.set(ip, [...recientes, ahora]);
-    res.json({ ok: true, folio, unido: !!existente });
+    res.json({ ok: true, folio });
   } catch { res.status(500).json({ error: "No se pudo enviar el pedido. Intenta de nuevo en unos minutos." }); }
 });
 // Mientras llena el formulario, la oficina ve si su horario choca con otras actividades del equipo
 // (solo dentro del horario laboral) o si cae fuera de él. Pide la misma clave y nunca devuelve títulos.
 app.post("/api/pedidos/horario", async (req, res) => {
-  const ip = String(req.headers["x-forwarded-for"] || "").split(",").pop().trim() || req.ip;
-  const ahora = Date.now(), fallas = (clavesFallidas.get(ip) || []).filter(t => ahora - t < 3600e3);
-  if (fallas.length >= CLAVE_FALLOS_POR_HORA) return res.status(429).json({ error: "Demasiados intentos." });
   try {
-    const data = await leerData(), clave = data.config?.clavePedidos;
-    if (!clave || String(req.body?.clave || "").trim().toLowerCase() !== clave.toLowerCase()) {
-      if (clave) clavesFallidas.set(ip, [...fallas, ahora]);
-      return res.status(403).json({ error: "Clave no válida", clave: true });
-    }
+    const data = await leerData();
+    if (!oficinaValida(req, res, data)) return;
     const { fecha, hora, horaFin } = req.body || {};
     res.json({ fuera: fueraDeHorario(fecha, hora, horaFin), choques: choquesHorario(data.tareas, fecha, hora, horaFin) });
   } catch { res.status(500).json({ error: "No se pudo revisar el horario" }); }
 });
 // La oficina consulta en qué va su pedido con el folio y la misma clave del formulario
 app.post("/api/pedidos/estado", async (req, res) => {
-  const ip = String(req.headers["x-forwarded-for"] || "").split(",").pop().trim() || req.ip;
-  const ahora = Date.now(), fallas = (clavesFallidas.get(ip) || []).filter(t => ahora - t < 3600e3);
-  if (fallas.length >= CLAVE_FALLOS_POR_HORA)
-    return res.status(429).json({ error: "Demasiados intentos con una clave incorrecta. Intenta de nuevo en una hora." });
   try {
-    const data = await leerData(), clave = data.config?.clavePedidos;
-    if (!clave) return res.status(403).json({ error: "El formulario todavía no está activo." });
-    if (String(req.body?.clave || "").trim().toLowerCase() !== clave.toLowerCase()) {
-      clavesFallidas.set(ip, [...fallas, ahora]);
-      return res.status(403).json({ error: "La clave de acceso no es correcta.", clave: true });
-    }
-    const folio = normFolio(req.body?.folio), reg = folio && (data.pedidos || []).find(p => p && p.folio === folio);
-    if (!reg) return res.status(404).json({ error: `No encontramos el pedido ${folio || "con ese número"}. Revisa el folio.` });
+    const data = await leerData();
+    const area = oficinaValida(req, res, data); if (!area) return;
+    const folio = normFolio(req.body?.folio);
+    // Cada oficina solo ve sus pedidos (con la clave de «Otra», los que entraron con esa clave)
+    const reg = folio && (data.pedidos || []).find(p => p && p.folio === folio && (p.claveDe || p.area) === area);
+    if (!reg) return res.status(404).json({ error: `No encontramos el pedido ${folio || "con ese número"} de tu oficina. Revisa el folio.` });
     res.json(estadoPedido(reg, data.tareas, data.equipo));
   } catch { res.status(500).json({ error: "No se pudo consultar el pedido. Intenta de nuevo en unos minutos." }); }
 });
@@ -310,7 +321,7 @@ app.get("/api/data/public", async (req, res) => {
 app.get("/api/data", verificarToken, async (req, res) => {
   try {
     const d = await leerData();
-    if (d.config && !puedeClave(req.usuario)) d.config = { ...d.config, clavePedidos: undefined };
+    if (d.config && !puedeClave(req.usuario)) d.config = { ...d.config, clavePedidos: undefined, clavesPedidos: undefined };
     res.json(d);
   }
   catch { res.status(500).json({ error: "Error leyendo datos" }); }
