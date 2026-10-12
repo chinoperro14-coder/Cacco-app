@@ -138,7 +138,7 @@ app.get("/pedido", (req, res) => res.sendFile(path.join(__dirname, "pedido.html"
 // ════════════════════════
 // Cada pedido entra como borrador de tarea. Como el formulario es público, se limita cuántos
 // pedidos puede enviar cada conexión y cuántos borradores de pedidos pueden esperar revisión.
-const { pedidoATarea, siguienteFolio } = require("./pedidos");
+const { pedidoATarea, siguienteFolio, buscarDuplicado, unirPedido, estadoPedido, normFolio } = require("./pedidos");
 const PEDIDOS_POR_HORA = 5, PEDIDOS_SIN_REVISAR = 40;
 const enviosPorIp = new Map();
 // Clave de acceso del formulario: la comparten las jefaturas; Líder y Editor la ven y la cambian.
@@ -183,15 +183,36 @@ app.post("/api/pedidos", async (req, res) => {
     const folio = siguienteFolio(data.pedidos);
     const r = pedidoATarea(req.body, { hoy: hoyPanama(), folio, id: () => Date.now().toString(36) + require("crypto").randomBytes(6).toString("hex") });
     if (r.error) return res.status(400).json({ error: r.error });
-    data.tareas.unshift(r.tarea);
+    // Si la actividad ya está en el tablero (mismo día, nombre parecido) el pedido se une a ella
+    const existente = buscarDuplicado(data.tareas, r.tarea);
+    if (existente) unirPedido(existente, r); else data.tareas.unshift(r.tarea);
     data.pedidos.unshift(r.registro);
     const hora = new Date().toLocaleTimeString("es-PA", { timeZone: "America/Panama", hour: "2-digit", minute: "2-digit" });
-    data.notifs.unshift({ id: r.tarea.id + "n", ico: "📨", txt: `Pedido ${folio} de ${r.registro.area}: ${r.tarea.titulo}`, sub: "Formulario de pedidos", ts: hora });
+    data.notifs.unshift({ id: r.registro.id + "n", ico: "📨", ts: hora, sub: "Formulario de pedidos",
+      txt: existente ? `Pedido ${folio} de ${r.registro.area} se unió a «${existente.titulo}»` : `Pedido ${folio} de ${r.registro.area}: ${r.tarea.titulo}` });
     data.notifs = data.notifs.slice(0, 50);
     await escribirData(data);
     enviosPorIp.set(ip, [...recientes, ahora]);
-    res.json({ ok: true, folio });
+    res.json({ ok: true, folio, unido: !!existente });
   } catch { res.status(500).json({ error: "No se pudo enviar el pedido. Intenta de nuevo en unos minutos." }); }
+});
+// La oficina consulta en qué va su pedido con el folio y la misma clave del formulario
+app.post("/api/pedidos/estado", async (req, res) => {
+  const ip = String(req.headers["x-forwarded-for"] || "").split(",").pop().trim() || req.ip;
+  const ahora = Date.now(), fallas = (clavesFallidas.get(ip) || []).filter(t => ahora - t < 3600e3);
+  if (fallas.length >= CLAVE_FALLOS_POR_HORA)
+    return res.status(429).json({ error: "Demasiados intentos con una clave incorrecta. Intenta de nuevo en una hora." });
+  try {
+    const data = await leerData(), clave = data.config?.clavePedidos;
+    if (!clave) return res.status(403).json({ error: "El formulario todavía no está activo." });
+    if (String(req.body?.clave || "").trim().toLowerCase() !== clave.toLowerCase()) {
+      clavesFallidas.set(ip, [...fallas, ahora]);
+      return res.status(403).json({ error: "La clave de acceso no es correcta.", clave: true });
+    }
+    const folio = normFolio(req.body?.folio), reg = folio && (data.pedidos || []).find(p => p && p.folio === folio);
+    if (!reg) return res.status(404).json({ error: `No encontramos el pedido ${folio || "con ese número"}. Revisa el folio.` });
+    res.json(estadoPedido(reg, data.tareas, data.equipo));
+  } catch { res.status(500).json({ error: "No se pudo consultar el pedido. Intenta de nuevo en unos minutos." }); }
 });
 
 // ════════════════════════

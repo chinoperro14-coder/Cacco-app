@@ -2,7 +2,7 @@
 // Convierte un pedido en un borrador de tarea. Lo usa el servidor (app.js) y también la página de prueba,
 // por eso no depende de Node ni del navegador.
 (function (raiz) {
-  const AREAS = ["Dirección", "Programación", "Educación", "Administración", "Otra"];
+  const AREAS = ["Administración", "Comunicaciones", "Dirección", "Desarrollo Social", "Coordinación de Arte y Cultura", "Educación Artística y Cultural", "Otra"];
   const SERVICIOS = {
     cobertura: { lbl: "Cobertura de fotos y video", secs: ["Audiovisual"] },
     diseno:    { lbl: "Diseño de una pieza (afiche, arte, invitación)", secs: ["Diseño"] },
@@ -23,6 +23,8 @@
                    : s.replace(/\s+/g, " ").trim();
     return s.slice(0, max);
   }
+  // Enlace al material (Drive, Dropbox…): se guarda tal cual solo si es un http(s) sin caracteres peligrosos
+  const limpiarUrl = v => { const u = String(v == null ? "" : v).trim(); return /^https?:\/\/[^\s<>"'`\\]{3,300}$/i.test(u) ? u : null; };
   const esFecha = f => /^\d{4}-\d{2}-\d{2}$/.test(f) && !isNaN(new Date(f + "T12:00:00Z"));
   const esHora = h => /^([01]\d|2[0-3]):[0-5]\d$/.test(h);
   const fechaLarga = f => {
@@ -43,8 +45,9 @@
     const servicios = (Array.isArray(b.servicios) ? b.servicios : []).filter(k => SERVICIOS[k]);
     const fecha = String(b.fecha || ""), hora = String(b.hora || ""), horaFin = String(b.horaFin || "");
     const entrega = String(b.entrega || "");
-    if (!area) return { error: "Elige el área que hace el pedido." };
-    if (area === "Otra" && !areaOtra) return { error: "Escribe el nombre de tu área." };
+    const materialTxt = String(b.material || "").trim(), material = materialTxt ? limpiarUrl(materialTxt) : "";
+    if (!area) return { error: "Elige la oficina que hace el pedido." };
+    if (area === "Otra" && !areaOtra) return { error: "Escribe el nombre de tu oficina." };
     if (!nombre) return { error: "Escribe tu nombre." };
     if (!contacto) return { error: "Escribe un teléfono o correo para contactarte." };
     if (!titulo) return { error: "Escribe el nombre de la actividad." };
@@ -54,6 +57,7 @@
     if (hora && !esHora(hora)) return { error: "La hora de inicio no es válida." };
     if (horaFin && !esHora(horaFin)) return { error: "La hora de fin no es válida." };
     if (entrega && (!esFecha(entrega) || entrega < ctx.hoy)) return { error: "La fecha de entrega del diseño no es válida." };
+    if (material === null) return { error: "El enlace al material no es válido: cópialo completo, empezando por https://" };
 
     const nomArea = area === "Otra" ? areaOtra : area;
     const secciones = {};
@@ -66,19 +70,69 @@
       `👤 Lo pide: ${nombre} · ${contacto}`,
       `🧰 Necesita: ${servicios.map(k => SERVICIOS[k].lbl).join("; ")}.`,
       entrega ? `🎨 Diseño para el ${fechaLarga(entrega)}.` : "",
+      material ? `🔗 Material: ${material}` : "",
       descripcion ? `\n${descripcion}` : "",
     ].filter(Boolean).join("\n");
-    const pedido = { folio: ctx.folio, area: nomArea, solicitante: nombre, contacto, servicios, recibido: ctx.hoy };
+    const pedido = { folio: ctx.folio, area: nomArea, solicitante: nombre, contacto, servicios, recibido: ctx.hoy, ...(material ? { material } : {}), ...(entrega ? { entrega } : {}) };
     const tarea = {
       id: ctx.id(), titulo, borrador: true, etiquetas: [], prioridad: "Media", fecha, hora, horaFin, lugar, notas,
       recurrencia: "ninguna", secciones, entregables: [], creadaEn: ctx.hoy, creadaPor: "Formulario de pedidos", creadoPorId: "pedidos", pedido,
     };
     // El registro de pedidos no se borra al descartar el borrador: sirve para medir cuánto pide cada área
-    const registro = { id: tarea.id, folio: ctx.folio, area: nomArea, titulo, fecha, servicios, recibido: ctx.hoy, solicitante: nombre };
-    return { tarea, registro };
+    const registro = { id: tarea.id, tareaId: tarea.id, folio: ctx.folio, area: nomArea, titulo, fecha, servicios, recibido: ctx.hoy, solicitante: nombre };
+    return { tarea, registro, notaPedido: notas };
   }
+
+  // ── Duplicados: la misma actividad puede venir ya del Calendario CACCO Logístico o de otro pedido ──
+  const VACIAS = new Set("para por con del las los una uno unos unas que como entre sobre desde hasta este esta estos estas cacco evento actividad".split(" "));
+  const palabras = t => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9ñ ]+/g, " ").split(/\s+/).filter(w => w.length >= 4 && !VACIAS.has(w));
+  function parecidos(a, b) {
+    const A = new Set(palabras(a)), B = new Set(palabras(b));
+    if (!A.size || !B.size) return false;
+    let comunes = 0; A.forEach(w => { if (B.has(w)) comunes++; });
+    // Conservador: la mitad o más de todas las palabras en común (con «Imposición de cinta …» no basta)
+    return comunes >= Math.min(2, A.size, B.size) && comunes / (A.size + B.size - comunes) >= 0.5;
+  }
+  // Devuelve la tarea existente del mismo día con nombre parecido (o null)
+  function buscarDuplicado(tareas, nueva) {
+    return (tareas || []).find(t => t && t.id !== nueva.id && t.fecha === nueva.fecha && parecidos(t.titulo, nueva.titulo)) || null;
+  }
+  // Une el pedido a la tarea existente sin pisar nada que alguien ya trabajó:
+  // siempre agrega la nota; en un borrador además agrega las secciones pedidas y completa datos vacíos.
+  function unirPedido(t, r) {
+    t.notas = [t.notas || "", r.notaPedido].filter(Boolean).join("\n\n");
+    if (t.borrador) {
+      t.secciones = t.secciones || {};
+      Object.entries(r.tarea.secciones).forEach(([s, sv]) => { if (!t.secciones[s]) t.secciones[s] = sv; });
+      ["hora", "horaFin", "lugar"].forEach(k => { if (!t[k] && r.tarea[k]) t[k] = r.tarea[k]; });
+    }
+    if (!t.pedido) t.pedido = r.tarea.pedido;
+    r.registro.tareaId = t.id; r.registro.unido = true;
+    return t;
+  }
+
+  // ── Estado que ve la oficina al consultar su folio ──
+  const ESTADO_SEC = { Completada: "Lista", "En Progreso": "En curso", "No cumplida": "No se pudo", Cerrada: "Cerrada", Pendiente: "Por hacer" };
+  function estadoPedido(reg, tareas, equipo) {
+    const base = { folio: reg.folio, actividad: reg.titulo, fecha: reg.fecha, oficina: reg.area, recibido: reg.recibido };
+    if (reg.rechazo) return { ...base, estado: "No se puede cubrir", motivo: reg.rechazo.motivo || "" };
+    const t = (tareas || []).find(x => x && x.id === (reg.tareaId || reg.id));
+    if (!t) return { ...base, estado: "No se puede cubrir", motivo: "" };
+    if (t.borrador) return { ...base, estado: "En revisión" };
+    const nom = id => ((equipo || []).find(p => p && p.id === id) || {}).nombre;
+    const secs = [...new Set((reg.servicios || []).flatMap(k => (SERVICIOS[k] || { secs: [] }).secs))];
+    const detalle = secs.filter(s => t.secciones && t.secciones[s]).map(s => {
+      const sv = t.secciones[s];
+      return { seccion: s, estado: ESTADO_SEC[sv.estado] || sv.estado || "Por hacer", responsables: (sv.responsables || []).map(nom).filter(Boolean) };
+    });
+    const listo = detalle.length && detalle.every(d => ["Lista", "Cerrada", "No se pudo"].includes(d.estado));
+    return { ...base, estado: listo ? "Atendido" : "Aceptado", detalle };
+  }
+  // Acepta «P-0003», «p3» o «3»
+  const normFolio = f => { const n = String(f || "").match(/\d+/); return n ? "P-" + String(parseInt(n[0], 10)).padStart(4, "0") : ""; };
   const siguienteFolio = registros => "P-" + String((registros || []).length + 1).padStart(4, "0");
 
-  const api = { AREAS, SERVICIOS, limpiar, pedidoATarea, siguienteFolio };
+  const api = { AREAS, SERVICIOS, limpiar, pedidoATarea, siguienteFolio, buscarDuplicado, unirPedido, estadoPedido, normFolio };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else raiz.CaccoPedidos = api;
 })(this);
