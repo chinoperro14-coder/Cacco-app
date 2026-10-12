@@ -5082,7 +5082,7 @@ async function aprobarPubAq(id){
 }
 function renderAprob(){
   const el=document.getElementById('aprobCont');if(!el)return;
-  const q=pendientesAprob(),tot=totAprob(q);
+  const q={...pendientesAprob(),borradores:[]},tot=totAprob(q);
   document.getElementById('aprobSub').textContent=tot?`${tot} pendiente${tot===1?'':'s'} de tu visto bueno`+(q.borradores.length?` · ${q.borradores.length} borrador${q.borradores.length===1?'':'es'} de tareas por revisar`:''):'Nada pendiente de aprobación'+(q.borradores.length?` · ${q.borradores.length} borradores de tareas por revisar`:'');
   actuCts();
   const caja=(ico,tit,n,cuerpo,nota)=>n?`<div style="margin-bottom:22px">
