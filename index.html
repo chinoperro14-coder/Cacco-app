@@ -5080,9 +5080,13 @@ async function aprobarPubAq(id){
   p2.fecha=f;p2.hora=h||p2.hora||'';p2.tipo=tipo;p2.plataformas=plats;
   aprobY(()=>cambiarEstadoPub(id,'aprobado'));
 }
+// Filtro por tipo en Aprobaciones ('' = todo)
+let aprobTipo='';
 function renderAprob(){
   const el=document.getElementById('aprobCont');if(!el)return;
   const q={...pendientesAprob(),borradores:[]},tot=totAprob(q);
+  if(aprobTipo&&!q[aprobTipo].length)aprobTipo='';
+  const ver=k=>!aprobTipo||aprobTipo===k;
   document.getElementById('aprobSub').textContent=tot?`${tot} pendiente${tot===1?'':'s'} de tu visto bueno`+(q.borradores.length?` · ${q.borradores.length} borrador${q.borradores.length===1?'':'es'} de tareas por revisar`:''):'Nada pendiente de aprobación'+(q.borradores.length?` · ${q.borradores.length} borradores de tareas por revisar`:'');
   actuCts();
   const caja=(ico,tit,n,cuerpo,nota)=>n?`<div style="margin-bottom:22px">
@@ -5135,11 +5139,11 @@ function renderAprob(){
     +(q.borradores.length>MAXB?`<div style="font-size:12px;color:var(--tm)">… y ${q.borradores.length-MAXB} más en <a style="color:var(--az);cursor:pointer" onclick="goV('tareas',document.querySelector('[onclick*=&quot;goV(\\'tareas\\'&quot;]'))">Tareas</a>.</div>`:'');
 
   el.innerHTML=(tot?'':`<div style="padding:28px 20px;text-align:center;color:var(--tm)"><div style="font-size:36px;margin-bottom:8px">🎉</div><div style="font-size:14px;font-weight:600">Todo al día: no hay nada esperando tu aprobación.</div></div>`)
-    +caja('👀','Publicaciones por aprobar',q.pubs.length,pubs)
-    +caja('📝','Permisos',q.permisos.length,pers)
-    +caja('🌴','Tiempo compensatorio',q.comp.length,comp)
-    +caja('⏱️','Horas extra',q.horas.length,horas)
-    +caja('🗂️','Borradores de tareas',q.borradores.length,bors,'· se publican al completarlos');
+    +(tot?`<div class="adj-chips">${[['','Todo',tot],['pubs','👀 Publicaciones',q.pubs.length],['permisos','📝 Permisos',q.permisos.length],['comp','🌴 Compensatorio',q.comp.length],['horas','⏱️ Horas extra',q.horas.length]].filter(([k,,n])=>!k||n||k===aprobTipo).map(([k,l,n])=>`<button class="adj-chip${k===aprobTipo?' on':''}" onclick="aprobTipo='${k}';renderAprob()">${l} <span>${n}</span></button>`).join('')}</div>`:'')
+    +(ver('pubs')?caja('👀','Publicaciones por aprobar',q.pubs.length,pubs):'')
+    +(ver('permisos')?caja('📝','Permisos',q.permisos.length,pers):'')
+    +(ver('comp')?caja('🌴','Tiempo compensatorio',q.comp.length,comp):'')
+    +(ver('horas')?caja('⏱️','Horas extra',q.horas.length,horas):'');
 }
 
 // ════════════════════════
