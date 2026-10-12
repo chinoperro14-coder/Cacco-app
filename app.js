@@ -28,7 +28,8 @@ app.use((req, res, next) => {
   if (EXT_PUBLICAS.has(ext) && !oculto) return next();
   res.status(404).end();
 });
-app.use(express.static(__dirname, { dotfiles: "deny", index: false }));
+// Las imágenes se guardan en el navegador por una semana (no se bajan en cada visita)
+app.use(express.static(__dirname, { dotfiles: "deny", index: false, maxAge: "7d" }));
 
 // ════════════════════════
 //  MODELOS MONGODB
@@ -144,8 +145,24 @@ const msgAusente = r => `🌴 Estás de tiempo compensatorio. Tu acceso se habil
 // ════════════════════════
 //  RUTA PRINCIPAL
 // ════════════════════════
-app.get("/", (req, res) => res.sendFile(path.join(__dirname, "index.html")));
-app.get("/pedido", (req, res) => res.sendFile(path.join(__dirname, "pedido.html")));
+// Las páginas se mandan comprimidas (gzip): la principal baja de ~600 KB a una fracción
+const zlib = require("zlib");
+const paginas = {};
+function enviarPagina(archivo) {
+  return (req, res) => {
+    const ruta = path.join(__dirname, archivo);
+    if (!/\bgzip\b/.test(req.headers["accept-encoding"] || "")) return res.sendFile(ruta);
+    try {
+      const mtime = fs.statSync(ruta).mtimeMs;
+      if (!paginas[archivo] || paginas[archivo].mtime !== mtime)
+        paginas[archivo] = { mtime, gz: zlib.gzipSync(fs.readFileSync(ruta), { level: 9 }) };
+      res.set({ "Content-Type": "text/html; charset=utf-8", "Content-Encoding": "gzip", "Vary": "Accept-Encoding", "Cache-Control": "no-cache" });
+      res.send(paginas[archivo].gz);
+    } catch { res.sendFile(ruta); }
+  };
+}
+app.get("/", enviarPagina("index.html"));
+app.get("/pedido", enviarPagina("pedido.html"));
 
 // ════════════════════════
 //  PEDIDOS DE OTRAS ÁREAS (formulario público, sin sesión)
@@ -321,6 +338,64 @@ async function conservarPermisos(nuevo, actual) {
   if (faltan.length) nuevo.permisos = [...lista, ...faltan];
   return nuevo;
 }
+// ════════════════════════
+//  RESPALDO DIARIO
+// ════════════════════════
+// Una copia de los datos por día, tomada antes del primer cambio del día (y al despertar el servidor).
+// Se guardan los últimos 30 días. Solo el Líder los ve y los descarga. No incluye contraseñas ni adjuntos.
+const RespaldoModel = mongoose.models.AppRespaldo || mongoose.model("AppRespaldo",
+  new mongoose.Schema({ _id: String, creado: Date, payload: mongoose.Schema.Types.Mixed }));
+const RESP_DIAS = 30, RESP_DIR = path.join(__dirname, "backups"), RESP_RE = /^respaldo-(\d{4}-\d{2}-\d{2})\.json$/;
+let respaldoHecho = "";
+async function respaldoDiario(actual) {
+  const dia = hoyPanama();
+  if (respaldoHecho === dia) return;
+  respaldoHecho = dia;
+  try {
+    if (MONGO_URI) {
+      if (!(await RespaldoModel.exists({ _id: dia }))) {
+        await RespaldoModel.create({ _id: dia, creado: new Date(), payload: actual || await leerData() });
+        const viejos = await RespaldoModel.find({}, { _id: 1 }).sort({ _id: -1 }).skip(RESP_DIAS).lean();
+        if (viejos.length) await RespaldoModel.deleteMany({ _id: { $in: viejos.map(v => v._id) } });
+      }
+    } else {
+      fs.mkdirSync(RESP_DIR, { recursive: true });
+      const f = path.join(RESP_DIR, `respaldo-${dia}.json`);
+      if (!fs.existsSync(f)) fs.writeFileSync(f, JSON.stringify(actual || await leerData()));
+      fs.readdirSync(RESP_DIR).filter(n => RESP_RE.test(n)).sort().reverse().slice(RESP_DIAS)
+        .forEach(n => fs.unlinkSync(path.join(RESP_DIR, n)));
+    }
+  } catch (e) { respaldoHecho = ""; console.warn("No se pudo hacer el respaldo diario:", e.message); }
+}
+function mandarRespaldo(res, nombre, datos) {
+  res.set({ "Content-Type": "application/json; charset=utf-8", "Content-Disposition": `attachment; filename="${nombre}"` });
+  res.send(JSON.stringify(datos, null, 1));
+}
+app.get("/api/respaldos", verificarToken, soloLider, async (req, res) => {
+  try {
+    let lista;
+    if (MONGO_URI) lista = (await RespaldoModel.find({}, { _id: 1, creado: 1 }).sort({ _id: -1 }).lean()).map(r => ({ fecha: r._id, creado: r.creado }));
+    else lista = fs.existsSync(RESP_DIR) ? fs.readdirSync(RESP_DIR).filter(n => RESP_RE.test(n)).sort().reverse()
+      .map(n => ({ fecha: n.match(RESP_RE)[1], creado: fs.statSync(path.join(RESP_DIR, n)).mtime })) : [];
+    res.json(lista);
+  } catch { res.status(500).json({ error: "No se pudo leer la lista de respaldos" }); }
+});
+app.get("/api/respaldos/actual", verificarToken, soloLider, async (req, res) => {
+  try { mandarRespaldo(res, `respaldo-cacco-${hoyPanama()}-ahora.json`, await leerData()); }
+  catch { res.status(500).json({ error: "No se pudo generar el respaldo" }); }
+});
+app.get("/api/respaldos/:fecha", verificarToken, soloLider, async (req, res) => {
+  const fecha = String(req.params.fecha);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return res.status(400).json({ error: "Fecha no válida" });
+  try {
+    let datos = null;
+    if (MONGO_URI) datos = (await RespaldoModel.findById(fecha).lean())?.payload;
+    else { const f = path.join(RESP_DIR, `respaldo-${fecha}.json`); if (fs.existsSync(f)) datos = JSON.parse(fs.readFileSync(f, "utf8")); }
+    if (!datos) return res.status(404).json({ error: "No hay respaldo de ese día" });
+    mandarRespaldo(res, `respaldo-cacco-${fecha}.json`, datos);
+  } catch { res.status(500).json({ error: "No se pudo leer el respaldo" }); }
+});
+
 app.post("/api/data", verificarToken, async (req, res) => {
   try {
     if (req.usuario?.nivel === "lector") return res.status(403).json({ error: "Solo lectura" });
@@ -328,6 +403,7 @@ app.post("/api/data", verificarToken, async (req, res) => {
     const regreso = await regresoSiAusente(req.usuario?.id, req.usuario?.nivel);
     if (regreso) return res.status(403).json({ error: msgAusente(regreso) });
     const actual = await leerData();
+    await respaldoDiario(actual);
     const nuevo = await conservarPermisos(aplicarReglasRol(req.body, actual, req.usuario?.nivel), actual);
     if (nuevo && typeof nuevo === "object") { if (actual.config) nuevo.config = actual.config; else delete nuevo.config; }   // la clave solo cambia por su ruta
     await escribirData(nuevo); res.json({ ok: true });
@@ -902,5 +978,7 @@ async function iniciar() {
     console.log("⚠️  Sin MONGODB_URI — usando archivos locales");
   }
   app.listen(PORT, () => console.log(`✅ Servidor CACCO corriendo en http://localhost:${PORT}`));
+  respaldoDiario();
+  setInterval(() => respaldoDiario(), 3600e3);
 }
 iniciar().catch(e => { console.error("Error al iniciar:", e); process.exit(1); });
