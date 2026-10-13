@@ -336,16 +336,6 @@ app.get("/api/actividad", verificarToken, async (req, res) => {
 // ════════════════════════
 //  DATOS COMPARTIDOS
 // ════════════════════════
-// Modo invitado: solo tareas, calendario y publicaciones. Nunca cédulas, correos, permisos, horas ni bitácora.
-function datosPublicos(d) {
-  const equipo = (d.equipo || []).map(p => ({ id: p.id, nombre: p.nombre, cargo: p.cargo, nivel: p.nivel, foto: p.foto, secciones: p.secciones, cats: p.cats }));
-  return { tareas: d.tareas || [], etiquetas: d.etiquetas || [], publicaciones: d.publicaciones || [], asigVarias: d.asigVarias || [],
-           equipo, horasExtra: [], permisos: [], bitacora: [], notifs: [], historico: [] };
-}
-app.get("/api/data/public", async (req, res) => {
-  try { res.json(datosPublicos(await leerData())); }
-  catch { res.status(500).json({ error: "Error leyendo datos" }); }
-});
 app.get("/api/data", verificarToken, async (req, res) => {
   try {
     const d = await leerData();
