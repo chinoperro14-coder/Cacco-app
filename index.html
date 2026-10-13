@@ -6,8 +6,8 @@
 <title>CACCO — Equipo de Comunicaciones</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-:root{--na:#E35205;--na2:#c44604;--nas:#fff4ee;--nab:#fcd9c4;--fo:#f5f4f2;--su:#ffffff;--su2:#f0eeeb;--bo:#e2ddd8;--tx:#1a1816;--tm:#6b6258;--ve:#166534;--ves:#dcfce7;--az:#1e40af;--azs:#dbeafe;--ro:#991b1b;--ros:#fee2e2;--am:#92400e;--ams:#fef3c7;--mo:#5b21b6;--mos:#ede9fe;--r:10px;--rs:6px;--sh:0 1px 3px rgba(0,0,0,.07),0 4px 12px rgba(0,0,0,.05);--shm:0 4px 16px rgba(0,0,0,.10),0 1px 4px rgba(0,0,0,.06);}
-body.osc{--na:#f2722f;--na2:#ff8a4f;--nas:#2d1d13;--nab:#5c3218;--fo:#141210;--su:#1d1a17;--su2:#27231f;--bo:#36302a;--tx:#ede7e0;--tm:#a69d93;--ve:#62d394;--ves:#15281d;--az:#82b6ff;--azs:#172338;--ro:#ff8f86;--ros:#351a1a;--am:#f3c35e;--ams:#2f2513;--mo:#c8a4ff;--mos:#241b35;--sh:0 1px 2px rgba(0,0,0,.35);--shm:0 10px 30px rgba(0,0,0,.55);color-scheme:dark;}
+:root{--e-ini:#eab308;--e-inis:#fef9c3;--e-inix:#854d0e;--e-cur:#16a34a;--e-curs:#dcfce7;--e-curx:#166534;--e-fin:#2563eb;--e-fins:#dbeafe;--e-finx:#1e40af;--e-can:#dc2626;--e-cans:#fee2e2;--e-canx:#991b1b;--e-att:#c026d3;--e-atts:#fae8ff;--e-attx:#86198f;--na:#E35205;--na2:#c44604;--nas:#fff4ee;--nab:#fcd9c4;--fo:#f5f4f2;--su:#ffffff;--su2:#f0eeeb;--bo:#e2ddd8;--tx:#1a1816;--tm:#6b6258;--ve:#166534;--ves:#dcfce7;--az:#1e40af;--azs:#dbeafe;--ro:#991b1b;--ros:#fee2e2;--am:#92400e;--ams:#fef3c7;--mo:#5b21b6;--mos:#ede9fe;--r:10px;--rs:6px;--sh:0 1px 3px rgba(0,0,0,.07),0 4px 12px rgba(0,0,0,.05);--shm:0 4px 16px rgba(0,0,0,.10),0 1px 4px rgba(0,0,0,.06);}
+body.osc{--e-ini:#facc15;--e-inis:#3a2f0a;--e-inix:#fde68a;--e-cur:#4ade80;--e-curs:#14301f;--e-curx:#86efac;--e-fin:#60a5fa;--e-fins:#172338;--e-finx:#93c5fd;--e-can:#f87171;--e-cans:#3a1a1a;--e-canx:#fca5a5;--e-att:#e879f9;--e-atts:#3a1a3f;--e-attx:#f0abfc;--na:#f2722f;--na2:#ff8a4f;--nas:#2d1d13;--nab:#5c3218;--fo:#141210;--su:#1d1a17;--su2:#27231f;--bo:#36302a;--tx:#ede7e0;--tm:#a69d93;--ve:#62d394;--ves:#15281d;--az:#82b6ff;--azs:#172338;--ro:#ff8f86;--ros:#351a1a;--am:#f3c35e;--ams:#2f2513;--mo:#c8a4ff;--mos:#241b35;--sh:0 1px 2px rgba(0,0,0,.35);--shm:0 10px 30px rgba(0,0,0,.55);color-scheme:dark;}
 /* Modo oscuro: colores escritos a mano en la página se pasan a tonos oscuros */
 body.osc [style*="background:#fff;" i],body.osc [style$="background:#fff" i]{background:var(--su)!important;}
 body.osc [style*="background:#fafafa;" i],body.osc [style$="background:#fafafa" i]{background:var(--su)!important;}
@@ -100,32 +100,34 @@ body.pant .pt-wrap{height:100vh;}
 .pt-h{padding:12px 16px;font-size:clamp(16px,1.7vw,24px);font-weight:800;display:flex;align-items:center;gap:8px;border-bottom:3px solid var(--na);}
 .pt-h small{font-size:.62em;font-weight:600;color:var(--tm);margin-left:auto;}
 .pt-n{background:var(--na);color:#fff;border-radius:12px;padding:0 9px;font-size:.8em;}
-.pt-col.atr .pt-h{border-bottom-color:#dc2626;}.pt-col.atr .pt-n{background:#dc2626;}
-.pt-col.man .pt-h{border-bottom-color:#2563eb;}.pt-col.man .pt-n{background:#2563eb;}
+.pt-col.atr .pt-h{border-bottom-color:var(--e-att);}.pt-col.atr .pt-n{background:var(--e-att);}
+.pt-col.man .pt-h{border-bottom-color:#0d9488;}.pt-col.man .pt-n{background:#0d9488;}
 .pt-lista{flex:1;min-height:0;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;}
 .pt-it{border:1px solid var(--bo);border-left:5px solid var(--na);border-radius:8px;padding:10px 12px;background:var(--fo);}
-.pt-col.atr .pt-it{border-left-color:#dc2626;}.pt-col.man .pt-it{border-left-color:#2563eb;}
-.pt-it.hecho{opacity:.55;border-left-color:#16a34a!important;}
+.pt-it.s-ini{border-left-color:var(--e-ini);}.pt-it.s-cur{border-left-color:var(--e-cur);}.pt-it.s-fin{border-left-color:var(--e-fin);}.pt-it.s-can{border-left-color:var(--e-can);}
+.pt-it.hecho{opacity:.6;}
 .pt-it.hecho .pt-t{text-decoration:line-through;}
 .pt-t{font-size:clamp(15px,1.55vw,22px);font-weight:700;line-height:1.25;}
 .pt-m{font-size:clamp(12px,1.1vw,16px);color:var(--tm);margin-top:3px;}
 .pt-hr{font-weight:800;color:var(--tx);}
 .pt-ch{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
 .pt-ch span{font-size:clamp(11px,1vw,14px);font-weight:600;padding:2px 9px;border-radius:12px;background:var(--su2);}
-.pt-ch .sa{background:#dc2626;color:#fff;font-weight:800;}
+.pt-ch .sa{background:var(--e-att);color:#fff;font-weight:800;}
 .pt-res{display:flex;gap:10px;flex-wrap:wrap;padding:7px 16px;font-size:clamp(12px,1.1vw,16px);font-weight:600;color:var(--tm);border-bottom:1px solid var(--bo);}
-.pt-res .sa{color:#dc2626;font-weight:800;}
-.pt-it.curso{border-color:#16a34a;border-left-color:#16a34a!important;background:var(--ves);box-shadow:0 0 0 2px #16a34a55;}
-.pt-it.canc{border-left-color:#dc2626!important;background:var(--ros);}
-.pt-it.canc .pt-t{text-decoration:line-through;color:var(--ro);}
+.pt-res .sa{color:var(--e-att);font-weight:800;}
+.pt-it.curso{border-color:var(--e-cur);background:var(--e-curs);box-shadow:0 0 0 2px #16a34a55;}
+.pt-it.canc{background:var(--e-cans);}
+.pt-it.canc .pt-t{text-decoration:line-through;color:var(--e-canx);}
 .pt-tag{display:inline-block;margin-top:5px;font-size:clamp(11px,1vw,14px);font-weight:800;padding:2px 9px;border-radius:12px;}
-.pt-tag.verde{background:#16a34a;color:#fff;}.pt-tag.rojo{background:#dc2626;color:#fff;}.pt-tag.ambar{background:var(--ams);color:var(--am);}
+.pt-tag.verde{background:var(--e-cur);color:#fff;}.pt-tag.rojo{background:var(--e-can);color:#fff;text-decoration:underline;}.pt-tag.ambar{background:var(--e-atts);color:var(--e-attx);}
 .pt-sem{margin-top:12px;background:var(--su);border:1px solid var(--bo);border-radius:var(--r);padding:8px 14px;display:flex;gap:14px;align-items:center;overflow:hidden;}
 .pt-sh{font-weight:800;font-size:clamp(14px,1.3vw,19px);white-space:nowrap;}
 .pt-sl{display:flex;gap:8px;overflow-x:auto;flex:1;scrollbar-width:none;}
 .pt-si{white-space:nowrap;font-size:clamp(12px,1.1vw,16px);background:var(--su2);padding:4px 11px;border-radius:14px;}
-.pt-si.canc{background:var(--ros);color:var(--ro);text-decoration:line-through;}
-.pt-ch .ok{background:var(--ves);color:var(--ve);}.pt-ch .ec{background:var(--azs);color:var(--az);}.pt-ch .pe{background:var(--ams);color:var(--am);}
+.pt-si.canc{background:var(--e-cans);color:var(--e-canx);text-decoration:line-through;}
+.pt-ch .ok{background:var(--e-fins);color:var(--e-finx);}.pt-ch .ec{background:var(--e-curs);color:var(--e-curx);}.pt-ch .pe{background:var(--e-inis);color:var(--e-inix);}
+.pt-leyenda{display:flex;gap:10px;flex-wrap:wrap;font-size:clamp(11px,1vw,15px);font-weight:700;white-space:nowrap;margin-left:auto;}
+.pt-leyenda span{padding:2px 9px;border-radius:12px;}
 .pt-vac{text-align:center;color:var(--tm);padding:28px 10px;font-size:clamp(14px,1.3vw,18px);}
 .pt-esc{display:none!important;position:fixed;top:8px;right:10px;z-index:900;opacity:.35;}
 .pt-esc:hover{opacity:1;}
@@ -212,6 +214,13 @@ header{background:var(--na);height:60px;display:flex;align-items:center;justify-
 /* STATS */
 .sg{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
 .stat{background:var(--su);border:1px solid var(--bo);border-radius:var(--r);padding:20px 22px;box-shadow:var(--sh);border-top:3px solid transparent;}
+.e-ini{background:var(--e-inis);color:var(--e-inix);}.e-cur{background:var(--e-curs);color:var(--e-curx);}.e-fin{background:var(--e-fins);color:var(--e-finx);}.e-can{background:var(--e-cans);color:var(--e-canx);}.e-att{background:var(--e-atts);color:var(--e-attx);}
+.s-ini{border-top-color:var(--e-ini);}.s-cur{border-top-color:var(--e-cur);}.s-fin{border-top-color:var(--e-fin);}
+/* Retazos: franja de parches de colores vivos, como los trajes del Congo colonense */
+.retazos{height:7px;background:repeating-linear-gradient(90deg,#E35205 0 26px,#facc15 26px 40px,#16a34a 40px 70px,#2563eb 70px 86px,#c026d3 86px 112px,#dc2626 112px 124px,#06b6d4 124px 150px,#fff 150px 156px);}
+header{position:sticky;}
+header::after{content:"";position:absolute;left:0;right:0;bottom:-7px;height:7px;background:repeating-linear-gradient(90deg,#E35205 0 26px,#facc15 26px 40px,#16a34a 40px 70px,#2563eb 70px 86px,#c026d3 86px 112px,#dc2626 112px 124px,#06b6d4 124px 150px,#fff 150px 156px);}
+body.pant header::after{display:none;}
 .sna{border-top-color:var(--na);}.sve{border-top-color:#16a34a;}.saz{border-top-color:#2563eb;}.sam{border-top-color:#d97706;}.sro{border-top-color:#dc2626;}
 .slbl{font-size:11px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
 .snum{font-size:32px;font-weight:800;color:var(--tx);letter-spacing:-1.5px;line-height:1;}
@@ -880,9 +889,9 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <div id="alVenc" class="al alro oculto">⚠️ <span id="txVenc"></span></div>
   <div class="sg">
     <div class="stat sna"><div class="slbl">Total</div><div class="snum" id="stTot">0</div></div>
-    <div class="stat sam"><div class="slbl">Pendiente</div><div class="snum" id="stPen">0</div></div>
-    <div class="stat saz"><div class="slbl">En Progreso</div><div class="snum" id="stPro">0</div></div>
-    <div class="stat sve"><div class="slbl">Completadas</div><div class="snum" id="stLis">0</div></div>
+    <div class="stat s-ini"><div class="slbl">🟡 Por iniciar</div><div class="snum" id="stPen">0</div></div>
+    <div class="stat s-cur"><div class="slbl">🟢 Iniciadas</div><div class="snum" id="stPro">0</div></div>
+    <div class="stat s-fin"><div class="slbl">🔵 Finalizadas</div><div class="snum" id="stLis">0</div></div>
   </div>
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
     <div style="position:relative;flex:1;min-width:180px;max-width:320px">
@@ -1122,6 +1131,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 
 <!-- ASIGNACIONES VARIAS -->
 <div id="vPantalla" class="oculto">
+  <div class="retazos" style="margin-bottom:10px;border-radius:4px"></div>
   <div class="pt-wrap">
     <div class="pt-top">
       <div><div class="pt-fecha" id="ptFecha"></div></div>
@@ -2318,6 +2328,9 @@ function eglobal(t){
   return'Pendiente';
 }
 // Una tarea está "resuelta" si ya no necesita seguimiento (no aparece en pendientes/vencidas)
+// Colores de estado: amarillo por iniciar · verde iniciada · azul finalizada · rojo tachado cancelada · fucsia pide atención
+const EST_CLS={Pendiente:'e-ini','En Progreso':'e-cur',Completada:'e-fin',Cerrada:'e-fin','No cumplida':'e-can'};
+const EST_TXT={Pendiente:'Por iniciar','En Progreso':'Iniciada',Completada:'Finalizada',Cerrada:'Cerrada','No cumplida':'No cumplida'};
 function tResuelta(t){if(t.cancelada)return true;const e=eglobal(t);return e==='Completada'||e==='Cerrada'||e==='No cumplida';}
 // Fecha/hora efectiva de una sección: su propia fecha o, si no tiene, la general de la tarea
 function secFecha(t,sec){return t.secciones?.[sec]?.fecha||t.fecha||null;}
@@ -2877,7 +2890,7 @@ function renderTareas(){
       </div>
       <div class="t-midbar tint" style="--sc:${cardColor};padding:10px 14px;background:${cardBg};display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;cursor:pointer" onclick="togT('${t.id}')">
         <div class="t-badges-row" style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
-          ${t.cancelada?`<span class="bg" style="background:var(--ros);color:var(--ro);font-weight:800" title="${escH(t.cancelada.motivo||'')}">🚫 CANCELADA</span>`:`<span class="bg ${bEst[eg]||'bgr'}">${eg}</span>`}
+          ${t.cancelada?`<span class="bg e-can" style="font-weight:800;text-decoration:underline" title="${escH(t.cancelada.motivo||'')}">🚫 CANCELADA</span>`:`<span class="bg ${EST_CLS[eg]||'bgr'}">${EST_TXT[eg]||eg}</span>`}
           ${t.prioridad?`<span class="bg ${bPri[t.prioridad]||'bgr'}">${escH(t.prioridad)}</span>`:''}
           ${t.fecha?`<span class="bg bgr" style="${vencida?'color:var(--ro);font-weight:700':''}">${vencida?'⚠️ ':'🗓️ '}${fmt(t.fecha)}</span>`:''}
           ${t.lugar?`<span class="bg bgr">📍 ${escH(t.lugar)}</span>`:''}
@@ -8509,8 +8522,9 @@ function renderPantalla(){
     const sa=!who&&!hecha(sv)&&!t.cancelada;
     const cl=sa?'sa':sv.estado==='Completada'||sv.estado==='Cerrada'?'ok':secEnCurso(t,k)||sv.estado==='En Progreso'?'ec':'pe';
     return `<span class="${cl}">${SECCIONES[k]?.ico||''} ${k}${sa?' · ⚠️ SIN ASIGNAR':who?' · '+escH(who):''}</span>`;}).join('');
-  const item=(x,atr)=>{const t=x.t,curso=!atr&&ptEnCurso(t,d.f0),canc=!!t.cancelada,pc=ptPosibleCancel(t);
-    return `<div class="pt-it${canc?' canc':tResuelta(t)?' hecho':''}${curso?' curso':''}"><div class="pt-t">${canc?'🚫 ':''}${escH(t.titulo||'(Sin título)')}</div>
+  const item=(x,atr)=>{const t=x.t,curso=!atr&&!tResuelta(t)&&ptEnCurso(t,d.f0),canc=!!t.cancelada,pc=ptPosibleCancel(t);
+    const eg=eglobal(t),sc=canc||eg==='No cumplida'?'can':curso||eg==='En Progreso'?'cur':eg==='Completada'||eg==='Cerrada'?'fin':'ini';
+    return `<div class="pt-it s-${sc}${canc?' canc':tResuelta(t)?' hecho':''}${curso?' curso':''}"><div class="pt-t">${canc?'🚫 ':''}${escH(t.titulo||'(Sin título)')}</div>
       <div class="pt-m">${atr?`<span class="pt-hr">${fmtPubFecha(x.f)}</span>`:`<span class="pt-hr">${t.hora?txtHora(t.hora)+(t.horaFin?' a '+txtHora(t.horaFin):''):'Sin hora'}</span>`}${t.lugar?' · 📍 '+escH(t.lugar):''}</div>
       ${curso?'<div class="pt-tag verde">🟢 EN CURSO AHORA</div>':''}${canc?`<div class="pt-tag rojo">🚫 CANCELADA${t.cancelada.motivo?' · '+escH(t.cancelada.motivo):''}</div>`:''}${pc?'<div class="pt-tag ambar">⚠️ Posible cancelación: verificar con Operaciones</div>':''}
       <div class="pt-ch">${chips(t)}</div></div>`;};
@@ -8526,7 +8540,8 @@ function renderPantalla(){
     +caja('hoy','📍 Hoy',cap1(fmtPubFecha(d.f0)),d.col.hoy,d.pc.hoy,false,'No hay actividades para hoy')
     +caja('man','➡️ Mañana',cap1(fmtPubFecha(d.f1)),d.col.man,d.pc.man,false,'No hay actividades para mañana');
   const dia=f=>cap1(new Date(f+'T12:00:00').toLocaleDateString('es-PA',{weekday:'short',day:'numeric'}).replace('.',''));
-  document.getElementById('ptSem').innerHTML=d.sem.length?`<div class="pt-sh">🗓️ Esta semana</div><div class="pt-sl">${d.sem.map(x=>`<span class="pt-si${x.t.cancelada?' canc':''}"><b>${dia(x.f)}</b>${x.t.hora?' '+txtHora(x.t.hora):''} · ${x.t.cancelada?'🚫 ':''}${escH(x.t.titulo||'')}</span>`).join('')}</div>`:`<div class="pt-sh">🗓️ Esta semana</div><div class="pt-sl"><span class="pt-si">Sin más actividades programadas en los próximos 7 días</span></div>`;
+  const ley=`<div class="pt-leyenda"><span class="e-ini">🟡 Por iniciar</span><span class="e-cur">🟢 Iniciada</span><span class="e-fin">🔵 Finalizada</span><span class="e-can" style="text-decoration:underline">🔴 Cancelada</span><span class="e-att">⚠️ Sin asignar</span></div>`;
+  document.getElementById('ptSem').innerHTML=(d.sem.length?`<div class="pt-sh">🗓️ Esta semana</div><div class="pt-sl">${d.sem.map(x=>`<span class="pt-si${x.t.cancelada?' canc':''}"><b>${dia(x.f)}</b>${x.t.hora?' '+txtHora(x.t.hora):''} · ${x.t.cancelada?'🚫 ':''}${escH(x.t.titulo||'')}</span>`).join('')}</div>`:`<div class="pt-sh">🗓️ Esta semana</div><div class="pt-sl"><span class="pt-si">Sin más actividades programadas en los próximos 7 días</span></div>`)+ley;
 }
 setInterval(()=>{if(document.getElementById('vPantalla')&&!document.getElementById('vPantalla').classList.contains('oculto'))renderPantalla();},60000);
 
