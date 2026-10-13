@@ -116,6 +116,8 @@ test("la bitácora solo crece y los pedidos e histórico no se borran sin ser L�
   assert.deepEqual(r.bitacora.map(b => b.accion), ["Nueva", "Antes"]);
   assert.equal(r.pedidos.length, 1);
   assert.equal(r.historico.length, 1);
+  const sinPedidos = copia(base()); sinPedidos.pedidos = [];
+  assert.equal(aplicarReglasRol(sinPedidos, base(), LIDER).pedidos.length, 0);
   const vacia = copia(base()); vacia.bitacora = [];
   assert.equal(aplicarReglasRol(vacia, base(), COLAB).bitacora.length, 1);
 });

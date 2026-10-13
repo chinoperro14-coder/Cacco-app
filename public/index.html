@@ -1874,6 +1874,7 @@ function puede(accion){
     case 'crearTarea':    return ['lider','editor','colaborador'].includes(niv);
     case 'editarTarea':   return ['lider','editor'].includes(niv);
     case 'eliminarTarea': return niv==='lider';
+    case 'eliminarPedido': return niv==='lider';
     case 'descartarBorrador': return ['lider','editor'].includes(niv);
     case 'marcarAvance':  return ['lider','editor','colaborador'].includes(niv);
     case 'registrarHora': return ['lider','editor','colaborador'].includes(niv);
@@ -3076,8 +3077,23 @@ function renderPedHist(){
       ${extra.length?`<div style="font-size:12px;color:var(--tm);margin-top:6px;line-height:1.5">${extra.join('<br>')}</div>`:''}
       ${htmlCorrs(p)}
       ${ab?`<div style="font-size:12.5px;line-height:1.5;background:var(--su2);border-radius:6px;padding:10px 12px;margin-top:8px;white-space:pre-wrap;max-height:360px;overflow:auto">${escH(p.nota||'Este pedido llegó antes de que el tablero guardara el texto completo. Los datos de arriba son los que quedaron registrados.')}</div>`:''}
-      ${t?`<div style="margin-top:8px"><button class="btn bgh bsm" onclick="abrirTareaDe('${t.id}')">${!t.borrador?'📋 Abrir la tarea':p.unido?'📝 Abrir el borrador':'📝 Ver en la bandeja'}</button></div>`:''}
+      ${t||puede('eliminarPedido')?`<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">${t?`<button class="btn bgh bsm" onclick="abrirTareaDe('${t.id}')">${!t.borrador?'📋 Abrir la tarea':p.unido?'📝 Abrir el borrador':'📝 Ver en la bandeja'}</button>`:''}${puede('eliminarPedido')?`<button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro);margin-left:auto" onclick="eliminarPedido('${escH(p.folio)}')">🗑 Eliminar pedido</button>`:''}</div>`:''}
     </div>`;}).join('')}</div>`;
+}
+// Solo el Líder borra un pedido (por ejemplo, uno de prueba). Si llegó solo como borrador, el borrador se va con él;
+// si ya se unió a una actividad o se aceptó, la actividad se queda, sin el pedido.
+async function eliminarPedido(folio){
+  if(!puede('eliminarPedido'))return;
+  const p=(E.pedidos||[]).find(x=>x.folio===folio);if(!p)return;
+  const t=E.tareas.find(x=>x.id===p.tareaId),va=t&&t.borrador&&!p.unido;
+  const queda=!t?'':va?`\n\nEl borrador «${t.titulo}» también se quita.`:`\n\nLa actividad «${t.titulo}» se queda en el tablero, sin el pedido.`;
+  if(!await confirmar(`Se borra el pedido ${folio} de ${p.area||'la oficina'} («${p.titulo||'sin título'}») y su historial. No se puede deshacer.${queda}`,{tit:'🗑 Eliminar pedido',ok:'Eliminar',peligro:true}))return;
+  E.pedidos=E.pedidos.filter(x=>x!==p);
+  if(va){E.tareas=E.tareas.filter(x=>x.id!==t.id);expandidas.delete(t.id);}
+  else if(t&&t.pedido?.folio===folio)delete t.pedido;
+  pedAbiertos.delete(folio);
+  reg('Pedido eliminado',`${folio} de ${p.area||''}: "${p.titulo||''}"${t?(va?' · se quitó su borrador':` · «${t.titulo}» se queda sin el pedido`):''} (por ${uAct?.nombre})`);
+  guardar();refrescarVistaAbierta();
 }
 function abrirTareaDe(id){
   const t=E.tareas.find(x=>x.id===id);if(!t)return;
@@ -8442,6 +8458,7 @@ function refrescarVistaAbierta(){
     if(vis('vPantalla'))renderPantalla();
     if(vis('vPrensa'))renderPrensa();
     if(vis('vTareas'))renderTareas();
+    if(vis('vPedidos'))renderPedHist();
     if(vis('vHorasExtra'))renderHoras();
     if(vis('vPermisos'))renderPermisos();
     if(vis('vCompensatorio'))renderComp();
