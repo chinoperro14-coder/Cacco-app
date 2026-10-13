@@ -5810,7 +5810,7 @@ function renderCal(){
           const col=SECCIONES[sec]?.color||'#888';const ico=SECCIONES[sec]?.ico||'📌';
           return`<div onclick="irATarea('${t.id}')" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;background:${col}15;border-left:3px solid ${col};margin-bottom:4px">
             <span style="font-size:13px;flex-shrink:0">${ico}</span>
-            <span style="font-size:13px;font-weight:600;color:var(--tx);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="color:${col};font-weight:700">${sec}</span> — ${escH(t.titulo)}</span>
+            <span style="font-size:13px;font-weight:600;color:var(--tx);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="color:${col};font-weight:700">${sec}</span> — ${t.cancelada?'🚫 ':''}<span${t.cancelada?' style="text-decoration:line-through;color:var(--ro)"':''}>${escH(t.titulo)}</span></span>
             ${hora?`<span style="font-size:11px;color:var(--tm);flex-shrink:0">${hora}</span>`:''}
           </div>`;
         }),
@@ -5821,7 +5821,7 @@ function renderCal(){
           const bor=t.borrador;
           return`<div onclick="irATarea('${t.id}')" title="${bor?'Borrador: falta confirmar si se cubre':''}" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;${bor?'background:transparent;border:1px dashed var(--bo);border-left:3px dashed #9ca3af;opacity:.75':`background:${col}15;border-left:3px solid ${col}`};margin-bottom:4px">
             <span style="font-size:13px;flex-shrink:0">${bor?'📝':ico}</span>
-            <span style="font-size:13px;font-weight:600;color:${bor?'var(--tm)':'var(--tx)'};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escH(t.titulo)}</span>
+            <span style="font-size:13px;font-weight:600;color:${bor?'var(--tm)':'var(--tx)'};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap${t.cancelada?';text-decoration:line-through;color:var(--ro)':''}">${t.cancelada?'🚫 ':''}${escH(t.titulo)}</span>
             ${t.hora?`<span style="font-size:11px;color:var(--tm);flex-shrink:0">${t.hora}</span>`:''}
           </div>`;
         }),
@@ -5855,7 +5855,7 @@ function renderCal(){
     const totalEv=td.length+av.length+secEvs.length;
     const eventosSec=secEvs.slice(0,3).map(({t,sec})=>{
       const col=SECCIONES[sec]?.color||'#888';const ico=SECCIONES[sec]?.ico||'📌';
-      return`<a class="cev" onclick="irATarea('${t.id}')" title="${sec} — ${escH(t.titulo)}" style="background:${col}20;border-left:3px solid ${col}">${ico} ${sec}: ${escH(t.titulo)}</a>`;
+      return`<a class="cev" onclick="irATarea('${t.id}')" title="${sec} — ${escH(t.titulo)}" style="background:${col}20;border-left:3px solid ${col}${t.cancelada?';text-decoration:line-through;color:var(--ro)':''}">${t.cancelada?'🚫':ico} ${sec}: ${escH(t.titulo)}</a>`;
     });
     const slotsT=Math.max(0,3-secEvs.length);
     const eventosT=td.slice(0,slotsT).map(t=>{
@@ -5864,7 +5864,7 @@ function renderCal(){
       const ico=sec?SECCIONES[sec].ico:'📌';
       const recIco=t.recurrencia&&t.recurrencia!=='ninguna'&&t.fecha!==fs?' 🔁':'';
       if(t.borrador)return`<a class="cev" onclick="irATarea('${t.id}')" title="Borrador (falta confirmar): ${escH(t.titulo)}" style="background:transparent;border:1px dashed var(--bo);border-left:3px dashed #9ca3af;color:var(--tm);opacity:.8">📝 ${escH(t.titulo)}</a>`;
-      return`<a class="cev" onclick="irATarea('${t.id}')" title="${escH(t.titulo)}" style="background:${col}20;border-left:3px solid ${col}">${ico} ${escH(t.titulo)}${recIco}</a>`;
+      return`<a class="cev" onclick="irATarea('${t.id}')" title="${escH(t.titulo)}" style="background:${col}20;border-left:3px solid ${col}${t.cancelada?';text-decoration:line-through;color:var(--ro)':''}">${t.cancelada?'🚫':ico} ${escH(t.titulo)}${recIco}</a>`;
     });
     const slots=Math.max(0,3-secEvs.length-td.length);
     const eventosAV=av.slice(0,slots).map(a=>
