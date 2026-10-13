@@ -2,24 +2,54 @@
 // Convierte un pedido en un borrador de tarea. Lo usa el servidor (app.js) y también la página de prueba,
 // por eso no depende de Node ni del navegador.
 (function (raiz) {
-  // Comunicaciones no aparece: es el equipo que recibe los pedidos
-  const AREAS = ["Administración", "Dirección", "Desarrollo Social", "Coordinación de Arte y Cultura", "Educación Artística y Cultural", "Otra"];
-  const SERVICIOS = {
-    cobertura: { lbl: "Cobertura de fotos y video", secs: ["Audiovisual"] },
-    diseno:    { lbl: "Diseño de una pieza (afiche, arte, invitación)", secs: ["Diseño"] },
-    prensa:    { lbl: "Prensa, radio o TV", secs: ["Medios"] },
-    protocolo: { lbl: "Protocolo (maestro de ceremonia, logística)", secs: ["Protocolo"] },
-  };
+  // Este archivo es la única fuente de las oficinas, servicios, preguntas y largos del formulario:
+  // lo usan el servidor, la página /pedido y el tablero (se publica en /pedidos.js).
 
-  // Preguntas que salen al marcar cada servicio: [clave, etiqueta en la nota, largo máximo]
-  const PREGUNTAS = {
-    cobertura: [["llegada", "Llegada del equipo", 5], ["momentos", "Momentos clave", 300], ["invitados", "Invitados importantes", 300]],
-    diseno:    [["nombre", "Nombre de la pieza", 120], ["tipo", "Tipo", 60], ["formato", "Formatos", 300], ["textos", "Textos", 1000]],
-    prensa:    [["vocero", "Vocero", 120], ["voceroContacto", "Contacto del vocero", 120]],
-    protocolo: [["programa", "Programa", 1000], ["invitados", "Invitados a mencionar", 300]],
+  // Comunicaciones no aparece: es el equipo que recibe los pedidos. «clave»: inicio de la clave de acceso de cada oficina.
+  const AREAS = ["Administración", "Dirección", "Desarrollo Social", "Coordinación de Arte y Cultura", "Educación Artística y Cultural", "Otra"];
+  const PREFIJO_CLAVE = { "Administración": "adm", "Dirección": "dir", "Desarrollo Social": "dsoc", "Coordinación de Arte y Cultura": "arte",
+    "Educación Artística y Cultural": "educ", "Otra": "otra" };
+  // lbl: en el formulario y la nota · corto: en el tablero · secs: secciones de la tarea que se abren
+  const SERVICIOS = {
+    cobertura: { ico: "📸", lbl: "Cobertura de fotos y video", corto: "Fotos y video", secs: ["Audiovisual"] },
+    diseno:    { ico: "🎨", lbl: "Diseño de una pieza (afiche, arte, invitación)", corto: "Diseño", secs: ["Diseño"] },
+    prensa:    { ico: "📰", lbl: "Prensa, radio o TV", corto: "Prensa", secs: ["Medios"] },
+    protocolo: { ico: "🎤", lbl: "Protocolo (maestro de ceremonia, logística)", corto: "Protocolo", secs: ["Protocolo"] },
   };
-  // «difusion» ya no se pide por el formulario (depende de la situación con las redes); queda el ícono para pedidos viejos
-  const SERV_ICO = { cobertura: "📸", diseno: "🎨", difusion: "📱", prensa: "📰", protocolo: "🎤" };
+  // «difusion» ya no se pide por el formulario (depende de la situación con las redes); queda para pedidos viejos
+  const SERVICIOS_VIEJOS = { difusion: { ico: "📱", lbl: "Difusión en redes", corto: "Redes", secs: [] } };
+
+  // Preguntas que salen al marcar cada servicio.
+  // c: clave · nota: cómo aparece en la nota de la tarea · max: largo máximo (el formulario no deja escribir más)
+  // tipo: text, area (varias líneas), time, uno (elegir una opción), varios (marcar varias), entrega (fecha del diseño)
+  const PREGUNTAS = {
+    cobertura: [
+      { c: "llegada", nota: "Llegada del equipo", max: 5, pregunta: "¿A qué hora debe llegar el equipo?", tipo: "time" },
+      { c: "momentos", nota: "Momentos clave", max: 300, pregunta: "Momentos clave que no se pueden perder", tipo: "text", ayuda: "ej. palabras de la directora, entrega de certificados" },
+      { c: "invitados", nota: "Invitados importantes", max: 300, pregunta: "Invitados importantes", tipo: "text", ayuda: "ej. ministra, alcalde, embajador" },
+    ],
+    diseno: [
+      { c: "nombre", nota: "Nombre de la pieza", max: 120, pregunta: "Nombre de la pieza", tipo: "text", ayuda: "ej. Afiche Gala de Danza" },
+      { c: "tipo", nota: "Tipo", max: 60, pregunta: "Tipo de pieza", tipo: "uno",
+        opciones: ["Afiche", "Invitación", "Post para redes", "Historia", "Banner o lona", "Certificado", "Video corto", "Otro"] },
+      { c: "formato", nota: "Formatos", max: 300, pregunta: "Formatos (marca los que necesites)", tipo: "varios",
+        opciones: ["Redes cuadrado (1080×1080)", "Redes vertical (1080×1350)", "Historia o reel (1080×1920)", "Impreso tamaño carta", "Impreso 11×17", "Pantalla horizontal (16:9)", "Otro (explícalo en Textos)"] },
+      { c: "entrega", pregunta: "¿Para cuándo necesitas el diseño?", tipo: "entrega" },
+      { c: "textos", nota: "Textos", max: 1000, pregunta: "Textos que deben aparecer", tipo: "area", ayuda: "Título, fecha, hora, lugar, organizadores…" },
+    ],
+    prensa: [
+      { c: "vocero", nota: "Vocero", max: 120, pregunta: "Vocero o persona a entrevistar", tipo: "text", ayuda: "Nombre y cargo" },
+      { c: "voceroContacto", nota: "Contacto del vocero", max: 120, pregunta: "Contacto del vocero", tipo: "text", ayuda: "Teléfono o correo" },
+    ],
+    protocolo: [
+      { c: "programa", nota: "Programa", max: 1000, pregunta: "Programa o guion de la actividad", tipo: "area", ayuda: "Orden del acto, quién habla y cuándo" },
+      { c: "invitados", nota: "Invitados a mencionar", max: 300, pregunta: "Invitados especiales a mencionar", tipo: "text", ayuda: "Nombres y cargos" },
+    ],
+  };
+  // Largo máximo de cada campo del formulario (por el id del campo en /pedido)
+  const LARGOS = { areaOtra: 60, nombre: 80, contacto: 120, actividad: 140, lugar: 120, descripcion: 1500, material: 300,
+    pfNombre: 80, pfCargo: 80, pfTel: 40, pfCorreo: 120, corrT: 800, corrN: 80, clave: 40, cClave: 40 };
+  const infoServicio = k => SERVICIOS[k] || SERVICIOS_VIEJOS[k] || { ico: "•", lbl: k, corto: k, secs: [] };
 
   // Horario laboral: lunes a viernes de 8:00 a 16:00. Lo de fuera se cubre con horas extra (tiempo compensatorio).
   const INI_LAB = 8 * 60, FIN_LAB = 16 * 60, DURACION_SUP = 120;
@@ -81,10 +111,11 @@
     const b = body && typeof body === "object" ? body : {};
     if (b.web) return { error: "No se pudo enviar el pedido." };              // campo trampa para robots
     const area = AREAS.includes(b.area) ? b.area : null;
-    const areaOtra = limpiar(b.areaOtra, 60);
-    const nombre = limpiar(b.nombre, 80), contacto = limpiar(b.contacto, 120);
-    const titulo = limpiar(b.actividad, 140), lugar = limpiar(b.lugar, 120);
-    const descripcion = limpiar(b.descripcion, 1500, true);
+    const L = LARGOS;
+    const areaOtra = limpiar(b.areaOtra, L.areaOtra);
+    const nombre = limpiar(b.nombre, L.nombre), contacto = limpiar(b.contacto, L.contacto);
+    const titulo = limpiar(b.actividad, L.actividad), lugar = limpiar(b.lugar, L.lugar);
+    const descripcion = limpiar(b.descripcion, L.descripcion, true);
     const servicios = (Array.isArray(b.servicios) ? b.servicios : []).filter(k => SERVICIOS[k]);
     const fecha = String(b.fecha || ""), hora = String(b.hora || ""), horaFin = String(b.horaFin || "");
     const entrega = String(b.entrega || "");
@@ -102,7 +133,7 @@
     if (entrega && (!esFecha(entrega) || entrega < ctx.hoy)) return { error: "La fecha de entrega del diseño no es válida." };
     if (material === null) return { error: "El enlace al material no es válido: cópialo completo, empezando por https://" };
     const pf = b.puntoFocal && typeof b.puntoFocal === "object" ? b.puntoFocal : {};
-    const focal = { nombre: limpiar(pf.nombre, 80), cargo: limpiar(pf.cargo, 80), telefono: limpiar(pf.telefono, 40), correo: limpiar(pf.correo, 120) };
+    const focal = { nombre: limpiar(pf.nombre, L.pfNombre), cargo: limpiar(pf.cargo, L.pfCargo), telefono: limpiar(pf.telefono, L.pfTel), correo: limpiar(pf.correo, L.pfCorreo) };
     if (!focal.nombre) return { error: "Escribe el nombre del punto focal de la actividad." };
     if (!focal.telefono) return { error: "Escribe el teléfono del punto focal." };
     // Respuestas de cada servicio marcado
@@ -110,9 +141,8 @@
     const detalles = {};
     servicios.forEach(k => {
       const r = {};
-      (PREGUNTAS[k] || []).forEach(([c, , max]) => { const v = limpiar(det[k] && det[k][c], max, max > 300); if (v) r[c] = v; });
+      (PREGUNTAS[k] || []).filter(q => q.max).forEach(q => { const v = limpiar(det[k] && det[k][q.c], q.max, q.tipo === "area"); if (v) r[q.c] = v; });
       if (r.llegada && !esHora(r.llegada)) delete r.llegada;
-      if (r.desde && !esFecha(r.desde)) delete r.desde;
       if (Object.keys(r).length) detalles[k] = r;
     });
     // El horario solo importa cuando el equipo tiene que estar en la actividad (cobertura); un diseño no depende de él
@@ -124,9 +154,8 @@
       secciones[s] = { responsables: [], estado: "Pendiente", completadoPor: null, completadoEn: null, fecha: null, hora: null };
     }));
     if (secciones["Diseño"] && entrega) secciones["Diseño"].fecha = entrega;
-    const valor = (k, c, v) => c === "desde" ? fechaLarga(v) : v.replace(/\n/g, "\n     ");
     const bloques = servicios.filter(k => detalles[k]).map(k =>
-      `${SERV_ICO[k]} ${SERVICIOS[k].lbl}:\n` + (PREGUNTAS[k] || []).filter(([c]) => detalles[k][c]).map(([c, et]) => `   • ${et}: ${valor(k, c, detalles[k][c])}`).join("\n"));
+      `${SERVICIOS[k].ico} ${SERVICIOS[k].lbl}:\n` + PREGUNTAS[k].filter(q => detalles[k][q.c]).map(q => `   • ${q.nota}: ${detalles[k][q.c].replace(/\n/g, "\n     ")}`).join("\n"));
     const notas = [
       `📨 Pedido ${ctx.folio} de ${nomArea}, recibido el ${fechaLarga(ctx.hoy)} por el formulario de pedidos.`,
       `👤 Lo pide: ${nombre} · ${contacto}`,
@@ -176,7 +205,7 @@
   function nuevaCorreccion(body, ctx) {
     const b = body && typeof body === "object" ? body : {};
     const campos = (Array.isArray(b.campos) ? b.campos : []).filter(c => CAMPOS_CORR.includes(c));
-    const texto = limpiar(b.texto, 800, true), nombre = limpiar(b.nombre, 80);
+    const texto = limpiar(b.texto, LARGOS.corrT, true), nombre = limpiar(b.nombre, LARGOS.corrN);
     if (!campos.length) return { error: "Marca qué hay que corregir." };
     if (!texto) return { error: "Escribe cuál es el dato correcto." };
     if (!nombre) return { error: "Escribe tu nombre." };
@@ -191,7 +220,7 @@
     if (t.cancelada) return { ...base, estado: "Cancelada", motivo: t.cancelada.motivo || "" };
     if (t.borrador) return { ...base, estado: "En revisión" };
     const nom = id => ((equipo || []).find(p => p && p.id === id) || {}).nombre;
-    const secs = [...new Set((reg.servicios || []).flatMap(k => (SERVICIOS[k] || { secs: [] }).secs))];
+    const secs = [...new Set((reg.servicios || []).flatMap(k => infoServicio(k).secs))];
     const detalle = secs.filter(s => t.secciones && t.secciones[s]).map(s => {
       const sv = t.secciones[s];
       return { seccion: s, estado: ESTADO_SEC[sv.estado] || sv.estado || "Por hacer", responsables: (sv.responsables || []).map(nom).filter(Boolean) };
@@ -203,6 +232,6 @@
   const normFolio = f => { const n = String(f || "").match(/\d+/); return n ? "P-" + String(parseInt(n[0], 10)).padStart(4, "0") : ""; };
   const siguienteFolio = registros => "P-" + String((registros || []).length + 1).padStart(4, "0");
 
-  const api = { AREAS, SERVICIOS, PREGUNTAS, fueraDeHorario, choquesHorario, limpiar, pedidoATarea, siguienteFolio, buscarDuplicado, estadoPedido, normFolio, CAMPOS_CORR, nuevaCorreccion };
+  const api = { AREAS, PREFIJO_CLAVE, SERVICIOS, PREGUNTAS, LARGOS, infoServicio, fueraDeHorario, choquesHorario, limpiar, pedidoATarea, siguienteFolio, buscarDuplicado, estadoPedido, normFolio, CAMPOS_CORR, nuevaCorreccion };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else raiz.CaccoPedidos = api;
 })(this);

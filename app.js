@@ -1,35 +1,42 @@
 require("dotenv").config();
 const express  = require("express");
-const cors     = require("cors");
 const path     = require("path");
 const fs       = require("fs");
+const crypto   = require("crypto");
+const zlib     = require("zlib");
 const bcrypt   = require("bcrypt");
 const jwt      = require("jsonwebtoken");
-const PDFDocument = require("pdfkit");
 const mongoose = require("mongoose");
+const { validarDatos, aplicarReglasRol, NIVELES, limitador } = require("./reglas");
 
 const app        = express();
 // La clave de las sesiones nunca va en el código (el repositorio es público).
 // Sin JWT_SECRET se usa una clave aleatoria por arranque: las sesiones se cierran al reiniciar.
-const JWT_SECRET = process.env.JWT_SECRET || require("crypto").randomBytes(48).toString("hex");
+const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(48).toString("hex");
 if (!process.env.JWT_SECRET)
   console.warn("⚠️  Falta JWT_SECRET — usando clave temporal. Defínela en Render (Environment) para que las sesiones duren.");
 const PORT       = process.env.PORT || 3000;
 const MONGO_URI  = process.env.MONGODB_URI?.includes("xxxxx") ? null : process.env.MONGODB_URI;
+// En Render los archivos locales se borran en cada despliegue: sin MongoDB no se arranca (se perderían los datos)
+if (!MONGO_URI && process.env.RENDER) {
+  console.error("❌ Falta MONGODB_URI en Render. Sin base de datos los cambios se perderían en el próximo despliegue.");
+  process.exit(1);
+}
+// Carpeta de los datos locales (desarrollo y pruebas). En producción todo va en MongoDB.
+const DIR_DATOS = process.env.CACCO_DATOS ? path.resolve(process.env.CACCO_DATOS) : __dirname;
+const nuevoId = (n = 6) => Date.now().toString(36) + crypto.randomBytes(n).toString("hex");
 
-app.use(cors());
-app.use(express.json({ limit: "5mb" }));
-// Solo se publica la interfaz y sus imágenes; nunca data.json, users.json, el código del servidor ni archivos ocultos.
-const EXT_PUBLICAS = new Set([".png", ".jpg", ".jpeg", ".svg", ".ico", ".webp", ".woff", ".woff2"]);
+app.disable("x-powered-by");
+app.set("trust proxy", 1);   // Render pone un proxy delante: req.ip es la IP real de quien se conecta
 app.use((req, res, next) => {
-  if (req.path === "/" || req.path === "/pedido" || req.path.startsWith("/api/")) return next();
-  const ext = path.extname(req.path).toLowerCase();
-  const oculto = req.path.split("/").some(seg => seg.startsWith(".") || seg === "node_modules" || seg === "backups" || seg === "adjuntos");
-  if (EXT_PUBLICAS.has(ext) && !oculto) return next();
-  res.status(404).end();
+  res.set({ "X-Content-Type-Options": "nosniff", "X-Frame-Options": "SAMEORIGIN", "Referrer-Policy": "same-origin" });
+  next();
 });
-// Las imágenes se guardan en el navegador por una semana (no se bajan en cada visita)
-app.use(express.static(__dirname, { dotfiles: "deny", index: false, maxAge: "7d" }));
+app.use(express.json({ limit: "5mb" }));
+// Lo único que se publica tal cual son las imágenes de public/. Las páginas van comprimidas (más abajo)
+// y nunca se sirven los datos, las contraseñas ni el código del servidor.
+app.use(express.static(path.join(__dirname, "public"), { dotfiles: "deny", index: false, maxAge: "7d",
+  setHeaders: (res, ruta) => { if (ruta.endsWith(".html")) res.set("Cache-Control", "no-cache"); } }));
 
 // ════════════════════════
 //  MODELOS MONGODB
@@ -40,7 +47,8 @@ const UserSchema = new mongoose.Schema({
   email:    { type: String, required: true, unique: true },
   password: { type: String, required: true },
   nivel:    { type: String, required: true },
-  ultimo:   { type: Date }
+  ultimo:   { type: Date },
+  claveCambiada: { type: Date }   // las sesiones abiertas antes de esta fecha dejan de valer
 });
 const DataModel = mongoose.models.AppData || mongoose.model("AppData", DataSchema);
 const UserModel = mongoose.models.AppUser || mongoose.model("AppUser", UserSchema);
@@ -48,28 +56,49 @@ const UserModel = mongoose.models.AppUser || mongoose.model("AppUser", UserSchem
 // ════════════════════════
 //  HELPERS DE DATOS
 // ════════════════════════
-// Fallback a archivos locales si no hay MongoDB (desarrollo sin .env)
-const DATA_FILE  = path.join(__dirname, "data.json");
-const USERS_FILE = path.join(__dirname, "users.json");
+// Sin MongoDB (desarrollo y pruebas) se usan archivos locales
+const DATA_FILE  = path.join(DIR_DATOS, "data.json");
+const USERS_FILE = path.join(DIR_DATOS, "users.json");
 function leerJSONLocal(file, def) {
   try { if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, "utf8")); } catch {}
   return def;
 }
 
-async function leerData() {
-  if (!MONGO_URI) return leerJSONLocal(DATA_FILE, {});
-  const doc = await DataModel.findById("main");
-  return doc ? doc.payload : {};
+// Copia en memoria de los datos (hay un solo servidor). Cada versión tiene su huella (ETag): la página
+// pregunta «¿cambió algo?» y solo baja todo cuando cambió. Se relee de la base cada 30 s por si alguien la cambió directo.
+let cache = null;
+function ponerCache(payload) {
+  const json = JSON.stringify(payload);
+  cache = { payload, json, huella: crypto.createHash("sha1").update(json).digest("base64url").slice(0, 20), leido: Date.now(), variantes: {} };
+  return cache;
 }
+async function estadoData() {
+  if (cache && Date.now() - cache.leido < 30e3) return cache;
+  let payload;
+  if (!MONGO_URI) payload = leerJSONLocal(DATA_FILE, {});
+  else { const doc = await DataModel.findById("main").lean(); payload = doc ? doc.payload : {}; }
+  return ponerCache(payload || {});
+}
+// Cada quien recibe su propia copia: cambiarla no toca la de memoria
+async function leerData() { return JSON.parse((await estadoData()).json); }
 async function escribirData(data) {
-  if (!MONGO_URI) { fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2)); return; }
-  await DataModel.findByIdAndUpdate("main", { payload: data }, { upsert: true, new: true });
+  if (!MONGO_URI) fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+  else await DataModel.findByIdAndUpdate("main", { payload: data }, { upsert: true });
+  return ponerCache(JSON.parse(JSON.stringify(data)));
 }
+// Los cambios a los datos van de uno en uno (leer → cambiar → guardar), para que dos guardados a la vez no se pisen
+let cola = Promise.resolve();
+function enCola(fn) { const r = cola.then(fn, fn); cola = r.catch(() => {}); return r; }
+
+let cacheUsers = null;
 async function leerUsers() {
-  if (!MONGO_URI) return leerJSONLocal(USERS_FILE, []);
-  return await UserModel.find({}).lean();
+  if (cacheUsers && Date.now() - cacheUsers.t < 15e3) return cacheUsers.lista;
+  const lista = MONGO_URI ? await UserModel.find({}).lean() : leerJSONLocal(USERS_FILE, []);
+  cacheUsers = { t: Date.now(), lista };
+  return lista;
 }
 async function escribirUser(u) {
+  cacheUsers = null;
   if (!MONGO_URI) {
     const arr = leerJSONLocal(USERS_FILE, []);
     const i = arr.findIndex(x => x.id === u.id);
@@ -79,6 +108,7 @@ async function escribirUser(u) {
   await UserModel.findOneAndUpdate({ id: u.id }, u, { upsert: true, new: true });
 }
 async function eliminarUser(id) {
+  cacheUsers = null;
   if (!MONGO_URI) {
     const arr = leerJSONLocal(USERS_FILE, []).filter(u => u.id !== id);
     fs.writeFileSync(USERS_FILE, JSON.stringify(arr, null, 2)); return;
@@ -89,15 +119,24 @@ async function eliminarUser(id) {
 // ════════════════════════
 //  MIDDLEWARE JWT
 // ════════════════════════
-function verificarToken(req, res, next) {
-  const auth = req.headers["authorization"];
-  if (!auth) return res.status(401).json({ error: "Sin token" });
+// Solo vale una sesión de una cuenta que sigue existiendo; el nivel es el que tiene hoy (si el Líder lo cambia,
+// rige de inmediato). Los enlaces firmados de adjuntos no sirven como sesión.
+const firmarSesion = (u, recordar) => jwt.sign({ id: u.id, email: u.email, nivel: u.nivel, typ: "ses" }, JWT_SECRET, { expiresIn: recordar ? "30d" : "8h" });
+async function verificarToken(req, res, next) {
+  const m = /^Bearer\s+(\S+)$/.exec(req.headers["authorization"] || "");
+  if (!m) return res.status(401).json({ error: "Sin sesión" });
+  let p;
+  try { p = jwt.verify(m[1], JWT_SECRET); } catch { return res.status(401).json({ error: "La sesión venció. Vuelve a entrar." }); }
+  if (!p || p.adj !== undefined || (p.typ && p.typ !== "ses") || !p.id) return res.status(401).json({ error: "Sesión no válida" });
   try {
-    req.usuario = jwt.verify(auth.split(" ")[1], JWT_SECRET);
+    const u = (await leerUsers()).find(x => x.id === p.id);
+    if (!u || !NIVELES.includes(u.nivel)) return res.status(401).json({ error: "Tu cuenta ya no existe. Habla con el Líder." });
+    if (u.claveCambiada && p.iat < Math.floor(new Date(u.claveCambiada).getTime() / 1000))
+      return res.status(401).json({ error: "La contraseña cambió. Vuelve a entrar." });
+    req.usuario = { id: u.id, email: u.email, nivel: u.nivel };
+    req.sesionLarga = p.exp - p.iat > 86400;   // entró con «Recordarme»
     next();
-  } catch {
-    return res.status(401).json({ error: "Token inválido o expirado" });
-  }
+  } catch { res.status(500).json({ error: "No se pudo revisar la sesión" }); }
 }
 function soloLider(req, res, next) {
   if (req.usuario?.nivel !== "lider")
@@ -143,54 +182,70 @@ async function regresoSiAusente(userId, nivel) {
 const msgAusente = r => `🌴 Estás de tiempo compensatorio. Tu acceso se habilita el ${r.split("-").reverse().join("/")}.`;
 
 // ════════════════════════
-//  RUTA PRINCIPAL
+//  PÁGINAS
 // ════════════════════════
-// Las páginas se mandan comprimidas (gzip): la principal baja de ~600 KB a una fracción
-const zlib = require("zlib");
-const paginas = {};
-function enviarPagina(archivo) {
+// Las páginas se mandan comprimidas (gzip): la principal baja de ~650 KB a una fracción.
+// Cada respuesta lleva su huella (ETag): si el navegador ya tiene esa versión, solo recibe «sin cambios».
+function mandarComprimido(req, res, cuerpo, tipo, huella) {
+  res.set({ "Content-Type": tipo, "Vary": "Accept-Encoding", "Cache-Control": "no-cache", ...(huella ? { ETag: huella } : {}) });
+  if (huella && String(req.headers["if-none-match"] || "").split(/\s*,\s*/).some(h => h.replace(/^W\//, "") === huella)) return res.status(304).end();
+  if (!/\bgzip\b/.test(req.headers["accept-encoding"] || "")) return res.send(cuerpo.texto);
+  res.set("Content-Encoding", "gzip").send(cuerpo.gz());
+}
+const archivos = {};
+function enviarArchivo(ruta, tipo) {
   return (req, res) => {
-    const ruta = path.join(__dirname, archivo);
-    if (!/\bgzip\b/.test(req.headers["accept-encoding"] || "")) return res.sendFile(ruta);
     try {
       const mtime = fs.statSync(ruta).mtimeMs;
-      if (!paginas[archivo] || paginas[archivo].mtime !== mtime)
-        paginas[archivo] = { mtime, gz: zlib.gzipSync(fs.readFileSync(ruta), { level: 9 }) };
-      res.set({ "Content-Type": "text/html; charset=utf-8", "Content-Encoding": "gzip", "Vary": "Accept-Encoding", "Cache-Control": "no-cache" });
-      res.send(paginas[archivo].gz);
-    } catch { res.sendFile(ruta); }
+      if (!archivos[ruta] || archivos[ruta].mtime !== mtime) {
+        const texto = fs.readFileSync(ruta), gz = zlib.gzipSync(texto, { level: 9 });
+        archivos[ruta] = { mtime, texto, gz: () => gz, huella: `"${crypto.createHash("sha1").update(texto).digest("base64url").slice(0, 16)}"` };
+      }
+      mandarComprimido(req, res, archivos[ruta], tipo, archivos[ruta].huella);
+    } catch { res.status(404).end(); }
   };
 }
-app.get("/", enviarPagina("index.html"));
-app.get("/pedido", enviarPagina("pedido.html"));
+const HTML = "text/html; charset=utf-8";
+app.get("/", enviarArchivo(path.join(__dirname, "public", "index.html"), HTML));
+app.get("/pedido", enviarArchivo(path.join(__dirname, "public", "pedido.html"), HTML));
+// Oficinas, servicios, preguntas y largos del formulario: un solo archivo que usan el servidor, /pedido y el tablero
+app.get("/pedidos.js", enviarArchivo(path.join(__dirname, "pedidos.js"), "application/javascript; charset=utf-8"));
 
 // ════════════════════════
 //  PEDIDOS DE OTRAS ÁREAS (formulario público, sin sesión)
 // ════════════════════════
 // Cada pedido entra como borrador de tarea. Como el formulario es público, se limita cuántos
 // pedidos puede enviar cada conexión y cuántos borradores de pedidos pueden esperar revisión.
-const { pedidoATarea, siguienteFolio, buscarDuplicado, estadoPedido, normFolio, nuevaCorreccion, fueraDeHorario, choquesHorario } = require("./pedidos");
-const PEDIDOS_POR_HORA = 5, PEDIDOS_SIN_REVISAR = 40;
-const enviosPorIp = new Map();
+const { AREAS, pedidoATarea, siguienteFolio, buscarDuplicado, estadoPedido, normFolio, nuevaCorreccion, fueraDeHorario, choquesHorario } = require("./pedidos");
+const PEDIDOS_SIN_REVISAR = 40;
+const envios = limitador(5, 3600e3);                 // pedidos o correcciones por conexión y hora
 // Claves de acceso del formulario: una por oficina. La clave dice de qué oficina viene el pedido, así que la
 // oficina no se elige a mano y cada una solo consulta sus propios folios. Líder y Editor las ven y las cambian.
 // Viven en data.config.clavesPedidos y solo se cambian por /api/pedidos/claves (nunca con un guardado normal).
-const { AREAS } = require("./pedidos");
-const clavesFallidas = new Map(), CLAVE_FALLOS_POR_HORA = 10;
+const fallosClave = limitador(10, 3600e3);           // claves equivocadas por conexión y hora
+const fallosClaveTodos = limitador(100, 3600e3);     // y en total: frena a quien prueba claves desde muchas conexiones
 const puedeClave = u => ["lider", "editor"].includes(u?.nivel);
-const ipDe = req => String(req.headers["x-forwarded-for"] || "").split(",").pop().trim() || req.ip;
+const ahoraPanama = () => {
+  const d = new Date(), tz = { timeZone: "America/Panama" };
+  return { hora: d.toLocaleTimeString("es-PA", { ...tz, hour: "2-digit", minute: "2-digit" }),
+           fecha: d.toLocaleDateString("es-PA", { ...tz, day: "2-digit", month: "short", year: "numeric" }) };
+};
 const oficinaDeClave = (data, clave) => {
   const c = String(clave || "").trim().toLowerCase();
   if (!c) return null;
   return Object.entries(data.config?.clavesPedidos || {}).find(([a, k]) => AREAS.includes(a) && k && k.toLowerCase() === c)?.[0] || null;
 };
-// Revisa la clave (con límite de intentos fallidos por conexión). Devuelve la oficina, o null si ya respondió el error.
+// Revisa la clave (con límite de intentos fallidos). Devuelve la oficina, o null si ya respondió el error.
 function oficinaValida(req, res, data, msg) {
-  const ip = ipDe(req), ahora = Date.now(), fallas = (clavesFallidas.get(ip) || []).filter(t => ahora - t < 3600e3);
-  if (fallas.length >= CLAVE_FALLOS_POR_HORA) { res.status(429).json({ error: "Demasiados intentos con una clave incorrecta. Intenta de nuevo en una hora." }); return null; }
+  if (fallosClave.lleno(req.ip) || fallosClaveTodos.lleno("*")) {
+    res.status(429).json({ error: "Demasiados intentos con una clave incorrecta. Intenta de nuevo en una hora." }); return null;
+  }
   if (!Object.values(data.config?.clavesPedidos || {}).some(Boolean)) { res.status(403).json({ error: "El formulario todavía no está activo. Pide la clave al equipo de Comunicaciones." }); return null; }
   const area = oficinaDeClave(data, req.body?.clave);
-  if (!area) { clavesFallidas.set(ip, [...fallas, ahora]); res.status(403).json({ error: msg || "La clave de acceso no es correcta. Pídela a tu jefatura o al equipo de Comunicaciones.", clave: true }); return null; }
+  if (!area) {
+    fallosClave.sumar(req.ip); fallosClaveTodos.sumar("*");
+    res.status(403).json({ error: msg || "La clave de acceso no es correcta. Pídela a tu jefatura o al equipo de Comunicaciones.", clave: true }); return null;
+  }
   return area;
 }
 app.get("/api/pedidos/claves", verificarToken, async (req, res) => {
@@ -202,14 +257,16 @@ app.post("/api/pedidos/claves", verificarToken, async (req, res) => {
   if (!puedeClave(req.usuario)) return res.status(403).json({ error: "Sin permiso" });
   const area = String(req.body?.area || ""), clave = String(req.body?.clave || "").trim();
   if (!AREAS.includes(area)) return res.status(400).json({ error: "Oficina no válida" });
-  if (clave && !/^[\p{L}\p{N}-]{4,30}$/u.test(clave)) return res.status(400).json({ error: "La clave debe tener de 4 a 30 letras o números, sin espacios." });
+  if (clave && !/^[\p{L}\p{N}-]{8,40}$/u.test(clave)) return res.status(400).json({ error: "La clave debe tener de 8 a 40 letras o números, sin espacios." });
   try {
-    const data = await leerData(), claves = { ...(data.config?.clavesPedidos || {}) };
-    if (clave && Object.entries(claves).some(([a, k]) => a !== area && k && k.toLowerCase() === clave.toLowerCase()))
-      return res.status(400).json({ error: "Esa clave ya la usa otra oficina." });
-    if (clave) claves[area] = clave; else delete claves[area];
-    data.config = { ...(data.config || {}), clavesPedidos: claves };
-    await escribirData(data); res.json({ ok: true, claves });
+    await enCola(async () => {
+      const data = await leerData(), claves = { ...(data.config?.clavesPedidos || {}) };
+      if (clave && Object.entries(claves).some(([a, k]) => a !== area && k && k.toLowerCase() === clave.toLowerCase()))
+        return res.status(400).json({ error: "Esa clave ya la usa otra oficina." });
+      if (clave) claves[area] = clave; else delete claves[area];
+      data.config = { ...(data.config || {}), clavesPedidos: claves };
+      await escribirData(data); res.json({ ok: true, claves });
+    });
   } catch { res.status(500).json({ error: "No se pudo guardar la clave" }); }
 });
 // El formulario pregunta de qué oficina es la clave para mostrarlo antes de enviar
@@ -218,36 +275,33 @@ app.post("/api/pedidos/oficina", async (req, res) => {
   catch { res.status(500).json({ error: "No se pudo revisar la clave" }); }
 });
 app.post("/api/pedidos", async (req, res) => {
-  // Render agrega la IP real al final de X-Forwarded-For (lo anterior lo puede escribir cualquiera)
-  const ip = ipDe(req), ahora = Date.now(), recientes = (enviosPorIp.get(ip) || []).filter(t => ahora - t < 3600e3);
-  if (recientes.length >= PEDIDOS_POR_HORA)
+  if (envios.lleno(req.ip))
     return res.status(429).json({ error: "Ya enviaste varios pedidos en la última hora. Si es urgente, escribe directamente al equipo de Comunicaciones." });
   try {
-    const data = await leerData();
-    const area = oficinaValida(req, res, data); if (!area) return;
-    data.tareas = data.tareas || []; data.pedidos = data.pedidos || []; data.notifs = data.notifs || [];
-    if (data.tareas.filter(t => t && t.borrador && t.pedido).length >= PEDIDOS_SIN_REVISAR)
-      return res.status(503).json({ error: "Hay muchos pedidos esperando revisión. Escribe directamente al equipo de Comunicaciones." });
-    const folio = siguienteFolio(data.pedidos);
-    const r = pedidoATarea({ ...req.body, area }, { hoy: hoyPanama(), folio, id: () => Date.now().toString(36) + require("crypto").randomBytes(6).toString("hex") });
-    if (r.error) return res.status(400).json({ error: r.error });
-    // El pedido siempre entra aparte, a la bandeja. Si ya hay una actividad parecida ese día solo se avisa:
-    // una persona decide en la bandeja si se une a ella, para no mezclar información sin revisar.
-    const parecida = buscarDuplicado(data.tareas, r.tarea);
-    if (parecida) r.registro.parecida = { id: parecida.id, titulo: parecida.titulo };
-    data.tareas.unshift(r.tarea);
-    data.pedidos.unshift(r.registro);
-    const ahoraPa = new Date(), tz = { timeZone: "America/Panama" };
-    const hora = ahoraPa.toLocaleTimeString("es-PA", { ...tz, hour: "2-digit", minute: "2-digit" });
-    data.notifs.unshift({ id: r.registro.id + "n", ico: "📨", ts: hora, sub: "Formulario de pedidos", txt: `Pedido ${folio} de ${r.registro.area}: ${r.tarea.titulo}` });
-    data.notifs = data.notifs.slice(0, 50);
-    data.bitacora = [{ id: r.registro.id + "b", fecha: ahoraPa.toLocaleDateString("es-PA", { ...tz, day: "2-digit", month: "short", year: "numeric" }), hora,
-      usuario: "Formulario de pedidos", accion: "Pedido recibido",
-      detalle: `${folio} de ${r.registro.area}: "${r.tarea.titulo}" (${r.tarea.fecha}) · pide ${r.registro.solicitante}${parecida ? ` · se parece a "${parecida.titulo}"` : ""}` },
-      ...(data.bitacora || [])].slice(0, 300);
-    await escribirData(data);
-    enviosPorIp.set(ip, [...recientes, ahora]);
-    res.json({ ok: true, folio });
+    await enCola(async () => {
+      const data = await leerData();
+      const area = oficinaValida(req, res, data); if (!area) return;
+      data.tareas = data.tareas || []; data.pedidos = data.pedidos || []; data.notifs = data.notifs || [];
+      if (data.tareas.filter(t => t && t.borrador && t.pedido).length >= PEDIDOS_SIN_REVISAR)
+        return res.status(503).json({ error: "Hay muchos pedidos esperando revisión. Escribe directamente al equipo de Comunicaciones." });
+      const folio = siguienteFolio(data.pedidos);
+      const r = pedidoATarea({ ...req.body, area }, { hoy: hoyPanama(), folio, id: () => nuevoId(6) });
+      if (r.error) return res.status(400).json({ error: r.error });
+      // El pedido siempre entra aparte, a la bandeja. Si ya hay una actividad parecida ese día solo se avisa:
+      // una persona decide en la bandeja si se une a ella, para no mezclar información sin revisar.
+      const parecida = buscarDuplicado(data.tareas, r.tarea);
+      if (parecida) r.registro.parecida = { id: parecida.id, titulo: parecida.titulo };
+      data.tareas.unshift(r.tarea);
+      data.pedidos.unshift(r.registro);
+      const { hora, fecha } = ahoraPanama();
+      data.notifs = [{ id: r.registro.id + "n", ico: "📨", ts: hora, sub: "Formulario de pedidos", txt: `Pedido ${folio} de ${r.registro.area}: ${r.tarea.titulo}` }, ...data.notifs].slice(0, 50);
+      data.bitacora = [{ id: r.registro.id + "b", fecha, hora, usuario: "Formulario de pedidos", accion: "Pedido recibido",
+        detalle: `${folio} de ${r.registro.area}: "${r.tarea.titulo}" (${r.tarea.fecha}) · pide ${r.registro.solicitante}${parecida ? ` · se parece a "${parecida.titulo}"` : ""}` },
+        ...(data.bitacora || [])].slice(0, 300);
+      await escribirData(data);
+      envios.sumar(req.ip);
+      res.json({ ok: true, folio });
+    });
   } catch { res.status(500).json({ error: "No se pudo enviar el pedido. Intenta de nuevo en unos minutos." }); }
 });
 // Mientras llena el formulario, la oficina ve si su horario choca con otras actividades del equipo
@@ -260,14 +314,14 @@ app.post("/api/pedidos/horario", async (req, res) => {
     res.json({ fuera: fueraDeHorario(fecha, hora, horaFin), choques: choquesHorario(data.tareas, fecha, hora, horaFin) });
   } catch { res.status(500).json({ error: "No se pudo revisar el horario" }); }
 });
+// Cada oficina solo ve sus pedidos (con la clave de «Otra», los que entraron con esa clave)
+const pedidoDeOficina = (data, folio, area) => folio && (data.pedidos || []).find(p => p && p.folio === folio && (p.claveDe || p.area) === area);
 // La oficina consulta en qué va su pedido con el folio y la misma clave del formulario
 app.post("/api/pedidos/estado", async (req, res) => {
   try {
     const data = await leerData();
     const area = oficinaValida(req, res, data); if (!area) return;
-    const folio = normFolio(req.body?.folio);
-    // Cada oficina solo ve sus pedidos (con la clave de «Otra», los que entraron con esa clave)
-    const reg = folio && (data.pedidos || []).find(p => p && p.folio === folio && (p.claveDe || p.area) === area);
+    const folio = normFolio(req.body?.folio), reg = pedidoDeOficina(data, folio, area);
     if (!reg) return res.status(404).json({ error: `No encontramos el pedido ${folio || "con ese número"} de tu oficina. Revisa el folio.` });
     res.json(estadoPedido(reg, data.tareas, data.equipo));
   } catch { res.status(500).json({ error: "No se pudo consultar el pedido. Intenta de nuevo en unos minutos." }); }
@@ -276,51 +330,54 @@ app.post("/api/pedidos/estado", async (req, res) => {
 // Si la oficina se equivocó al llenar el pedido, pide una corrección con el folio y su clave.
 // No cambia la tarea: queda en la bandeja del equipo hasta que alguien la aplica.
 app.post("/api/pedidos/correccion", async (req, res) => {
-  const ip = ipDe(req), ahora = Date.now(), recientes = (enviosPorIp.get(ip) || []).filter(t => ahora - t < 3600e3);
-  if (recientes.length >= PEDIDOS_POR_HORA)
+  if (envios.lleno(req.ip))
     return res.status(429).json({ error: "Ya enviaste varios mensajes en la última hora. Si es urgente, escribe directamente al equipo de Comunicaciones." });
   try {
-    const data = await leerData();
-    const area = oficinaValida(req, res, data); if (!area) return;
-    const folio = normFolio(req.body?.folio);
-    const reg = folio && (data.pedidos || []).find(p => p && p.folio === folio && (p.claveDe || p.area) === area);
-    if (!reg) return res.status(404).json({ error: `No encontramos el pedido ${folio || "con ese número"} de tu oficina. Revisa el folio.` });
-    if ((reg.correcciones || []).length >= 10) return res.status(400).json({ error: "Este pedido ya tiene muchas correcciones. Escribe directamente al equipo de Comunicaciones." });
-    const ahoraPa = new Date(), tz = { timeZone: "America/Panama" };
-    const hora = ahoraPa.toLocaleTimeString("es-PA", { ...tz, hour: "2-digit", minute: "2-digit" });
-    const r = nuevaCorreccion(req.body, { hoy: hoyPanama(), hora, id: () => Date.now().toString(36) + require("crypto").randomBytes(4).toString("hex") });
-    if (r.error) return res.status(400).json({ error: r.error });
-    reg.correcciones = [...(reg.correcciones || []), r.correccion];
-    const txt = `${folio} "${reg.titulo}": ${r.correccion.campos.join(", ")} → ${r.correccion.texto}`;
-    data.notifs = [{ id: r.correccion.id + "n", ico: "✏️", ts: hora, sub: "Formulario de pedidos", txt: `Corrección pedida en ${txt}` }, ...(data.notifs || [])].slice(0, 50);
-    data.bitacora = [{ id: r.correccion.id + "b", fecha: ahoraPa.toLocaleDateString("es-PA", { ...tz, day: "2-digit", month: "short", year: "numeric" }), hora,
-      usuario: "Formulario de pedidos", accion: "Pedido: corrección pedida", detalle: `${txt} (pide ${r.correccion.nombre}, ${reg.area})` }, ...(data.bitacora || [])].slice(0, 300);
-    await escribirData(data);
-    enviosPorIp.set(ip, [...recientes, ahora]);
-    res.json({ ok: true });
+    await enCola(async () => {
+      const data = await leerData();
+      const area = oficinaValida(req, res, data); if (!area) return;
+      const folio = normFolio(req.body?.folio), reg = pedidoDeOficina(data, folio, area);
+      if (!reg) return res.status(404).json({ error: `No encontramos el pedido ${folio || "con ese número"} de tu oficina. Revisa el folio.` });
+      if ((reg.correcciones || []).length >= 10) return res.status(400).json({ error: "Este pedido ya tiene muchas correcciones. Escribe directamente al equipo de Comunicaciones." });
+      const { hora, fecha } = ahoraPanama();
+      const r = nuevaCorreccion(req.body, { hoy: hoyPanama(), hora, id: () => nuevoId(4) });
+      if (r.error) return res.status(400).json({ error: r.error });
+      reg.correcciones = [...(reg.correcciones || []), r.correccion];
+      const txt = `${folio} "${reg.titulo}": ${r.correccion.campos.join(", ")} → ${r.correccion.texto}`;
+      data.notifs = [{ id: r.correccion.id + "n", ico: "✏️", ts: hora, sub: "Formulario de pedidos", txt: `Corrección pedida en ${txt}` }, ...(data.notifs || [])].slice(0, 50);
+      data.bitacora = [{ id: r.correccion.id + "b", fecha, hora, usuario: "Formulario de pedidos", accion: "Pedido: corrección pedida",
+        detalle: `${txt} (pide ${r.correccion.nombre}, ${reg.area})` }, ...(data.bitacora || [])].slice(0, 300);
+      await escribirData(data);
+      envios.sumar(req.ip);
+      res.json({ ok: true });
+    });
   } catch { res.status(500).json({ error: "No se pudo enviar la corrección. Intenta de nuevo en unos minutos." }); }
 });
 
 // ════════════════════════
 //  LOGIN
 // ════════════════════════
+// Un solo mensaje de error (no dice si el correo existe) y un límite de intentos fallidos por conexión y por cuenta
+const fallosLogin = limitador(10, 15 * 60e3), fallosCuenta = limitador(10, 15 * 60e3);
+const HASH_FALSO = bcrypt.hashSync("cacco-no-existe", 10);
 app.post("/api/login", async (req, res) => {
-  const { email, password, recordar } = req.body;
-  if (!email || !password)
-    return res.status(400).json({ error: "Email y contraseña requeridos" });
+  const email = String(req.body?.email || "").toLowerCase().trim(), password = String(req.body?.password || "");
+  if (!email || !password) return res.status(400).json({ error: "Escribe tu correo y tu contraseña." });
+  if (fallosLogin.lleno(req.ip) || fallosCuenta.lleno(email))
+    return res.status(429).json({ error: "Demasiados intentos fallidos. Espera 15 minutos y vuelve a probar." });
   try {
-    const users = await leerUsers();
-    const user  = users.find(u => u.email === email.toLowerCase().trim());
-    if (!user) return res.status(401).json({ error: "Usuario no encontrado" });
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(401).json({ error: "Contraseña incorrecta" });
+    const user = (await leerUsers()).find(u => u.email === email);
+    const valid = await bcrypt.compare(password, user?.password || HASH_FALSO);
+    if (!user || !valid) {
+      fallosLogin.sumar(req.ip); fallosCuenta.sumar(email);
+      return res.status(401).json({ error: "Correo o contraseña incorrectos." });
+    }
+    fallosCuenta.limpiar(email);
     const regreso = await regresoSiAusente(user.id, user.nivel);
     if (regreso) return res.status(403).json({ error: msgAusente(regreso) });
-    const expira = recordar ? "30d" : "8h";
-    const token = jwt.sign({ id: user.id, email: user.email, nivel: user.nivel }, JWT_SECRET, { expiresIn: expira });
     marcarActivo(user.id);
-    res.json({ token, userId: user.id });
-  } catch (e) { res.status(500).json({ error: "Error interno" }); }
+    res.json({ token: firmarSesion(user, req.body?.recordar), userId: user.id });
+  } catch { res.status(500).json({ error: "Error interno" }); }
 });
 app.post("/api/actividad", verificarToken, (req, res) => { marcarActivo(req.usuario.id); res.json({ ok: true }); });
 // Solo Líder y Editor ven cuándo usó cada quien el tablero por última vez
@@ -336,53 +393,32 @@ app.get("/api/actividad", verificarToken, async (req, res) => {
 // ════════════════════════
 //  DATOS COMPARTIDOS
 // ════════════════════════
+// La página pregunta cada pocos segundos si hubo cambios (con la huella de lo que ya tiene): si no los hubo,
+// la respuesta es «sin cambios» y no baja nada. Cuando sí, los datos van comprimidos.
+// Las claves del formulario de pedidos solo las reciben Líder y Editor.
+function versionPara(c, conClaves) {
+  const k = conClaves ? "c" : "s";
+  if (!c.variantes[k]) {
+    let texto = c.json;
+    if (!conClaves && c.payload.config) {
+      const { clavePedidos, clavesPedidos, ...config } = c.payload.config;
+      texto = JSON.stringify({ ...c.payload, config });
+    }
+    let gz = null;
+    c.variantes[k] = { texto, gz: () => gz || (gz = zlib.gzipSync(texto)), huella: `"${k}-${c.huella}"` };
+  }
+  return c.variantes[k];
+}
+// ¿La huella que manda la página es de la versión guardada ahora?
+const huellaVigente = (h, c) => String(h || "").replace(/^W\//, "").replace(/"/g, "").split("-").pop() === c.huella;
 app.get("/api/data", verificarToken, async (req, res) => {
   try {
-    const d = await leerData();
-    if (d.config && !puedeClave(req.usuario)) d.config = { ...d.config, clavePedidos: undefined, clavesPedidos: undefined };
-    res.json(d);
+    const v = versionPara(await estadoData(), puedeClave(req.usuario));
+    res.set("Vary", "Accept-Encoding, Authorization");
+    mandarComprimido(req, res, v, "application/json; charset=utf-8", v.huella);
   }
   catch { res.status(500).json({ error: "Error leyendo datos" }); }
 });
-// Las solicitudes de permiso no se borran: si un guardado omite alguna que ya existe, se conserva.
-// Reglas por rol que el servidor hace cumplir aunque alguien salte la interfaz:
-// - nadie salvo el Líder cambia niveles ni agrega personas al equipo
-// - un colaborador no aprueba ni rechaza horas, compensatorios ni permisos (los suyos nuevos quedan «Pendiente»)
-function aplicarReglasRol(nuevo, actual, nivel) {
-  if (!nuevo || typeof nuevo !== "object" || nivel === "lider") return nuevo;
-  const previos = new Map((actual.equipo || []).map(p => [p.id, p]));
-  if (Array.isArray(nuevo.equipo))
-    nuevo.equipo = [
-      ...nuevo.equipo.filter(p => p && previos.has(p.id)).map(p => ({ ...p, nivel: previos.get(p.id).nivel })),
-      ...[...previos.values()].filter(p => !nuevo.equipo.some(q => q && q.id === p.id))
-    ];
-  if (nivel === "colaborador") {
-    for (const col of ["horasExtra", "permisos"]) {
-      if (!Array.isArray(nuevo[col])) continue;
-      const ant = new Map((actual[col] || []).map(r => [r && r.id, r]));
-      nuevo[col] = nuevo[col].map(r => {
-        if (!r) return r;
-        const a = ant.get(r.id);
-        if (!a) return ["Aprobado", "Rechazado"].includes(r.aprobacion) ? { ...r, aprobacion: "Pendiente", aprobadoPor: undefined, fechaAprob: undefined } : r;
-        if (r.aprobacion !== a.aprobacion && ["Aprobado", "Rechazado"].includes(r.aprobacion))
-          return { ...r, aprobacion: a.aprobacion, aprobadoPor: a.aprobadoPor, fechaAprob: a.fechaAprob };
-        return r;
-      });
-    }
-  }
-  return nuevo;
-}
-async function conservarPermisos(nuevo, actual) {
-  if (!nuevo || typeof nuevo !== "object") return nuevo;
-  actual = actual || await leerData();
-  const previos = Array.isArray(actual?.permisos) ? actual.permisos : [];
-  if (!previos.length) return nuevo;
-  const lista = Array.isArray(nuevo.permisos) ? nuevo.permisos : [];
-  const ids = new Set(lista.map(p => p && p.id));
-  const faltan = previos.filter(p => p && p.id && !ids.has(p.id));
-  if (faltan.length) nuevo.permisos = [...lista, ...faltan];
-  return nuevo;
-}
 // ════════════════════════
 //  RESPALDO DIARIO
 // ════════════════════════
@@ -390,7 +426,7 @@ async function conservarPermisos(nuevo, actual) {
 // Se guardan los últimos 30 días. Solo el Líder los ve y los descarga. No incluye contraseñas ni adjuntos.
 const RespaldoModel = mongoose.models.AppRespaldo || mongoose.model("AppRespaldo",
   new mongoose.Schema({ _id: String, creado: Date, payload: mongoose.Schema.Types.Mixed }));
-const RESP_DIAS = 30, RESP_DIR = path.join(__dirname, "backups"), RESP_RE = /^respaldo-(\d{4}-\d{2}-\d{2})\.json$/;
+const RESP_DIAS = 30, RESP_DIR = path.join(DIR_DATOS, "backups"), RESP_RE = /^respaldo-(\d{4}-\d{2}-\d{2})\.json$/;
 let respaldoHecho = "";
 async function respaldoDiario(actual) {
   const dia = hoyPanama();
@@ -441,17 +477,31 @@ app.get("/api/respaldos/:fecha", verificarToken, soloLider, async (req, res) => 
   } catch { res.status(500).json({ error: "No se pudo leer el respaldo" }); }
 });
 
+// Guardar: la página manda todos los datos con la huella de la versión que tenía (If-Match). Si otra persona
+// guardó en medio, se responde 409 y la página vuelve a traer lo último, junta sus cambios y reintenta.
+// Las reglas de cada nivel (reglas.js) se aplican aquí aunque alguien salte la interfaz.
 app.post("/api/data", verificarToken, async (req, res) => {
   try {
-    if (req.usuario?.nivel === "lector") return res.status(403).json({ error: "Solo lectura" });
-    marcarActivo(req.usuario?.id);
-    const regreso = await regresoSiAusente(req.usuario?.id, req.usuario?.nivel);
+    if (req.usuario.nivel === "lector") return res.status(403).json({ error: "Solo lectura" });
+    const error = validarDatos(req.body);
+    if (error) return res.status(400).json({ error });
+    marcarActivo(req.usuario.id);
+    const regreso = await regresoSiAusente(req.usuario.id, req.usuario.nivel);
     if (regreso) return res.status(403).json({ error: msgAusente(regreso) });
-    const actual = await leerData();
-    await respaldoDiario(actual);
-    const nuevo = await conservarPermisos(aplicarReglasRol(req.body, actual, req.usuario?.nivel), actual);
-    if (nuevo && typeof nuevo === "object") { if (actual.config) nuevo.config = actual.config; else delete nuevo.config; }   // la clave solo cambia por su ruta
-    await escribirData(nuevo); res.json({ ok: true });
+    await enCola(async () => {
+      const c = await estadoData();
+      if (req.headers["if-match"] && !huellaVigente(req.headers["if-match"], c))
+        return res.status(409).json({ error: "Otra persona guardó cambios. Se juntan y se vuelve a guardar.", conflicto: true });
+      const actual = JSON.parse(c.json);
+      await respaldoDiario(actual);
+      const enviado = JSON.stringify(req.body);
+      const nuevo = aplicarReglasRol(req.body, actual, req.usuario);
+      if (actual.config) nuevo.config = actual.config; else delete nuevo.config;   // las claves solo cambian por su ruta
+      const { config: _a, ...sinConfig } = nuevo, { config: _b, ...enviadoSin } = JSON.parse(enviado);
+      const guardado = await escribirData(nuevo);
+      // «ajustado»: el servidor deshizo algo que ese nivel no puede hacer; la página vuelve a cargar lo guardado
+      res.json({ ok: true, huella: versionPara(guardado, puedeClave(req.usuario)).huella, ajustado: JSON.stringify(sinConfig) !== JSON.stringify(enviadoSin) });
+    });
   }
   catch { res.status(500).json({ error: "No se pudo guardar" }); }
 });
@@ -475,7 +525,7 @@ const ADJ_TIPOS = {
 const ADJ_EN_LINEA = new Set(["pdf", "png", "jpg", "jpeg", "webp", "gif"]);   // se abren en el navegador; el resto se descarga
 const AdjuntoSchema = new mongoose.Schema({ _id: String, meta: mongoose.Schema.Types.Mixed, fileId: mongoose.Schema.Types.ObjectId });
 const AdjuntoModel = mongoose.models.AppAdjunto || mongoose.model("AppAdjunto", AdjuntoSchema);
-const ADJ_DIR = path.join(__dirname, "adjuntos"), ADJ_FILE = path.join(__dirname, "adjuntos.json");
+const ADJ_DIR = path.join(DIR_DATOS, "adjuntos"), ADJ_FILE = path.join(DIR_DATOS, "adjuntos.json");
 const bucketAdj = () => new mongoose.mongo.GridFSBucket(mongoose.connection.db, { bucketName: "adjuntos" });
 
 async function listarAdj() {
@@ -523,7 +573,7 @@ async function escritorAdj(req, res) {
   return (data.equipo || []).find(p => p.id === req.usuario?.id)?.nombre || req.usuario?.email || "—";
 }
 // Cada archivo se abre con un enlace firmado de pocas horas: así sirve en <img>, en otra pestaña o en el celular sin enviar la sesión.
-const conEnlaceAdj = a => a.enlace ? a : { ...a, url: `/api/adjuntos/${encodeURIComponent(a.id)}/archivo?t=${jwt.sign({ adj: a.id }, JWT_SECRET, { expiresIn: "12h" })}` };
+const conEnlaceAdj = a => a.enlace ? a : { ...a, url: `/api/adjuntos/${encodeURIComponent(a.id)}/archivo?t=${jwt.sign({ adj: a.id, typ: "adj" }, JWT_SECRET, { expiresIn: "12h" })}` };
 
 app.get("/api/adjuntos", verificarToken, async (req, res) => {
   try {
@@ -543,7 +593,7 @@ app.post("/api/adjuntos/archivo", verificarToken, cuerpoArchivo, async (req, res
     const lista = await listarAdj(), usado = lista.reduce((s, a) => s + (a.tamano || 0), 0);
     if (usado + buf.length > ADJ_TOTAL) return res.status(413).json({ error: "Se llenó el espacio de adjuntos (400 MB). Borra archivos que ya no se usan o guarda los grandes en Drive como enlace." });
     const m = metaEditable({ ...req.query, nombre: req.query.nombre || archivo.replace(/\.[^.]+$/, "") });
-    const meta = { id: Date.now().toString(36) + require("crypto").randomBytes(4).toString("hex"), ...m, nombre: m.nombre || archivo,
+    const meta = { id: nuevoId(4), ...m, nombre: m.nombre || archivo,
       archivo, ext, tamano: buf.length, subidoPor: autor, subidoPorId: req.usuario.id, subidoEn: hoyPanama() };
     await guardarAdj(meta, buf);
     res.json({ ok: true, adjunto: conEnlaceAdj(meta) });
@@ -556,7 +606,7 @@ app.post("/api/adjuntos/enlace", verificarToken, async (req, res) => {
     if (!/^https?:\/\/[^\s]+\.[^\s]+/i.test(enlace)) return res.status(400).json({ error: "Pega un enlace completo, que empiece con https://" });
     const m = metaEditable(req.body || {});
     if (!m.nombre) return res.status(400).json({ error: "Escribe un nombre para el enlace." });
-    const meta = { id: Date.now().toString(36) + require("crypto").randomBytes(4).toString("hex"), ...m, enlace,
+    const meta = { id: nuevoId(4), ...m, enlace,
       subidoPor: autor, subidoPorId: req.usuario.id, subidoEn: hoyPanama() };
     await guardarAdj(meta);
     res.json({ ok: true, adjunto: meta });
@@ -593,7 +643,7 @@ app.delete("/api/adjuntos/:id", verificarToken, async (req, res) => {
 app.get("/api/adjuntos/:id/archivo", async (req, res) => {
   try {
     let ok = false;
-    try { ok = jwt.verify(String(req.query.t || ""), JWT_SECRET).adj === req.params.id; } catch {}
+    try { const p = jwt.verify(String(req.query.t || ""), JWT_SECRET); ok = !!p.adj && p.adj === req.params.id; } catch {}
     if (!ok) return res.status(401).send("Este enlace venció. Vuelve a abrir el archivo desde el dashboard.");
     const a = (await listarAdj()).find(x => x.id === req.params.id && !x.enlace);
     const flujo = a && await leerArchivoAdj(a.id);
@@ -613,404 +663,46 @@ app.get("/api/adjuntos/:id/archivo", async (req, res) => {
 //  GESTIÓN DE USUARIOS
 // ════════════════════════
 app.post("/api/users", verificarToken, soloLider, async (req, res) => {
-  const { id, email, password, nivel } = req.body;
-  if (!id || !email || !nivel)
-    return res.status(400).json({ error: "id, email y nivel requeridos" });
+  const { id, password } = req.body || {}, email = String(req.body?.email || "").toLowerCase().trim(), nivel = req.body?.nivel;
+  if (!id || !email || !nivel) return res.status(400).json({ error: "id, email y nivel requeridos" });
+  if (!NIVELES.includes(nivel)) return res.status(400).json({ error: "Nivel no válido" });
   try {
     const users = await leerUsers();
     const existe = users.find(u => u.id === id);
-    if (!existe && !password)
-      return res.status(400).json({ error: "Contraseña requerida para usuario nuevo" });
-    if (password && String(password).length < 8)
-      return res.status(400).json({ error: "La contraseña debe tener al menos 8 caracteres" });
-    const hashed = password ? await bcrypt.hash(password, 10) : existe?.password;
-    await escribirUser({ id, email: email.toLowerCase().trim(), password: hashed, nivel });
+    if (users.some(u => u.email === email && u.id !== id)) return res.status(400).json({ error: "Ese correo ya lo usa otra persona." });
+    if (!existe && !password) return res.status(400).json({ error: "Contraseña requerida para usuario nuevo" });
+    if (password && String(password).length < 8) return res.status(400).json({ error: "La contraseña debe tener al menos 8 caracteres" });
+    // Si el Líder pone una contraseña nueva, las sesiones abiertas de esa persona se cierran
+    const cambio = password ? { password: await bcrypt.hash(String(password), 10), claveCambiada: new Date() } : { password: existe.password };
+    await escribirUser({ id, email, nivel, ...cambio });
     res.json({ ok: true });
-  } catch (e) { res.status(500).json({ error: "Error guardando usuario" }); }
+  } catch { res.status(500).json({ error: "Error guardando usuario" }); }
 });
 
 app.delete("/api/users/:id", verificarToken, soloLider, async (req, res) => {
+  if (req.params.id === req.usuario.id) return res.status(400).json({ error: "No puedes eliminar tu propia cuenta." });
   try { await eliminarUser(req.params.id); res.json({ ok: true }); }
   catch { res.status(500).json({ error: "Error eliminando usuario" }); }
 });
 
+// Al cambiar la contraseña se cierran las demás sesiones de esa persona; esta recibe una sesión nueva
 app.post("/api/change-password", verificarToken, async (req, res) => {
-  const { passwordActual, passwordNueva } = req.body;
-  if (!passwordActual || !passwordNueva)
-    return res.status(400).json({ error: "Ambas contraseñas requeridas" });
-  if (passwordNueva.length < 8)
-    return res.status(400).json({ error: "Mínimo 8 caracteres" });
+  const passwordActual = String(req.body?.passwordActual || ""), passwordNueva = String(req.body?.passwordNueva || "");
+  if (!passwordActual || !passwordNueva) return res.status(400).json({ error: "Ambas contraseñas requeridas" });
+  if (passwordNueva.length < 8) return res.status(400).json({ error: "Mínimo 8 caracteres" });
+  if (fallosLogin.lleno(req.ip)) return res.status(429).json({ error: "Demasiados intentos fallidos. Espera 15 minutos." });
   try {
-    const users = await leerUsers();
-    const user  = users.find(u => u.id === req.usuario.id);
+    const user = (await leerUsers()).find(u => u.id === req.usuario.id);
     if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
-    const valid = await bcrypt.compare(passwordActual, user.password);
-    if (!valid) return res.status(401).json({ error: "Contraseña actual incorrecta" });
-    await escribirUser({ ...user, password: await bcrypt.hash(passwordNueva, 10) });
-    res.json({ ok: true });
-  } catch (e) { res.status(500).json({ error: "Error cambiando contraseña" }); }
+    if (!await bcrypt.compare(passwordActual, user.password)) { fallosLogin.sumar(req.ip); return res.status(401).json({ error: "Contraseña actual incorrecta" }); }
+    const claveCambiada = new Date(Math.floor(Date.now() / 1000) * 1000);
+    await escribirUser({ ...user, password: await bcrypt.hash(passwordNueva, 10), claveCambiada });
+    res.json({ ok: true, token: firmarSesion(user, req.sesionLarga) });
+  } catch { res.status(500).json({ error: "Error cambiando contraseña" }); }
 });
 
-// ════════════════════════
-//  GENERADOR DE PDF
-// ════════════════════════
-const FONT_REG  = path.join(__dirname, 'Calibri.ttf');
-const FONT_BOLD = path.join(__dirname, 'Calibrib.ttf');
-const FONT_ITAL = path.join(__dirname, 'Calibrii.ttf');
-const LOGO_PATH = path.join(__dirname, 'logo.png');
-const ICON_PATH = path.join(__dirname, 'icon.png');
-
-const OR = [232, 73, 28];
-const BK = [30,  30, 30];
-const G1 = [90,  90, 90];
-const G2 = [155,155,155];
-const VE = [15, 120, 75];
-const AZ = [22,  90,165];
-const RO = [185, 38, 38];
-const AM = [160,110,  0];
-const WH = [255,255,255];
-
-const NIVEL_NOM = { lider:'Coordinador/a', editor:'Editor/a', colaborador:'Colaborador/a' };
-const cap = s => (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'');
-
-function generarPDF(datos, tipo, generadoPor) {
-  const { tareas=[], equipo=[], horasExtra=[] } = datos;
-  const ahora   = new Date();
-  const hora    = ahora.toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit'});
-  const dLarga  = cap(ahora.toLocaleDateString('es-PA',{weekday:'long',year:'numeric',month:'long',day:'numeric'}));
-  const tipoLbl = {diario:'Diario',semanal:'Semanal',mensual:'Mensual'}[tipo]||'Diario';
-
-  let periodoSub = dLarga;
-  if (tipo==='semanal') {
-    const lun=new Date(ahora); lun.setDate(ahora.getDate()-((ahora.getDay()+6)%7));
-    const dom=new Date(lun); dom.setDate(lun.getDate()+6);
-    const fmt=d=>cap(d.toLocaleDateString('es-PA',{day:'numeric',month:'long'}));
-    periodoSub=`Semana del ${fmt(lun)} al ${fmt(dom)} de ${ahora.getFullYear()}`;
-  } else if (tipo==='mensual') {
-    periodoSub = cap(ahora.toLocaleDateString('es-PA',{month:'long',year:'numeric'}));
-  }
-
-  const eg = t => {
-    if (!t.secciones) return 'Pendiente';
-    const v = Object.values(t.secciones);
-    if (v.every(s=>s.estado==='Completada')) return 'Completada';
-    if (v.some(s=>s.estado==='En Progreso'||s.estado==='Completada')) return 'En Progreso';
-    return 'Pendiente';
-  };
-
-  const total = tareas.length;
-  const comp  = tareas.filter(t=>eg(t)==='Completada').length;
-  const prog  = tareas.filter(t=>eg(t)==='En Progreso').length;
-  const pct   = total ? Math.round(comp/total*100) : 0;
-  const hoyS  = ahora.toISOString().split('T')[0];
-  const venc  = tareas.filter(t=>t.fecha&&t.fecha<hoyS&&eg(t)!=='Completada');
-  const hapr  = horasExtra.filter(h=>h.aprobacion==='Aprobado'&&h.tipo!=='compensatorio');
-  const thrs  = hapr.reduce((s,h)=>s+parseFloat(h.horas||0),0);
-  const semCol = pct>=80?VE : pct>=50?AM : RO;
-  const semTxt = pct>=80?'VERDE — Rendimiento excelente'
-               : pct>=50?'AMARILLO — Rendimiento moderado'
-               :'ROJO — Requiere atencion inmediata';
-
-  const W=595.28, H=841.89;
-  const ML=52, MR=52, CW=W-ML-MR;
-  const FOOTER_Y = H-44;
-
-  const doc = new PDFDocument({size:'A4',margin:0,bufferPages:true,info:{
-    Title:`Reporte ${tipoLbl} — CACCO`, Author:generadoPor||'CACCO'
-  }});
-  doc.registerFont('R', FONT_REG);
-  doc.registerFont('B', FONT_BOLD);
-  doc.registerFont('I', FONT_ITAL);
-
-  let y = 0;
-  const chk = (n=20) => { if (y+n > FOOTER_Y) { doc.addPage(); y = 90; } };
-
-  // Helpers
-  const ln = (str, font, size, color, opts={}) => {
-    chk(size*1.6+4);
-    doc.font(font).fontSize(size).fillColor(color);
-    doc.text(str, ML, y, {width:CW, lineBreak:true, ...opts});
-    y = doc.y;
-  };
-
-  const gap = (n=8) => { y += n; };
-
-  const divider = (col=G2) => {
-    chk(10);
-    gap(4);
-    doc.moveTo(ML,y).lineTo(W-MR,y).lineWidth(0.5).strokeColor(col).stroke();
-    gap(8);
-  };
-
-  const secTitle = (label) => {
-    chk(28);
-    gap(6);
-    divider(OR);
-    doc.font('B').fontSize(8).fillColor(OR).fillOpacity(1);
-    doc.text(label.toUpperCase(), ML, y, {characterSpacing:1.5, width:CW});
-    y = doc.y + 6;
-  };
-
-  // Barra de progreso textual (bloques)
-  const pbarText = (pct) => {
-    const total = 10;
-    const filled = Math.round(pct/100*total);
-    const bar = '█'.repeat(filled) + '░'.repeat(total-filled);
-    return bar;
-  };
-
-  // ════════════════════════════════════════════════════════════════════════════
-  //  CABECERA (dibujada en todas las páginas al final con bufferPages)
-  // ════════════════════════════════════════════════════════════════════════════
-  const drawHeader = (pg) => {
-    doc.switchToPage(pg);
-    doc.rect(0,0,W,2).fill(OR);
-
-    const logoOk = fs.existsSync(LOGO_PATH);
-    const iconOk = fs.existsSync(ICON_PATH);
-    if (logoOk) {
-      doc.image(LOGO_PATH, ML, 14, {height:28, fit:[150,28]});
-    } else if (iconOk) {
-      doc.image(ICON_PATH, ML, 10, {width:36,height:36});
-      doc.font('B').fontSize(15).fillColor(OR).text('CACCO', ML+44, 18, {lineBreak:false});
-    } else {
-      doc.font('B').fontSize(16).fillColor(OR).text('CACCO', ML, 16, {lineBreak:false, characterSpacing:2});
-    }
-    doc.font('R').fontSize(7).fillColor(G2).text('Centro de Arte y Cultura de Colon', ML, 48, {lineBreak:false});
-
-    doc.font('B').fontSize(9).fillColor(OR)
-       .text(`REPORTE ${tipoLbl.toUpperCase()} DE COMUNICACIONES`, W-MR, 18,
-             {align:'right', width:W-MR-ML, lineBreak:false});
-    doc.font('R').fontSize(7.5).fillColor(G1)
-       .text(periodoSub, W-MR, 32, {align:'right', width:W-MR-ML, lineBreak:false});
-    doc.font('R').fontSize(7).fillColor(G2)
-       .text(`Generado: ${hora}  |  Por: ${generadoPor||'—'}`, W-MR, 46,
-             {align:'right', width:W-MR-ML, lineBreak:false});
-
-    doc.moveTo(ML,65).lineTo(W-MR,65).lineWidth(1).strokeColor(OR).stroke();
-  };
-
-  const drawFooter = (pg, tot) => {
-    doc.switchToPage(pg);
-    doc.moveTo(ML,FOOTER_Y).lineTo(W-MR,FOOTER_Y).lineWidth(0.5).strokeColor(OR).stroke();
-    doc.font('R').fontSize(7).fillColor(G2)
-       .text('CACCO — Centro de Arte y Cultura de Colon  |  Uso interno — Equipo de Comunicaciones',
-             ML, FOOTER_Y+8, {width:CW-50, lineBreak:false});
-    doc.font('B').fontSize(7).fillColor(OR)
-       .text(`${pg+1} / ${tot}`, W-MR-40, FOOTER_Y+8, {width:40, align:'right', lineBreak:false});
-  };
-
-  // ════════════════════════════════════════════════════════════════════════════
-  //  CONTENIDO
-  // ════════════════════════════════════════════════════════════════════════════
-  y = 80;
-
-  // ─── ESTADO GENERAL ────────────────────────────────────────────────────────
-  gap(6);
-  // Círculo de color estado
-  doc.circle(ML+7, y+7, 6).fill(semCol);
-  doc.font('B').fontSize(10).fillColor(semCol);
-  doc.text(`ESTADO GENERAL: ${semTxt}`, ML+18, y+2, {width:CW-18, lineBreak:false});
-  y += 16;
-  const statsLine = `${total} tarea${total!==1?'s':''} en curso  ·  ${comp} completada${comp!==1?'s':''} (${pct}%)  ·  ${venc.length} vencida${venc.length!==1?'s':''}`;
-  doc.font('R').fontSize(9).fillColor(G1);
-  doc.text(statsLine, ML+18, y, {width:CW-18, lineBreak:false});
-  y += 14;
-
-  // ─── AVANCE POR PERSONA ─────────────────────────────────────────────────────
-  const miembros = equipo.filter(u=>u.nivel!=='lector');
-  const conTareas = miembros.filter(u =>
-    tareas.some(t=>t.secciones&&Object.values(t.secciones)
-      .some(sv=>(sv.responsables||[]).includes(u.id))));
-
-  if (conTareas.length) {
-    secTitle('Avance por Persona');
-
-    conTareas.forEach(u => {
-      const lins = [];
-      tareas.forEach(t => {
-        if (!t.secciones) return;
-        Object.entries(t.secciones).forEach(([sec,sv]) => {
-          if (!(sv.responsables||[]).includes(u.id)) return;
-          lins.push({ sec, titulo: cap(t.titulo), est: sv.estado||'Pendiente' });
-        });
-      });
-      if (!lins.length) return;
-
-      const cc = lins.filter(l=>l.est==='Completada').length;
-      const det = [cap(u.seccion||''), NIVEL_NOM[u.nivel]||u.nivel].filter(Boolean).join('  |  ');
-
-      chk(14 + lins.length*14);
-      gap(4);
-
-      // Nombre + sección
-      doc.font('B').fontSize(10).fillColor(BK);
-      doc.text(cap(u.nombre), ML, y, {lineBreak:false, width:280});
-      if (det) {
-        doc.font('R').fontSize(9).fillColor(G2);
-        doc.text(`  |  ${det}`, ML+doc.widthOfString(cap(u.nombre)), y, {lineBreak:false});
-      }
-      // Completadas a la derecha
-      doc.font('B').fontSize(9).fillColor(cc===lins.length?VE:cc>0?AZ:G2);
-      doc.text(`${cc}/${lins.length} completadas`, W-MR, y, {width:W-MR-ML, align:'right', lineBreak:false});
-      y += 14;
-
-      lins.forEach(l => {
-        chk(14);
-        const eCol = l.est==='Completada'?VE : l.est==='En Progreso'?AZ : G2;
-        const eMrk = l.est==='Completada'?'[OK]' : l.est==='En Progreso'?'[ > ]' : '[   ]';
-        doc.font('B').fontSize(8.5).fillColor(eCol);
-        doc.text(eMrk, ML+10, y, {lineBreak:false, width:36});
-        doc.font('R').fontSize(8.5).fillColor(G1);
-        doc.text(`${cap(l.titulo)}`, ML+50, y, {lineBreak:false, width:CW-160});
-        doc.font('R').fontSize(8.5).fillColor(G2);
-        doc.text('  →', ML+50+doc.widthOfString(cap(l.titulo)), y, {lineBreak:false});
-        doc.font('B').fontSize(8.5).fillColor(eCol);
-        doc.text(l.est, W-MR, y, {width:W-MR-ML, align:'right', lineBreak:false});
-        y += 14;
-      });
-      gap(4);
-    });
-  }
-
-  // ─── AVANCE POR SECCIÓN ──────────────────────────────────────────────────────
-  secTitle('Avance por Seccion');
-
-  ['Audiovisual','Protocolo','Diseño','Redes Sociales','Medios'].forEach(sec => {
-    const tc = tareas.filter(t=>t.secciones?.[sec]);
-    if (!tc.length) return;
-    const cc = tc.filter(t=>t.secciones[sec].estado==='Completada').length;
-    const pp = tc.length ? Math.round(cc/tc.length*100) : 0;
-    const pCol = pp>=80?VE : pp>=50?AM : RO;
-
-    chk(16);
-    // Nombre de sección
-    doc.font('B').fontSize(9.5).fillColor(BK);
-    doc.text(cap(sec), ML, y, {lineBreak:false, width:110});
-    // Barra
-    const barW = 80, filled = Math.round(pp/100*barW);
-    doc.rect(ML+118, y+2, barW, 8).fill([228,228,228]);
-    if (filled>0) doc.rect(ML+118, y+2, filled, 8).fill(pCol);
-    // Texto
-    doc.font('B').fontSize(9).fillColor(pCol);
-    doc.text(`${cc}/${tc.length}  (${pp}%)`, ML+206, y+1, {lineBreak:false, width:80});
-    y += 14;
-
-    // Detalle Redes Sociales
-    if (sec==='Redes Sociales') {
-      const partes = [];
-      const rk=[['instagram','publicaciones','IG pub'],['instagram','reels','reels'],
-                ['instagram','historias','hist'],['facebook','publicaciones','FB pub'],
-                ['tiktok','videos','TT videos']];
-      rk.forEach(([r,c,lbl]) => {
-        let tot=0,done=0;
-        tc.forEach(t=>{ if(!t.redesSociales)return;
-          tot+=t.redesSociales[r]?.[c]||0; done+=t.redesSociales[r]?.[c+'_comp']||0; });
-        if (tot) partes.push(`${lbl}: ${done}/${tot}`);
-      });
-      if (partes.length) {
-        chk(12);
-        doc.font('I').fontSize(8).fillColor(G2);
-        doc.text('   ' + partes.join('  ·  '), ML, y, {width:CW, lineBreak:true});
-        y = doc.y + 2;
-      }
-    }
-
-    // Detalle Medios
-    if (sec==='Medios') {
-      const partes = [];
-      const mk=[['radio','notas','Radio'],['radio','entrevistas','E.Radio'],
-                ['tv','notas','TV'],['tv','entrevistas','E.TV'],
-                ['prensa','comunicados','Prensa'],['redaccion','articulos','Art']];
-      mk.forEach(([m,c,lbl]) => {
-        let tot=0,done=0;
-        tc.forEach(t=>{ if(!t.mediosData)return;
-          tot+=t.mediosData[m]?.[c]||0; done+=t.mediosData[m]?.[c+'_comp']||0; });
-        if (tot) partes.push(`${lbl}: ${done}/${tot}`);
-      });
-      if (partes.length) {
-        chk(12);
-        doc.font('I').fontSize(8).fillColor(G2);
-        doc.text('   ' + partes.join('  ·  '), ML, y, {width:CW, lineBreak:true});
-        y = doc.y + 2;
-      }
-    }
-
-    gap(2);
-  });
-
-  // ─── PENDIENTES Y VENCIDAS ────────────────────────────────────────────────────
-  if (venc.length) {
-    secTitle('Pendientes y Vencidas');
-    venc.forEach(t => {
-      chk(14);
-      const resp = equipo.filter(u=>Object.values(t.secciones||{})
-        .some(sv=>(sv.responsables||[]).includes(u.id)))
-        .map(u=>cap(u.nombre).split(' ')[0]).join(', ');
-      const fechaStr = t.fecha ? `vencio el ${t.fecha}` : '';
-      const detalle  = [fechaStr, resp].filter(Boolean).join('  ·  ');
-      doc.font('R').fontSize(9).fillColor(RO);
-      doc.text(`•  "${cap(t.titulo)}"${detalle?' — '+detalle:''}`, ML+6, y, {width:CW-6, lineBreak:true});
-      y = doc.y + 2;
-    });
-    gap(2);
-  }
-
-  // ─── HORAS EXTRAS ─────────────────────────────────────────────────────────────
-  if (hapr.length) {
-    secTitle('Horas Extras');
-    const resumen = {};
-    hapr.forEach(h => { resumen[h.miembro]=(resumen[h.miembro]||0)+parseFloat(h.horas||0); });
-    Object.entries(resumen).forEach(([nom,hrs]) => {
-      chk(14);
-      doc.font('R').fontSize(9).fillColor(BK);
-      doc.text(`   ${cap(nom)}:`, ML, y, {lineBreak:false, width:230});
-      doc.font('B').fontSize(9).fillColor(AZ);
-      doc.text(`${hrs.toFixed(1)} hrs`, ML+230, y, {lineBreak:false, width:100});
-      y += 14;
-    });
-    gap(4);
-    chk(16);
-    doc.moveTo(ML+10, y).lineTo(ML+340, y).lineWidth(0.4).strokeColor(G2).stroke();
-    y += 5;
-    doc.font('B').fontSize(9.5).fillColor(OR);
-    doc.text('   TOTAL:', ML, y, {lineBreak:false, width:230});
-    doc.font('B').fontSize(9.5).fillColor(OR);
-    doc.text(`${thrs.toFixed(1)} hrs aprobadas`, ML+230, y, {lineBreak:false, width:160});
-    y += 16;
-  }
-
-  // ─── FIRMA ────────────────────────────────────────────────────────────────────
-  chk(50);
-  gap(16);
-  doc.moveTo(ML, y).lineTo(ML+130, y).lineWidth(0.5).strokeColor(G2).stroke();
-  doc.font('R').fontSize(7.5).fillColor(G2).text('Firma del Coordinador/a', ML, y+4, {lineBreak:false});
-  doc.moveTo(W-MR-120, y).lineTo(W-MR, y).lineWidth(0.5).strokeColor(G2).stroke();
-  doc.font('R').fontSize(7.5).fillColor(G2).text('Fecha', W-MR-60, y+4, {lineBreak:false});
-
-  // ════════════════════════════════════════════════════════════════════════════
-  //  CABECERA Y PIE EN TODAS LAS PÁGINAS
-  // ════════════════════════════════════════════════════════════════════════════
-  const totalPages = doc.bufferedPageRange().count;
-  for (let i=0; i<totalPages; i++) {
-    drawHeader(i);
-    drawFooter(i, totalPages);
-  }
-
-  doc.end();
-  return doc;
-}
-
-app.post("/api/reporte-pdf", verificarToken, (req,res)=>{
-  const {tipo='diario',generadoPor}=req.body;
-  const datos=leerJSON(DATA_FILE,{});
-  const label={diario:'Diario',semanal:'Semanal',mensual:'Mensual'}[tipo]||'Diario';
-  const fecha=new Date().toISOString().split('T')[0];
-  res.setHeader('Content-Type','application/pdf');
-  res.setHeader('Content-Disposition',`attachment; filename="CACCO_Reporte_${label}_${fecha}.pdf"`);
-  try { generarPDF(datos,tipo,generadoPor).pipe(res); }
-  catch(e){ console.error('PDF error:',e); res.status(500).json({error:'Error: '+e.message}); }
-});
+// Cualquier otra ruta de /api/ no existe
+app.use("/api", (req, res) => res.status(404).json({ error: "No existe" }));
 
 // ════════════════════════
 //  INICIAR SERVIDOR
@@ -1020,10 +712,12 @@ async function iniciar() {
     await mongoose.connect(MONGO_URI);
     console.log("✅ Conectado a MongoDB Atlas");
   } else {
-    console.log("⚠️  Sin MONGODB_URI — usando archivos locales");
+    console.log("⚠️  Sin MONGODB_URI — usando archivos locales en", DIR_DATOS);
   }
   app.listen(PORT, () => console.log(`✅ Servidor CACCO corriendo en http://localhost:${PORT}`));
   respaldoDiario();
   setInterval(() => respaldoDiario(), 3600e3);
 }
-iniciar().catch(e => { console.error("Error al iniciar:", e); process.exit(1); });
+// Las pruebas (test/) cargan la app sin arrancar el servidor
+if (require.main === module) iniciar().catch(e => { console.error("Error al iniciar:", e); process.exit(1); });
+module.exports = app;
