@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pedidos a Comunicaciones · CACCO</title>
+<link rel="icon" href="/caccoisotipo.png">
 <meta name="robots" content="noindex">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -106,7 +107,7 @@ footer{text-align:center;font-size:12px;color:var(--tm);padding:0 16px 30px}
   <p class="intro">Escribe el número de folio que recibiste al enviar el pedido para ver en qué va.</p>
   <div class="fila">
     <div class="campo"><label class="lbl" for="cFolio">Folio</label><input type="text" id="cFolio" maxlength="12" placeholder="ej. P-0003" autocomplete="off"></div>
-    <div class="campo" id="cClaveBlk"><label class="lbl" for="cClave">Clave de acceso</label><input type="text" id="cClave" maxlength="30" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+    <div class="campo" id="cClaveBlk"><label class="lbl" for="cClave">Clave de acceso</label><input type="text" id="cClave" maxlength="40" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
   </div>
   <div id="cRecientes"></div>
   <div class="err" id="cErr" role="alert"></div>
@@ -118,7 +119,7 @@ footer{text-align:center;font-size:12px;color:var(--tm);padding:0 16px 30px}
 
   <div class="repetir" id="repBlk"><label class="lbl" for="repSel">↻ Repetir un pedido anterior</label><select id="repSel" onchange="repetir(this.value)"><option value="">Elige uno para copiar sus datos…</option></select><div class="ayuda">Copia todo menos la fecha. Revisa y cambia lo que haga falta.</div></div>
 
-  <div class="campo"><label class="lbl" for="clave">Clave de acceso <span class="req">*</span></label><input type="text" id="clave" maxlength="30" autocomplete="off" autocapitalize="none" spellcheck="false"><div class="ayuda">Cada oficina tiene su propia clave; la tiene tu jefatura. Este navegador la recuerda para la próxima vez.</div><div class="ofi" id="oficinaInfo"></div>
+  <div class="campo"><label class="lbl" for="clave">Clave de acceso <span class="req">*</span></label><input type="text" id="clave" maxlength="40" autocomplete="off" autocapitalize="none" spellcheck="false"><div class="ayuda">Cada oficina tiene su propia clave; la tiene tu jefatura. Este navegador la recuerda para la próxima vez.</div><div class="ofi" id="oficinaInfo"></div>
     <input type="text" id="areaOtra" placeholder="¿De qué oficina o institución eres?" style="display:none;margin-top:8px" maxlength="60"></div>
 
   <div class="sec">1. Quién pide<small>Tus datos se recuerdan en este aparato para la próxima vez.</small></div>
@@ -177,27 +178,22 @@ footer{text-align:center;font-size:12px;color:var(--tm);padding:0 16px 30px}
 </div>
 </main>
 <footer>Uso interno del Centro de Arte y Cultura de Colón.</footer>
+<script src="/pedidos.js"></script>
 <script>
-const SERV={cobertura:['📸','Cobertura de fotos y video'],diseno:['🎨','Diseño de una pieza (afiche, arte, invitación)'],prensa:['📰','Prensa, radio o TV'],protocolo:['🎤','Protocolo (maestro de ceremonia, logística)']};
+// Oficinas, servicios, preguntas y largos vienen de /pedidos.js, el mismo archivo que usa el servidor
+const P=window.CaccoPedidos,SERV=P.SERVICIOS,PREG=P.PREGUNTAS;
 const $=id=>document.getElementById(id);
-// Preguntas de cada servicio: [clave, etiqueta, tipo, ayuda]
-const PREG={
-  cobertura:[['llegada','¿A qué hora debe llegar el equipo?','time'],['momentos','Momentos clave que no se pueden perder','text','ej. palabras de la directora, entrega de certificados'],['invitados','Invitados importantes','text','ej. ministra, alcalde, embajador']],
-  diseno:[['nombre','Nombre de la pieza','text','ej. Afiche Gala de Danza'],
-    ['tipo','Tipo de pieza','uno',['Afiche','Invitación','Post para redes','Historia','Banner o lona','Certificado','Video corto','Otro']],
-    ['formato','Formatos (marca los que necesites)','varios',['Redes cuadrado (1080×1080)','Redes vertical (1080×1350)','Historia o reel (1080×1920)','Impreso tamaño carta','Impreso 11×17','Pantalla horizontal (16:9)','Otro (explícalo en Textos)']],
-    ['_entrega','¿Para cuándo necesitas el diseño?','entrega'],['textos','Textos que deben aparecer','area','Título, fecha, hora, lugar, organizadores…']],
-  prensa:[['vocero','Vocero o persona a entrevistar','text','Nombre y cargo'],['voceroContacto','Contacto del vocero','text','Teléfono o correo']],
-  protocolo:[['programa','Programa o guion de la actividad','area','Orden del acto, quién habla y cuándo'],['invitados','Invitados especiales a mencionar','text','Nombres y cargos']]
+const escA=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const campoPreg=(k,q)=>{
+  if(q.tipo==='entrega')return`<div class="campo"><label class="lbl" for="entrega">${q.pregunta}</label><input type="date" id="entrega"><div class="ayuda">Si es para promocionar la actividad, conviene tenerlo al menos 10 días antes.</div><div class="aviso" id="avDis"></div></div>`;
+  if(q.tipo==='uno'||q.tipo==='varios')return`<div class="campo"><span class="lbl">${q.pregunta}</span><div class="chips" id="d-${k}-${q.c}">${q.opciones.map(o=>`<label><input type="${q.tipo==='uno'?'radio':'checkbox'}" name="d-${k}-${q.c}" value="${escA(o)}"> ${escA(o)}</label>`).join('')}</div></div>`;
+  const id=`d-${k}-${q.c}`,attr=`id="${id}" ${q.ayuda?`placeholder="${escA(q.ayuda)}"`:''} maxlength="${q.max}"`;
+  const inp=q.tipo==='area'?`<textarea ${attr}></textarea>`:q.tipo==='time'?`<input type="time" id="${id}">`:`<input type="text" ${attr}>`;
+  return`<div class="campo"><label class="lbl" for="${id}">${q.pregunta}</label>${inp}</div>`;
 };
-const campoPreg=(k,[c,l,t,ph])=>{
-  if(t==='entrega')return`<div class="campo"><label class="lbl" for="entrega">${l}</label><input type="date" id="entrega"><div class="ayuda">Si es para promocionar la actividad, conviene tenerlo al menos 10 días antes.</div><div class="aviso" id="avDis"></div></div>`;
-  if(t==='uno'||t==='varios')return`<div class="campo"><span class="lbl">${l}</span><div class="chips" id="d-${k}-${c}">${ph.map(o=>`<label><input type="${t==='uno'?'radio':'checkbox'}" name="d-${k}-${c}" value="${o}"> ${o}</label>`).join('')}</div></div>`;
-  const id=`d-${k}-${c}`,attr=`id="${id}" ${ph?`placeholder="${ph}"`:''}`;
-  const inp=t==='area'?`<textarea ${attr} maxlength="1000"></textarea>`:t==='time'?`<input type="time" ${attr}>`:t==='date'?`<input type="date" ${attr}>`:`<input type="text" ${attr} maxlength="300">`;
-  return`<div class="campo"><label class="lbl" for="${id}">${l}</label>${inp}</div>`;
-};
-$('servicios').innerHTML=Object.entries(SERV).map(([k,[i,l]])=>`<label><input type="checkbox" name="serv" value="${k}"><span class="ico">${i}</span>${l}</label><div class="preg" id="pg-${k}">${PREG[k].map(q=>campoPreg(k,q)).join('')}</div>`).join('');
+$('servicios').innerHTML=Object.entries(SERV).map(([k,{ico:i,lbl:l}])=>`<label><input type="checkbox" name="serv" value="${k}"><span class="ico">${i}</span>${l}</label><div class="preg" id="pg-${k}">${PREG[k].map(q=>campoPreg(k,q)).join('')}</div>`).join('');
+// Cada campo deja escribir lo mismo que el servidor guarda (nada se corta sin aviso)
+Object.entries(P.LARGOS).forEach(([id,n])=>{if($(id))$(id).maxLength=n;});
 try{$('clave').value=localStorage.getItem('cacco_clave_pedidos')||'';}catch{}
 const qFolio=new URLSearchParams(location.search).get('folio');
 const hoyPa=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Panama'}).format(new Date());
@@ -218,18 +214,12 @@ function avisos(){
 ['fecha','entrega'].forEach(id=>$(id).addEventListener('input',avisos));
 // ── Horario: choques con otras actividades (solo en horario laboral) y aviso de fuera de horario ──
 const hTx=h=>{const [a,m]=h.split(':').map(Number);return `${a%12||12}:${String(m).padStart(2,'0')} ${a<12?'a. m.':'p. m.'}`;};
-function fueraLocal(f,h,hf){// igual que en el servidor: lunes a viernes de 8:00 a. m. a 4:00 p. m.
-  if(!f)return null;const d=new Date(f+'T12:00:00Z').getUTCDay();if(d===0||d===6)return 'fin de semana';
-  if(!h)return null;const mi=x=>{const [a,b]=x.split(':').map(Number);return a*60+b;};
-  const i=mi(h);let fi=hf?mi(hf):i+120;if(fi<=i)fi+=1440;
-  return i<480?'antes de las 8:00 a. m.':fi>960?'después de las 4:00 p. m.':null;
-}
 let tHor=null,claveMala='';
 function revisarHorario(){
   clearTimeout(tHor);
   // Solo cuando piden cobertura: el equipo tiene que estar ahí. Un diseño no depende del horario.
   const cob=document.querySelector('input[name=serv][value=cobertura]').checked;
-  const f=$('fecha').value,h=$('hora').value,hf=$('horaFin').value,fu=cob?fueraLocal(f,h,hf):null,af=$('avFuera');
+  const f=$('fecha').value,h=$('hora').value,hf=$('horaFin').value,fu=cob?P.fueraDeHorario(f,h,hf):null,af=$('avFuera');
   af.innerHTML=fu?`🌙 <b>Fuera del horario laboral</b> (${fu}). El horario del equipo es de lunes a viernes, de 8:00 a. m. a 4:00 p. m. Lo que quede fuera se cubre con horas extra, que luego el equipo toma como tiempo compensatorio. Tenlo en cuenta al planificar.`:'';
   af.style.display=fu?'block':'none';
   const ac=$('avChoque'),cl=$('clave').value.trim();
@@ -288,7 +278,7 @@ function repetir(i){
   ['nombre','contacto','actividad','hora','horaFin','lugar','descripcion','material'].forEach(k=>{if($(k))$(k).value=b[k]||'';});
   const pf=b.puntoFocal||{};$('pfNombre').value=pf.nombre||'';$('pfCargo').value=pf.cargo||'';$('pfTel').value=pf.telefono||'';$('pfCorreo').value=pf.correo||'';$('soyYo').checked=false;
   document.querySelectorAll('input[name=serv]').forEach(c=>{c.checked=(b.servicios||[]).includes(c.value);$('pg-'+c.value).style.display=c.checked?'block':'none';});
-  Object.entries(PREG).forEach(([k,qs])=>qs.forEach(([c,,t])=>{if(c[0]!=='_')ponPreg(k,c,t==='date'?'':b.detalles?.[k]?.[c]);}));
+  Object.entries(PREG).forEach(([k,qs])=>qs.forEach(q=>{if(q.max)ponPreg(k,q.c,b.detalles?.[k]?.[q.c]);}));
   $('fecha').value='';$('entrega').value='';
   avisos();revisarHorario();$('fecha').focus();
 }
@@ -336,7 +326,7 @@ async function consultar(folio){
 }
 $('cFolio').addEventListener('keydown',e=>{if(e.key==='Enter')consultar();});
 // Corrección: si la oficina se equivocó en un dato del pedido, se lo avisa al equipo sin hacer otro pedido
-const CAMPOS_CORR=['Fecha','Hora','Lugar','Nombre de la actividad','Punto focal','Lo que se necesita','Otro'];
+const CAMPOS_CORR=P.CAMPOS_CORR;
 function htmlCorr(j){
   const lista=(j.correcciones||[]).map(c=>`<div><b>${c.estado==='Aplicada'?'✅ Aplicada':'⏳ Pendiente'} · ${esc(fLarga(c.en))}</b><br>${esc(c.campos.join(', '))}: ${esc(c.texto)}</div>`).join('');
   if(['No se puede cubrir','Cancelada'].includes(j.estado)&&!lista)return '';
@@ -377,7 +367,7 @@ $('f').addEventListener('submit',async e=>{
     actividad:$('actividad').value,fecha:$('fecha').value,hora:$('hora').value,horaFin:$('horaFin').value,lugar:$('lugar').value,
     puntoFocal:{nombre:$('pfNombre').value,cargo:$('pfCargo').value,telefono:$('pfTel').value,correo:$('pfCorreo').value},
     servicios:[...document.querySelectorAll('input[name=serv]:checked')].map(x=>x.value),clave:$('clave').value.trim(),entrega:$('entrega').value,material:$('material').value.trim(),descripcion:$('descripcion').value,web:$('web').value,
-    detalles:Object.fromEntries(Object.entries(PREG).map(([k,qs])=>[k,Object.fromEntries(qs.filter(([c])=>c[0]!=='_').map(([c])=>[c,valPreg(k,c)]))]))};
+    detalles:Object.fromEntries(Object.entries(PREG).map(([k,qs])=>[k,Object.fromEntries(qs.filter(q=>q.max).map(q=>[q.c,valPreg(k,q.c)]))]))};
   const err=$('err'),btn=$('btn');err.style.display='none';btn.disabled=true;btn.textContent='Enviando…';
   try{
     const r=await fetch('/api/pedidos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
@@ -391,10 +381,10 @@ $('f').addEventListener('submit',async e=>{
     const of=oficina==='Otra'?body.areaOtra.trim():oficina;
     resumenTxt=[`📨 Pedido ${j.folio} a Comunicaciones · CACCO`,`Oficina: ${of}`,`Actividad: ${body.actividad.trim()}`,
       `Fecha: ${fLarga(body.fecha)}${body.hora?', '+hTxt(body.hora):''}${body.horaFin?' a '+hTxt(body.horaFin):''}`,body.lugar.trim()?`Lugar: ${body.lugar.trim()}`:'',
-      `Servicios: ${body.servicios.map(k=>SERV[k][1]).join('; ')}`,`Punto focal: ${body.puntoFocal.nombre.trim()} · ${body.puntoFocal.telefono.trim()}`,
+      `Servicios: ${body.servicios.map(k=>SERV[k].lbl).join('; ')}`,`Punto focal: ${body.puntoFocal.nombre.trim()} · ${body.puntoFocal.telefono.trim()}`,
       `Ver en qué va: ${location.origin}/pedido?folio=${j.folio}`].filter(Boolean).join('\n');
     try{localStorage.setItem('cacco_mis_pedidos',JSON.stringify([{folio:j.folio,actividad:body.actividad.trim()},...misPed().filter(p=>p.folio!==j.folio)].slice(0,8)));}catch{}
-    $('okRes').innerHTML=`<strong>${esc(body.actividad)}</strong><br>🗓️ ${esc(fLarga(body.fecha))}${body.hora?' · '+hTxt(body.hora):''}${body.horaFin?' a '+hTxt(body.horaFin):''}${body.lugar?'<br>📍 '+esc(body.lugar):''}<br>🧰 ${body.servicios.map(k=>SERV[k][1]).join('; ')}`;
+    $('okRes').innerHTML=`<strong>${esc(body.actividad)}</strong><br>🗓️ ${esc(fLarga(body.fecha))}${body.hora?' · '+hTxt(body.hora):''}${body.horaFin?' a '+hTxt(body.horaFin):''}${body.lugar?'<br>📍 '+esc(body.lugar):''}<br>🧰 ${body.servicios.map(k=>SERV[k].lbl).join('; ')}`;
     $('f').style.display='none';$('ok').style.display='block';window.scrollTo(0,0);
   }catch(x){err.textContent=x.message;err.style.display='block';err.scrollIntoView({block:'center',behavior:'smooth'});}
   btn.disabled=false;btn.textContent='Enviar pedido';
