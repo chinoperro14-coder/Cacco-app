@@ -114,7 +114,7 @@ footer{text-align:center;font-size:12px;color:var(--tm);padding:0 16px 30px}
   <div id="cRes"></div>
 </div>
 <form id="f" novalidate>
-  <p class="intro">Pide aquí cobertura, diseño o difusión para tu actividad. El equipo revisa cada pedido y te contacta para confirmar. Mientras antes lo envíes, mejor: lo ideal es con una semana o más.</p>
+  <p class="intro">Pide aquí cobertura, diseño, prensa o protocolo para tu actividad. El equipo revisa cada pedido y te contacta para confirmar. Mientras antes lo envíes, mejor: lo ideal es con una semana o más.</p>
 
   <div class="repetir" id="repBlk"><label class="lbl" for="repSel">↻ Repetir un pedido anterior</label><select id="repSel" onchange="repetir(this.value)"><option value="">Elige uno para copiar sus datos…</option></select><div class="ayuda">Copia todo menos la fecha. Revisa y cambia lo que haga falta.</div></div>
 
@@ -178,7 +178,7 @@ footer{text-align:center;font-size:12px;color:var(--tm);padding:0 16px 30px}
 </main>
 <footer>Uso interno del Centro de Arte y Cultura de Colón.</footer>
 <script>
-const SERV={cobertura:['📸','Cobertura de fotos y video'],diseno:['🎨','Diseño de una pieza (afiche, arte, invitación)'],difusion:['📱','Difusión en redes sociales'],prensa:['📰','Prensa, radio o TV'],protocolo:['🎤','Protocolo (maestro de ceremonia, logística)']};
+const SERV={cobertura:['📸','Cobertura de fotos y video'],diseno:['🎨','Diseño de una pieza (afiche, arte, invitación)'],prensa:['📰','Prensa, radio o TV'],protocolo:['🎤','Protocolo (maestro de ceremonia, logística)']};
 const $=id=>document.getElementById(id);
 // Preguntas de cada servicio: [clave, etiqueta, tipo, ayuda]
 const PREG={
@@ -187,7 +187,6 @@ const PREG={
     ['tipo','Tipo de pieza','uno',['Afiche','Invitación','Post para redes','Historia','Banner o lona','Certificado','Video corto','Otro']],
     ['formato','Formatos (marca los que necesites)','varios',['Redes cuadrado (1080×1080)','Redes vertical (1080×1350)','Historia o reel (1080×1920)','Impreso tamaño carta','Impreso 11×17','Pantalla horizontal (16:9)','Otro (explícalo en Textos)']],
     ['_entrega','¿Para cuándo necesitas el diseño?','entrega'],['textos','Textos que deben aparecer','area','Título, fecha, hora, lugar, organizadores…']],
-  difusion:[['desde','¿Desde cuándo publicar?','date'],['publico','¿A qué público va dirigido?','text','ej. jóvenes de Colón, familias, artistas']],
   prensa:[['vocero','Vocero o persona a entrevistar','text','Nombre y cargo'],['voceroContacto','Contacto del vocero','text','Teléfono o correo']],
   protocolo:[['programa','Programa o guion de la actividad','area','Orden del acto, quién habla y cuándo'],['invitados','Invitados especiales a mencionar','text','Nombres y cargos']]
 };
@@ -317,8 +316,8 @@ function verTab(t){
     const m=misPed();$('cRecientes').innerHTML=m.length?`<div class="lbl" style="margin-top:2px">Tus pedidos desde este aparato</div><div class="recientes" style="margin-bottom:14px">${m.map(p=>`<button type="button" onclick="consultar('${esc(p.folio)}')" title="${esc(p.actividad)}">${esc(p.folio)} · ${esc(p.actividad.slice(0,28))}${p.actividad.length>28?'…':''}</button>`).join('')}</div>`:'';
   }
 }
-const CLS={'En revisión':'b-rev','Aceptado':'b-ace','Atendido':'b-ok','No se puede cubrir':'b-no'};
-const EXPL={'En revisión':'El equipo todavía no lo ha revisado.','Aceptado':'El pedido fue aceptado y ya tiene equipo asignado.','Atendido':'El equipo ya completó lo que pediste.','No se puede cubrir':'El equipo no puede atender este pedido.'};
+const CLS={'En revisión':'b-rev','Aceptado':'b-ace','Atendido':'b-ok','No se puede cubrir':'b-no','Cancelada':'b-no'};
+const EXPL={'En revisión':'El equipo todavía no lo ha revisado.','Aceptado':'El pedido fue aceptado y ya tiene equipo asignado.','Atendido':'El equipo ya completó lo que pediste.','No se puede cubrir':'El equipo no puede atender este pedido.','Cancelada':'La actividad fue cancelada.'};
 async function consultar(folio){
   if(folio)$('cFolio').value=folio;
   const f=$('cFolio').value.trim(),err=$('cErr'),btn=$('cBtn');err.style.display='none';$('cRes').innerHTML='';
@@ -340,10 +339,10 @@ $('cFolio').addEventListener('keydown',e=>{if(e.key==='Enter')consultar();});
 const CAMPOS_CORR=['Fecha','Hora','Lugar','Nombre de la actividad','Punto focal','Lo que se necesita','Otro'];
 function htmlCorr(j){
   const lista=(j.correcciones||[]).map(c=>`<div><b>${c.estado==='Aplicada'?'✅ Aplicada':'⏳ Pendiente'} · ${esc(fLarga(c.en))}</b><br>${esc(c.campos.join(', '))}: ${esc(c.texto)}</div>`).join('');
-  if(j.estado==='No se puede cubrir'&&!lista)return '';
+  if(['No se puede cubrir','Cancelada'].includes(j.estado)&&!lista)return '';
   let nom='';try{nom=(JSON.parse(localStorage.getItem('cacco_ped_perfil')||'null')||{}).nombre||'';}catch{}
   return `<div class="corr">${lista?`<div class="lbl">Correcciones enviadas</div><div class="lista">${lista}</div>`:''}
-    ${j.estado==='No se puede cubrir'?'':`<button type="button" class="abrir" id="corrAbrir" onclick="this.style.display='none';$('corrF').style.display='block'">✏️ Me equivoqué en un dato: pedir corrección</button>
+    ${['No se puede cubrir','Cancelada'].includes(j.estado)?'':`<button type="button" class="abrir" id="corrAbrir" onclick="this.style.display='none';$('corrF').style.display='block'">✏️ Me equivoqué en un dato: pedir corrección</button>
     <div id="corrF" style="display:none">
       <div class="campo"><span class="lbl">¿Qué hay que corregir? <span class="req">*</span></span><div class="chips">${CAMPOS_CORR.map(c=>`<label><input type="checkbox" name="corrC" value="${c}"> ${c}</label>`).join('')}</div></div>
       <div class="campo"><label class="lbl" for="corrT">¿Cuál es el dato correcto? <span class="req">*</span></label><textarea id="corrT" maxlength="800" placeholder="ej. La hora correcta es 3:00 p. m., no 1:00 p. m."></textarea></div>
