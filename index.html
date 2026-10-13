@@ -478,21 +478,6 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 .login-btn:hover{background:var(--na2);box-shadow:0 6px 20px rgba(227,82,5,.3);transform:translateY(-1px);}
 .login-btn:active{transform:translateY(0);box-shadow:0 2px 8px rgba(227,82,5,.2);}
 
-/* Separador */
-.login-sep{
-  display:flex;align-items:center;gap:12px;
-  margin:20px 0 16px;color:var(--bo);font-size:12px;color:var(--tm);
-}
-.login-sep::before,.login-sep::after{content:'';flex:1;height:1px;background:var(--bo);}
-
-.login-hint{text-align:center;}
-.login-lect-btn{
-  background:none;border:none;color:var(--tm);font-size:12px;
-  cursor:pointer;font-family:'Inter',sans-serif;
-  transition:color .15s;padding:4px 8px;border-radius:4px;
-}
-.login-lect-btn:hover{color:var(--na);}
-
 /* Footer */
 .login-footer{
   margin-top:28px;text-align:center;
@@ -772,10 +757,6 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 
       <button class="btn login-btn" onclick="tryLogin()">Entrar</button>
 
-      <div class="login-sep">o</div>
-      <div class="login-hint">
-        <button class="login-lect-btn" onclick="entrarLect()">Continuar solo como lector</button>
-      </div>
     </div>
 
     <div class="login-footer">
@@ -2138,26 +2119,6 @@ async function tryLogin() {
   }
 }
 
-async function entrarLect(){
-  try{
-    const res=await fetch('/api/data/public');
-    if(res.ok){
-      const s=await res.json();
-      if(s&&Object.keys(s).length){
-        E=s;
-        if(!E.etiquetas)E.etiquetas=[...ETIQ_DEF];
-        if(!E.notifs)E.notifs=[];
-        if(!E.historico)E.historico=[];
-        if(!E.equipo)E.equipo=[];
-        if(!E.publicaciones)E.publicaciones=[];
-        E.equipo.forEach(u=>{if(!u.secciones){u.secciones=u.seccion?[u.seccion]:[];}delete u.seccion;});
-      }
-    }
-  }catch(e){}
-  const l=E.equipo.find(u=>u.nivel==='lector');
-  if(l){entrar(l.id);return;}
-  uAct={id:'inv',nombre:'Invitado',cargo:'',nivel:'lector',foto:'',ingreso:'',cats:[]};niv='lector';iniciarApp();
-}
 // Foco automático al cargar
 setTimeout(()=>{const el=document.getElementById('loginUser');if(el)el.focus();},200);
 
