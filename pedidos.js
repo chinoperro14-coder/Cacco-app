@@ -7,7 +7,6 @@
   const SERVICIOS = {
     cobertura: { lbl: "Cobertura de fotos y video", secs: ["Audiovisual"] },
     diseno:    { lbl: "Diseño de una pieza (afiche, arte, invitación)", secs: ["Diseño"] },
-    difusion:  { lbl: "Difusión en redes sociales", secs: ["Redes Sociales"] },
     prensa:    { lbl: "Prensa, radio o TV", secs: ["Medios"] },
     protocolo: { lbl: "Protocolo (maestro de ceremonia, logística)", secs: ["Protocolo"] },
   };
@@ -16,10 +15,10 @@
   const PREGUNTAS = {
     cobertura: [["llegada", "Llegada del equipo", 5], ["momentos", "Momentos clave", 300], ["invitados", "Invitados importantes", 300]],
     diseno:    [["nombre", "Nombre de la pieza", 120], ["tipo", "Tipo", 60], ["formato", "Formatos", 300], ["textos", "Textos", 1000]],
-    difusion:  [["desde", "Publicar desde", 10], ["publico", "Público", 200]],
     prensa:    [["vocero", "Vocero", 120], ["voceroContacto", "Contacto del vocero", 120]],
     protocolo: [["programa", "Programa", 1000], ["invitados", "Invitados a mencionar", 300]],
   };
+  // «difusion» ya no se pide por el formulario (depende de la situación con las redes); queda el ícono para pedidos viejos
   const SERV_ICO = { cobertura: "📸", diseno: "🎨", difusion: "📱", prensa: "📰", protocolo: "🎤" };
 
   // Horario laboral: lunes a viernes de 8:00 a 16:00. Lo de fuera se cubre con horas extra (tiempo compensatorio).
@@ -189,6 +188,7 @@
     if (reg.rechazo) return { ...base, estado: "No se puede cubrir", motivo: reg.rechazo.motivo || "" };
     const t = (tareas || []).find(x => x && x.id === (reg.tareaId || reg.id));
     if (!t) return { ...base, estado: "No se puede cubrir", motivo: "" };
+    if (t.cancelada) return { ...base, estado: "Cancelada", motivo: t.cancelada.motivo || "" };
     if (t.borrador) return { ...base, estado: "En revisión" };
     const nom = id => ((equipo || []).find(p => p && p.id === id) || {}).nombre;
     const secs = [...new Set((reg.servicios || []).flatMap(k => (SERVICIOS[k] || { secs: [] }).secs))];

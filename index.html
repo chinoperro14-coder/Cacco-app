@@ -112,6 +112,19 @@ body.pant .pt-wrap{height:100vh;}
 .pt-hr{font-weight:800;color:var(--tx);}
 .pt-ch{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
 .pt-ch span{font-size:clamp(11px,1vw,14px);font-weight:600;padding:2px 9px;border-radius:12px;background:var(--su2);}
+.pt-ch .sa{background:#dc2626;color:#fff;font-weight:800;}
+.pt-res{display:flex;gap:10px;flex-wrap:wrap;padding:7px 16px;font-size:clamp(12px,1.1vw,16px);font-weight:600;color:var(--tm);border-bottom:1px solid var(--bo);}
+.pt-res .sa{color:#dc2626;font-weight:800;}
+.pt-it.curso{border-color:#16a34a;border-left-color:#16a34a!important;background:var(--ves);box-shadow:0 0 0 2px #16a34a55;}
+.pt-it.canc{border-left-color:#dc2626!important;background:var(--ros);}
+.pt-it.canc .pt-t{text-decoration:line-through;color:var(--ro);}
+.pt-tag{display:inline-block;margin-top:5px;font-size:clamp(11px,1vw,14px);font-weight:800;padding:2px 9px;border-radius:12px;}
+.pt-tag.verde{background:#16a34a;color:#fff;}.pt-tag.rojo{background:#dc2626;color:#fff;}.pt-tag.ambar{background:var(--ams);color:var(--am);}
+.pt-sem{margin-top:12px;background:var(--su);border:1px solid var(--bo);border-radius:var(--r);padding:8px 14px;display:flex;gap:14px;align-items:center;overflow:hidden;}
+.pt-sh{font-weight:800;font-size:clamp(14px,1.3vw,19px);white-space:nowrap;}
+.pt-sl{display:flex;gap:8px;overflow-x:auto;flex:1;scrollbar-width:none;}
+.pt-si{white-space:nowrap;font-size:clamp(12px,1.1vw,16px);background:var(--su2);padding:4px 11px;border-radius:14px;}
+.pt-si.canc{background:var(--ros);color:var(--ro);text-decoration:line-through;}
 .pt-ch .ok{background:var(--ves);color:var(--ve);}.pt-ch .ec{background:var(--azs);color:var(--az);}.pt-ch .pe{background:var(--ams);color:var(--am);}
 .pt-vac{text-align:center;color:var(--tm);padding:28px 10px;font-size:clamp(14px,1.3vw,18px);}
 .pt-esc{display:none!important;position:fixed;top:8px;right:10px;z-index:900;opacity:.35;}
@@ -859,7 +872,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <div class="sh2">
     <div class="stit">Tareas del equipo</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn bgh bsm ned oculto" onclick="compartirPedidos()" title="Enlace para que otras áreas pidan cobertura, diseño o difusión">🔗 Formulario de pedidos</button>
+      <button class="btn bgh bsm ned oculto" onclick="compartirPedidos()" title="Enlace para que otras áreas pidan cobertura, diseño, prensa o protocolo">🔗 Formulario de pedidos</button>
       <button class="btn bgh bsm nle ned oculto" onclick="goV('reportes',null)">📊 Reporte</button>
       <button class="btn bna bsm ncr oculto" onclick="abrirMT()">+ Nueva Tarea</button>
     </div>
@@ -1116,6 +1129,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
         <button class="btn bgh bsm" onclick="ptCompleta(true)" title="Oculta el menú para dejarlo en la tele">📺 Pantalla completa</button></div>
     </div>
     <div class="pt-cols" id="ptCols"></div>
+    <div class="pt-sem" id="ptSem"></div>
   </div>
   <button class="btn bgh bsm pt-esc" onclick="ptCompleta(false)">✕ Salir de pantalla completa</button>
 </div>
@@ -2304,7 +2318,7 @@ function eglobal(t){
   return'Pendiente';
 }
 // Una tarea está "resuelta" si ya no necesita seguimiento (no aparece en pendientes/vencidas)
-function tResuelta(t){const e=eglobal(t);return e==='Completada'||e==='Cerrada'||e==='No cumplida';}
+function tResuelta(t){if(t.cancelada)return true;const e=eglobal(t);return e==='Completada'||e==='Cerrada'||e==='No cumplida';}
 // Fecha/hora efectiva de una sección: su propia fecha o, si no tiene, la general de la tarea
 function secFecha(t,sec){return t.secciones?.[sec]?.fecha||t.fecha||null;}
 function secHora(t,sec){return t.secciones?.[sec]?.hora||'';}
@@ -2806,6 +2820,7 @@ function renderTareas(){
     const notaPreview=t.notas?`<div style="font-size:12px;color:var(--tm);margin-top:3px;word-break:break-word">📝 ${t.notas.replace(/📅/g,'🗓️')}</div>`:'';
     const acciones=abierta&&(puedeEditarT(t)||puede('eliminarTarea')||puede('crearTarea'))?`<div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
       ${puedeEditarT(t)?`<button class="btn bna bsm" onclick="event.stopPropagation();editT('${t.id}')">✏️ Editar</button>`:''}
+      ${puede('editarTarea')?(t.cancelada?`<button class="btn bgh bsm" onclick="event.stopPropagation();cancelarT('${t.id}')">↩️ Reactivar</button>`:`<button class="btn bgh bsm" style="color:var(--ro)" onclick="event.stopPropagation();cancelarT('${t.id}')">🚫 Cancelar actividad</button>`):''}
       ${puede('crearTarea')?`<button class="btn bgh bsm" onclick="event.stopPropagation();duplT('${t.id}')">📋 Duplicar</button>`:''}
       ${puede('eliminarTarea')?`<button class="btn bpe bsm" onclick="event.stopPropagation();elimT('${t.id}')">🗑 Eliminar</button>`:''}
     </div>`:'';
@@ -2851,7 +2866,7 @@ function renderTareas(){
         <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">
           <span class="t-ico" style="font-size:17px;flex-shrink:0">${secIco}</span>
           <div style="min-width:0">
-            <div class="t-tit" style="font-size:14px;font-weight:700;color:#fff;white-space:normal;word-break:break-word">${escH(t.titulo)}${t.recurrencia&&t.recurrencia!=='ninguna'?' 🔁':''}</div>
+            <div class="t-tit" style="font-size:14px;font-weight:700;color:#fff;white-space:normal;word-break:break-word${t.cancelada?';text-decoration:line-through':''}">${t.cancelada?'🚫 ':''}${escH(t.titulo)}${t.recurrencia&&t.recurrencia!=='ninguna'?' 🔁':''}</div>
             ${t.notas&&abierta?`<div style="font-size:11px;color:rgba(255,255,255,.82);margin-top:1px;word-break:break-word">📝 ${t.notas.replace(/📅/g,'🗓️')}</div>`:''}
           </div>
         </div>
@@ -2862,7 +2877,7 @@ function renderTareas(){
       </div>
       <div class="t-midbar tint" style="--sc:${cardColor};padding:10px 14px;background:${cardBg};display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;cursor:pointer" onclick="togT('${t.id}')">
         <div class="t-badges-row" style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
-          <span class="bg ${bEst[eg]||'bgr'}">${eg}</span>
+          ${t.cancelada?`<span class="bg" style="background:var(--ros);color:var(--ro);font-weight:800" title="${escH(t.cancelada.motivo||'')}">🚫 CANCELADA</span>`:`<span class="bg ${bEst[eg]||'bgr'}">${eg}</span>`}
           ${t.prioridad?`<span class="bg ${bPri[t.prioridad]||'bgr'}">${escH(t.prioridad)}</span>`:''}
           ${t.fecha?`<span class="bg bgr" style="${vencida?'color:var(--ro);font-weight:700':''}">${vencida?'⚠️ ':'🗓️ '}${fmt(t.fecha)}</span>`:''}
           ${t.lugar?`<span class="bg bgr">📍 ${escH(t.lugar)}</span>`:''}
@@ -2888,9 +2903,11 @@ function renderTareas(){
   };
   // Agrupar por fecha
   const hh=hoy();
-  const pendts=ts.filter(t=>!tResuelta(t));
-  const compts=ts.filter(t=>eglobal(t)==='Completada');
-  const cerradts=ts.filter(t=>{const e=eglobal(t);return e==='Cerrada'||e==='No cumplida';});
+  // Una actividad cancelada que aún no pasa sigue a la vista en su día (tachada); las pasadas van con las cerradas
+  const cancVisible=t=>t.cancelada&&(!t.fecha||t.fecha>=hh);
+  const pendts=ts.filter(t=>!tResuelta(t)||cancVisible(t));
+  const compts=ts.filter(t=>!t.cancelada&&eglobal(t)==='Completada');
+  const cerradts=ts.filter(t=>{if(t.cancelada)return !cancVisible(t);const e=eglobal(t);return e==='Cerrada'||e==='No cumplida';});
   const vencidts=pendts.filter(t=>t.fecha&&t.fecha<hh);
   const dehoyts=pendts.filter(t=>t.fecha===hh);
   const futurts=pendts.filter(t=>t.fecha&&t.fecha>hh);
@@ -2903,7 +2920,7 @@ function renderTareas(){
   Object.keys(byFch).sort().forEach(f=>{htmlOut+=mkHdrT('🗓️ '+fmt(f),'#2563eb','#EFF6FF',byFch[f].length);htmlOut+=byFch[f].map(renderTCard).join('');});
   if(sfechts.length){htmlOut+=mkHdrT('📌 Sin fecha','#888','#f5f5f5',sfechts.length);htmlOut+=sfechts.map(renderTCard).join('');}
   if(compts.length){htmlOut+=mkHdrT('✅ Completadas','#16a34a','#DCFCE7',compts.length);htmlOut+=compts.map(renderTCard).join('');}
-  if(cerradts.length){htmlOut+=mkHdrT('🚫 Cerradas / No cumplidas','#6b7280','#f3f4f6',cerradts.length);htmlOut+=cerradts.map(renderTCard).join('');}
+  if(cerradts.length){htmlOut+=mkHdrT('🚫 Cerradas / No cumplidas / Canceladas','#6b7280','#f3f4f6',cerradts.length);htmlOut+=cerradts.map(renderTCard).join('');}
   lista.innerHTML='';renderPedidos(lista);lista.innerHTML+=htmlOut;
   renderBorradores(lista);
 }
@@ -4527,6 +4544,22 @@ function fmtFechaLarga(f){
   return d.toLocaleDateString('es-PA',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 }
 
+// Actividad cancelada: queda a la vista (tachada y en rojo) en Tareas y en la pantalla, y ya no cuenta como pendiente
+async function cancelarT(id){
+  if(!puede('editarTarea')){alert('Solo Líder o Editor pueden cancelar actividades.');return;}
+  const t=E.tareas.find(x=>x.id===id);if(!t)return;
+  if(t.cancelada){
+    if(!await confirmar(`«${t.titulo}» vuelve a quedar como actividad activa.`,{tit:'↩️ Reactivar actividad',ok:'Reactivar'}))return;
+    delete t.cancelada;reg('Actividad reactivada',`"${t.titulo}" por ${uAct?.nombre}`);
+  }else{
+    const m=await pedirTexto('🚫 Cancelar actividad',`«${t.titulo}»${t.fecha?' · '+fmt(t.fecha):''}. Queda marcada como cancelada para todo el equipo.`,{label:'Motivo *',req:true,ph:'ej. Se canceló desde Operaciones',err:'Escribe el motivo para continuar.'},'Cancelar actividad');
+    if(m===null)return;
+    t.cancelada={motivo:m,por:uAct?.nombre||'',en:hoy()};
+    reg('Actividad cancelada',`"${t.titulo}" — ${m} (por ${uAct?.nombre})`);
+    addNotif('🚫',`Actividad cancelada: "${t.titulo}"`,m);
+  }
+  guardar();refrescarVistaAbierta();
+}
 async function elimT(id){
   if(!puede('eliminarTarea')){alert('Solo el Líder puede eliminar tareas.');return;}
   const t=E.tareas.find(t=>t.id===id);
@@ -6771,7 +6804,7 @@ const BIT_POR_PAG=25;
 
 function renderBit(){
   const tbody=document.getElementById('cBit'),vac=document.getElementById('vacBit');
-  const cls={'Tarea creada':'bpro','Tarea editada':'bmed','Tarea eliminada':'balt','Avance completado':'blis','Avance revertido':'bmed','Hora registrada':'bnar','Hora aprobada':'blis','Hora rechazada':'balt','Hora editada':'bmed','Hora eliminada':'balt','Persona creada':'blis','Persona editada':'bmor','Persona eliminada':'balt','Perfil actualizado':'bgr','Mes cerrado':'bnar','Bitácora limpiada':'bgr','Pedido recibido':'bnar','Pedido aceptado':'blis','Pedido unido a otra tarea':'bmed','Pedido no cubierto':'balt'};
+  const cls={'Tarea creada':'bpro','Tarea editada':'bmed','Tarea eliminada':'balt','Avance completado':'blis','Avance revertido':'bmed','Hora registrada':'bnar','Hora aprobada':'blis','Hora rechazada':'balt','Hora editada':'bmed','Hora eliminada':'balt','Persona creada':'blis','Persona editada':'bmor','Persona eliminada':'balt','Perfil actualizado':'bgr','Mes cerrado':'bnar','Bitácora limpiada':'bgr','Pedido recibido':'bnar','Actividad cancelada':'balt','Actividad reactivada':'blis','Pedido aceptado':'blis','Pedido unido a otra tarea':'bmed','Pedido no cubierto':'balt'};
 
   // Actualizar opciones de usuarios
   const selU=document.getElementById('bitFiltU');
@@ -7487,7 +7520,7 @@ function misSecs(uid){
   const out=[];
   E.tareas.forEach(t=>{if(t.borrador||!t.secciones)return;
     Object.entries(t.secciones).forEach(([sec,sv])=>{if(!sv||!(sv.responsables||[]).includes(uid))return;
-      out.push({t,sec,sv,f:secFecha(t,sec),h:secHora(t,sec)||t.hora||'',hecha:['Completada','No cumplida','Cerrada'].includes(sv.estado)});});});
+      out.push({t,sec,sv,f:secFecha(t,sec),h:secHora(t,sec)||t.hora||'',hecha:!!t.cancelada||['Completada','No cumplida','Cerrada'].includes(sv.estado)});});});
   return out;
 }
 // Publicaciones que le tocan a la persona (las sin responsable las ven Líder y Editor)
@@ -7977,7 +8010,7 @@ function informeMensual(ym){
   // Actividades
   const ts=E.tareas.filter(t=>!t.borrador&&en(t.fecha)).sort((x,y)=>(x.fecha+(x.hora||'')).localeCompare(y.fecha+(y.hora||'')));
   const atendidas=ts.filter(t=>['Completada','Cerrada'].includes(eglobal(t)));
-  const estTxt=t=>({Completada:'Atendida',Cerrada:'Atendida en parte','No cumplida':'No se cubrió','En Progreso':'En curso',Pendiente:'Pendiente'}[eglobal(t)]||eglobal(t));
+  const estTxt=t=>t.cancelada?'Cancelada':({Completada:'Atendida',Cerrada:'Atendida en parte','No cumplida':'No se cubrió','En Progreso':'En curso',Pendiente:'Pendiente'}[eglobal(t)]||eglobal(t));
   // Publicaciones
   const pubs=(E.publicaciones||[]).filter(p=>pubEst(p)==='publicado'&&en(fechaPublicada(p))).sort((x,y)=>fechaPublicada(x).localeCompare(fechaPublicada(y)));
   const conRes=pubs.filter(p=>p.resultados),alc=conRes.reduce((s,p)=>s+(p.resultados.alcance||0),0),inter=conRes.reduce((s,p)=>s+(p.resultados.interacciones||0),0);
@@ -8434,45 +8467,66 @@ function ptDatos(){
   const f0=hoy(),f1=sumarDias(f0,1);
   const tareas=(E.tareas||[]).filter(t=>t&&!t.borrador);
   const fechasSec=t=>Object.entries(t.secciones||{}).filter(([,sv])=>sv).map(([k,sv])=>({sec:k,sv,f:secFecha(t,k)})).filter(x=>x.f);
-  const col={atr:[],hoy:[],man:[]};
+  const col={atr:[],hoy:[],man:[]},sem=[];
   tareas.forEach(t=>{
     const res=tResuelta(t),ss=fechasSec(t),sinRes=ss.filter(x=>!['Completada','Cerrada','No cumplida'].includes(x.sv.estado));
     const fs=ss.length?ss.map(x=>x.f):[t.fecha].filter(Boolean);
+    if(t.fecha&&!fs.includes(t.fecha))fs.push(t.fecha);
     if(!fs.length)return;
     const vencidas=(ss.length?sinRes.map(x=>x.f):[t.fecha]).filter(f=>f&&f<f0).sort();
     if(!res&&vencidas.length)col.atr.push({t,f:vencidas[0]});
-    if(fs.includes(f0)||t.fecha===f0)col.hoy.push({t,f:f0});
-    if(fs.includes(f1)||t.fecha===f1)col.man.push({t,f:f1});
+    if(fs.includes(f0))col.hoy.push({t,f:f0});
+    if(fs.includes(f1))col.man.push({t,f:f1});
+    const prox=fs.filter(f=>f>f1&&f<=sumarDias(f0,7)).sort()[0];
+    if(prox)sem.push({t,f:prox});
   });
   const hh=x=>x.t.hora||'99';
   col.atr.sort((a,b)=>a.f.localeCompare(b.f)||hh(a).localeCompare(hh(b)));
   col.hoy.sort((a,b)=>hh(a).localeCompare(hh(b)));col.man.sort((a,b)=>hh(a).localeCompare(hh(b)));
+  sem.sort((a,b)=>a.f.localeCompare(b.f)||hh(a).localeCompare(hh(b)));
   const pubs=(E.publicaciones||[]).filter(p=>p&&pubEst(p)!=='publicado');
   const pc={atr:pubs.filter(p=>p.fecha&&p.fecha<f0&&pubEst(p)==='aprobado'),hoy:pubs.filter(p=>p.fecha===f0&&pubEst(p)==='aprobado'),man:pubs.filter(p=>p.fecha===f1&&pubEst(p)==='aprobado')};
-  return {f0,f1,col,pc};
+  return {f0,f1,col,pc,sem};
 }
+// ¿La actividad de hoy está ocurriendo ahora? (sin hora de fin se asume 2 h)
+function ptEnCurso(t,f0){
+  if(t.fecha!==f0||!t.hora||t.cancelada)return false;
+  const mm=h=>{const [a,b]=String(h).split(':').map(Number);return a*60+(b||0);};
+  const n=new Date().toLocaleTimeString('en-GB',{timeZone:'America/Panama',hour:'2-digit',minute:'2-digit'}),ahora=mm(n),ini=mm(t.hora);
+  let fin=t.horaFin?mm(t.horaFin):ini+120;if(fin<=ini)fin+=1440;
+  return ahora>=ini&&ahora<fin;
+}
+const ptPosibleCancel=t=>!t.cancelada&&/AVISO[^\n]*CANCELADO/i.test(t.notas||'');
 function renderPantalla(){
   const cont=document.getElementById('ptCols');if(!cont||!uAct)return;
   const d=ptDatos(),n=new Date();
   document.getElementById('ptFecha').textContent=cap1(fmtFechaLarga(d.f0));
   document.getElementById('ptHora').textContent=txtHora(n.toLocaleTimeString('en-GB',{timeZone:'America/Panama',hour:'2-digit',minute:'2-digit'}));
   const nom=id=>nombrePila((E.equipo||[]).find(p=>p.id===id)?.nombre);
+  const hecha=sv=>['Completada','Cerrada','No cumplida'].includes(sv.estado);
   const chips=t=>Object.entries(t.secciones||{}).filter(([,sv])=>sv).map(([k,sv])=>{
-    const cl=sv.estado==='Completada'||sv.estado==='Cerrada'?'ok':secEnCurso(t,k)||sv.estado==='En Progreso'?'ec':'pe';
     const who=(sv.responsables||[]).map(nom).filter(Boolean).join(', ');
-    return `<span class="${cl}">${SECCIONES[k]?.ico||''} ${k}${who?' · '+escH(who):' · sin asignar'}</span>`;}).join('');
-  const item=(x,atr)=>{const t=x.t;
-    return `<div class="pt-it${tResuelta(t)?' hecho':''}"><div class="pt-t">${escH(t.titulo||'(Sin título)')}</div>
+    const sa=!who&&!hecha(sv)&&!t.cancelada;
+    const cl=sa?'sa':sv.estado==='Completada'||sv.estado==='Cerrada'?'ok':secEnCurso(t,k)||sv.estado==='En Progreso'?'ec':'pe';
+    return `<span class="${cl}">${SECCIONES[k]?.ico||''} ${k}${sa?' · ⚠️ SIN ASIGNAR':who?' · '+escH(who):''}</span>`;}).join('');
+  const item=(x,atr)=>{const t=x.t,curso=!atr&&ptEnCurso(t,d.f0),canc=!!t.cancelada,pc=ptPosibleCancel(t);
+    return `<div class="pt-it${canc?' canc':tResuelta(t)?' hecho':''}${curso?' curso':''}"><div class="pt-t">${canc?'🚫 ':''}${escH(t.titulo||'(Sin título)')}</div>
       <div class="pt-m">${atr?`<span class="pt-hr">${fmtPubFecha(x.f)}</span>`:`<span class="pt-hr">${t.hora?txtHora(t.hora)+(t.horaFin?' a '+txtHora(t.horaFin):''):'Sin hora'}</span>`}${t.lugar?' · 📍 '+escH(t.lugar):''}</div>
+      ${curso?'<div class="pt-tag verde">🟢 EN CURSO AHORA</div>':''}${canc?`<div class="pt-tag rojo">🚫 CANCELADA${t.cancelada.motivo?' · '+escH(t.cancelada.motivo):''}</div>`:''}${pc?'<div class="pt-tag ambar">⚠️ Posible cancelación: verificar con Operaciones</div>':''}
       <div class="pt-ch">${chips(t)}</div></div>`;};
   const itemPub=(p,atr)=>`<div class="pt-it"><div class="pt-t">📣 ${escH(p.titulo||'(Sin título)')}</div>
-      <div class="pt-m"><span class="pt-hr">${atr?fmtPubFecha(p.fecha):p.hora?txtHora(p.hora):'Sin hora'}</span> · ${(p.plataformas||[]).map(x=>PLAT_WA[x]||x).join(', ')}${p.responsableId?' · '+escH(nom(p.responsableId)):' · sin responsable'}</div></div>`;
+      <div class="pt-m"><span class="pt-hr">${atr?fmtPubFecha(p.fecha):p.hora?txtHora(p.hora):'Sin hora'}</span> · ${(p.plataformas||[]).map(x=>PLAT_WA[x]||x).join(', ')}${p.responsableId?' · '+escH(nom(p.responsableId)):' · <b style="color:#dc2626">sin responsable</b>'}</div></div>`;
+  // Avance de la columna: secciones listas, y cuántas siguen sin responsable
+  const resumen=arr=>{let tot=0,lis=0,sa=0;arr.filter(x=>!x.t.cancelada).forEach(x=>Object.values(x.t.secciones||{}).filter(Boolean).forEach(sv=>{tot++;if(hecha(sv))lis++;else if(!(sv.responsables||[]).length)sa++;}));
+    return tot?`<div class="pt-res"><span>${lis} de ${tot} listas</span>${sa?`<span class="sa">⚠️ ${sa} sin asignar</span>`:''}${tot-lis-sa?`<span>${tot-lis-sa} por hacer</span>`:''}</div>`:'';};
   const caja=(cls,tit,sub,arr,pubs,atr,vacio)=>{const tot=arr.length+pubs.length;
-    return `<div class="pt-col ${cls}"><div class="pt-h">${tit} ${tot?`<span class="pt-n">${tot}</span>`:''}<small>${sub}</small></div>
+    return `<div class="pt-col ${cls}"><div class="pt-h">${tit} ${tot?`<span class="pt-n">${tot}</span>`:''}<small>${sub}</small></div>${resumen(arr)}
       <div class="pt-lista">${tot?arr.map(x=>item(x,atr)).join('')+pubs.map(p=>itemPub(p,atr)).join(''):`<div class="pt-vac">${vacio}</div>`}</div></div>`;};
   cont.innerHTML=caja('atr','⚠️ Pendiente','sin terminar',d.col.atr,d.pc.atr,true,'Nada atrasado 🎉')
     +caja('hoy','📍 Hoy',cap1(fmtPubFecha(d.f0)),d.col.hoy,d.pc.hoy,false,'No hay actividades para hoy')
     +caja('man','➡️ Mañana',cap1(fmtPubFecha(d.f1)),d.col.man,d.pc.man,false,'No hay actividades para mañana');
+  const dia=f=>cap1(new Date(f+'T12:00:00').toLocaleDateString('es-PA',{weekday:'short',day:'numeric'}).replace('.',''));
+  document.getElementById('ptSem').innerHTML=d.sem.length?`<div class="pt-sh">🗓️ Esta semana</div><div class="pt-sl">${d.sem.map(x=>`<span class="pt-si${x.t.cancelada?' canc':''}"><b>${dia(x.f)}</b>${x.t.hora?' '+txtHora(x.t.hora):''} · ${x.t.cancelada?'🚫 ':''}${escH(x.t.titulo||'')}</span>`).join('')}</div>`:`<div class="pt-sh">🗓️ Esta semana</div><div class="pt-sl"><span class="pt-si">Sin más actividades programadas en los próximos 7 días</span></div>`;
 }
 setInterval(()=>{if(document.getElementById('vPantalla')&&!document.getElementById('vPantalla').classList.contains('oculto'))renderPantalla();},60000);
 
