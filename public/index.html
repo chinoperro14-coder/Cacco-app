@@ -250,8 +250,6 @@ tr:last-child td{border-bottom:none;}
 textarea.fc{resize:vertical;min-height:80px;}
 textarea.auto-alto{min-height:60px;max-height:65vh;line-height:1.5;overflow-y:auto;}
 #tNotas{min-height:120px;}
-.sug-tarj{font-size:13px;line-height:1.55;color:var(--tx);background:var(--nas);border:1px solid var(--nab);border-radius:8px;padding:10px 14px;margin:0 0 12px;word-break:break-word;display:flex;flex-direction:column;gap:4px;}
-.sug-cab{font-weight:700}.sug-cab span{font-weight:500;color:var(--tm)}
 .notas-tarj{font-size:13.5px;line-height:1.6;color:var(--tx);background:var(--su2);border-radius:8px;padding:12px 14px;margin-bottom:12px;white-space:pre-wrap;word-break:break-word;}
 .fr{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 /* CHIPS */
@@ -1322,7 +1320,6 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
         <button class="btn bgh bsm" onclick="addEtiq()">+ Agregar</button>
       </div>
     </div>
-    <div id="tSug"></div>
     <div class="fg"><label class="fl">Notas</label><textarea class="fc auto-alto" id="tNotas" placeholder="Instrucciones, detalles del evento..."></textarea></div>
 
 
@@ -2931,7 +2928,6 @@ function renderTareas(){
         </div>
       </div>
       <div id="tbody-${t.id}" style="display:${abierta?'block':'none'};padding:14px;border-top:2px solid ${cardColor}30">
-        ${abierta?sugHtml(t.kit):''}
         ${abierta&&t.notas?`<div class="notas-tarj">📝 ${escH(t.notas.replace(/📅/g,'🗓️'))}</div>`:''}
         ${gruposHTML?`<div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Avance por sección</div>${gruposHTML}`:''}
         ${seccionesHTML}
@@ -3141,7 +3137,7 @@ function renderBorradores(lista){
         </div>
         ${puede('editarTarea')?`<button class="btn bna bsm" onclick="abrirMT('${t.id}')">✏️ Completar</button>`:''}
         ${puede('descartarBorrador')?`<button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro)" onclick="descartarBorr(['${t.id}'])">🗑 Descartar</button>`:''}
-        ${ab?`<div class="notas-tarj" style="flex-basis:100%;margin:0">${t.lugar?`📍 ${escH(t.lugar)}\n`:''}${escH((t.notas||'Sin más detalles.').replace(/📅/g,'🗓️'))}</div>${hayKit(t.kit)?`<div style="flex-basis:100%">${sugHtml(t.kit)}</div>`:''}`:''}
+        ${ab?`<div class="notas-tarj" style="flex-basis:100%;margin:0">${t.lugar?`📍 ${escH(t.lugar)}\n`:''}${escH((t.notas||'Sin más detalles.').replace(/📅/g,'🗓️'))}</div>`:''}
       </div>`;};
   const borHtml=proximos.map(fila).join('');
   const pd=puede('descartarBorrador'),nc=proximos.filter(t=>/No cubrir/.test(nivelDe(t)));
@@ -3196,9 +3192,8 @@ function revPintar(){
     <div style="height:4px;background:var(--su2);border-radius:4px;margin-bottom:14px"><div style="height:4px;width:${Math.round(hecho/total*100)}%;background:var(--na);border-radius:4px"></div></div>
     <div style="font-size:17px;font-weight:800;line-height:1.3;color:var(--tx)">${escH(t.titulo||'(Sin título)')}</div>
     <div style="font-size:13px;color:var(--tm);margin-top:4px">${t.fecha?'🗓️ '+fmtAct(t):''}${t.hora?' · '+txtHora(t.hora):''}${t.lugar?' · 📍 '+escH(t.lugar):''}</div>
-    ${niv0&&!hayKit(t.kit)?`<div style="margin-top:10px;font-size:13px"><b>Sugerido:</b> ${escH(niv0)}</div>`:''}
-    <div style="margin-top:10px">${sugHtml(t.kit)}</div>
-    ${kit.trim()||!hayKit(t.kit)?`<div class="notas-tarj">${escH(kit.trim()||'Sin más detalles.')}</div>`:''}`;
+    ${niv0?`<div style="margin-top:10px;font-size:13px"><b>Sugerido:</b> ${escH(niv0)}</div>`:''}
+    <div class="notas-tarj" style="margin-top:10px">${escH(kit.trim()||'Sin más detalles.')}</div>`;
   document.getElementById('revPie').innerHTML=`
     <button class="btn bgh" style="margin-right:auto" onclick="revDespues()">Después →</button>
     ${puede('descartarBorrador')?`<button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro)" onclick="revNoCubrir()">⚪ No cubrir</button>`:''}
@@ -3292,19 +3287,6 @@ async function togCat(tareaId,cat){
 const COB_TXT={completa:'🔴 Cobertura completa',ligera:'🟡 Cobertura ligera',agenda:'🟢 Solo agenda',no:'⚪ No cubrir'};
 const KIT_CAMPOS=[['enfoque'],['video'],['historias'],['carrusel'],['copy'],['prensa']];
 const hayKit=k=>!!k&&(!!k.cobertura||(k.fotos||[]).length>0||KIT_CAMPOS.some(([c])=>String(k[c]||'').trim()));
-// Sugerencia de cobertura que deja el asistente (solo lectura, corta)
-function sugHtml(k){
-  if(!hayKit(k))return '';
-  const que=[(k.fotos||[]).length?'📸 Fotos':'',String(k.video||'').trim()?'🎥 Reel':'',String(k.historias||'').trim()?'📱 Historias':'',String(k.carrusel||'').trim()?'🖼️ Carrusel':'',String(k.prensa||'').trim()?'📰 Prensa':''].filter(Boolean);
-  const l=(ico,txt)=>String(txt||'').trim()?`<div>${ico} ${escH(txt)}</div>`:'';
-  return `<div class="sug-tarj">
-    <div class="sug-cab">💡 ${k.cobertura?escH(COB_TXT[k.cobertura]||''):'Sugerencia'}${que.length?` · <span>${que.join(' · ')}</span>`:''}</div>
-    ${l('🎯',k.enfoque)}${(k.fotos||[]).length?l('📸',k.fotos.join(' · ')):''}${l('🎥',k.video)}${l('📱',k.historias)}${l('🖼️',k.carrusel)}
-    ${String(k.copy||'').trim()?`<div style="display:flex;gap:6px;align-items:flex-start"><span>✍️</span><span style="flex:1;white-space:pre-wrap">${escH(k.copy)}</span><button class="btn bgh bsm" onclick="event.stopPropagation();copiarTexto(${escH(JSON.stringify(k.copy))})" title="Copiar el texto">📋</button></div>`:''}
-    ${l('📰',k.prensa)}
-  </div>`;
-}
-async function copiarTexto(txt){try{await navigator.clipboard.writeText(txt||'');avisar('✅ Copiado.');}catch{avisar('No se pudo copiar.');}}
 // Las cajas de texto crecen con lo que tienen (hasta un tope) para leer sin desplazarse
 function autoAlto(el){if(!el)return;el.style.height='auto';el.style.height=Math.min(el.scrollHeight+4,window.innerHeight*0.65)+'px';}
 document.addEventListener('input',e=>{if(e.target.classList?.contains('auto-alto'))autoAlto(e.target);});
@@ -3360,7 +3342,6 @@ function abrirMT(id){
   document.getElementById('tNotas').value=t?.notas||'';
   document.getElementById('tRec').value=t?.recurrencia||'ninguna';
   etiqSel=[...(t?.etiquetas||[])];renderChEtiq();
-  document.getElementById('tSug').innerHTML=sugHtml(t?.kit);
   const pre=prellenarBorrador(t);
   renderSeccionesModal(pre.t);
   const ka=document.getElementById('tKitAviso');
