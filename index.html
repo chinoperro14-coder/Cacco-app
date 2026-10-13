@@ -104,6 +104,7 @@ body.pant .pt-wrap{height:100vh;}
 .pt-col.man .pt-h{border-bottom-color:#0d9488;}.pt-col.man .pt-n{background:#0d9488;}
 .pt-lista{flex:1;min-height:0;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;}
 .pt-it{border:1px solid var(--bo);border-left:5px solid var(--na);border-radius:8px;padding:10px 12px;background:var(--fo);}
+.pt-it.abre{cursor:pointer;}.pt-it.abre:hover{filter:brightness(.97);}.pt-it.mio{box-shadow:0 0 0 2px var(--na);}
 .pt-it.s-ini{border-left-color:var(--e-ini);}.pt-it.s-cur{border-left-color:var(--e-cur);}.pt-it.s-fin{border-left-color:var(--e-fin);}.pt-it.s-can{border-left-color:var(--e-can);}
 .pt-it.hecho{opacity:.6;}
 .pt-it.hecho .pt-t{text-decoration:line-through;}
@@ -8505,11 +8506,17 @@ function ptEnCurso(t,f0){
   return ahora>=ini&&ahora<fin;
 }
 const ptPosibleCancel=t=>!t.cancelada&&/AVISO[^\n]*CANCELADO/i.test(t.notas||'');
+// Reloj de la Pantalla con segundos (hora de Panamá)
+function ptReloj(){const el=document.getElementById('ptHora');if(!el)return;
+  el.textContent=new Date().toLocaleTimeString('es-PA',{timeZone:'America/Panama',hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true});}
+setInterval(()=>{const v=document.getElementById('vPantalla');if(v&&!v.classList.contains('oculto'))ptReloj();},1000);
+// Tocar una actividad propia en la Pantalla abre su detalle en Tareas
+function ptAbrir(id){if(document.body.classList.contains('pant'))ptCompleta(false);irATarea(id);}
 function renderPantalla(){
   const cont=document.getElementById('ptCols');if(!cont||!uAct)return;
   const d=ptDatos(),n=new Date();
   document.getElementById('ptFecha').textContent=cap1(fmtFechaLarga(d.f0));
-  document.getElementById('ptHora').textContent=txtHora(n.toLocaleTimeString('en-GB',{timeZone:'America/Panama',hour:'2-digit',minute:'2-digit'}));
+  ptReloj();
   const nom=id=>nombrePila((E.equipo||[]).find(p=>p.id===id)?.nombre);
   const hecha=sv=>['Completada','Cerrada','No cumplida'].includes(sv.estado);
   const chips=t=>Object.entries(t.secciones||{}).filter(([,sv])=>sv).map(([k,sv])=>{
@@ -8519,7 +8526,8 @@ function renderPantalla(){
     return `<span class="${cl}">${SECCIONES[k]?.ico||''} ${k}${sa?' · ⚠️ SIN ASIGNAR':who?' · '+escH(who):''}</span>`;}).join('');
   const item=(x,atr)=>{const t=x.t,curso=!atr&&!tResuelta(t)&&ptEnCurso(t,d.f0),canc=!!t.cancelada,pc=ptPosibleCancel(t);
     const eg=eglobal(t),sc=canc||eg==='No cumplida'?'can':curso||eg==='En Progreso'?'cur':eg==='Completada'||eg==='Cerrada'?'fin':'ini';
-    return `<div class="pt-it s-${sc}${canc?' canc':tResuelta(t)?' hecho':''}${curso?' curso':''}"><div class="pt-t">${canc?'🚫 ':''}${escH(t.titulo||'(Sin título)')}</div>
+    const mio=Object.values(t.secciones||{}).some(sv=>sv&&(sv.responsables||[]).includes(uAct.id));
+    return `<div class="pt-it s-${sc}${canc?' canc':tResuelta(t)?' hecho':''}${curso?' curso':''}${mio?' mio':''}${niv!=='lector'?' abre':''}"${niv!=='lector'?` onclick="ptAbrir('${t.id}')" title="${mio?'Es tuya · ':''}Toca para ver el detalle"`:''}><div class="pt-t">${canc?'🚫 ':''}${escH(t.titulo||'(Sin título)')}</div>
       <div class="pt-m">${atr?`<span class="pt-hr">${fmtPubFecha(x.f)}</span>`:`<span class="pt-hr">${t.hora?txtHora(t.hora)+(t.horaFin?' a '+txtHora(t.horaFin):''):'Sin hora'}</span>`}${t.lugar?' · 📍 '+escH(t.lugar):''}</div>
       ${curso?'<div class="pt-tag verde">🟢 EN CURSO AHORA</div>':''}${canc?`<div class="pt-tag rojo">🚫 CANCELADA${t.cancelada.motivo?' · '+escH(t.cancelada.motivo):''}</div>`:''}${pc?'<div class="pt-tag ambar">⚠️ Posible cancelación: verificar con Operaciones</div>':''}
       <div class="pt-ch">${chips(t)}</div></div>`;};
