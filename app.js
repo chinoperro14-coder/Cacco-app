@@ -410,7 +410,7 @@ function versionPara(c, conClaves) {
   return c.variantes[k];
 }
 // ¿La huella que manda la página es de la versión guardada ahora?
-const huellaVigente = (h, c) => String(h || "").replace(/^W\//, "").replace(/"/g, "").split("-").pop() === c.huella;
+const huellaVigente = (h, c) => String(h || "").replace(/^W\//, "").replace(/"/g, "").replace(/^[cs]-/, "") === c.huella;
 app.get("/api/data", verificarToken, async (req, res) => {
   try {
     const v = versionPara(await estadoData(), puedeClave(req.usuario));

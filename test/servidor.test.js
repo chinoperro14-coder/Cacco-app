@@ -94,6 +94,22 @@ test("guardar con una versión vieja responde conflicto; con la vigente, guarda"
   assert.equal(viejo.status, 409);
 });
 
+test("guardados seguidos con la huella recibida nunca chocan consigo mismos", async () => {
+  for (const email of ["lider@x.org", "colab@x.org"]) {
+    const t = await entrar(email);
+    const r = await pedir("/api/data", { token: t });
+    let huella = r.headers.get("etag"), d = await r.json();
+    for (let i = 0; i < 25; i++) {
+      d.bitacora = [{ id: `b-${email}-${i}`, accion: "Prueba", detalle: String(i) }, ...(d.bitacora || [])];
+      const res = await pedir("/api/data", { metodo: "POST", token: t, cuerpo: d, headers: { "If-Match": huella } });
+      assert.equal(res.status, 200, `guardado ${i} de ${email}`);
+      const j = await res.json();
+      if (j.ajustado) { const g = await pedir("/api/data", { token: t }); huella = g.headers.get("etag"); d = await g.json(); }
+      else huella = j.huella;
+    }
+  }
+});
+
 test("lector no guarda y un guardado sin forma de datos se rechaza", async () => {
   const tv = await entrar("tv@x.org"), t = await entrar("lider@x.org");
   assert.equal((await pedir("/api/data", { metodo: "POST", token: tv, cuerpo: { tareas: [], equipo: [] } })).status, 403);
