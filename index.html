@@ -216,11 +216,7 @@ header{background:var(--na);height:60px;display:flex;align-items:center;justify-
 .stat{background:var(--su);border:1px solid var(--bo);border-radius:var(--r);padding:20px 22px;box-shadow:var(--sh);border-top:3px solid transparent;}
 .e-ini{background:var(--e-inis);color:var(--e-inix);}.e-cur{background:var(--e-curs);color:var(--e-curx);}.e-fin{background:var(--e-fins);color:var(--e-finx);}.e-can{background:var(--e-cans);color:var(--e-canx);}.e-att{background:var(--e-atts);color:var(--e-attx);}
 .s-ini{border-top-color:var(--e-ini);}.s-cur{border-top-color:var(--e-cur);}.s-fin{border-top-color:var(--e-fin);}
-/* Retazos: franja de parches de colores vivos, como los trajes del Congo colonense */
-.retazos{height:7px;background:repeating-linear-gradient(90deg,#E35205 0 26px,#facc15 26px 40px,#16a34a 40px 70px,#2563eb 70px 86px,#c026d3 86px 112px,#dc2626 112px 124px,#06b6d4 124px 150px,#fff 150px 156px);}
 header{position:sticky;}
-header::after{content:"";position:absolute;left:0;right:0;bottom:-7px;height:7px;background:repeating-linear-gradient(90deg,#E35205 0 26px,#facc15 26px 40px,#16a34a 40px 70px,#2563eb 70px 86px,#c026d3 86px 112px,#dc2626 112px 124px,#06b6d4 124px 150px,#fff 150px 156px);}
-body.pant header::after{display:none;}
 .sna{border-top-color:var(--na);}.sve{border-top-color:#16a34a;}.saz{border-top-color:#2563eb;}.sam{border-top-color:#d97706;}.sro{border-top-color:#dc2626;}
 .slbl{font-size:11px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
 .snum{font-size:32px;font-weight:800;color:var(--tx);letter-spacing:-1.5px;line-height:1;}
@@ -1131,7 +1127,6 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 
 <!-- ASIGNACIONES VARIAS -->
 <div id="vPantalla" class="oculto">
-  <div class="retazos" style="margin-bottom:10px;border-radius:4px"></div>
   <div class="pt-wrap">
     <div class="pt-top">
       <div><div class="pt-fecha" id="ptFecha"></div></div>
