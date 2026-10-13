@@ -87,6 +87,41 @@ body{font-family:'Inter',sans-serif;background:var(--fo);color:var(--tx);min-hei
 :focus-visible{outline:3px solid var(--na);outline-offset:2px;border-radius:4px;}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important;}}
 body.tg{font-size:18px;}body.txl{font-size:22px;}
+
+/* ── Modo pantalla: Pendiente · Hoy · Mañana en una sola vista (para la tele) ── */
+.pt-wrap{display:flex;flex-direction:column;height:calc(100vh - 150px);min-height:420px;}
+body.pant .pt-wrap{height:100vh;}
+.pt-top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+.pt-fecha{font-size:clamp(20px,2.6vw,38px);font-weight:800;line-height:1.1;}
+.pt-hora{font-size:clamp(20px,2.6vw,38px);font-weight:800;color:var(--na);font-variant-numeric:tabular-nums;}
+.pt-bt{display:flex;gap:6px;align-items:center;}
+.pt-cols{flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;}
+.pt-col{display:flex;flex-direction:column;min-height:0;background:var(--su);border:1px solid var(--bo);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;}
+.pt-h{padding:12px 16px;font-size:clamp(16px,1.7vw,24px);font-weight:800;display:flex;align-items:center;gap:8px;border-bottom:3px solid var(--na);}
+.pt-h small{font-size:.62em;font-weight:600;color:var(--tm);margin-left:auto;}
+.pt-n{background:var(--na);color:#fff;border-radius:12px;padding:0 9px;font-size:.8em;}
+.pt-col.atr .pt-h{border-bottom-color:#dc2626;}.pt-col.atr .pt-n{background:#dc2626;}
+.pt-col.man .pt-h{border-bottom-color:#2563eb;}.pt-col.man .pt-n{background:#2563eb;}
+.pt-lista{flex:1;min-height:0;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;}
+.pt-it{border:1px solid var(--bo);border-left:5px solid var(--na);border-radius:8px;padding:10px 12px;background:var(--fo);}
+.pt-col.atr .pt-it{border-left-color:#dc2626;}.pt-col.man .pt-it{border-left-color:#2563eb;}
+.pt-it.hecho{opacity:.55;border-left-color:#16a34a!important;}
+.pt-it.hecho .pt-t{text-decoration:line-through;}
+.pt-t{font-size:clamp(15px,1.55vw,22px);font-weight:700;line-height:1.25;}
+.pt-m{font-size:clamp(12px,1.1vw,16px);color:var(--tm);margin-top:3px;}
+.pt-hr{font-weight:800;color:var(--tx);}
+.pt-ch{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+.pt-ch span{font-size:clamp(11px,1vw,14px);font-weight:600;padding:2px 9px;border-radius:12px;background:var(--su2);}
+.pt-ch .ok{background:var(--ves);color:var(--ve);}.pt-ch .ec{background:var(--azs);color:var(--az);}.pt-ch .pe{background:var(--ams);color:var(--am);}
+.pt-vac{text-align:center;color:var(--tm);padding:28px 10px;font-size:clamp(14px,1.3vw,18px);}
+.pt-esc{display:none!important;position:fixed;top:8px;right:10px;z-index:900;opacity:.35;}
+.pt-esc:hover{opacity:1;}
+body.pant .pt-esc{display:block!important;}
+body.pant .pt-bt button{display:none;}
+body.pant header,body.pant nav.sid,body.pant .subnav{display:none!important;}
+body.pant .cont{padding:14px 18px;}
+@media (max-width:900px){.pt-cols{grid-template-columns:1fr;}.pt-wrap{height:auto;}.pt-lista{max-height:none;}}
+
 @media print{body.slr *{display:none!important;}body.slr::after{display:block!important;content:"Impresión restringida.";font-size:18px;text-align:center;margin-top:40px;}}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--rs);border:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;line-height:1;}
 .btn:disabled{opacity:.4;cursor:not-allowed;}
@@ -788,6 +823,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <button data-v="calendario" onclick="goV('calendario')">🗓️ Calendario</button>
   <button data-v="asignaciones" onclick="goV('asignaciones')">☀️ Parte Diario</button>
   <button data-v="asigVarias" onclick="goV('asigVarias')">🔁 Recurrentes</button>
+  <button data-v="pantalla" onclick="goV('pantalla')">📺 Pantalla</button>
   <button data-v="pedidos" class="ned oculto" onclick="goV('pedidos')">📨 Pedidos</button>
 </div>
 <div class="subnav oculto" data-g="pubs">
@@ -1072,6 +1108,18 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 </div>
 
 <!-- ASIGNACIONES VARIAS -->
+<div id="vPantalla" class="oculto">
+  <div class="pt-wrap">
+    <div class="pt-top">
+      <div><div class="pt-fecha" id="ptFecha"></div></div>
+      <div class="pt-bt"><span class="pt-hora" id="ptHora"></span>
+        <button class="btn bgh bsm" onclick="ptCompleta(true)" title="Oculta el menú para dejarlo en la tele">📺 Pantalla completa</button></div>
+    </div>
+    <div class="pt-cols" id="ptCols"></div>
+  </div>
+  <button class="btn bgh bsm pt-esc" onclick="ptCompleta(false)">✕ Salir de pantalla completa</button>
+</div>
+
 <div id="vAsigVarias" class="oculto">
   <div class="sh2">
     <div>
@@ -2123,6 +2171,7 @@ function iniciarApp(){
 
   renderTodo();
   irInicio();
+  if(location.hash==='#pantalla'){goV('pantalla');ptCompleta(true);}
   cargarAdj();
 }
 
@@ -2148,9 +2197,9 @@ function limpNotifs(){E.notifs=[];renderNotifs();document.getElementById('notifP
 // ════════════════════════
 //  NAVEGACIÓN
 // ════════════════════════
-const VISTAS=['Pedidos','MiDia','Prensa','Adjuntos','Tareas','Aprobaciones','Calendario','HorasExtra','Compensatorio','Permisos','Equipo','Reportes','Historico','Bitacora','Perfil','CalPub','Asignaciones','AsigVarias'];
+const VISTAS=['Pantalla','Pedidos','MiDia','Prensa','Adjuntos','Tareas','Aprobaciones','Calendario','HorasExtra','Compensatorio','Permisos','Equipo','Reportes','Historico','Bitacora','Perfil','CalPub','Asignaciones','AsigVarias'];
 // Menú en 7 grupos; cada grupo con varias vistas muestra sus pestañas arriba
-const GRUPOS={miDia:['miDia'],tareas:['tareas','calendario','asignaciones','asigVarias','pedidos'],pubs:['calPub','prensa'],
+const GRUPOS={miDia:['miDia'],tareas:['tareas','calendario','asignaciones','asigVarias','pantalla','pedidos'],pubs:['calPub','prensa'],
   tramites:['horasExtra','compensatorio','permisos'],aprob:['aprobaciones'],reportes:['reportes'],mas:['equipo','adjuntos','historico','bitacora']};
 const grupoDe=v=>Object.keys(GRUPOS).find(g=>GRUPOS[g].includes(v));
 function marcarMenu(v){
@@ -2189,6 +2238,7 @@ function goV(v,el){
   if(v==='asignaciones'){if(!document.getElementById('asigFecha').value)document.getElementById('asigFecha').value=hoy();renderAsig();}
   if(v==='asigVarias')renderAsigVarias();
   if(v==='pedidos')renderPedHist();
+  if(v==='pantalla')renderPantalla();
 }
 
 function filtraCat(c,el){
@@ -8371,11 +8421,67 @@ ${parrafos(r.recom)||nada}
 function hayModalAbierto(){return !!document.querySelector('.mov.on')||!!document.getElementById('repOverlay');}
 
 // Re-dibuja SOLO la vista que está abierta ahora mismo (todas las vistas).
+
+// ── Modo pantalla: Pendiente · Hoy · Mañana (se actualiza solo con el refresco de datos y cada minuto) ──
+function ptCompleta(on){
+  document.body.classList.toggle('pant',!!on);
+  try{if(on&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{});
+      else if(!on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});}catch{}
+  history.replaceState(null,'',on?'#pantalla':location.pathname+location.search);
+}
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&document.body.classList.contains('pant')&&!document.getElementById('vPantalla').classList.contains('oculto'))ptCompleta(false);});
+function ptDatos(){
+  const f0=hoy(),f1=sumarDias(f0,1);
+  const tareas=(E.tareas||[]).filter(t=>t&&!t.borrador);
+  const fechasSec=t=>Object.entries(t.secciones||{}).filter(([,sv])=>sv).map(([k,sv])=>({sec:k,sv,f:secFecha(t,k)})).filter(x=>x.f);
+  const col={atr:[],hoy:[],man:[]};
+  tareas.forEach(t=>{
+    const res=tResuelta(t),ss=fechasSec(t),sinRes=ss.filter(x=>!['Completada','Cerrada','No cumplida'].includes(x.sv.estado));
+    const fs=ss.length?ss.map(x=>x.f):[t.fecha].filter(Boolean);
+    if(!fs.length)return;
+    const vencidas=(ss.length?sinRes.map(x=>x.f):[t.fecha]).filter(f=>f&&f<f0).sort();
+    if(!res&&vencidas.length)col.atr.push({t,f:vencidas[0]});
+    if(fs.includes(f0)||t.fecha===f0)col.hoy.push({t,f:f0});
+    if(fs.includes(f1)||t.fecha===f1)col.man.push({t,f:f1});
+  });
+  const hh=x=>x.t.hora||'99';
+  col.atr.sort((a,b)=>a.f.localeCompare(b.f)||hh(a).localeCompare(hh(b)));
+  col.hoy.sort((a,b)=>hh(a).localeCompare(hh(b)));col.man.sort((a,b)=>hh(a).localeCompare(hh(b)));
+  const pubs=(E.publicaciones||[]).filter(p=>p&&pubEst(p)!=='publicado');
+  const pc={atr:pubs.filter(p=>p.fecha&&p.fecha<f0&&pubEst(p)==='aprobado'),hoy:pubs.filter(p=>p.fecha===f0&&pubEst(p)==='aprobado'),man:pubs.filter(p=>p.fecha===f1&&pubEst(p)==='aprobado')};
+  return {f0,f1,col,pc};
+}
+function renderPantalla(){
+  const cont=document.getElementById('ptCols');if(!cont||!uAct)return;
+  const d=ptDatos(),n=new Date();
+  document.getElementById('ptFecha').textContent=cap1(fmtFechaLarga(d.f0));
+  document.getElementById('ptHora').textContent=txtHora(n.toLocaleTimeString('en-GB',{timeZone:'America/Panama',hour:'2-digit',minute:'2-digit'}));
+  const nom=id=>nombrePila((E.equipo||[]).find(p=>p.id===id)?.nombre);
+  const chips=t=>Object.entries(t.secciones||{}).filter(([,sv])=>sv).map(([k,sv])=>{
+    const cl=sv.estado==='Completada'||sv.estado==='Cerrada'?'ok':secEnCurso(t,k)||sv.estado==='En Progreso'?'ec':'pe';
+    const who=(sv.responsables||[]).map(nom).filter(Boolean).join(', ');
+    return `<span class="${cl}">${SECCIONES[k]?.ico||''} ${k}${who?' · '+escH(who):' · sin asignar'}</span>`;}).join('');
+  const item=(x,atr)=>{const t=x.t;
+    return `<div class="pt-it${tResuelta(t)?' hecho':''}"><div class="pt-t">${escH(t.titulo||'(Sin título)')}</div>
+      <div class="pt-m">${atr?`<span class="pt-hr">${fmtPubFecha(x.f)}</span>`:`<span class="pt-hr">${t.hora?txtHora(t.hora)+(t.horaFin?' a '+txtHora(t.horaFin):''):'Sin hora'}</span>`}${t.lugar?' · 📍 '+escH(t.lugar):''}</div>
+      <div class="pt-ch">${chips(t)}</div></div>`;};
+  const itemPub=(p,atr)=>`<div class="pt-it"><div class="pt-t">📣 ${escH(p.titulo||'(Sin título)')}</div>
+      <div class="pt-m"><span class="pt-hr">${atr?fmtPubFecha(p.fecha):p.hora?txtHora(p.hora):'Sin hora'}</span> · ${(p.plataformas||[]).map(x=>PLAT_WA[x]||x).join(', ')}${p.responsableId?' · '+escH(nom(p.responsableId)):' · sin responsable'}</div></div>`;
+  const caja=(cls,tit,sub,arr,pubs,atr,vacio)=>{const tot=arr.length+pubs.length;
+    return `<div class="pt-col ${cls}"><div class="pt-h">${tit} ${tot?`<span class="pt-n">${tot}</span>`:''}<small>${sub}</small></div>
+      <div class="pt-lista">${tot?arr.map(x=>item(x,atr)).join('')+pubs.map(p=>itemPub(p,atr)).join(''):`<div class="pt-vac">${vacio}</div>`}</div></div>`;};
+  cont.innerHTML=caja('atr','⚠️ Pendiente','sin terminar',d.col.atr,d.pc.atr,true,'Nada atrasado 🎉')
+    +caja('hoy','📍 Hoy',cap1(fmtPubFecha(d.f0)),d.col.hoy,d.pc.hoy,false,'No hay actividades para hoy')
+    +caja('man','➡️ Mañana',cap1(fmtPubFecha(d.f1)),d.col.man,d.pc.man,false,'No hay actividades para mañana');
+}
+setInterval(()=>{if(document.getElementById('vPantalla')&&!document.getElementById('vPantalla').classList.contains('oculto'))renderPantalla();},60000);
+
 function refrescarVistaAbierta(){
   actuCts();
   const vis=id=>{const el=document.getElementById(id);return el&&!el.classList.contains('oculto');};
   try{
     if(vis('vMiDia'))renderMiDia();
+    if(vis('vPantalla'))renderPantalla();
     if(vis('vPrensa'))renderPrensa();
     if(vis('vTareas'))renderTareas();
     if(vis('vHorasExtra'))renderHoras();
