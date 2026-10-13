@@ -1904,8 +1904,9 @@ const hoy=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Panama'}).forma
 const fmt=f=>f?new Date(f+'T00:00:00').toLocaleDateString('es-PA',{day:'2-digit',month:'short',year:'numeric'}):'—';
 const dH=f=>f?Math.ceil((new Date(f+'T00:00:00')-new Date(hoy()+'T00:00:00'))/86400000):null;
 function cAv(n){let h=0;for(let c of(n||'?'))h=(h*31+c.charCodeAt(0))&0xffff;return COLORS[h%COLORS.length];}
-function ini(n){return(n||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();}
-function rAv(n,f,s=28,fs=10){const st=`width:${s}px;height:${s}px;font-size:${fs}px;flex-shrink:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;color:#fff;overflow:hidden;background:${cAv(n)};`;if(f)return`<div style="${st}"><img src="${f}" alt="${n}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='${ini(n)}'"></div>`;return`<div style="${st}">${ini(n)}</div>`;}
+function ini(n){return(String(n||'?').normalize('NFD').replace(/[^\p{L}\p{N} ]/gu,'').split(' ').filter(Boolean).map(w=>w[0]).join('').slice(0,2).toUpperCase())||'?';}
+function rAv(n,f,s=28,fs=10){const st=`width:${s}px;height:${s}px;font-size:${fs}px;flex-shrink:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;color:#fff;overflow:hidden;background:${cAv(n)};`;// La foto solo se usa si es un enlace http(s) o una imagen incrustada
+  if(f&&/^(https?:\/\/|data:image\/)[^\s"'<>`]+$/i.test(f))return`<div style="${st}"><img src="${escH(f)}" alt="${escH(n)}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.textContent='${ini(n)}'"></div>`;return`<div style="${st}">${ini(n)}</div>`;}
 
 // ════════════════════════
 //  PERSISTENCIA (servidor compartido)
@@ -2188,7 +2189,7 @@ function cerrarSes(){
 //  NOTIFICACIONES
 // ════════════════════════
 function addNotif(ico,txt,sub){E.notifs.unshift({id:gId(),ico,txt,sub,ts:new Date().toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit'})});if(E.notifs.length>50)E.notifs=E.notifs.slice(0,50);document.getElementById('ndot').classList.add('on');renderNotifs();}
-function renderNotifs(){const l=document.getElementById('notifLista');if(!E.notifs.length){l.innerHTML='<div class="nvac">Sin notificaciones.</div>';return;}l.innerHTML=E.notifs.map(n=>`<div class="nit"><div class="nico">${n.ico}</div><div class="ntxt">${escH(n.txt)}<div class="nsub">${escH(n.sub)} · ${n.ts}</div></div></div>`).join('');}
+function renderNotifs(){const l=document.getElementById('notifLista');if(!E.notifs.length){l.innerHTML='<div class="nvac">Sin notificaciones.</div>';return;}l.innerHTML=E.notifs.map(n=>`<div class="nit"><div class="nico">${escH(n.ico)}</div><div class="ntxt">${escH(n.txt)}<div class="nsub">${escH(n.sub)} · ${escH(n.ts)}</div></div></div>`).join('');}
 function togSid(){document.getElementById('sidNav').classList.toggle('open');document.getElementById('sidOverlay').classList.toggle('open');}
 function cerrarSid(){document.getElementById('sidNav').classList.remove('open');document.getElementById('sidOverlay').classList.remove('open');}
 function togNotif(){document.getElementById('notifPanel').classList.toggle('on');document.getElementById('ndot').classList.remove('on');}
@@ -2554,7 +2555,7 @@ function renderTareas(){
               ${sv.fecha?`<div style="font-size:11px;color:${sInfo.color||'var(--na)'};font-weight:600;margin-top:2px">🗓️ Entrega: ${fmt(sv.fecha)}${sv.hora?` · ${sv.hora}`:''}</div>`:''}
               ${resumenUnid}
               ${(sv.completadaTarde||sv.notaRetraso)?`<div style="font-size:11px;color:#dc2626;margin-top:2px">⏰ Completada con retraso${sv.notaRetraso?` — ${sv.notaRetraso}`:''}</div>`:''}
-              ${noCump&&!tieneUnid?`<div style="font-size:11px;color:#dc2626;margin-top:2px">🚫 No cumplida${sv.noCumplidaPor?` · ${sv.noCumplidaPor}`:''}${sv.noCumplidaEn?` · ${fmt(sv.noCumplidaEn)}`:''} — ${sv.motivoNoCumplida||''}</div>`:''}
+              ${noCump&&!tieneUnid?`<div style="font-size:11px;color:#dc2626;margin-top:2px">🚫 No cumplida${sv.noCumplidaPor?` · ${escH(sv.noCumplidaPor)}`:''}${sv.noCumplidaEn?` · ${fmt(sv.noCumplidaEn)}`:''} — ${escH(sv.motivoNoCumplida)}</div>`:''}
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:6px">
@@ -2659,10 +2660,10 @@ function renderTareas(){
           const aparsHtml=apars2.length?apars2.map(a=>`<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 8px;background:var(--su);border:1px solid var(--bo);border-radius:6px;margin-bottom:3px">
             <span style="flex-shrink:0;font-size:14px">${a.publicado?'✅':'⏳'}</span>
             <div style="flex:1;min-width:0">
-              <div style="font-size:12px;font-weight:700">${a.medio||'—'}${a.tipo?' · <em style="font-weight:400">'+a.tipo+'</em>':''}</div>
+              <div style="font-size:12px;font-weight:700">${escH(a.medio||'—')}${a.tipo?' · <em style="font-weight:400">'+escH(a.tipo)+'</em>':''}</div>
               <div style="font-size:11px;color:var(--tx)">${escH(a.titulo||'—')}</div>
               ${a.fecha?`<div style="font-size:10px;color:var(--tm)">${fmt(a.fecha)}</div>`:''}
-              ${a.enlace?`<a href="${a.enlace}" target="_blank" style="font-size:10px;color:var(--az);overflow:hidden;text-overflow:ellipsis;display:block;white-space:nowrap">🔗 ${a.enlace}</a>`:''}
+              ${a.enlace?`<a href="${hrefS(a.enlace)}" target="_blank" rel="noopener" style="font-size:10px;color:var(--az);overflow:hidden;text-overflow:ellipsis;display:block;white-space:nowrap">🔗 ${escH(a.enlace)}</a>`:''}
             </div>
             ${canApar?`<div style="display:flex;gap:4px;flex-shrink:0">
               <button class="btn bna bsm" style="padding:1px 7px;font-size:10px" onclick="event.stopPropagation();togApar('${t.id}','${a.id}')">${a.publicado?'Revertir':'✅ Ok'}</button>
@@ -2732,7 +2733,7 @@ function renderTareas(){
             const med=AV_MED[a.medio]||AV_MED.foto;
             const tip=AV_TIPO[a.tipo]||{bg:'#f5f5f5',col:'#555'};
             const medB=`<span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;background:${med.bg};color:${med.col};white-space:nowrap">${med.lbl}</span>`;
-            const tipB=`<span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;background:${tip.bg};color:${tip.col};white-space:nowrap">${a.tipo}</span>`;
+            const tipB=`<span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;background:${tip.bg};color:${tip.col};white-space:nowrap">${escH(a.tipo)}</span>`;
             const est=a.comp?`<span style="font-size:12px;color:#0F6E56;font-weight:700">✅</span>`:a.noCump?`<span style="font-size:12px;color:#dc2626;font-weight:700">🚫</span>`:`<span style="font-size:12px;color:#888">⏳</span>`;
             const botones=canMarkAV?`<div style="display:flex;gap:4px;flex-wrap:wrap">
                 <button class="btn bgh bsm" style="padding:2px 7px;font-size:11px" onclick="event.stopPropagation();togCompAV('${t.id}',${i})">${a.comp?'Revertir':'✅ Listo'}</button>
@@ -2753,8 +2754,8 @@ function renderTareas(){
             ?`<div class="prog-badge" onclick="event.stopPropagation();programarEntregable('${t.id}','${e.id}')">🗓️ ${fmtPubFecha(pub.fecha)} · ${pub.hora}</div>`
             :(canAddEnt?`<button class="btn-prog" onclick="event.stopPropagation();programarEntregable('${t.id}','${e.id}')">🗓️ Programar</button>`:'');
           return`<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--fo);border:1px solid var(--bo);border-radius:var(--rs);margin-bottom:4px;font-size:12px;flex-wrap:wrap">
-            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🔗 <a href="${(e.url||'').startsWith('http')?e.url:'https://'+(e.url||'')}" target="_blank" style="color:var(--az)" onclick="event.stopPropagation()">${escH(e.nombre)}</a></span>
-            <span style="color:var(--tm);font-size:11px;white-space:nowrap">${e.subidoPor||''}</span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🔗 <a href="${hrefS(e.url)}" rel="noopener" target="_blank" style="color:var(--az)" onclick="event.stopPropagation()">${escH(e.nombre)}</a></span>
+            <span style="color:var(--tm);font-size:11px;white-space:nowrap">${escH(e.subidoPor)}</span>
             ${progEl}
             ${canAddEnt&&(e.subidoPorId===uAct?.id||niv==='lider')?`<button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro);padding:1px 6px;font-size:10px" onclick="event.stopPropagation();elimEntregable('${t.id}','${e.id}')">✕</button>`:''}
           </div>`;
@@ -2783,8 +2784,8 @@ function renderTareas(){
         const entItems=ents.map(e=>{
           return`<div class="ent-item">
             <div class="ent-ico">🔗</div>
-            <div class="ent-info"><div class="ent-name">${escH(e.nombre)}</div><a href="${e.url}" target="_blank" class="ent-url">${e.url}</a></div>
-            <span class="ent-who">${e.subidoPor||'—'}</span>
+            <div class="ent-info"><div class="ent-name">${escH(e.nombre)}</div><a href="${hrefS(e.url)}" target="_blank" rel="noopener" class="ent-url">${escH(e.url)}</a></div>
+            <span class="ent-who">${escH(e.subidoPor||'—')}</span>
             ${canAddEnt&&(e.subidoPorId===uAct?.id||niv==='lider')?`<button class="btn bpe bsm" onclick="event.stopPropagation();elimEntregable('${t.id}','${e.id}')">🗑</button>`:''}
           </div>`;
         }).join('');
@@ -2806,7 +2807,7 @@ function renderTareas(){
     }
 
     const etiqH=(t.etiquetas||[]).map(e=>`<span class="bg bmor">${e}</span>`).join('');
-    const notaPreview=t.notas?`<div style="font-size:12px;color:var(--tm);margin-top:3px;word-break:break-word">📝 ${t.notas.replace(/📅/g,'🗓️')}</div>`:'';
+    const notaPreview=t.notas?`<div style="font-size:12px;color:var(--tm);margin-top:3px;word-break:break-word">📝 ${escH(t.notas.replace(/📅/g,'🗓️'))}</div>`:'';
     const acciones=abierta&&(puedeEditarT(t)||puede('eliminarTarea')||puede('crearTarea'))?`<div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
       ${puedeEditarT(t)?`<button class="btn bna bsm" onclick="event.stopPropagation();editT('${t.id}')">✏️ Editar</button>`:''}
       ${puede('editarTarea')?(t.cancelada?`<button class="btn bgh bsm" onclick="event.stopPropagation();cancelarT('${t.id}')">↩️ Reactivar</button>`:`<button class="btn bgh bsm" style="color:var(--ro)" onclick="event.stopPropagation();cancelarT('${t.id}')">🚫 Cancelar actividad</button>`):''}
@@ -2824,7 +2825,7 @@ function renderTareas(){
         const platDots=(p.plataformas||[]).map(pl=>`<span class="pc ${pl}">${PLAT_NOM[pl]}</span>`).join(' ');
         const accionBtn=pubBotones(p);
         const editBtn=canProg?`<button class="btn bgh bsm" style="font-size:11px;padding:2px 8px" onclick="event.stopPropagation();editarPublicacion('${p.id}')">✏️</button>`:'';
-        const linkHTML=p.linkPublicado?`<a href="${p.linkPublicado}" target="_blank" rel="noopener noreferrer" style="font-size:11px;color:var(--na);white-space:nowrap" onclick="event.stopPropagation()">🔗 Ver</a>`:'';
+        const linkHTML=p.linkPublicado?`<a href="${hrefS(p.linkPublicado)}" target="_blank" rel="noopener noreferrer" style="font-size:11px;color:var(--na);white-space:nowrap" onclick="event.stopPropagation()">🔗 Ver</a>`:'';
         return`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--bo);flex-wrap:wrap">
           <div style="display:flex;gap:4px;flex-wrap:wrap;flex-shrink:0">${platDots}</div>
           <div style="flex:1;min-width:0;font-size:12px;font-weight:600;color:var(--tx)">${fmtPubFecha(p.fecha)} · ${p.hora}  ${escH(p.titulo)} ${pubTipoBadge(p)}</div>
@@ -2856,7 +2857,7 @@ function renderTareas(){
           <span class="t-ico" style="font-size:17px;flex-shrink:0">${secIco}</span>
           <div style="min-width:0">
             <div class="t-tit" style="font-size:14px;font-weight:700;color:#fff;white-space:normal;word-break:break-word${t.cancelada?';text-decoration:line-through':''}">${t.cancelada?'🚫 ':''}${escH(t.titulo)}${t.recurrencia&&t.recurrencia!=='ninguna'?' 🔁':''}</div>
-            ${t.notas&&abierta?`<div style="font-size:11px;color:rgba(255,255,255,.82);margin-top:1px;word-break:break-word">📝 ${t.notas.replace(/📅/g,'🗓️')}</div>`:''}
+            ${t.notas&&abierta?`<div style="font-size:11px;color:rgba(255,255,255,.82);margin-top:1px;word-break:break-word">📝 ${escH(t.notas.replace(/📅/g,'🗓️'))}</div>`:''}
           </div>
         </div>
         <div class="t-badges" style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:10px">
@@ -3468,7 +3469,7 @@ function actualizarAudiovisualBlk(){
       const u=E.equipo.find(u=>u.id===a.userId);
       return`<div style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13px">
         <span>${a.medio==='foto'?'📷':'🎬'}</span>
-        <span style="flex:1">${u?.nombre.split(' ')[0]||a.nombre||'?'} — <b>${a.tipo}</b></span>
+        <span style="flex:1">${escH(u?.nombre.split(' ')[0]||a.nombre||'?')} — <b>${escH(a.tipo)}</b></span>
         <span onclick="avQuitarAsig(${i})" style="cursor:pointer;color:var(--ro);font-size:11px;padding:2px 5px;border:1px solid var(--ro);border-radius:4px">✕</span>
       </div>`;
     }).join('')}
@@ -3930,7 +3931,7 @@ const PUB_TIPOS_SECC={'Diseño':['Post','Carrusel','Historia'],'Audiovisual':['R
 function pubEst(p){return p.estado==='pendiente'?'produccion':(p.estado||'produccion');}
 function pubEstVis(p){const e=pubEst(p);return e!=='publicado'&&p.fecha&&p.fecha<hoy()?'atrasado':e;}
 function pubBadge(p){const e=PUB_EST[pubEstVis(p)];return`<span style="font-size:11px;background:${e.bg};color:${e.col};padding:1px 7px;border-radius:20px;font-weight:700;white-space:nowrap">${e.lbl}</span>`;}
-function pubTipoBadge(p){return p.tipo?`<span style="font-size:10px;border:1px solid var(--bo);color:var(--tm);padding:0 6px;border-radius:10px;white-space:nowrap">${p.tipo}</span>`:'';}
+function pubTipoBadge(p){return p.tipo?`<span style="font-size:10px;border:1px solid var(--bo);color:var(--tm);padding:0 6px;border-radius:10px;white-space:nowrap">${escH(p.tipo)}</span>`:'';}
 function esFeed(p){return!PUB_NO_FEED.includes(p.tipo)&&(p.plataformas||[]).some(pl=>['ig','fb','tt','yt'].includes(pl));}
 function pubBotones(p){
   if(!puede('marcarAvance'))return'';
@@ -4258,7 +4259,7 @@ function renderPendientesPub(){
         <div style="font-size:13px;font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🔗 ${escH(p.nombre)}</div>
         <div style="font-size:11px;color:var(--tm);margin-top:2px">📋 ${p.tareaTit}</div>
       </div>
-      <a href="${p.url.startsWith('http')?p.url:'https://'+p.url}" target="_blank" class="btn bgh bsm" style="flex-shrink:0">Ver</a>
+      <a href="${hrefS(p.url)}" rel="noopener" target="_blank" class="btn bgh bsm" style="flex-shrink:0">Ver</a>
       ${canProg?`<button class="btn-prog" onclick="programarEntregable('${p.tareaId}','${p.entId}')">🗓️ Programar</button>`:''}
     </div>`).join('');
   el.innerHTML=`
@@ -4318,7 +4319,7 @@ function renderCalPubMes(anio,mes,pubs){
       const ev=pubEstVis(p);
       const c=['publicado','atrasado'].includes(ev)?PUB_EST[ev].col:PLAT_COLOR[p.plataformas[0]]||'var(--na)';
       const bg=['publicado','atrasado'].includes(ev)?PUB_EST[ev].bg:PLAT_BG[p.plataformas[0]]||'var(--nas)';
-      return`<span class="cev-pub" style="background:${bg};color:${c};border-left-color:${c}" onclick="verDiaPub(${d})">${p.hora.replace(':','h').slice(0,5)} ${p.nombre.slice(0,18)}</span>`;
+      return`<span class="cev-pub" style="background:${bg};color:${c};border-left-color:${c}" onclick="verDiaPub(${d})">${p.hora.replace(':','h').slice(0,5)} ${escH(p.nombre.slice(0,18))}</span>`;
     }).join('');
     const mas=ps.length>3?`<span class="cev-pub" style="background:var(--su2);color:var(--tm);border-left-color:var(--bo)" onclick="event.stopPropagation();verDiaPub(${d})">+${ps.length-3} más</span>`:'';
     const dots=ps.length?`<div style="display:flex;gap:2px;justify-content:center;flex-wrap:wrap;margin-top:2px">${[...new Set(ps.flatMap(p=>p.plataformas||[]))].map(pl=>`<span style="width:6px;height:6px;border-radius:50%;background:${PLAT_COL[pl]||'#888'};display:inline-block"></span>`).join('')}</div>`:'';
@@ -4357,19 +4358,19 @@ function renderCalPubAgenda(pubs){
               <span style="font-size:11px;color:var(--tm);font-weight:400">▾</span>
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-              ${pubBadge(p)}${p.aprobadoPor?`<span style="font-size:11px;color:var(--tm)">👍 ${p.aprobadoPor}</span>`:''}
+              ${pubBadge(p)}${p.aprobadoPor?`<span style="font-size:11px;color:var(--tm)">👍 ${escH(p.aprobadoPor)}</span>`:''}
               ${p.tarea?`<span style="font-size:11px;color:var(--tm)">📋 ${p.tarea}</span>`:'<span style="font-size:11px;color:var(--tm)">—</span>'}
-              ${p.responsableNombre?`<span style="font-size:11px;color:var(--tm)">👤 ${p.responsableNombre}</span>`:''}
+              ${p.responsableNombre?`<span style="font-size:11px;color:var(--tm)">👤 ${escH(p.responsableNombre)}</span>`:''}
             </div>
           </div>
           ${accionBtn}
         </div>
         <div id="apub-${p._idx}" style="display:none;margin:-6px 0 6px 0;padding:12px 14px 14px;background:var(--fo);border:1px solid var(--bo);border-top:none;border-radius:0 0 var(--rs) var(--rs)">
-          ${p.copy?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">📝 Copy</div><div style="font-size:13px;color:var(--tx);white-space:pre-wrap;line-height:1.5">${p.copy}</div></div>`:''}
+          ${p.copy?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">📝 Copy</div><div style="font-size:13px;color:var(--tx);white-space:pre-wrap;line-height:1.5">${escH(p.copy)}</div></div>`:''}
           ${p.notas?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">💬 Notas</div><div style="font-size:12px;color:var(--tm)">${escH(p.notas)}</div></div>`:''}
-          ${p.responsableNombre?`<div style="margin-bottom:10px;font-size:12px;color:var(--tm)">👤 Responsable: <strong>${p.responsableNombre}</strong></div>`:''}
+          ${p.responsableNombre?`<div style="margin-bottom:10px;font-size:12px;color:var(--tm)">👤 Responsable: <strong>${escH(p.responsableNombre)}</strong></div>`:''}
           ${p.links?.length?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">🔗 Links</div>${p.links.map(l=>`<a href="${l}" target="_blank" style="display:block;font-size:12px;color:var(--az);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l}</a>`).join('')}</div>`:''}
-          ${p.linkPublicado?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--ve);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">✅ Link publicado</div><a href="${p.linkPublicado}" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:var(--na)">${p.linkPublicado}</a></div>`:''}
+          ${p.linkPublicado?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--ve);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">✅ Link publicado</div><a href="${hrefS(p.linkPublicado)}" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:var(--na)">${escH(p.linkPublicado)}</a></div>`:''}
           ${resHtml(p)?`<div style="margin-bottom:10px">${resHtml(p)}</div>`:''}
           <div id="apub-ents-${p._idx}"></div>
           ${puede('marcarAvance')?`<div style="display:flex;gap:6px;margin-top:10px"><button class="btn bgh bsm" onclick="event.stopPropagation();editarPub('${p.id}')">✏️ Editar</button>${!p.tareaId&&!p.entId||niv==='lider'?`<button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro)" onclick="event.stopPropagation();elimPub('${p.id}')">🗑 Eliminar</button>`:''}</div>`:''}
@@ -4403,7 +4404,7 @@ function togAgendaPub(id){
         if(e) entsHTML=`<div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">🔗 Entregable</div>
           <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--su);border:1px solid var(--bo);border-radius:var(--rs);font-size:12px">
             <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--tx)">${escH(e.nombre)}</span>
-            <a href="${e.url.startsWith('http')?e.url:'https://'+e.url}" target="_blank" class="btn bgh bsm" onclick="event.stopPropagation()">🔗 Abrir</a>
+            <a href="${hrefS(e.url)}" rel="noopener" target="_blank" class="btn bgh bsm" onclick="event.stopPropagation()">🔗 Abrir</a>
           </div>`;
       }
       entsEl.innerHTML=entsHTML;
@@ -4445,7 +4446,7 @@ function verDiaPub(dia){
           </div>
           ${pubBadge(p)}
         </div>
-        ${p.copy?`<div class="dia-copy">${p.copy}</div>`:''}
+        ${p.copy?`<div class="dia-copy">${escH(p.copy)}</div>`:''}
       </div>`;
     }).join('')+`<div style="margin-top:12px;text-align:right">${addBtn}</div>`;
   }
@@ -5084,7 +5085,9 @@ async function elimH(id){
 // ════════════════════════
 const MOTIVOS_PER=['Enfermedad del Servidor Público','Duelo','Matrimonio del Servidor Público','Nacimiento de hijo del Servidor Público','Enfermedades de parientes cercanos','Eventos académicos puntuales','Otros asuntos personales de importancia','144 horas'];
 const MIN_DIA=HORAS_DIA*60, TOPE_144=144*60;
-const escH=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const escH=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// Enlace para href: solo http(s) (si falta, se agrega https://); cualquier otra cosa no se abre
+const hrefS=u=>{u=String(u??'').trim();if(!u)return'#';if(!/^[a-z]+:/i.test(u))u='https://'+u;return /^https?:\/\/[^\s"'<>`]+$/i.test(u)?escH(u):'#';};
 const minHM=t=>{if(!t)return null;const [a,b]=t.split(':').map(Number);return a*60+b;};
 // Minutos de jornada (lunes a viernes, 8:00–16:00) entre dos momentos
 function minJornada(df,dh,hf,hh){
@@ -5580,7 +5583,7 @@ function renderEquipo(){
             <div style="font-size:12px;color:var(--tm);margin-top:2px">${escH(p.cargo||'Sin cargo')}</div>
             ${(()=>{const a=!esSistema(p)&&actInfo(p.id);return a?`<div style="font-size:11px;font-weight:600;color:${a.col};margin-top:3px">● ${escH(a.txt)}</div>`:'';})()}
             ${(()=>{const a=ausenciaComp(p.nombre);return a?`<div style="font-size:11px;font-weight:700;color:var(--az);margin-top:3px">🌴 De compensatorio · regresa el ${fmt(a.regreso)}</div>`:'';})()}
-            ${p.puesto||p.posicion?`<div style="font-size:11px;color:var(--tm);margin-top:2px">RRHH: ${p.puesto||'—'}${p.posicion?` · Posición ${p.posicion}`:''}</div>`:''}
+            ${p.puesto||p.posicion?`<div style="font-size:11px;color:var(--tm);margin-top:2px">RRHH: ${escH(p.puesto||'—')}${p.posicion?` · Posición ${escH(p.posicion)}`:''}</div>`:''}
             <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
               <span class="pnivel ${p.nivel}">${NIVEL_ICO[p.nivel]||'👤'} ${NIVEL_NOM[p.nivel]||p.nivel}</span>
               ${seccBadge}
@@ -5981,7 +5984,7 @@ function generarRep(){
           const sv=t.secciones[m.sec];const est=sv.estado||'Pendiente';
           const estI=est==='Completada'?'✅':est==='En Progreso'?'🔄':'⏳';
           const resps=(sv.responsables||[]).map(id=>E.equipo.find(u=>u.id===id)?.nombre?.split(' ')[0]).filter(Boolean).join(', ');
-          const meta=[t.hora&&`🕐 ${t.hora}`,t.lugar&&`📍 ${t.lugar}`].filter(Boolean).join(' ');
+          const meta=[t.hora&&`🕐 ${escH(t.hora)}`,t.lugar&&`📍 ${escH(t.lugar)}`].filter(Boolean).join(' ');
           return`<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 10px;background:var(--fo);border:1px solid var(--bo);border-radius:6px;margin-bottom:4px">
             <span style="flex-shrink:0;margin-top:1px">${estI}</span>
             <div style="flex:1;min-width:0">
@@ -6017,7 +6020,7 @@ function generarRep(){
             <span style="flex-shrink:0;margin-top:1px">⏳</span>
             <div style="flex:1;min-width:0">
               <div style="font-size:13px;font-weight:600">${escH(t.titulo)}</div>
-              <div style="font-size:11px;color:var(--tm);margin-top:1px">🗓️ ${fmt(t.fecha)}${t.hora?' · 🕐 '+t.hora:''}${t.lugar?' · 📍 '+t.lugar:''}</div>
+              <div style="font-size:11px;color:var(--tm);margin-top:1px">🗓️ ${fmt(t.fecha)}${t.hora?' · 🕐 '+t.hora:''}${t.lugar?' · 📍 '+escH(t.lugar):''}</div>
               ${resps?`<div style="font-size:11px;color:var(--na);margin-top:1px">👤 ${resps}</div>`:''}
               ${av>0?`<div style="margin-top:4px"><div class="pbar" style="height:4px"><div class="pfill" style="width:${av}%;background:var(--na)"></div></div><span style="font-size:10px;color:var(--tm)">${av}% completado</span></div>`:''}
             </div>
@@ -6043,7 +6046,7 @@ function generarRep(){
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;font-weight:600">${escH(p.titulo||p.nombre||'—')}</div>
           <div style="font-size:11px;color:var(--tm);margin-top:1px">${fmt(p.fecha)} ${p.hora||''} ${plats}</div>
-          ${p.linkPublicado?`<a href="${p.linkPublicado}" target="_blank" style="font-size:11px;color:var(--az)">🔗 Ver</a>`:''}
+          ${p.linkPublicado?`<a href="${hrefS(p.linkPublicado)}" target="_blank" style="font-size:11px;color:var(--az)">🔗 Ver</a>`:''}
         </div>
       </div>`;
     });
@@ -6061,10 +6064,10 @@ function generarRep(){
       html+=`<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;background:var(--fo);border:1px solid var(--bo);border-radius:6px;margin-bottom:5px">
         <span style="flex-shrink:0;font-size:16px">${a.publicado?'✅':'⏳'}</span>
         <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:700">${a.medio||'—'}</div>
-          <div style="font-size:12px;color:var(--tx);margin-top:1px">${escH(a.titulo||'—')}${a.tipo?' · <em>'+a.tipo+'</em>':''}</div>
+          <div style="font-size:13px;font-weight:700">${escH(a.medio||'—')}</div>
+          <div style="font-size:12px;color:var(--tx);margin-top:1px">${escH(a.titulo||'—')}${a.tipo?' · <em>'+escH(a.tipo)+'</em>':''}</div>
           ${a.fecha?`<div style="font-size:11px;color:var(--tm);margin-top:1px">${fmt(a.fecha)}</div>`:''}
-          ${a.enlace?`<a href="${a.enlace}" target="_blank" style="font-size:11px;color:var(--az);display:block;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🔗 ${a.enlace}</a>`:'<span style="font-size:11px;color:var(--tm)">Sin enlace</span>'}
+          ${a.enlace?`<a href="${hrefS(a.enlace)}" target="_blank" rel="noopener" style="font-size:11px;color:var(--az);display:block;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🔗 ${escH(a.enlace)}</a>`:'<span style="font-size:11px;color:var(--tm)">Sin enlace</span>'}
           <div style="font-size:11px;color:var(--tm);margin-top:1px">📋 ${a.tarea||'—'}</div>
         </div>
       </div>`;
@@ -6299,7 +6302,7 @@ function imprimirReporte(){
       const estTxt=i.isVenc?'⚠️ VENCIDA':i.estado;
       const ico=SECCIONES[i.area]?.ico||'📌';
       pendRows+=`<tr style="${i.isVenc?'background:#fff5f5':''}">
-        <td style="padding-left:22px"><strong>${escH(i.titulo)}</strong>${i.notas?`<br><span style="font-size:11px;color:#666">📝 ${escH(i.notas)}</span>`:''}<br><span style="font-size:11px;color:#666">${ico} ${i.area}</span></td>
+        <td style="padding-left:22px"><strong>${escH(i.titulo)}</strong>${i.notas?`<br><span style="font-size:11px;color:#666">📝 ${escH(i.notas)}</span>`:''}<br><span style="font-size:11px;color:#666">${ico} ${escH(i.area)}</span></td>
         <td><span style="color:${estCol};font-weight:600;font-size:12px">${estTxt}</span></td>
         <td style="font-size:12px">${i.fecha?fmt(i.fecha):'-'}</td>
       </tr>`;
@@ -6311,7 +6314,7 @@ function imprimirReporte(){
   noCumplidas.sort((a,b)=>{if(!a.fecha&&!b.fecha)return 0;if(!a.fecha)return 1;if(!b.fecha)return -1;return a.fecha.localeCompare(b.fecha);}).forEach(i=>{
     const ico=SECCIONES[i.area]?.ico||'📌';
     nocRows+=`<tr style="background:#fef2f2">
-      <td><strong>${escH(i.titulo)}</strong><br><span style="font-size:11px;color:#666">${ico} ${i.area} · 👤 ${i.resp}</span></td>
+      <td><strong>${escH(i.titulo)}</strong><br><span style="font-size:11px;color:#666">${ico} ${escH(i.area)} · 👤 ${escH(i.resp)}</span></td>
       <td style="font-size:12px">${i.fecha?fmt(i.fecha):'-'}</td>
       <td style="font-size:12px;color:#991b1b">${escH(i.motivo||'—')}${i.por?`<br><span style="font-size:10px;color:#888">— ${i.por}</span>`:''}</td>
     </tr>`;
@@ -6333,7 +6336,7 @@ function imprimirReporte(){
     const secs=t.secciones?Object.keys(t.secciones).filter(s=>t.secciones[s]).join(', '):'';
     const ti=tardeInfo(t);
     const tag=ti.tarde?` <span style="font-size:10px;font-weight:700;color:#dc2626;background:#fee2e2;padding:1px 6px;border-radius:10px;white-space:nowrap">⏰ TARDE</span>`:'';
-    const motivoTxt=ti.tarde&&ti.motivos.length?`<br><span style="font-size:11px;color:#991b1b">⏰ ${ti.motivos.join(' · ')}</span>`:'';
+    const motivoTxt=ti.tarde&&ti.motivos.length?`<br><span style="font-size:11px;color:#991b1b">⏰ ${escH(ti.motivos.join(' · '))}</span>`:'';
     const compEn=t.secciones?Object.values(t.secciones).map(sv=>sv?.completadoEn).filter(Boolean).sort().pop():null;
     compRows+=`<tr style="background:${ti.tarde?'#fffbeb':'#f0fdf4'}">
       <td><strong>${escH(t.titulo)}</strong>${tag}${t.notas?`<br><span style="font-size:11px;color:#666">📝 ${escH(t.notas)}</span>`:''}${motivoTxt}</td>
@@ -6395,7 +6398,7 @@ function imprimirReporte(){
   const apSet=new Map();
   E.tareas.forEach(t=>{(t.mediosData?.apariciones||[]).forEach(a=>{if(!a.fecha||(a.fecha>=rango.ini&&a.fecha<=rango.fin))apSet.set(a.id,{...a});});});
   const apars=[...apSet.values()].sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
-  const apRows=apars.map(a=>`<tr><td><strong>${a.medio||'—'}</strong>${a.tipo?` · <em>${a.tipo}</em>`:''}${a.titulo?`<br><span style="font-size:11px;color:#666">${escH(a.titulo)}</span>`:''}</td><td style="font-size:12px">${a.fecha?fmt(a.fecha):'-'}</td><td style="font-size:12px;font-weight:600;color:${a.publicado?'#16a34a':'#d97706'}">${a.publicado?'✅ Publicado':'🕓 Pendiente'}${a.enlace?` · <a href="${a.enlace}" style="color:#2563eb">enlace</a>`:''}</td></tr>`).join('');
+  const apRows=apars.map(a=>`<tr><td><strong>${escH(a.medio||'—')}</strong>${a.tipo?` · <em>${escH(a.tipo)}</em>`:''}${a.titulo?`<br><span style="font-size:11px;color:#666">${escH(a.titulo)}</span>`:''}</td><td style="font-size:12px">${a.fecha?fmt(a.fecha):'-'}</td><td style="font-size:12px;font-weight:600;color:${a.publicado?'#16a34a':'#d97706'}">${a.publicado?'✅ Publicado':'🕓 Pendiente'}${a.enlace?` · <a href="${hrefS(a.enlace)}" style="color:#2563eb">enlace</a>`:''}</td></tr>`).join('');
 
   const htmlContent=`<!DOCTYPE html><html lang="es"><head>
 <meta charset="UTF-8">
@@ -6753,8 +6756,8 @@ function renderHist(){
   cont.innerHTML=`<div class="ttop"><div class="ttit">Reportes archivados (${E.historico.length})</div></div>`+
     E.historico.slice().reverse().map(h=>`<div class="hitem">
       <div>
-        <div style="font-weight:700;font-size:14px">🗓️ ${h.mes}</div>
-        <div style="font-size:12px;color:var(--tm);margin-top:3px">Archivado: ${fmt(h.fecha)}${h.hora?' a las '+h.hora:''} · ${h.tareasCompletadas}/${h.tareasTotales} tareas (${h.pct}%) · Por ${h.archivadoPor||'—'}</div>
+        <div style="font-weight:700;font-size:14px">🗓️ ${escH(h.mes)}</div>
+        <div style="font-size:12px;color:var(--tm);margin-top:3px">Archivado: ${fmt(h.fecha)}${h.hora?' a las '+h.hora:''} · ${h.tareasCompletadas}/${h.tareasTotales} tareas (${h.pct}%) · Por ${escH(h.archivadoPor||'—')}</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <span class="bg ${h.pct>=80?'blis':h.pct>=50?'bmed':'balt'}">${h.pct}%</span>
@@ -6826,9 +6829,9 @@ function renderBit(){
 
   tbody.innerHTML=pag.map(r=>`<tr>
     <td style="font-size:12px;color:var(--tm);white-space:nowrap">${r.fecha} ${r.hora}</td>
-    <td><div style="display:flex;align-items:center;gap:7px">${rAv(r.usuario||'?','',24,9)}<span style="font-size:13px">${r.usuario||'—'}</span></div></td>
-    <td><span class="bg ${cls[r.accion]||'bgr'}">${r.accion}</span></td>
-    <td style="font-size:13px">${r.detalle}</td>
+    <td><div style="display:flex;align-items:center;gap:7px">${rAv(r.usuario||'?','',24,9)}<span style="font-size:13px">${escH(r.usuario||'—')}</span></div></td>
+    <td><span class="bg ${cls[r.accion]||'bgr'}">${escH(r.accion)}</span></td>
+    <td style="font-size:13px">${escH(r.detalle)}</td>
   </tr>`).join('');
 
   // Paginación
@@ -7084,7 +7087,7 @@ function renderAsig(){
       <div style="font-size:13px;font-weight:700;color:var(--am);margin-bottom:8px">⚠️ Publicaciones de este día sin responsable</div>
       ${pubsSinResp.map(p=>`<div style="display:flex;align-items:center;gap:8px;font-size:12px;padding:4px 0;border-bottom:1px solid var(--bo)">
         <span style="font-weight:700;color:var(--na);min-width:40px">${p.hora||'—'}</span>
-        <span style="color:var(--tm)">${(p.plataformas||[]).map(pl=>PLAT_WA[pl]||pl).join('/')}</span>
+        <span style="color:var(--tm)">${escH((p.plataformas||[]).map(pl=>PLAT_WA[pl]||pl).join('/'))}</span>
         <span style="flex:1;font-weight:600">${escH(p.titulo||p.nombre||'—')}</span>
         <button class="btn bna bsm" style="font-size:11px" onclick="editarPublicacion('${p.id}')">Asignar</button>
       </div>`).join('')}
@@ -7104,7 +7107,7 @@ function renderAsig(){
       ?tareaLines.map(l=>{
         const bg=ESTADO_BG[l.estado]||'var(--su2)';
         const col=ESTADO_COL[l.estado]||'var(--tm)';
-        const metaStr=[l.hora?`🕐 ${l.hora}`:'',l.lugar?`📍 ${l.lugar}`:''].filter(Boolean).join(' · ');
+        const metaStr=[l.hora?`🕐 ${escH(l.hora)}`:'',l.lugar?`📍 ${escH(l.lugar)}`:''].filter(Boolean).join(' · ');
         return`<div onclick="abrirMT('${l.id}')" style="display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-radius:6px;background:var(--fo);margin-bottom:4px;cursor:pointer;transition:background .15s" onmouseover="this.style.background='var(--su2)'" onmouseout="this.style.background='var(--fo)'">
           <span style="font-size:15px;flex-shrink:0">${l.ico}</span>
           <div style="flex:1;min-width:0">
@@ -7242,7 +7245,7 @@ function renderAsigVarias(){
     const exp=avExpandidas.has(av.id);
     const pasosHtml=(av.pasos||[]).map(p=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 0">
       <input type="checkbox" ${p.comp?'checked':''} onchange="togPasoAV('${av.id}','${p.id}')" style="width:15px;height:15px;cursor:pointer;flex-shrink:0">
-      <span style="font-size:13px;color:var(--tx);${p.comp?'text-decoration:line-through;color:var(--tm)':''}">${p.texto}</span>
+      <span style="font-size:13px;color:var(--tx);${p.comp?'text-decoration:line-through;color:var(--tm)':''}">${escH(p.texto)}</span>
     </div>`).join('');
     return`<div style="background:var(--su);border:1.5px solid ${venc?'var(--ro)':'var(--bo)'};border-radius:var(--r);margin-bottom:8px;overflow:hidden">
       <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer" onclick="togAV('${av.id}')">
@@ -7263,7 +7266,7 @@ function renderAsigVarias(){
       </div>
       ${total?`<div style="height:3px;background:var(--fo)"><div style="height:100%;width:${pct}%;background:${colPct};transition:width .3s"></div></div>`:''}
       ${exp?`<div style="padding:12px 14px;border-top:1px solid var(--bo)">
-        ${av.descripcion?`<div style="font-size:13px;color:var(--tm);margin-bottom:8px">${av.descripcion}</div>`:''}
+        ${av.descripcion?`<div style="font-size:13px;color:var(--tm);margin-bottom:8px">${escH(av.descripcion)}</div>`:''}
         ${av.notas?`<div style="font-size:12px;color:var(--az);margin-bottom:10px;padding:6px 10px;background:var(--azs);border-radius:5px;border-left:2px solid var(--az)">📝 ${escH(av.notas)}</div>`:''}
         <div style="margin-bottom:8px">${pasosHtml||'<div style="font-size:12px;color:var(--tm)">Sin pasos. Usa + Paso para agregar.</div>'}</div>
         ${canEdit?`<button class="btn bna bsm" style="font-size:12px" onclick="abrirFmPasoAV('${av.id}')">+ Paso</button>`:''}
@@ -7340,7 +7343,7 @@ function abrirMAsigVar(avId){
   if(asigsCont){
     const miembros=equipoReal().filter(u=>u.nivel!=='lector');
     asigsCont.innerHTML=miembros.length
-      ? miembros.map(u=>`<button type="button" class="btn bsm chip-av${(av?.asignadoA||[]).includes(u.id)?' chip-sel':''}" data-id="${u.id}" onclick="togChipAV(this)">${u.nombre.split(' ')[0]}</button>`).join('')
+      ? miembros.map(u=>`<button type="button" class="btn bsm chip-av${(av?.asignadoA||[]).includes(u.id)?' chip-sel':''}" data-id="${u.id}" onclick="togChipAV(this)">${escH(u.nombre.split(' ')[0])}</button>`).join('')
       : `<span style="font-size:13px;color:var(--tm)">No hay miembros disponibles</span>`;
   }
   abrirM('mAsigVar');
