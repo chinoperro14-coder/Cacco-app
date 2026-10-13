@@ -251,9 +251,6 @@ textarea.fc{resize:vertical;min-height:80px;}
 textarea.auto-alto{min-height:60px;max-height:65vh;line-height:1.5;overflow-y:auto;}
 #tNotas{min-height:120px;}
 .notas-tarj{font-size:13.5px;line-height:1.6;color:var(--tx);background:var(--su2);border-radius:8px;padding:12px 14px;margin-bottom:12px;white-space:pre-wrap;word-break:break-word;}
-.kit-tarj{font-size:13px;line-height:1.55;color:var(--tx);background:var(--nas);border:1px solid var(--bo);border-radius:8px;padding:12px 14px;margin:0 0 12px;word-break:break-word;}
-.kit-blk{border:1px solid var(--bo);border-radius:var(--r);padding:10px 14px;background:var(--fo);}
-.kit-blk>summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--tx);list-style:revert;}
 .fr{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 /* CHIPS */
 .chw{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px;}
@@ -1302,7 +1299,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <div class="fg"><label class="fl">Título *</label><input type="text" class="fc" id="tTit" placeholder="Nombre del evento o actividad"></div>
     <div class="fr">
       <div class="fg"><label class="fl">Fecha de la actividad</label><input type="date" class="fc" id="tFecha" oninput="fechaFinCambio();SECC_NAMES.forEach(s=>avisoFechaSec(s.replace(/\s/g,'_')))"></div>
-      <div class="fg"><label class="fl">Hasta <span style="font-weight:400;color:var(--tm)">(si dura varios días)</span></label><input type="date" class="fc" id="tFechaFin" oninput="fechaFinCambio()">
+      <div class="fg"><label class="fl">Hasta</label><input type="date" class="fc" id="tFechaFin" oninput="fechaFinCambio()">
         <div id="tFechaFinAviso" style="display:none;font-size:11px;color:var(--tm);margin-top:3px"></div></div>
       <div class="fg"><label class="fl">Hora</label><input type="time" class="fc" id="tHora"></div>
       <div class="fg"><label class="fl">Termina</label><input type="time" class="fc" id="tHoraFin" title="Hora en que termina la actividad cada día (sirve para proponer las horas extra)"></div>
@@ -1325,19 +1322,6 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     </div>
     <div class="fg"><label class="fl">Notas</label><textarea class="fc auto-alto" id="tNotas" placeholder="Instrucciones, detalles del evento..."></textarea></div>
 
-    <details class="fg kit-blk" id="kitBlk">
-      <summary>✨ Plan de contenido <span id="kitOrigen" style="font-weight:400;color:var(--tm);font-size:12px"></span></summary>
-      <div style="font-size:12px;color:var(--tm);margin:8px 0 10px;line-height:1.5">Ideas para cubrir y publicar. Lo que está entre [corchetes] hay que confirmarlo antes de publicar.</div>
-      <div class="fg"><label class="fl">Cobertura sugerida</label>
-        <select class="fc" id="kCob"><option value="">—</option><option value="completa">🔴 Cobertura completa</option><option value="ligera">🟡 Cobertura ligera</option><option value="agenda">🟢 Solo agenda</option><option value="no">⚪ No cubrir</option></select></div>
-      <div class="fg"><label class="fl">🎯 Enfoque</label><textarea class="fc auto-alto" id="kEnfoque" rows="2"></textarea></div>
-      <div class="fg"><label class="fl">📸 Fotos <span style="font-weight:400;color:var(--tm)">(una por línea)</span></label><textarea class="fc auto-alto" id="kFotos" rows="2"></textarea></div>
-      <div class="fg"><label class="fl">🎥 Reel / video</label><textarea class="fc auto-alto" id="kVideo" rows="2"></textarea></div>
-      <div class="fg"><label class="fl">📱 Historias</label><textarea class="fc auto-alto" id="kHistorias" rows="2"></textarea></div>
-      <div class="fg"><label class="fl">🖼️ Carrusel</label><textarea class="fc auto-alto" id="kCarrusel" rows="2"></textarea></div>
-      <div class="fg"><label class="fl" style="display:flex;align-items:center;gap:8px">✍️ Copy <button type="button" class="btn bgh bsm" style="margin-left:auto" onclick="copiarTexto(document.getElementById('kCopy').value)">📋 Copiar</button></label><textarea class="fc auto-alto" id="kCopy" rows="3"></textarea></div>
-      <div class="fg" style="margin-bottom:0"><label class="fl">📰 Nota de prensa</label><textarea class="fc auto-alto" id="kPrensa" rows="2"></textarea></div>
-    </details>
 
     <div class="fg">
       <label class="fl" style="margin-bottom:10px">Secciones involucradas y responsables</label>
@@ -2945,7 +2929,6 @@ function renderTareas(){
       </div>
       <div id="tbody-${t.id}" style="display:${abierta?'block':'none'};padding:14px;border-top:2px solid ${cardColor}30">
         ${abierta&&t.notas?`<div class="notas-tarj">📝 ${escH(t.notas.replace(/📅/g,'🗓️'))}</div>`:''}
-        ${abierta?kitHtml(t.kit):''}
         ${gruposHTML?`<div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Avance por sección</div>${gruposHTML}`:''}
         ${seccionesHTML}
         ${abierta?entHTML:''}
@@ -3154,7 +3137,7 @@ function renderBorradores(lista){
         </div>
         ${puede('editarTarea')?`<button class="btn bna bsm" onclick="abrirMT('${t.id}')">✏️ Completar</button>`:''}
         ${puede('descartarBorrador')?`<button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro)" onclick="descartarBorr(['${t.id}'])">🗑 Descartar</button>`:''}
-        ${ab?`<div class="notas-tarj" style="flex-basis:100%;margin:0">${t.lugar?`📍 ${escH(t.lugar)}\n`:''}${escH((t.notas||(hayKit(t.kit)?'':'Sin más detalles.')).replace(/📅/g,'🗓️'))}</div>${hayKit(t.kit)?`<div style="flex-basis:100%">${kitHtml(t.kit)}</div>`:''}`:''}
+        ${ab?`<div class="notas-tarj" style="flex-basis:100%;margin:0">${t.lugar?`📍 ${escH(t.lugar)}\n`:''}${escH((t.notas||'Sin más detalles.').replace(/📅/g,'🗓️'))}</div>`:''}
       </div>`;};
   const borHtml=proximos.map(fila).join('');
   const pd=puede('descartarBorrador'),nc=proximos.filter(t=>/No cubrir/.test(nivelDe(t)));
@@ -3210,8 +3193,7 @@ function revPintar(){
     <div style="font-size:17px;font-weight:800;line-height:1.3;color:var(--tx)">${escH(t.titulo||'(Sin título)')}</div>
     <div style="font-size:13px;color:var(--tm);margin-top:4px">${t.fecha?'🗓️ '+fmtAct(t):''}${t.hora?' · '+txtHora(t.hora):''}${t.lugar?' · 📍 '+escH(t.lugar):''}</div>
     ${niv0?`<div style="margin-top:10px;font-size:13px"><b>Sugerido:</b> ${escH(niv0)}</div>`:''}
-    ${kit.trim()||!hayKit(t.kit)?`<div class="notas-tarj" style="margin-top:10px">${escH(kit.trim()||'Sin más detalles.')}</div>`:''}
-    ${kitHtml(t.kit)}`;
+    <div class="notas-tarj" style="margin-top:10px">${escH(kit.trim()||'Sin más detalles.')}</div>`;
   document.getElementById('revPie').innerHTML=`
     <button class="btn bgh" style="margin-right:auto" onclick="revDespues()">Después →</button>
     ${puede('descartarBorrador')?`<button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro)" onclick="revNoCubrir()">⚪ No cubrir</button>`:''}
@@ -3301,51 +3283,18 @@ async function togCat(tareaId,cat){
   guardar();renderTareas();
 }
 
-// ── Plan de contenido (kit): ideas de fotos, reel, historias, copy… que deja el asistente o escribe una persona ──
+// ── Plan del asistente (kit): fotos, reel, historias… Se usa para dejar puesto lo que hay que producir al completar un borrador ──
 const COB_TXT={completa:'🔴 Cobertura completa',ligera:'🟡 Cobertura ligera',agenda:'🟢 Solo agenda',no:'⚪ No cubrir'};
-const KIT_CAMPOS=[['enfoque','kEnfoque'],['video','kVideo'],['historias','kHistorias'],['carrusel','kCarrusel'],['copy','kCopy'],['prensa','kPrensa']];
+const KIT_CAMPOS=[['enfoque'],['video'],['historias'],['carrusel'],['copy'],['prensa']];
 const hayKit=k=>!!k&&(!!k.cobertura||(k.fotos||[]).length>0||KIT_CAMPOS.some(([c])=>String(k[c]||'').trim()));
-function kitDelModal(){
-  const v=id=>document.getElementById(id).value.trim();
-  const k={cobertura:v('kCob')||'',fotos:v('kFotos').split('\n').map(x=>x.replace(/^\s*[•\-*]\s*/,'').trim()).filter(Boolean)};
-  KIT_CAMPOS.forEach(([c,id])=>{k[c]=v(id);});
-  return hayKit(k)?k:null;
-}
-function kitAlModal(k){
-  k=k||{};
-  document.getElementById('kCob').value=k.cobertura||'';
-  document.getElementById('kFotos').value=(k.fotos||[]).join('\n');
-  KIT_CAMPOS.forEach(([c,id])=>{document.getElementById(id).value=k[c]||'';});
-  document.getElementById('kitBlk').open=hayKit(k);
-}
-// Texto corto del plan para la tarjeta
-function kitHtml(k){
-  if(!hayKit(k))return '';
-  const fila=(ico,tit,txt)=>txt?`<div style="margin-top:6px"><b>${ico} ${tit}:</b> ${escH(txt)}</div>`:'';
-  return `<div class="kit-tarj">
-    <div style="display:flex;align-items:center;gap:8px;font-weight:700">✨ Plan de contenido${k.cobertura?` <span style="font-weight:600;color:var(--tm)">· ${COB_TXT[k.cobertura]||''}</span>`:''}
-      ${k.copy?`<button class="btn bgh bsm" style="margin-left:auto" onclick="event.stopPropagation();copiarTexto(${escH(JSON.stringify(k.copy))})">📋 Copiar copy</button>`:''}</div>
-    ${fila('🎯','Enfoque',k.enfoque)}
-    ${(k.fotos||[]).length?`<div style="margin-top:6px"><b>📸 Fotos:</b><ul style="margin:3px 0 0 18px;padding:0">${k.fotos.map(f=>`<li>${escH(f)}</li>`).join('')}</ul></div>`:''}
-    ${fila('🎥','Reel / video',k.video)}${fila('📱','Historias',k.historias)}${fila('🖼️','Carrusel',k.carrusel)}
-    ${k.copy?`<div style="margin-top:6px"><b>✍️ Copy:</b><div style="white-space:pre-wrap;margin-top:2px">${escH(k.copy)}</div></div>`:''}
-    ${fila('📰','Nota de prensa',k.prensa)}
-  </div>`;
-}
-async function copiarTexto(txt){
-  try{await navigator.clipboard.writeText(txt||'');avisar('✅ Copiado.');}catch{avisar('No se pudo copiar: selecciona el texto y cópialo.');}
-}
 // Las cajas de texto crecen con lo que tienen (hasta un tope) para leer sin desplazarse
 function autoAlto(el){if(!el)return;el.style.height='auto';el.style.height=Math.min(el.scrollHeight+4,window.innerHeight*0.65)+'px';}
 document.addEventListener('input',e=>{if(e.target.classList?.contains('auto-alto'))autoAlto(e.target);});
-document.addEventListener('toggle',e=>{if(e.target.id==='kitBlk'&&e.target.open)e.target.querySelectorAll('.auto-alto').forEach(autoAlto);},true);
 // Hasta: solo vale si es después de la fecha de la actividad
 function fechaFinCambio(){
   const a=document.getElementById('tFecha').value,b=document.getElementById('tFechaFin'),av=document.getElementById('tFechaFinAviso');
-  const dias=a&&b.value&&b.value>a?diasEntre(a,b.value)+1:0;
-  av.style.display=b.value?'block':'none';
-  av.textContent=!b.value?'':dias?`Dura ${dias} días: aparece en cada uno en el calendario, la Pantalla y Mi día.`:'⚠️ Debe ser después de la fecha de la actividad; si no, se ignora.';
-  av.style.color=b.value&&!dias?'var(--ro)':'var(--tm)';
+  const mal=!!(a&&b.value&&b.value<=a);
+  av.style.display=mal?'block':'none';av.textContent=mal?'⚠️ Debe ser después de la fecha.':'';av.style.color='var(--ro)';
 }
 // ── Asignación automática por área (la define el Líder en Equipo) ──
 const asigAutoDe=sec=>((E.asigAuto||{})[sec]||[]).filter(id=>equipoReal().some(u=>u.id===id&&u.nivel!=='lector'));
@@ -3393,8 +3342,6 @@ function abrirMT(id){
   document.getElementById('tNotas').value=t?.notas||'';
   document.getElementById('tRec').value=t?.recurrencia||'ninguna';
   etiqSel=[...(t?.etiquetas||[])];renderChEtiq();
-  kitAlModal(t?.kit);
-  document.getElementById('kitOrigen').textContent=t?.kit?.origen==='asistente'?'· del asistente':'';
   const pre=prellenarBorrador(t);
   renderSeccionesModal(pre.t);
   const ka=document.getElementById('tKitAviso');
@@ -3686,8 +3633,6 @@ function addEtiq(){const v=document.getElementById('nEtiq').value.trim();if(!v||
 
 // Fecha final solo si es después de la de inicio
 function fechaFinDelModal(){const a=document.getElementById('tFecha').value,b=document.getElementById('tFechaFin').value;return a&&b&&b>a?{fechaFin:b}:{};}
-// El plan conserva que vino del asistente mientras exista
-function kitConOrigen(orig){const k=kitDelModal();if(!k)return {};if(orig?.kit?.origen)k.origen=orig.kit.origen;return {kit:k};}
 function guardarT(){
   const titulo=document.getElementById('tTit').value.trim();if(!titulo){mostrarErrorModal('❌ El título de la tarea es obligatorio.');document.getElementById('tTit').focus();return;}
   const id=document.getElementById('tId').value;
@@ -3780,7 +3725,7 @@ function guardarT(){
     horaFin:document.getElementById('tHoraFin').value,
     lugar:document.getElementById('tLugar').value.trim(),
     notas:document.getElementById('tNotas').value.trim(),
-    ...kitConOrigen(orig),
+    ...(orig?.kit?{kit:orig.kit}:{}),
     recurrencia:document.getElementById('tRec').value,
     ...(orig?.pedido?{pedido:orig.pedido}:{}),
     ...(orig?.cancelada?{cancelada:orig.cancelada}:{}),
@@ -3825,7 +3770,7 @@ function guardarBorrador(){
     horaFin:document.getElementById('tHoraFin').value,
     lugar:document.getElementById('tLugar').value.trim(),
     notas:document.getElementById('tNotas').value.trim(),
-    ...kitConOrigen(orig),
+    ...(orig?.kit?{kit:orig.kit}:{}),
     recurrencia:document.getElementById('tRec').value,
     ...(orig?.pedido?{pedido:orig.pedido}:{}),
     creadaEn:orig?.creadaEn||hoy(),
