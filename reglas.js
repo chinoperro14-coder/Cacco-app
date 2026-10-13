@@ -20,6 +20,9 @@ function validarDatos(d) {
   }
   if (d.etiquetas !== undefined && (!Array.isArray(d.etiquetas) || d.etiquetas.some(e => typeof e !== "string")))
     return "Las etiquetas deben ser una lista de textos.";
+  if (d.asigAuto !== undefined && (!d.asigAuto || typeof d.asigAuto !== "object" || Array.isArray(d.asigAuto) ||
+      Object.values(d.asigAuto).some(v => !Array.isArray(v) || v.some(x => typeof x !== "string"))))
+    return "La asignación por área no tiene el formato esperado.";
   return null;
 }
 
@@ -109,6 +112,9 @@ function aplicarReglasRol(nuevo, actual, usuario) {
 
   // Pedidos de oficinas e histórico de reportes: solo el Líder los quita
   ["pedidos", "historico"].forEach(k => { if (Array.isArray(nuevo[k])) nuevo[k] = reponer(nuevo[k], actual[k], () => false); });
+
+  // Asignación automática por área: solo la cambia el Líder
+  if (actual.asigAuto === undefined) delete nuevo.asigAuto; else nuevo.asigAuto = actual.asigAuto;
 
   // Bitácora: solo se agregan entradas; las que ya estaban no se cambian ni se borran
   if (Array.isArray(nuevo.bitacora)) {

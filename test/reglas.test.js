@@ -120,6 +120,16 @@ test("la bitácora solo crece y los pedidos e histórico no se borran sin ser L�
   assert.equal(aplicarReglasRol(vacia, base(), COLAB).bitacora.length, 1);
 });
 
+test("solo el Líder cambia la asignación automática por área", () => {
+  const antes = { ...copia(base()), asigAuto: { "Diseño": ["u5"] } };
+  const n = { ...copia(antes), asigAuto: { "Diseño": ["u3"] } };
+  assert.deepEqual(aplicarReglasRol(copia(n), antes, EDITOR).asigAuto, { "Diseño": ["u5"] });
+  assert.deepEqual(aplicarReglasRol(copia(n), antes, LIDER).asigAuto, { "Diseño": ["u3"] });
+  assert.equal(aplicarReglasRol({ ...copia(base()), asigAuto: { x: ["u1"] } }, base(), COLAB).asigAuto, undefined);
+  assert.ok(validarDatos({ tareas: [], equipo: [], asigAuto: { "Diseño": "u5" } }));
+  assert.equal(validarDatos({ tareas: [], equipo: [], asigAuto: { "Diseño": ["u5"] } }), null);
+});
+
 test("limitador cuenta intentos por clave", () => {
   const l = limitador(2, 60e3);
   assert.equal(l.lleno("a"), false);
