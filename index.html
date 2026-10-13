@@ -409,6 +409,13 @@ select.fc option{background:var(--su);color:var(--tx);}
 body.osc #pLog{background:#0f0e0d;}
 body.osc #pLog::after{background-image:radial-gradient(circle,rgba(227,82,5,.06) 1px,transparent 1px);}
 
+/* Fondo del inicio de sesión: patchwork dibujado, como las faldas congo */
+#pLog{background:#fff url(/patchwork.svg) center/384px auto repeat;}
+#pLog::after{background:rgba(255,255,255,.58);}
+body.osc #pLog{background:#0f0e0d url(/patchwork.svg) center/384px auto repeat;}
+body.osc #pLog::after{background:rgba(15,14,13,.84);}
+.login-logo{background:#fff;padding:14px 22px;border-radius:14px;}
+
 .login-bg{
   display:flex;flex-direction:column;align-items:center;
   width:100%;max-width:420px;position:relative;z-index:1;
