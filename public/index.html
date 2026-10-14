@@ -254,6 +254,8 @@ textarea.auto-alto{min-height:60px;max-height:65vh;line-height:1.5;overflow-y:au
 .fr{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 /* CHIPS */
 .chw{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px;}
+.fc.fc-aviso{border-color:var(--am);background:var(--ams);}
+.revisar-tarj{font-size:13px;line-height:1.5;color:var(--tx);background:var(--ams);border:1px solid var(--am);border-radius:8px;padding:8px 12px;margin-bottom:10px;white-space:pre-wrap;word-break:break-word;}
 .chip{display:flex;align-items:center;gap:6px;border:1.5px solid var(--bo);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:500;cursor:pointer;transition:all .12s;background:var(--su);color:var(--tx);user-select:none;}
 .chip:hover{border-color:var(--na);}.chip.sel{border-color:var(--na);background:var(--nas);color:var(--na);font-weight:700;}
 /* MODALES */
@@ -1306,6 +1308,13 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     </div>
     <div class="fg"><label class="fl">📍 Lugar</label><input type="text" class="fc" id="tLugar" placeholder="Ej: Salón principal, Teatro Municipal..."></div>
     <div class="fr">
+      <div class="fg"><label class="fl">📞 Contacto</label><input type="text" class="fc" id="tContacto" placeholder="Nombre y teléfono del encargado"></div>
+      <div class="fg"><label class="fl">🗓️ Otras fechas</label>
+        <div style="display:flex;gap:6px;align-items:flex-start"><div style="flex:1;min-width:0"><input type="date" class="fc" id="tOtraF"></div><button class="btn bgh bsm" onclick="addOtraF()" title="Agregar fecha">+ Agregar</button></div>
+        <div class="chw" id="chOtrasF"></div></div>
+    </div>
+    <div class="fg"><label class="fl">⚠️ Por revisar</label><input type="text" class="fc" id="tRevisar" placeholder="Algo que confirmar antes de la actividad" oninput="this.classList.toggle('fc-aviso',!!this.value.trim())"></div>
+    <div class="fr">
       <div class="fg"><label class="fl">Prioridad</label>
         <select class="fc" id="tPri"><option value="Alta">🔴 Alta</option><option value="Media" selected>🟡 Media</option><option value="Baja">🟢 Baja</option></select>
       </div>
@@ -2337,9 +2346,17 @@ function tResuelta(t){if(t.cancelada)return true;const e=eglobal(t);return e==='
 function secFecha(t,sec){return t.secciones?.[sec]?.fecha||t.fecha||null;}
 // Actividades de varios días: fecha = primer día y fechaFin = último (opcional)
 const finAct=t=>t&&t.fechaFin&&t.fecha&&t.fechaFin>t.fecha?t.fechaFin:t?.fecha;
-const enCursoEl=(t,f)=>!!t.fecha&&t.fecha<=f&&f<=finAct(t);
-// Ya pasó: su último día quedó atrás
-const pasoAct=(t,h=hoy())=>!!t.fecha&&finAct(t)<h;
+// Días sueltos en que se repite (además de fecha/fechaFin)
+const otrasF=t=>[...new Set((Array.isArray(t?.otrasFechas)?t.otrasFechas:[]).filter(f=>/^\d{4}-\d{2}-\d{2}$/.test(f)&&f>(finAct(t)||'')))].sort();
+const ultimaAct=t=>{const o=otrasF(t);return o.length?o[o.length-1]:finAct(t);};
+const enCursoEl=(t,f)=>!!t.fecha&&(t.fecha<=f&&f<=finAct(t)||otrasF(t).includes(f));
+// Ya pasó: su último día (incluidas otras fechas) quedó atrás
+const pasoAct=(t,h=hoy())=>!!t.fecha&&ultimaAct(t)<h;
+const fmtCorta=f=>{const d=new Date(f+'T00:00:00');return d.getDate()+' '+d.toLocaleDateString('es-PA',{month:'short'}).replace('.','');};
+const fmtOtras=t=>otrasF(t).map(fmtCorta).join(' · ');
+// Contacto y otras fechas en una línea cada uno (para notas de tarjeta y revisión)
+const extrasTxt=t=>[t.contacto?'📞 '+t.contacto:'',otrasF(t).length?'🗓️ También: '+fmtOtras(t):''].filter(Boolean).join('\n');
+const revisarHtml=t=>String(t.revisar||'').trim()?`<div class="revisar-tarj">⚠️ ${escH(t.revisar.trim())}</div>`:'';
 // Plazo de una sección: su fecha propia o el último día de la actividad
 function secLimite(t,sec){return t.secciones?.[sec]?.fecha||finAct(t)||null;}
 // «19 oct 2026» o, si dura varios días, «19 – 21 oct 2026»
@@ -2915,7 +2932,8 @@ function renderTareas(){
         <div class="t-badges-row" style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
           ${t.cancelada?`<span class="bg e-can" style="font-weight:800;text-decoration:underline" title="${escH(t.cancelada.motivo||'')}">🚫 CANCELADA</span>`:`<span class="bg ${EST_CLS[eg]||'bgr'}">${EST_TXT[eg]||eg}</span>`}
           ${t.prioridad?`<span class="bg ${bPri[t.prioridad]||'bgr'}">${escH(t.prioridad)}</span>`:''}
-          ${t.fecha?`<span class="bg bgr" style="${vencida?'color:var(--ro);font-weight:700':''}">${vencida?'⚠️ ':'🗓️ '}${fmtAct(t)}</span>`:''}
+          ${t.fecha?`<span class="bg bgr" style="${vencida?'color:var(--ro);font-weight:700':''}">${vencida?'⚠️ ':'🗓️ '}${fmtAct(t)}${otrasF(t).length?` <span title="También: ${fmtOtras(t)}">+${otrasF(t).length}</span>`:''}</span>`:''}
+          ${String(t.revisar||'').trim()?`<span class="bg" style="background:var(--ams);color:var(--am);font-weight:700" title="${escH(t.revisar)}">⚠️ Por revisar</span>`:''}
           ${t.lugar?`<span class="bg bgr">📍 ${escH(t.lugar)}</span>`:''}
           ${etiqH}
           ${!abierta&&ents.length?entHTML:''}
@@ -2928,7 +2946,8 @@ function renderTareas(){
         </div>
       </div>
       <div id="tbody-${t.id}" style="display:${abierta?'block':'none'};padding:14px;border-top:2px solid ${cardColor}30">
-        ${abierta&&t.notas?`<div class="notas-tarj">📝 ${escH(t.notas.replace(/📅/g,'🗓️'))}</div>`:''}
+        ${abierta?revisarHtml(t):''}
+        ${abierta&&(t.notas||extrasTxt(t))?`<div class="notas-tarj">${escH([extrasTxt(t),t.notas?(extrasTxt(t)?'':'📝 ')+t.notas.replace(/📅/g,'🗓️'):''].filter(Boolean).join('\n'))}</div>`:''}
         ${gruposHTML?`<div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Avance por sección</div>${gruposHTML}`:''}
         ${seccionesHTML}
         ${abierta?entHTML:''}
@@ -3133,11 +3152,11 @@ function renderBorradores(lista){
         ${puede('descartarBorrador')?`<input type="checkbox" class="borSel" value="${t.id}" onchange="borSelCambio()" style="width:18px;height:18px;cursor:pointer" title="Seleccionar">`:''}
         <div style="flex:1;min-width:0">
           <div onclick="togT('${t.id}')" title="${ab?'Ocultar':'Ver'} detalle" style="font-size:13px;font-weight:700;color:var(--tx);cursor:pointer">${ab?'▾':'▸'} ${escH(t.titulo||'(Sin título)')}</div>
-          <div style="font-size:11px;color:var(--tm);margin-top:2px">📝 Borrador · ${t.fecha?'🗓️ '+fmtAct(t)+(t.hora?' '+t.hora:'')+' · ':''}${nivelDe(t)?nivelDe(t).trim()+' · ':''}${t.pedido?pedidoTxt(t):escH(t.creadaPor||'?')}</div>
+          <div style="font-size:11px;color:var(--tm);margin-top:2px">📝 Borrador · ${t.fecha?'🗓️ '+fmtAct(t)+(t.hora?' '+t.hora:'')+' · ':''}${otrasF(t).length?'+'+otrasF(t).length+' fechas · ':''}${String(t.revisar||'').trim()?'<b style="color:var(--am)">⚠️ Por revisar</b> · ':''}${nivelDe(t)?nivelDe(t).trim()+' · ':''}${t.pedido?pedidoTxt(t):escH(t.creadaPor||'?')}</div>
         </div>
         ${puede('editarTarea')?`<button class="btn bna bsm" onclick="abrirMT('${t.id}')">✏️ Completar</button>`:''}
         ${puede('descartarBorrador')?`<button class="btn bsm" style="background:var(--ros);color:var(--ro);border:1px solid var(--ro)" onclick="descartarBorr(['${t.id}'])">🗑 Descartar</button>`:''}
-        ${ab?`<div class="notas-tarj" style="flex-basis:100%;margin:0">${t.lugar?`📍 ${escH(t.lugar)}\n`:''}${escH((t.notas||'Sin más detalles.').replace(/📅/g,'🗓️'))}</div>`:''}
+        ${ab?`<div style="flex-basis:100%">${revisarHtml(t)}<div class="notas-tarj" style="margin:0">${t.lugar?`📍 ${escH(t.lugar)}\n`:''}${extrasTxt(t)?escH(extrasTxt(t))+'\n':''}${escH((t.notas||'Sin más detalles.').replace(/📅/g,'🗓️'))}</div></div>`:''}
       </div>`;};
   const borHtml=proximos.map(fila).join('');
   const pd=puede('descartarBorrador'),nc=proximos.filter(t=>/No cubrir/.test(nivelDe(t)));
@@ -3192,6 +3211,8 @@ function revPintar(){
     <div style="height:4px;background:var(--su2);border-radius:4px;margin-bottom:14px"><div style="height:4px;width:${Math.round(hecho/total*100)}%;background:var(--na);border-radius:4px"></div></div>
     <div style="font-size:17px;font-weight:800;line-height:1.3;color:var(--tx)">${escH(t.titulo||'(Sin título)')}</div>
     <div style="font-size:13px;color:var(--tm);margin-top:4px">${t.fecha?'🗓️ '+fmtAct(t):''}${t.hora?' · '+txtHora(t.hora):''}${t.lugar?' · 📍 '+escH(t.lugar):''}</div>
+    ${extrasTxt(t)?`<div style="font-size:13px;color:var(--tm);margin-top:4px;white-space:pre-wrap">${escH(extrasTxt(t))}</div>`:''}
+    ${revisarHtml(t)?`<div style="margin-top:10px">${revisarHtml(t)}</div>`:''}
     ${niv0?`<div style="margin-top:10px;font-size:13px"><b>Sugerido:</b> ${escH(niv0)}</div>`:''}
     <div class="notas-tarj" style="margin-top:10px">${escH(kit.trim()||'Sin más detalles.')}</div>`;
   document.getElementById('revPie').innerHTML=`
@@ -3339,6 +3360,9 @@ function abrirMT(id){
   document.getElementById('tHora').value=t?.hora||'';
   document.getElementById('tHoraFin').value=t?.horaFin||'';
   document.getElementById('tLugar').value=t?.lugar||'';
+  document.getElementById('tContacto').value=t?.contacto||'';
+  const rv=document.getElementById('tRevisar');rv.value=t?.revisar||'';rv.classList.toggle('fc-aviso',!!rv.value.trim());
+  otrasFSel=t?otrasF(t):[];{const of=document.getElementById('tOtraF');of.value='';of.dispatchEvent(new Event('input',{bubbles:true}));}renderOtrasF();
   document.getElementById('tNotas').value=t?.notas||'';
   document.getElementById('tRec').value=t?.recurrencia||'ninguna';
   etiqSel=[...(t?.etiquetas||[])];renderChEtiq();
@@ -3632,6 +3656,16 @@ function tgEtiq(el,e){el.classList.toggle('sel');etiqSel.includes(e)?etiqSel=eti
 function addEtiq(){const v=document.getElementById('nEtiq').value.trim();if(!v||E.etiquetas.includes(v))return;E.etiquetas.push(v);etiqSel.push(v);guardar();renderChEtiq();document.getElementById('nEtiq').value='';}
 
 // Fecha final solo si es después de la de inicio
+// Otras fechas (días sueltos en que se repite la actividad)
+let otrasFSel=[];
+function renderOtrasF(){document.getElementById('chOtrasF').innerHTML=otrasFSel.map((f,i)=>`<div class="chip sel" style="display:inline-flex;align-items:center;gap:4px">${fmtCorta(f)}<span onclick="otrasFSel.splice(${i},1);renderOtrasF()" style="cursor:pointer;opacity:.6;font-size:10px" title="Quitar">✕</span></div>`).join('');}
+function addOtraF(){const el=document.getElementById('tOtraF'),f=el.value;if(!f)return;if(!otrasFSel.includes(f))otrasFSel=[...otrasFSel,f].sort();el.value='';el.dispatchEvent(new Event('input',{bubbles:true}));renderOtrasF();}
+function extrasDelModal(){
+  const c=document.getElementById('tContacto').value.trim(),r=document.getElementById('tRevisar').value.trim();
+  const pend=document.getElementById('tOtraF').value;
+  const o=otrasF({fecha:document.getElementById('tFecha').value,...fechaFinDelModal(),otrasFechas:pend?[...otrasFSel,pend]:otrasFSel});
+  return{...(c?{contacto:c}:{}),...(r?{revisar:r}:{}),...(o.length?{otrasFechas:o}:{})};
+}
 function fechaFinDelModal(){const a=document.getElementById('tFecha').value,b=document.getElementById('tFechaFin').value;return a&&b&&b>a?{fechaFin:b}:{};}
 function guardarT(){
   const titulo=document.getElementById('tTit').value.trim();if(!titulo){mostrarErrorModal('❌ El título de la tarea es obligatorio.');document.getElementById('tTit').focus();return;}
@@ -3721,6 +3755,7 @@ function guardarT(){
     prioridad:document.getElementById('tPri').value,
     fecha:document.getElementById('tFecha').value,
     ...fechaFinDelModal(),
+    ...extrasDelModal(),
     hora:document.getElementById('tHora').value,
     horaFin:document.getElementById('tHoraFin').value,
     lugar:document.getElementById('tLugar').value.trim(),
@@ -3766,6 +3801,7 @@ function guardarBorrador(){
     prioridad:document.getElementById('tPri').value,
     fecha:document.getElementById('tFecha').value,
     ...fechaFinDelModal(),
+    ...extrasDelModal(),
     hora:document.getElementById('tHora').value,
     horaFin:document.getElementById('tHoraFin').value,
     lugar:document.getElementById('tLugar').value.trim(),
