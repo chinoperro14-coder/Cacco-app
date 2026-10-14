@@ -91,15 +91,15 @@ body.tg{font-size:18px;}body.txl{font-size:22px;}
 
 /* ── Modo pantalla: Pendiente · Hoy · Mañana en una sola vista (para la tele) ── */
 .pt-wrap{display:flex;flex-direction:column;height:calc(100vh - 150px);min-height:420px;}
-body.pant .pt-wrap{height:100vh;}
+body.pant .pt-wrap{height:92vh;}
 .pt-top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
-.pt-fecha{font-size:clamp(20px,2.6vw,38px);font-weight:800;line-height:1.1;}
-.pt-hora{font-size:clamp(20px,2.6vw,38px);font-weight:800;color:var(--na);font-variant-numeric:tabular-nums;}
+.pt-fecha{font-size:clamp(20px,3vw,56px);font-weight:800;line-height:1.1;}
+.pt-hora{font-size:clamp(20px,3vw,56px);font-weight:800;color:var(--na);font-variant-numeric:tabular-nums;}
 .pt-bt{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
 .pt-wa{display:inline-flex;gap:6px;flex-wrap:wrap;}
 .pt-cols{flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;}
 .pt-col{display:flex;flex-direction:column;min-height:0;background:var(--su);border:1px solid var(--bo);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;}
-.pt-h{padding:12px 16px;font-size:clamp(16px,1.7vw,24px);font-weight:800;display:flex;align-items:center;gap:8px;border-bottom:3px solid var(--na);}
+.pt-h{padding:12px 16px;font-size:clamp(16px,2vw,36px);font-weight:800;display:flex;align-items:center;gap:8px;border-bottom:3px solid var(--na);}
 .pt-h small{font-size:.62em;font-weight:600;color:var(--tm);margin-left:auto;}
 .pt-n{background:var(--na);color:#fff;border-radius:12px;padding:0 9px;font-size:.8em;}
 .pt-col.atr .pt-h{border-bottom-color:var(--e-att);}.pt-col.atr .pt-n{background:var(--e-att);}
@@ -110,34 +110,35 @@ body.pant .pt-wrap{height:100vh;}
 .pt-it.s-ini{border-left-color:var(--e-ini);}.pt-it.s-cur{border-left-color:var(--e-cur);}.pt-it.s-fin{border-left-color:var(--e-fin);}.pt-it.s-can{border-left-color:var(--e-can);}
 .pt-it.hecho{opacity:.6;}
 .pt-it.hecho .pt-t{text-decoration:line-through;}
-.pt-t{font-size:clamp(15px,1.55vw,22px);font-weight:700;line-height:1.25;}
-.pt-m{font-size:clamp(12px,1.1vw,16px);color:var(--tm);margin-top:3px;}
+.pt-t{font-size:clamp(15px,1.8vw,32px);font-weight:700;line-height:1.25;}
+.pt-m{font-size:clamp(12px,1.35vw,24px);color:var(--tm);margin-top:3px;}
 .pt-hr{font-weight:800;color:var(--tx);}
 .pt-ch{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
-.pt-ch span{font-size:clamp(11px,1vw,14px);font-weight:600;padding:2px 9px;border-radius:12px;background:var(--su2);}
+.pt-ch span{font-size:clamp(11px,1.15vw,20px);font-weight:600;padding:2px 9px;border-radius:12px;background:var(--su2);}
 .pt-ch .sa{background:var(--e-att);color:#fff;font-weight:800;}
-.pt-res{display:flex;gap:10px;flex-wrap:wrap;padding:7px 16px;font-size:clamp(12px,1.1vw,16px);font-weight:600;color:var(--tm);border-bottom:1px solid var(--bo);}
+.pt-res{display:flex;gap:10px;flex-wrap:wrap;padding:7px 16px;font-size:clamp(12px,1.3vw,22px);font-weight:600;color:var(--tm);border-bottom:1px solid var(--bo);}
 .pt-res .sa{color:var(--e-att);font-weight:800;}
 .pt-it.curso{border-color:var(--e-cur);background:var(--e-curs);box-shadow:0 0 0 2px #16a34a55;}
 .pt-it.canc{background:var(--e-cans);}
 .pt-it.canc .pt-t{text-decoration:line-through;color:var(--e-canx);}
-.pt-tag{display:inline-block;margin-top:5px;font-size:clamp(11px,1vw,14px);font-weight:800;padding:2px 9px;border-radius:12px;}
+.pt-tag{display:inline-block;margin-top:5px;font-size:clamp(11px,1.15vw,20px);font-weight:800;padding:2px 9px;border-radius:12px;}
 .pt-tag.verde{background:var(--e-cur);color:#fff;}.pt-tag.rojo{background:var(--e-can);color:#fff;text-decoration:underline;}.pt-tag.ambar{background:var(--e-atts);color:var(--e-attx);}
-.pt-sem{margin-top:12px;background:var(--su);border:1px solid var(--bo);border-radius:var(--r);padding:8px 14px;display:flex;gap:14px;align-items:center;overflow:hidden;}
-.pt-sh{font-weight:800;font-size:clamp(14px,1.3vw,19px);white-space:nowrap;}
-.pt-sl{display:flex;gap:8px;overflow-x:auto;flex:1;scrollbar-width:none;}
-.pt-si{white-space:nowrap;font-size:clamp(12px,1.1vw,16px);background:var(--su2);padding:4px 11px;border-radius:14px;}
+.pt-sem{margin-top:12px;background:var(--su);border:1px solid var(--bo);border-radius:var(--r);padding:10px 16px;display:flex;gap:14px;align-items:center;overflow:hidden;}
+.pt-sh{font-weight:800;font-size:clamp(14px,1.5vw,26px);white-space:nowrap;}
+.pt-sl{display:flex;flex-wrap:wrap;gap:8px;flex:1;min-width:0;}
+.pt-si{white-space:nowrap;max-width:calc(50% - 4px);box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;font-size:clamp(12px,1.3vw,22px);background:var(--su2);padding:4px 11px;border-radius:14px;}
 .pt-si.canc{background:var(--e-cans);color:var(--e-canx);text-decoration:line-through;}
 .pt-ch .ok{background:var(--e-fins);color:var(--e-finx);}.pt-ch .ec{background:var(--e-curs);color:var(--e-curx);}.pt-ch .pe{background:var(--e-inis);color:var(--e-inix);}
-.pt-leyenda{display:flex;gap:10px;flex-wrap:wrap;font-size:clamp(11px,1vw,15px);font-weight:700;white-space:nowrap;margin-left:auto;}
+.pt-leyenda{display:grid;grid-template-columns:repeat(3,auto);gap:4px 6px;font-size:clamp(10px,.85vw,15px);font-weight:700;white-space:nowrap;flex-shrink:0;}
 .pt-leyenda span{padding:2px 9px;border-radius:12px;}
-.pt-vac{text-align:center;color:var(--tm);padding:28px 10px;font-size:clamp(14px,1.3vw,18px);}
-.pt-esc{display:none!important;position:fixed;top:8px;right:10px;z-index:900;opacity:.35;}
+.pt-vac{text-align:center;color:var(--tm);padding:28px 10px;font-size:clamp(14px,1.6vw,28px);}
+.pt-esc{display:none!important;position:fixed;bottom:12px;right:14px;z-index:900;}
 .pt-esc:hover{opacity:1;}
-body.pant .pt-esc{display:block!important;}
+body.pant.pt-raton .pt-esc{display:block!important;}
+body.pant:not(.pt-raton){cursor:none;}
 body.pant .pt-bt button{display:none;}
 body.pant header,body.pant nav.sid,body.pant .subnav{display:none!important;}
-body.pant .cont{padding:14px 18px;}
+body.pant .cont{padding:4vh 4vw;}
 @media (max-width:900px){.pt-cols{grid-template-columns:1fr;}.pt-wrap{height:auto;}.pt-lista{max-height:none;}}
 
 @media print{body.slr *{display:none!important;}body.slr::after{display:block!important;content:"Impresión restringida.";font-size:18px;text-align:center;margin-top:40px;}}
@@ -1115,7 +1116,9 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
         <button class="btn bgh bsm" onclick="ptCompleta(true)" title="Oculta el menú para dejarlo en la tele">📺 Pantalla completa</button></div>
     </div>
     <div class="pt-cols" id="ptCols"></div>
-    <div class="pt-sem" id="ptSem"></div>
+    <div class="pt-sem"><div id="ptSem" style="display:flex;gap:14px;align-items:center;flex:1;min-width:0"></div>
+      <div class="pt-leyenda"><span class="e-ini">🟡 Por iniciar</span><span class="e-cur">🟢 Iniciada</span><span class="e-fin">🔵 Finalizada</span><span class="e-can" style="text-decoration:underline">🔴 Cancelada</span><span class="e-att">⚠️ Sin asignar</span></div>
+    </div>
   </div>
   <button class="btn bgh bsm pt-esc" onclick="ptCompleta(false)">✕ Salir de pantalla completa</button>
 </div>
@@ -8484,6 +8487,14 @@ function hayModalAbierto(){return !!document.querySelector('.mov.on')||!!documen
 // Re-dibuja SOLO la vista que está abierta ahora mismo (todas las vistas).
 
 // ── Modo pantalla: Pendiente · Hoy · Mañana (se actualiza solo con el refresco de datos y cada minuto) ──
+// En la tele, una columna que no cabe baja sola despacio, espera abajo y vuelve arriba
+const ptPausa=new WeakMap();
+setInterval(()=>{if(!document.body.classList.contains('pant'))return;const ahora=Date.now();
+  document.querySelectorAll('#ptCols .pt-lista').forEach(l=>{if(l.scrollHeight<=l.clientHeight+2)return;if((ptPausa.get(l)||0)>ahora)return;
+    if(l.scrollTop+l.clientHeight>=l.scrollHeight-2){l.scrollTop=0;ptPausa.set(l,ahora+5000);}
+    else{if(l.scrollTop===0&&!ptPausa.has(l)){ptPausa.set(l,ahora+5000);return;}l.scrollTop+=1;if(l.scrollTop+l.clientHeight>=l.scrollHeight-2)ptPausa.set(l,ahora+5000);}});},40);
+let ptRatonT=0;
+document.addEventListener('mousemove',()=>{if(!document.body.classList.contains('pant'))return;document.body.classList.add('pt-raton');clearTimeout(ptRatonT);ptRatonT=setTimeout(()=>document.body.classList.remove('pt-raton'),3000);},{passive:true});
 function ptCompleta(on){
   document.body.classList.toggle('pant',!!on);
   try{if(on&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{});
@@ -8495,12 +8506,13 @@ function ptDatos(){
   const f0=hoy(),f1=sumarDias(f0,1);
   const tareas=(E.tareas||[]).filter(t=>t&&!t.borrador);
   const fechasSec=t=>Object.entries(t.secciones||{}).filter(([,sv])=>sv).map(([k,sv])=>({sec:k,sv,f:secFecha(t,k)})).filter(x=>x.f);
-  const col={atr:[],hoy:[],man:[]},sem=[];
+  const col={atr:[],hoy:[],man:[]},sem=[],prox7=[];
   tareas.forEach(t=>{
     const res=tResuelta(t),ss=fechasSec(t),sinRes=ss.filter(x=>!['Completada','Cerrada','No cumplida'].includes(x.sv.estado));
     const fs=ss.length?ss.map(x=>x.f):[t.fecha].filter(Boolean);
     // Si dura varios días, aparece en cada uno
     for(let f=t.fecha;f&&f<=finAct(t);f=sumarDias(f,1))if(!fs.includes(f))fs.push(f);
+    otrasF(t).forEach(f=>{if(!fs.includes(f))fs.push(f);});
     if(!fs.length)return;
     const vencidas=(ss.length?sinRes.map(x=>secLimite(t,x.sec)):[finAct(t)]).filter(f=>f&&f<f0).sort();
     if(!res&&vencidas.length)col.atr.push({t,f:vencidas[0]});
@@ -8508,14 +8520,17 @@ function ptDatos(){
     if(fs.includes(f1))col.man.push({t,f:f1});
     const prox=fs.filter(f=>f>f1&&f<=sumarDias(f0,7)).sort()[0];
     if(prox)sem.push({t,f:prox});
+    const luego=fs.filter(f=>f>sumarDias(f0,7)).sort()[0];
+    if(luego&&!t.cancelada)prox7.push({t,f:luego});
   });
   const hh=x=>x.t.hora||'99';
   col.atr.sort((a,b)=>a.f.localeCompare(b.f)||hh(a).localeCompare(hh(b)));
   col.hoy.sort((a,b)=>hh(a).localeCompare(hh(b)));col.man.sort((a,b)=>hh(a).localeCompare(hh(b)));
-  sem.sort((a,b)=>a.f.localeCompare(b.f)||hh(a).localeCompare(hh(b)));
+  sem.sort((a,b)=>a.f.localeCompare(b.f)||hh(a).localeCompare(hh(b)));sem.splice(4);
   const pubs=(E.publicaciones||[]).filter(p=>p&&pubEst(p)!=='publicado');
   const pc={atr:pubs.filter(p=>p.fecha&&p.fecha<f0&&pubEst(p)==='aprobado'),hoy:pubs.filter(p=>p.fecha===f0&&pubEst(p)==='aprobado'),man:pubs.filter(p=>p.fecha===f1&&pubEst(p)==='aprobado')};
-  return {f0,f1,col,pc,sem};
+  prox7.sort((a,b)=>a.f.localeCompare(b.f)||hh(a).localeCompare(hh(b)));
+  return {f0,f1,col,pc,sem,prox:prox7.slice(0,4)};
 }
 // ¿La actividad de hoy está ocurriendo ahora? (sin hora de fin se asume 2 h)
 function ptEnCurso(t,f0){
@@ -8559,12 +8574,17 @@ function renderPantalla(){
   const caja=(cls,tit,sub,arr,pubs,atr,vacio)=>{const tot=arr.length+pubs.length;
     return `<div class="pt-col ${cls}"><div class="pt-h">${tit} ${tot?`<span class="pt-n">${tot}</span>`:''}<small>${sub}</small></div>${resumen(arr)}
       <div class="pt-lista">${tot?arr.map(x=>item(x,atr)).join('')+pubs.map(p=>itemPub(p,atr)).join(''):`<div class="pt-vac">${vacio}</div>`}</div></div>`;};
+  const scr=[...cont.querySelectorAll('.pt-lista')].map(l=>l.scrollTop);
   cont.innerHTML=caja('atr','⚠️ Pendiente','sin terminar',d.col.atr,d.pc.atr,true,'Nada atrasado 🎉')
     +caja('hoy','📍 Hoy',cap1(fmtPubFecha(d.f0)),d.col.hoy,d.pc.hoy,false,'No hay actividades para hoy')
     +caja('man','➡️ Mañana',cap1(fmtPubFecha(d.f1)),d.col.man,d.pc.man,false,'No hay actividades para mañana');
+  cont.querySelectorAll('.pt-lista').forEach((l,i)=>l.scrollTop=scr[i]||0);
   const dia=f=>cap1(new Date(f+'T12:00:00').toLocaleDateString('es-PA',{weekday:'short',day:'numeric'}).replace('.',''));
-  const ley=`<div class="pt-leyenda"><span class="e-ini">🟡 Por iniciar</span><span class="e-cur">🟢 Iniciada</span><span class="e-fin">🔵 Finalizada</span><span class="e-can" style="text-decoration:underline">🔴 Cancelada</span><span class="e-att">⚠️ Sin asignar</span></div>`;
-  document.getElementById('ptSem').innerHTML=(d.sem.length?`<div class="pt-sh">🗓️ Esta semana</div><div class="pt-sl">${d.sem.map(x=>`<span class="pt-si${x.t.cancelada?' canc':''}"><b>${dia(x.f)}</b>${x.t.hora?' '+txtHora(x.t.hora):''} · ${x.t.cancelada?'🚫 ':''}${escH(x.t.titulo||'')}</span>`).join('')}</div>`:`<div class="pt-sh">🗓️ Esta semana</div><div class="pt-sl"><span class="pt-si">Sin más actividades programadas en los próximos 7 días</span></div>`)+ley;
+  const si=(x,fd=dia)=>`<span class="pt-si${x.t.cancelada?' canc':''}"><b>${fd(x.f)}</b>${x.t.hora?' '+txtHora(x.t.hora):''} · ${x.t.cancelada?'🚫 ':''}${escH(x.t.titulo||'')}</span>`;
+  const diaM=f=>cap1(new Date(f+'T12:00:00').toLocaleDateString('es-PA',{weekday:'short',day:'numeric',month:'short'}).replace(/\./g,''));
+  document.getElementById('ptSem').innerHTML=d.sem.length?`<div class="pt-sh">🗓️ Esta semana</div><div class="pt-sl">${d.sem.map(x=>si(x)).join('')}</div>`
+    :d.prox.length?`<div class="pt-sh">🗓️ Próximas</div><div class="pt-sl">${d.prox.map(x=>si(x,diaM)).join('')}</div>`
+    :`<div class="pt-sh">🗓️ Esta semana</div><div class="pt-sl"><span class="pt-si">Sin actividades programadas</span></div>`;
 }
 setInterval(()=>{if(document.getElementById('vPantalla')&&!document.getElementById('vPantalla').classList.contains('oculto'))renderPantalla();},60000);
 
