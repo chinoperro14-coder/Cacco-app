@@ -1319,6 +1319,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
         <div style="display:flex;gap:6px;align-items:flex-start"><div style="flex:1;min-width:0"><input type="date" class="fc" id="tOtraF"></div><button class="btn bgh bsm" onclick="addOtraF()" title="Agregar fecha">+ Agregar</button></div>
         <div class="chw" id="chOtrasF"></div></div>
     </div>
+    <div class="fg"><label class="fl">📁 Carpeta del material (Drive)</label><input type="url" class="fc" id="tCarpeta" placeholder="Se llena sola cuando se crea la carpeta; también puedes pegar un enlace"></div>
     <div class="fg"><label class="fl">⚠️ Por revisar</label><input type="text" class="fc" id="tRevisar" placeholder="Algo que confirmar antes de la actividad" oninput="this.classList.toggle('fc-aviso',!!this.value.trim())"></div>
     <div class="fr">
       <div class="fg"><label class="fl">Prioridad</label>
@@ -2374,6 +2375,10 @@ const fmtCorta=f=>{const d=new Date(f+'T00:00:00');return d.getDate()+' '+d.toLo
 const fmtOtras=t=>otrasF(t).map(fmtCorta).join(' · ');
 // Contacto y otras fechas en una línea cada uno (para notas de tarjeta y revisión)
 const extrasTxt=t=>[t.contacto?'📞 '+t.contacto:'',otrasF(t).length?'🗓️ También: '+fmtOtras(t):''].filter(Boolean).join('\n');
+// Carpeta de Drive para subir el material (la de la actividad, o la del día si dura varios días)
+const urlOk=u=>/^https:\/\/\S+$/.test(String(u||'').trim());
+const carpetaDe=(t,f)=>{const d=t?.carpetasDia&&f?t.carpetasDia[f]:'';return urlOk(d)?d:urlOk(t?.carpeta)?t.carpeta:'';};
+const carpetaBtn=(t,f,cls='btn bgh bsm')=>niv!=='lector'&&!t?.borrador&&carpetaDe(t,f)?`<a class="${cls}" href="${escH(carpetaDe(t,f))}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="text-decoration:none">📁 Subir material</a>`:'';
 const revisarHtml=t=>String(t.revisar||'').trim()?`<div class="revisar-tarj">⚠️ ${escH(t.revisar.trim())}</div>`:'';
 // Plazo de una sección: su fecha propia o el último día de la actividad
 function secLimite(t,sec){return t.secciones?.[sec]?.fecha||finAct(t)||null;}
@@ -2965,6 +2970,7 @@ function renderTareas(){
       </div>
       <div id="tbody-${t.id}" style="display:${abierta?'block':'none'};padding:14px;border-top:2px solid ${cardColor}30">
         ${abierta?revisarHtml(t):''}
+        ${abierta&&carpetaBtn(t)?`<div style="margin-bottom:10px">${carpetaBtn(t)}</div>`:''}
         ${abierta&&(t.notas||extrasTxt(t))?`<div class="notas-tarj">${escH([extrasTxt(t),t.notas?(extrasTxt(t)?'':'📝 ')+t.notas.replace(/📅/g,'🗓️'):''].filter(Boolean).join('\n'))}</div>`:''}
         ${gruposHTML?`<div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Avance por sección</div>${gruposHTML}`:''}
         ${seccionesHTML}
@@ -3379,6 +3385,7 @@ function abrirMT(id){
   document.getElementById('tHoraFin').value=t?.horaFin||'';
   document.getElementById('tLugar').value=t?.lugar||'';
   document.getElementById('tContacto').value=t?.contacto||'';
+  document.getElementById('tCarpeta').value=t?.carpeta||'';
   const rv=document.getElementById('tRevisar');rv.value=t?.revisar||'';rv.classList.toggle('fc-aviso',!!rv.value.trim());
   otrasFSel=t?otrasF(t):[];{const of=document.getElementById('tOtraF');of.value='';of.dispatchEvent(new Event('input',{bubbles:true}));}renderOtrasF();
   document.getElementById('tNotas').value=t?.notas||'';
@@ -3679,10 +3686,10 @@ let otrasFSel=[];
 function renderOtrasF(){document.getElementById('chOtrasF').innerHTML=otrasFSel.map((f,i)=>`<div class="chip sel" style="display:inline-flex;align-items:center;gap:4px">${fmtCorta(f)}<span onclick="otrasFSel.splice(${i},1);renderOtrasF()" style="cursor:pointer;opacity:.6;font-size:10px" title="Quitar">✕</span></div>`).join('');}
 function addOtraF(){const el=document.getElementById('tOtraF'),f=el.value;if(!f)return;if(!otrasFSel.includes(f))otrasFSel=[...otrasFSel,f].sort();el.value='';el.dispatchEvent(new Event('input',{bubbles:true}));renderOtrasF();}
 function extrasDelModal(){
-  const c=document.getElementById('tContacto').value.trim(),r=document.getElementById('tRevisar').value.trim();
-  const pend=document.getElementById('tOtraF').value;
+  const c=document.getElementById('tContacto').value.trim(),r=document.getElementById('tRevisar').value.trim(),cp=document.getElementById('tCarpeta').value.trim();
+  const pend=document.getElementById('tOtraF').value,id0=document.getElementById('tId').value,o0=id0?E.tareas.find(t=>t.id===id0):null;// las carpetas por día se conservan si no cambió la carpeta
   const o=otrasF({fecha:document.getElementById('tFecha').value,...fechaFinDelModal(),otrasFechas:pend?[...otrasFSel,pend]:otrasFSel});
-  return{...(c?{contacto:c}:{}),...(r?{revisar:r}:{}),...(o.length?{otrasFechas:o}:{})};
+  return{...(c?{contacto:c}:{}),...(r?{revisar:r}:{}),...(o.length?{otrasFechas:o}:{}),...(urlOk(cp)?{carpeta:cp}:{}),...(o0?.carpetasDia&&o0.carpeta===cp?{carpetasDia:o0.carpetasDia}:{})};
 }
 function fechaFinDelModal(){const a=document.getElementById('tFecha').value,b=document.getElementById('tFechaFin').value;return a&&b&&b>a?{fechaFin:b}:{};}
 function guardarT(){
@@ -7658,7 +7665,7 @@ function renderMiDia(){
     <div class="md-hr">${x.f<d.f0?fmtPubFecha(x.f):x.h?txtHora(x.h):'Sin hora'}</div>
     <div style="flex:1;min-width:0"><div class="md-t" onclick="irATarea('${x.t.id}')">${escH(x.t.titulo||'(Sin título)')}</div>
       <div class="md-s">${SECCIONES[x.sec]?.ico||''} ${x.sec}${x.sec==='Diseño'&&x.sv.etapa?' · '+escH(x.sv.etapa):''}${x.t.lugar?' · 📍 '+escH(x.t.lugar):''}</div>
-      ${ed?`<div class="md-ac"><button class="btn bve bsm" onclick="togSeccion('${x.t.id}','${x.sec}')">✅ Listo</button></div>`:''}</div></div>`;
+      ${ed||carpetaBtn(x.t,x.f)?`<div class="md-ac">${ed?`<button class="btn bve bsm" onclick="togSeccion('${x.t.id}','${x.sec}')">✅ Listo</button>`:''}${carpetaBtn(x.t,x.f)}</div>`:''}</div></div>`;
   const itPub=p=>`<div class="md-it">
     <div class="md-hr">${p.hora?txtHora(p.hora):'Sin hora'}</div>
     <div style="flex:1;min-width:0"><div class="md-t" onclick="verPubEnCal('${p.id}')">${escH(p.titulo||'(Sin título)')} ${pubTipoBadge(p)}</div>
