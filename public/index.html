@@ -937,6 +937,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <div class="stit">Horas Extras</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn bgh bsm nhe oculto" onclick="abrirMOirh()">📋 Formulario OIRH</button>
+      <button class="btn bgh bsm ncr oculto" onclick="abrirMRepComp('consolidado')">📊 Consolidado compensatorio</button>
       <button class="btn bna bsm nhe oculto" onclick="abrirMH()">+ Registrar Horas</button>
     </div>
   </div>
@@ -959,7 +960,8 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <div class="sh2">
     <div><div class="stit">Tiempo compensatorio</div><div style="font-size:13px;color:var(--tm);margin-top:3px">Se usa el saldo de horas extra aprobadas · 8 h = 1 día · el saldo nunca queda en negativo</div></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn bgh bsm nhe oculto" onclick="abrirMRepComp()">📄 Reporte compensatorio</button>
+      <button class="btn bgh bsm ncr oculto" onclick="abrirMRepComp('consolidado')">📊 Consolidado del equipo</button>
+      <button class="btn bgh bsm nhe oculto" onclick="abrirMRepComp('persona')">📄 Reporte por persona</button>
       <button class="btn bna bsm nhe oculto" onclick="abrirMComp()">+ Solicitar tiempo compensatorio</button>
     </div>
   </div>
@@ -1487,7 +1489,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <div class="mcab"><div class="mtit">Registro de Horas Extras (OIRH)</div><button class="mx" onclick="cerM('mOirh')">×</button></div>
   <div class="mbody">
     <div class="fg" id="oiMiemGrupo"><label class="fl">Servidor público</label><select class="fc" id="oiMiem"></select></div>
-    <div class="fg"><label class="fl">Mes</label><input type="month" class="fc" id="oiMes"></div>
+    <div class="fg"><label class="fl">Mes</label><select class="fc" id="oiMes"></select></div>
     <div id="oiDatos">
       <div class="fr">
         <div class="fg"><label class="fl">Puesto desempeñado</label><input type="text" class="fc" id="oiPuesto" placeholder="Puesto según RRHH"></div>
@@ -6705,6 +6707,7 @@ function abrirMOirh(){
   const sel=document.getElementById('oiMiem');
   if(niv==='colaborador'){sel.innerHTML=`<option value="${escH(uAct.nombre)}">${escH(uAct.nombre)}</option>`;document.getElementById('oiMiemGrupo').style.display='none';}
   else{sel.innerHTML='<option value="">Todo el equipo (una hoja por persona)</option>'+equipoReal().map(p=>`<option value="${escH(p.nombre)}">${escH(p.nombre)}</option>`).join('');sel.value=uAct?.nombre||'';document.getElementById('oiMiemGrupo').style.display='block';}
+  document.getElementById('oiMes').innerHTML=opcionesMes();
   document.getElementById('oiMes').value=hoy().slice(0,7);
   document.getElementById('oiPend').checked=false;
   sel.onchange=oirhDatos;oirhDatos();
@@ -6804,12 +6807,20 @@ tbody td{height:20px;font-size:11px;line-height:1.1}td.c{text-align:center;white
 // ════════════════════════
 //  REPORTE DE TIEMPO COMPENSATORIO
 // ════════════════════════
-function abrirMRepComp(){
+// Meses para elegir sin escribir: del mes que viene hacia atrás, 18 meses
+function opcionesMes(){
+  const [a,m]=hoy().split('-').map(Number);let out='';
+  for(let i=-1;i<18;i++){const d=new Date(a,m-1-i,1),v=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    out+=`<option value="${v}">${cap1(d.toLocaleDateString('es-PA',{month:'long',year:'numeric'}).replace(' de ',' '))}</option>`;}
+  return out;
+}
+function abrirMRepComp(tipoIni){
   if(!puede('registrarHora')){alert('Sin permiso.');return;}
   const sel=document.getElementById('rcMiem');
   const tipo=document.getElementById('rcTipo');
   if(niv==='colaborador'){sel.innerHTML=`<option value="${escH(uAct.nombre)}">${escH(uAct.nombre)}</option>`;tipo.value='persona';document.getElementById('rcTipoGrupo').style.display='none';}
   else{sel.innerHTML='<option value="">Todo el equipo</option>'+equipoReal().map(p=>`<option value="${escH(p.nombre)}">${escH(p.nombre)}</option>`).join('');document.getElementById('rcTipoGrupo').style.display='block';}
+  if(tipoIni&&niv!=='colaborador')tipo.value=tipoIni;
   let area='';try{area=localStorage.getItem('cacco_rcArea')||'';}catch{}
   document.getElementById('rcArea').value=area||'Comunicaciones';
   rcTipoCambio();
