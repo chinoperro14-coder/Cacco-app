@@ -2865,7 +2865,8 @@ function renderTareas(){
         }).join('');
 
         const secKey=sec.replace(/\s/g,'_');
-        const addEntForm=canAddEnt?`<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+        // Audiovisual: fotos y videos van a la carpeta de Drive (Miguel: «el botón de subir material reemplaza el entregable»)
+        const addEntForm=sec==='Audiovisual'?(carpetaInfo(t)||`<div style="font-size:12px;color:var(--tm)">📁 Las fotos y videos se suben a la carpeta de Drive de la actividad; el botón aparece aquí cuando se crea.</div>`):canAddEnt?`<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
           <input type="text" class="fc" id="ent-nom-${t.id}-${secKey}" placeholder="Nombre del entregable" style="flex:1;min-width:120px;font-size:12px;padding:5px 8px">
           <input type="url" class="fc" id="ent-url-${t.id}-${secKey}" placeholder="https://..." style="flex:2;min-width:150px;font-size:12px;padding:5px 8px">
           <button class="btn bna bsm" onclick="event.stopPropagation();agregarEntregableSeccion('${t.id}','${sec}')">+ Agregar</button>
@@ -2875,7 +2876,7 @@ function renderTareas(){
           ${sHdr}
           ${abiertaSec?`${detalle?`<div style="margin-bottom:8px">${detalle}</div>`:''}
           ${entItems}
-          ${addEntForm}`:''}
+          ${addEntForm}`:sec==='Audiovisual'?carpetaInfo(t):''}
         </div>`;
       }).join('');
     }
@@ -2985,7 +2986,7 @@ function renderTareas(){
       </div>
       <div id="tbody-${t.id}" style="display:${abierta?'block':'none'};padding:14px;border-top:2px solid ${cardColor}30">
         ${abierta?revisarHtml(t):''}
-        ${abierta?carpetaInfo(t):''}
+        ${abierta&&!t.secciones?.Audiovisual?carpetaInfo(t):''}
         ${abierta&&(t.notas||extrasTxt(t))?`<div class="notas-tarj">${escH([extrasTxt(t),t.notas?(extrasTxt(t)?'':'📝 ')+t.notas.replace(/📅/g,'🗓️'):''].filter(Boolean).join('\n'))}</div>`:''}
         ${gruposHTML?`<div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Avance por sección</div>${gruposHTML}`:''}
         ${seccionesHTML}
