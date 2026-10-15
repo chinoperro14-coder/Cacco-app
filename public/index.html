@@ -2381,14 +2381,16 @@ const carpetaDe=(t,f)=>{const d=t?.carpetasDia&&f?t.carpetasDia[f]:'';return url
 const carpetaBtn=(t,f,cls='btn bgh bsm')=>niv!=='lector'&&!t?.borrador&&carpetaDe(t,f)?`<a class="${cls}" href="${escH(carpetaDe(t,f))}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="text-decoration:none">📁 Subir material</a>`:'';
 // Material subido (lo cuenta la revisión de cada mañana) y aviso si la actividad ya pasó y la carpeta sigue vacía
 const faltaMaterial=t=>!!(t?.carpeta&&t.carpetaConteo&&!t.cancelada&&pasoAct(t)&&ultimaAct(t)>=sumarDias(hoy(),-30)&&!((+t.carpetaConteo.fotos||0)+(+t.carpetaConteo.videos||0)));
+// Carpeta(s) FOTO que se comparten con la oficina que hizo el pedido (una por día si la actividad dura varios)
+const fotosOficina=t=>(Array.isArray(t?.carpetaOficina)?t.carpetaOficina:[t?.carpetaOficina]).filter(urlOk);
 const waOficina=t=>{const d=String(t?.pedido?.contacto||'').replace(/\D/g,'');if(d.length<7)return '';
-  const n=d.length<=8?'507'+d:d;return `https://wa.me/${n}?text=${encodeURIComponent(`Hola, aquí está el material de «${t.titulo||'la actividad'}»: ${t.carpetaOficina}`)}`;};
+  const n=d.length<=8?'507'+d:d,ls=fotosOficina(t);return `https://wa.me/${n}?text=${encodeURIComponent(`Hola, aquí están las fotos de «${t.titulo||'la actividad'}»:\n${ls.join('\n')}`)}`;};
 function carpetaInfo(t){
   if(niv==='lector'||t?.borrador||!carpetaDe(t))return '';
   const c=t.carpetaConteo,ft=+c?.fotos||0,vd=+c?.videos||0,partes=[carpetaBtn(t)];
   if(faltaMaterial(t))partes.push('<span class="revisar-tarj" style="display:inline-block;margin:0;padding:4px 10px">📁 Falta subir material</span>');
   else if(c&&(ft||vd))partes.push(`<span style="font-size:12px;color:var(--tm)">${[ft?`📸 ${ft} foto${ft===1?'':'s'}`:'',vd?`🎥 ${vd} video${vd===1?'':'s'}`:''].filter(Boolean).join(' · ')}</span>`);
-  if(urlOk(t.carpetaOficina)){partes.push(`<a class="btn bgh bsm" href="${escH(t.carpetaOficina)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="text-decoration:none">📤 Para la oficina</a>`);
+  if(fotosOficina(t).length){partes.push(`<span style="font-size:12px;color:var(--tm)">📤 FOTO compartida con la oficina</span>`);
     const wa=!/@/.test(t.pedido?.contacto||'')&&waOficina(t);if(wa)partes.push(`<a class="btn bgh bsm" href="${escH(wa)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="text-decoration:none">💬 Enviar por WhatsApp</a>`);}
   return `<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px">${partes.join('')}</div>`;
 }
