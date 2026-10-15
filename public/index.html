@@ -3705,7 +3705,7 @@ function extrasDelModal(){
   const c=document.getElementById('tContacto').value.trim(),r=document.getElementById('tRevisar').value.trim(),cp=document.getElementById('tCarpeta').value.trim();
   const pend=document.getElementById('tOtraF').value,id0=document.getElementById('tId').value,o0=id0?E.tareas.find(t=>t.id===id0):null;// los datos de la carpeta (días, conteo, oficina) se conservan si no cambió la carpeta
   const o=otrasF({fecha:document.getElementById('tFecha').value,...fechaFinDelModal(),otrasFechas:pend?[...otrasFSel,pend]:otrasFSel});
-  return{...(c?{contacto:c}:{}),...(r?{revisar:r}:{}),...(o.length?{otrasFechas:o}:{}),...(urlOk(cp)?{carpeta:cp}:{}),...(o0&&o0.carpeta===cp?Object.fromEntries(['carpetasDia','carpetaConteo','carpetaOficina'].filter(k=>o0[k]).map(k=>[k,o0[k]])):{})};
+  return{...(c?{contacto:c}:{}),...(r?{revisar:r}:{}),...(o.length?{otrasFechas:o}:{}),...(urlOk(cp)?{carpeta:cp}:{}),...(o0&&o0.carpeta===cp?Object.fromEntries(['carpetasDia','carpetaConteo','carpetaOficina','carpetaFecha'].filter(k=>o0[k]).map(k=>[k,o0[k]])):{})};
 }
 function fechaFinDelModal(){const a=document.getElementById('tFecha').value,b=document.getElementById('tFechaFin').value;return a&&b&&b>a?{fechaFin:b}:{};}
 function guardarT(){
