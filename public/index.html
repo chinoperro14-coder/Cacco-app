@@ -2385,11 +2385,15 @@ const faltaMaterial=t=>!!(t?.carpeta&&t.carpetaConteo&&!t.cancelada&&pasoAct(t)&
 const fotosOficina=t=>(Array.isArray(t?.carpetaOficina)?t.carpetaOficina:[t?.carpetaOficina]).filter(urlOk);
 const waOficina=t=>{const d=String(t?.pedido?.contacto||'').replace(/\D/g,'');if(d.length<7)return '';
   const n=d.length<=8?'507'+d:d,ls=fotosOficina(t);return `https://wa.me/${n}?text=${encodeURIComponent(`Hola, aquí están las fotos de «${t.titulo||'la actividad'}»:\n${ls.join('\n')}`)}`;};
+// Desde que arrancan las carpetas (la primera fecha con carpeta creada), una tarea confirmada sin carpeta queda marcada
+const carpetaPend=t=>{const d=E.tareas.map(x=>x.carpetaFecha).filter(Boolean).sort()[0];return !!(d&&t&&!t.borrador&&!t.cancelada&&!carpetaDe(t)&&t.secciones?.Audiovisual&&t.fecha>=d&&!pasoAct(t));};
 function carpetaInfo(t){
   if(niv==='lector'||t?.borrador||!carpetaDe(t))return '';
   const c=t.carpetaConteo,ft=+c?.fotos||0,vd=+c?.videos||0,partes=[carpetaBtn(t)];
-  if(faltaMaterial(t))partes.push('<span class="revisar-tarj" style="display:inline-block;margin:0;padding:4px 10px">📁 Falta subir material</span>');
-  else if(c&&(ft||vd))partes.push(`<span style="font-size:12px;color:var(--tm)">${[ft?`📸 ${ft} foto${ft===1?'':'s'}`:'',vd?`🎥 ${vd} video${vd===1?'':'s'}`:''].filter(Boolean).join(' · ')}</span>`);
+  // El conteo lo hace la revisión de la mañana: se dice de cuándo es para que no confunda si se subió después
+  const rev=c?.fecha?` · revisado ${c.fecha===hoy()?'hoy':fmtCorta(c.fecha)}`:'';
+  if(faltaMaterial(t))partes.push(`<span class="revisar-tarj" style="display:inline-block;margin:0;padding:4px 10px">📁 Falta subir material<span style="font-weight:400">${rev}</span></span>`);
+  else if(c&&(ft||vd))partes.push(`<span style="font-size:12px;color:var(--tm)">${[ft?`📸 ${ft} foto${ft===1?'':'s'}`:'',vd?`🎥 ${vd} video${vd===1?'':'s'}`:''].filter(Boolean).join(' · ')}${rev}</span>`);
   if(fotosOficina(t).length){partes.push(`<span style="font-size:12px;color:var(--tm)">📤 FOTO compartida con la oficina</span>`);
     const wa=!/@/.test(t.pedido?.contacto||'')&&waOficina(t);if(wa)partes.push(`<a class="btn bgh bsm" href="${escH(wa)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="text-decoration:none">💬 Enviar por WhatsApp</a>`);}
   return `<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px">${partes.join('')}</div>`;
@@ -2866,7 +2870,7 @@ function renderTareas(){
 
         const secKey=sec.replace(/\s/g,'_');
         // Audiovisual: fotos y videos van a la carpeta de Drive (Miguel: «el botón de subir material reemplaza el entregable»)
-        const addEntForm=sec==='Audiovisual'?(carpetaInfo(t)||`<div style="font-size:12px;color:var(--tm)">📁 Las fotos y videos se suben a la carpeta de Drive de la actividad; el botón aparece aquí cuando se crea.</div>`):canAddEnt?`<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+        const addEntForm=sec==='Audiovisual'?(carpetaInfo(t)||(carpetaPend(t)?`<div class="revisar-tarj" style="margin:0">📁 Carpeta pendiente: se crea en la revisión de la mañana. Si urge, crea una y pega el enlace en ✏️ Editar.</div>`:`<div style="font-size:12px;color:var(--tm)">📁 Las fotos y videos se suben a la carpeta de Drive de la actividad; el botón aparece aquí cuando se crea.</div>`)):canAddEnt?`<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
           <input type="text" class="fc" id="ent-nom-${t.id}-${secKey}" placeholder="Nombre del entregable" style="flex:1;min-width:120px;font-size:12px;padding:5px 8px">
           <input type="url" class="fc" id="ent-url-${t.id}-${secKey}" placeholder="https://..." style="flex:2;min-width:150px;font-size:12px;padding:5px 8px">
           <button class="btn bna bsm" onclick="event.stopPropagation();agregarEntregableSeccion('${t.id}','${sec}')">+ Agregar</button>
