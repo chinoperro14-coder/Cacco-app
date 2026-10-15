@@ -6707,10 +6707,10 @@ function abrirMOirh(){
   const sel=document.getElementById('oiMiem');
   if(niv==='colaborador'){sel.innerHTML=`<option value="${escH(uAct.nombre)}">${escH(uAct.nombre)}</option>`;document.getElementById('oiMiemGrupo').style.display='none';}
   else{sel.innerHTML='<option value="">Todo el equipo (una hoja por persona)</option>'+equipoReal().map(p=>`<option value="${escH(p.nombre)}">${escH(p.nombre)}</option>`).join('');sel.value=uAct?.nombre||'';document.getElementById('oiMiemGrupo').style.display='block';}
-  document.getElementById('oiMes').innerHTML=opcionesMes();
-  document.getElementById('oiMes').value=hoy().slice(0,7);
+  document.getElementById('oiMes').innerHTML='';
   document.getElementById('oiPend').checked=false;
-  sel.onchange=oirhDatos;oirhDatos();
+  sel.onchange=()=>{oirhDatos();oirhMeses();};oirhDatos();oirhMeses();
+  if([...document.getElementById('oiMes').options].some(o=>o.value===hoy().slice(0,7)))document.getElementById('oiMes').value=hoy().slice(0,7);
   abrirM('mOirh');
 }
 
@@ -6734,7 +6734,7 @@ function oirhDatos(){
 
 function generarOirh(){
   const sel=document.getElementById('oiMiem').value,mes=document.getElementById('oiMes').value,conPend=document.getElementById('oiPend').checked;
-  if(!mes){alert('Elige el mes.');return;}
+  if(!mes){alert('No hay horas extra registradas para este formulario.');return;}
   // Guardar en la ficha los datos del servidor que se hayan completado aquí
   const pf=sel&&E.equipo.find(x=>x.nombre===sel);
   if(pf&&(puede('aprobarHora')||pf.id===uAct?.id)){
@@ -6808,11 +6808,21 @@ tbody td{height:20px;font-size:11px;line-height:1.1}td.c{text-align:center;white
 //  REPORTE DE TIEMPO COMPENSATORIO
 // ════════════════════════
 // Meses para elegir sin escribir: del mes que viene hacia atrás, 18 meses
+// Solo los meses en que la persona elegida (o alguien del equipo) tiene horas extra registradas
 function opcionesMes(){
-  const [a,m]=hoy().split('-').map(Number);let out='';
-  for(let i=-1;i<18;i++){const d=new Date(a,m-1-i,1),v=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    out+=`<option value="${v}">${cap1(d.toLocaleDateString('es-PA',{month:'long',year:'numeric'}).replace(' de ',' '))}</option>`;}
-  return out;
+  const nom=document.getElementById('oiMiem').value;
+  const cuenta={};
+  E.horasExtra.filter(h=>!esComp(h)&&h.aprobacion!=='Rechazado'&&/^\d{4}-\d{2}/.test(h.fecha||'')&&(nom?h.miembro===nom:true)&&(niv!=='colaborador'||h.miembro===uAct?.nombre))
+    .forEach(h=>{const k=h.fecha.slice(0,7);cuenta[k]=(cuenta[k]||0)+1;});
+  const meses=Object.keys(cuenta).sort().reverse();
+  if(!meses.length)return '<option value="">Sin horas extra registradas</option>';
+  return meses.map(v=>{const [a,m]=v.split('-').map(Number);
+    return `<option value="${v}">${cap1(new Date(a,m-1,1).toLocaleDateString('es-PA',{month:'long',year:'numeric'}).replace(' de ',' '))} · ${cuenta[v]} registro${cuenta[v]===1?'':'s'}</option>`;}).join('');
+}
+function oirhMeses(){
+  const s=document.getElementById('oiMes'),prev=s.value;
+  s.innerHTML=opcionesMes();
+  if(prev&&[...s.options].some(o=>o.value===prev))s.value=prev;
 }
 function abrirMRepComp(tipoIni){
   if(!puede('registrarHora')){alert('Sin permiso.');return;}
