@@ -1512,12 +1512,9 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <div class="fg" id="rcTipoGrupo"><label class="fl">Reporte</label><select class="fc" id="rcTipo" onchange="rcTipoCambio()"><option value="consolidado">Consolidado del equipo (días y horas pendientes)</option><option value="persona">Detalle por persona</option></select></div>
     <div class="fg" id="rcAreaGrupo"><label class="fl">Departamento / Área</label><input type="text" class="fc" id="rcArea" placeholder="ej. Comunicaciones"></div>
     <div class="fg" id="rcMiemGrupo"><label class="fl">Persona</label><select class="fc" id="rcMiem"></select></div>
-    <div class="fr">
-      <div class="fg"><label class="fl">Desde</label><input type="date" class="fc" id="rcIni"></div>
-      <div class="fg"><label class="fl">Hasta</label><input type="date" class="fc" id="rcFin"></div>
-    </div>
+    <div class="fg"><label class="fl">Mes</label><select class="fc" id="rcMes"></select></div>
     <label id="rcIndivGrupo" style="display:flex;gap:8px;align-items:center;font-size:13px;margin-bottom:10px;cursor:pointer"><input type="checkbox" id="rcIndiv" checked> Adjuntar el control individual de cada persona</label>
-    <div style="font-size:12px;color:var(--tm);line-height:1.5">Solo cuentan los registros aprobados. El saldo inicial incluye todo lo aprobado antes de la fecha «Desde».</div>
+    <div style="font-size:12px;color:var(--tm);line-height:1.5">Solo cuentan los registros aprobados. El saldo inicial es lo que quedaba al cierre del mes anterior.</div>
   </div>
   <div class="mpie"><button class="btn bgh" onclick="cerM('mRepComp')">Cancelar</button><button class="btn bna" onclick="generarRepComp()">Generar reporte</button></div>
 </div></div>
@@ -6834,9 +6831,12 @@ function abrirMRepComp(tipoIni){
   let area='';try{area=localStorage.getItem('cacco_rcArea')||'';}catch{}
   document.getElementById('rcArea').value=area||'Comunicaciones';
   rcTipoCambio();
-  const h=hoy();
-  document.getElementById('rcIni').value=h.slice(0,4)+'-01-01';
-  document.getElementById('rcFin').value=h;
+  // Meses completos: desde el primer mes con registros hasta el mes actual
+  const h=hoy(),pri=E.horasExtra.map(x=>(x.fecha||'').slice(0,7)).filter(x=>/^\d{4}-\d{2}$/.test(x)).sort()[0]||h.slice(0,7);
+  let [a,m]=h.split('-').map(Number),op='';
+  for(let i=0;i<120;i++){const v=`${a}-${String(m).padStart(2,'0')}`;if(v<pri&&i>0)break;
+    op+=`<option value="${v}">${cap1(new Date(a,m-1,1).toLocaleDateString('es-PA',{month:'long',year:'numeric'}).replace(' de ',' '))}</option>`;if(--m<1){m=12;a--;}}
+  document.getElementById('rcMes').innerHTML=op;
   abrirM('mRepComp');
 }
 
@@ -6848,15 +6848,16 @@ function rcTipoCambio(){
 }
 function generarRepComp(){
   const cons=document.getElementById('rcTipo').value==='consolidado'&&niv!=='colaborador';
-  const sel=cons?'':document.getElementById('rcMiem').value,ini=document.getElementById('rcIni').value,fin=document.getElementById('rcFin').value;
+  const sel=cons?'':document.getElementById('rcMiem').value,mes=document.getElementById('rcMes').value;
   const area=document.getElementById('rcArea').value.trim();if(cons)try{localStorage.setItem('cacco_rcArea',area);}catch{}
-  if(!ini||!fin||ini>fin){alert('Revisa las fechas: «Desde» debe ser anterior a «Hasta».');return;}
+  if(!mes){alert('Elige el mes.');return;}
+  const [mA,mM]=mes.split('-').map(Number),ini=mes+'-01',fin=mes+'-'+String(new Date(mA,mM,0).getDate()).padStart(2,'0');
   const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const dia=f=>{const [a,m,d]=f.split('-').map(Number);const w=new Date(a,m-1,d).toLocaleDateString('es-PA',{weekday:'long'});return w.charAt(0).toUpperCase()+w.slice(1);};
   const antes=d=>{const [a,m,dd]=d.split('-').map(Number);const x=new Date(a,m-1,dd-1);return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;};
   const incl=!cons||document.getElementById('rcIndiv').checked;
   const personas=!incl?[]:(sel?E.equipo.filter(p=>p.nombre===sel):equipoReal()).filter(p=>niv!=='colaborador'||p.nombre===uAct?.nombre);
-  const rangoLbl=`${fmt(ini)} al ${fmt(fin)}`;
+  const rangoLbl=cap1(new Date(mA,mM-1,1).toLocaleDateString('es-PA',{month:'long',year:'numeric'}).replace(' de ',' '));
   const secciones=personas.map(p=>{
     const regs=E.horasExtra.filter(h=>h.miembro===p.nombre&&h.fecha>=ini&&h.fecha<=fin).sort((a,b)=>a.fecha.localeCompare(b.fecha));
     const ext=regs.filter(h=>!esComp(h)&&h.aprobacion==='Aprobado'),usa=regs.filter(h=>esComp(h)&&h.aprobacion==='Aprobado');
@@ -6933,7 +6934,7 @@ ${consHtml}${secciones.join('')}
 </body></html>`;
   cerM('mRepComp');
   reg('Reporte compensatorio',`${cons?'Consolidado':sel||'Todo el equipo'} — ${rangoLbl}`);
-  mostrarDocumento(html,`🌴 Tiempo compensatorio — ${rangoLbl}`,`Compensatorio_CACCO_${cons?'consolidado':(sel||'equipo').replace(/\s+/g,'_')}_${ini}_${fin}.html`);
+  mostrarDocumento(html,`🌴 Tiempo compensatorio — ${rangoLbl}`,`Compensatorio_CACCO_${cons?'consolidado':(sel||'equipo').replace(/\s+/g,'_')}_${mes}.html`);
 }
 
 function archivarRep(){
