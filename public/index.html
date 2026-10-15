@@ -2343,7 +2343,18 @@ const EST_CLS={Pendiente:'e-ini','En Progreso':'e-cur',Completada:'e-fin',Cerrad
 const EST_TXT={Pendiente:'Por iniciar','En Progreso':'Iniciada',Completada:'Finalizada',Cerrada:'Cerrada','No cumplida':'No cumplida'};
 // Clave de color del estado de una actividad: ini (por iniciar), cur (iniciada), fin (finalizada), can (cancelada)
 const EST_K={Pendiente:'ini','En Progreso':'cur',Completada:'fin',Cerrada:'fin','No cumplida':'can'};
-const estK=t=>t.cancelada?'can':(EST_K[eglobal(t)]||'ini');
+// Ya terminó la actividad: pasó su último día o, si es hoy, su hora de fin (sin hora de fin se asumen 2 h; sin hora, al acabar el día)
+function actTerminada(t){
+  if(!t?.fecha||t.borrador||t.cancelada)return false;
+  const u=ultimaAct(t),h=hoy();if(u!==h)return u<h;
+  if(!t.hora)return false;
+  const mm=x=>{const [a,b]=String(x).split(':').map(Number);return a*60+(b||0);};
+  const ini=mm(t.hora),fin=t.horaFin?mm(t.horaFin):ini+120;if(fin<=ini||fin>=1440)return false;
+  return mm(new Date().toLocaleTimeString('en-GB',{timeZone:'America/Panama',hour:'2-digit',minute:'2-digit'}))>=fin;
+}
+// Estado que se ve (color y texto): mientras ocurre se ve iniciada y, cuando termina, finalizada aunque falten entregas (siguen pendientes en su sección)
+const eVista=t=>{const e=eglobal(t);if(e!=='Pendiente'&&e!=='En Progreso')return e;return actTerminada(t)?'Completada':e==='Pendiente'&&ptEnCurso(t,hoy())?'En Progreso':e;};
+const estK=t=>t.cancelada?'can':(EST_K[eVista(t)]||'ini');
 function tResuelta(t){if(t.cancelada)return true;const e=eglobal(t);return e==='Completada'||e==='Cerrada'||e==='No cumplida';}
 // Fecha/hora efectiva de una sección: su propia fecha o, si no tiene, la general de la tarea
 function secFecha(t,sec){return t.secciones?.[sec]?.fecha||t.fecha||null;}
@@ -2933,7 +2944,7 @@ function renderTareas(){
       </div>
       <div class="t-midbar tint" style="--sc:${cardColor};padding:10px 14px;background:${cardBg};display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;cursor:pointer" onclick="togT('${t.id}')">
         <div class="t-badges-row" style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
-          ${t.cancelada?`<span class="bg e-can" style="font-weight:800;text-decoration:underline" title="${escH(t.cancelada.motivo||'')}">🚫 CANCELADA</span>`:`<span class="bg ${EST_CLS[eg]||'bgr'}">${EST_TXT[eg]||eg}</span>`}
+          ${t.cancelada?`<span class="bg e-can" style="font-weight:800;text-decoration:underline" title="${escH(t.cancelada.motivo||'')}">🚫 CANCELADA</span>`:`<span class="bg ${EST_CLS[eVista(t)]||'bgr'}">${EST_TXT[eVista(t)]||eg}</span>`}
           ${t.prioridad?`<span class="bg ${bPri[t.prioridad]||'bgr'}">${escH(t.prioridad)}</span>`:''}
           ${t.fecha?`<span class="bg bgr" style="${vencida?'color:var(--ro);font-weight:700':''}">${vencida?'⚠️ ':'🗓️ '}${fmtAct(t)}${otrasF(t).length?` <span title="También: ${fmtOtras(t)}">+${otrasF(t).length}</span>`:''}</span>`:''}
           ${String(t.revisar||'').trim()?`<span class="bg" style="background:var(--ams);color:var(--am);font-weight:700" title="${escH(t.revisar)}">⚠️ Por revisar</span>`:''}
@@ -8560,7 +8571,7 @@ function renderPantalla(){
     const cl=sa?'sa':sv.estado==='Completada'||sv.estado==='Cerrada'?'ok':secEnCurso(t,k)||sv.estado==='En Progreso'?'ec':'pe';
     return `<span class="${cl}">${SECCIONES[k]?.ico||''} ${k}${sa?' · ⚠️ SIN ASIGNAR':who?' · '+escH(who):''}</span>`;}).join('');
   const item=(x,atr)=>{const t=x.t,curso=!atr&&!tResuelta(t)&&ptEnCurso(t,d.f0),canc=!!t.cancelada,pc=ptPosibleCancel(t);
-    const eg=eglobal(t),sc=canc||eg==='No cumplida'?'can':curso||eg==='En Progreso'?'cur':eg==='Completada'||eg==='Cerrada'?'fin':'ini';
+    const eg=eVista(t),sc=canc||eg==='No cumplida'?'can':curso||eg==='En Progreso'?'cur':eg==='Completada'||eg==='Cerrada'?'fin':'ini';
     const mio=Object.values(t.secciones||{}).some(sv=>sv&&(sv.responsables||[]).includes(uAct.id));
     return `<div class="pt-it s-${sc}${canc?' canc':tResuelta(t)?' hecho':''}${curso?' curso':''}${mio?' mio':''}${niv!=='lector'?' abre':''}"${niv!=='lector'?` onclick="ptAbrir('${t.id}')" title="${mio?'Es tuya · ':''}Toca para ver el detalle"`:''}><div class="pt-t">${canc?'🚫 ':''}${escH(t.titulo||'(Sin título)')}</div>
       <div class="pt-m">${atr?`<span class="pt-hr">${fmtPubFecha(x.f)}</span>`:`<span class="pt-hr">${t.hora?txtHora(t.hora)+(t.horaFin?' a '+txtHora(t.horaFin):''):'Sin hora'}</span>`}${t.lugar?' · 📍 '+escH(t.lugar):''}</div>
@@ -8587,6 +8598,8 @@ function renderPantalla(){
     :`<div class="pt-sh">🗓️ Esta semana</div><div class="pt-sl"><span class="pt-si">Sin actividades programadas</span></div>`;
 }
 setInterval(()=>{if(document.getElementById('vPantalla')&&!document.getElementById('vPantalla').classList.contains('oculto'))renderPantalla();},60000);
+// Los colores cambian con la hora (en curso, finalizada): Tareas se repinta cada minuto si nadie está escribiendo en ella
+setInterval(()=>{const v=document.getElementById('vTareas'),ae=document.activeElement;if(v&&!v.classList.contains('oculto')&&!hayModalAbierto()&&!(ae&&v.contains(ae)&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName)))renderTareas();},60000);
 
 function refrescarVistaAbierta(){
   actuCts();
