@@ -2379,6 +2379,19 @@ const extrasTxt=t=>[t.contacto?'📞 '+t.contacto:'',otrasF(t).length?'🗓️ T
 const urlOk=u=>/^https:\/\/\S+$/.test(String(u||'').trim());
 const carpetaDe=(t,f)=>{const d=t?.carpetasDia&&f?t.carpetasDia[f]:'';return urlOk(d)?d:urlOk(t?.carpeta)?t.carpeta:'';};
 const carpetaBtn=(t,f,cls='btn bgh bsm')=>niv!=='lector'&&!t?.borrador&&carpetaDe(t,f)?`<a class="${cls}" href="${escH(carpetaDe(t,f))}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="text-decoration:none">📁 Subir material</a>`:'';
+// Material subido (lo cuenta la revisión de cada mañana) y aviso si la actividad ya pasó y la carpeta sigue vacía
+const faltaMaterial=t=>!!(t?.carpeta&&t.carpetaConteo&&!t.cancelada&&pasoAct(t)&&ultimaAct(t)>=sumarDias(hoy(),-30)&&!((+t.carpetaConteo.fotos||0)+(+t.carpetaConteo.videos||0)));
+const waOficina=t=>{const d=String(t?.pedido?.contacto||'').replace(/\D/g,'');if(d.length<7)return '';
+  const n=d.length<=8?'507'+d:d;return `https://wa.me/${n}?text=${encodeURIComponent(`Hola, aquí está el material de «${t.titulo||'la actividad'}»: ${t.carpetaOficina}`)}`;};
+function carpetaInfo(t){
+  if(niv==='lector'||t?.borrador||!carpetaDe(t))return '';
+  const c=t.carpetaConteo,ft=+c?.fotos||0,vd=+c?.videos||0,partes=[carpetaBtn(t)];
+  if(faltaMaterial(t))partes.push('<span class="revisar-tarj" style="display:inline-block;margin:0;padding:4px 10px">📁 Falta subir material</span>');
+  else if(c&&(ft||vd))partes.push(`<span style="font-size:12px;color:var(--tm)">${[ft?`📸 ${ft} foto${ft===1?'':'s'}`:'',vd?`🎥 ${vd} video${vd===1?'':'s'}`:''].filter(Boolean).join(' · ')}</span>`);
+  if(urlOk(t.carpetaOficina)){partes.push(`<a class="btn bgh bsm" href="${escH(t.carpetaOficina)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="text-decoration:none">📤 Para la oficina</a>`);
+    const wa=!/@/.test(t.pedido?.contacto||'')&&waOficina(t);if(wa)partes.push(`<a class="btn bgh bsm" href="${escH(wa)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="text-decoration:none">💬 Enviar por WhatsApp</a>`);}
+  return `<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px">${partes.join('')}</div>`;
+}
 const revisarHtml=t=>String(t.revisar||'').trim()?`<div class="revisar-tarj">⚠️ ${escH(t.revisar.trim())}</div>`:'';
 // Plazo de una sección: su fecha propia o el último día de la actividad
 function secLimite(t,sec){return t.secciones?.[sec]?.fecha||finAct(t)||null;}
@@ -2970,7 +2983,7 @@ function renderTareas(){
       </div>
       <div id="tbody-${t.id}" style="display:${abierta?'block':'none'};padding:14px;border-top:2px solid ${cardColor}30">
         ${abierta?revisarHtml(t):''}
-        ${abierta&&carpetaBtn(t)?`<div style="margin-bottom:10px">${carpetaBtn(t)}</div>`:''}
+        ${abierta?carpetaInfo(t):''}
         ${abierta&&(t.notas||extrasTxt(t))?`<div class="notas-tarj">${escH([extrasTxt(t),t.notas?(extrasTxt(t)?'':'📝 ')+t.notas.replace(/📅/g,'🗓️'):''].filter(Boolean).join('\n'))}</div>`:''}
         ${gruposHTML?`<div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Avance por sección</div>${gruposHTML}`:''}
         ${seccionesHTML}
@@ -3687,9 +3700,9 @@ function renderOtrasF(){document.getElementById('chOtrasF').innerHTML=otrasFSel.
 function addOtraF(){const el=document.getElementById('tOtraF'),f=el.value;if(!f)return;if(!otrasFSel.includes(f))otrasFSel=[...otrasFSel,f].sort();el.value='';el.dispatchEvent(new Event('input',{bubbles:true}));renderOtrasF();}
 function extrasDelModal(){
   const c=document.getElementById('tContacto').value.trim(),r=document.getElementById('tRevisar').value.trim(),cp=document.getElementById('tCarpeta').value.trim();
-  const pend=document.getElementById('tOtraF').value,id0=document.getElementById('tId').value,o0=id0?E.tareas.find(t=>t.id===id0):null;// las carpetas por día se conservan si no cambió la carpeta
+  const pend=document.getElementById('tOtraF').value,id0=document.getElementById('tId').value,o0=id0?E.tareas.find(t=>t.id===id0):null;// los datos de la carpeta (días, conteo, oficina) se conservan si no cambió la carpeta
   const o=otrasF({fecha:document.getElementById('tFecha').value,...fechaFinDelModal(),otrasFechas:pend?[...otrasFSel,pend]:otrasFSel});
-  return{...(c?{contacto:c}:{}),...(r?{revisar:r}:{}),...(o.length?{otrasFechas:o}:{}),...(urlOk(cp)?{carpeta:cp}:{}),...(o0?.carpetasDia&&o0.carpeta===cp?{carpetasDia:o0.carpetasDia}:{})};
+  return{...(c?{contacto:c}:{}),...(r?{revisar:r}:{}),...(o.length?{otrasFechas:o}:{}),...(urlOk(cp)?{carpeta:cp}:{}),...(o0&&o0.carpeta===cp?Object.fromEntries(['carpetasDia','carpetaConteo','carpetaOficina'].filter(k=>o0[k]).map(k=>[k,o0[k]])):{})};
 }
 function fechaFinDelModal(){const a=document.getElementById('tFecha').value,b=document.getElementById('tFechaFin').value;return a&&b&&b>a?{fechaFin:b}:{};}
 function guardarT(){
@@ -7690,6 +7703,7 @@ function renderMiDia(){
     vb=mios.length?mios.map(([i,t,v])=>`<div class="md-li" onclick="goV('${v}',navDe('${v}'))"><span style="font-size:17px">${i}</span><span style="flex:1">${t}</span><span style="color:var(--tm)">›</span></div>`).join(''):vac('Nada pendiente.');
   }
 
+  const sinMat=[...new Set(d.ms.filter(x=>SEC_CUBRE.includes(x.sec)).map(x=>x.t))].filter(faltaMaterial);
   const he=propuestasHE(uAct.id);
   const heHtml=he.map(p=>`<div class="md-it"><div class="md-hr">${fmtPubFecha(p.f)}</div><div style="flex:1;min-width:0">
       <div class="md-t" onclick="irATarea('${p.t.id}')">${escH(p.t.titulo)}</div>
@@ -7722,6 +7736,7 @@ function renderMiDia(){
     +`<div class="md-grid">`
     +caja('📸','Hoy cubro',d.cubro.length,d.cubro.length?d.cubro.map(itSec).join(''):vac('No tienes coberturas hoy.'))
     +caja('📦','Hoy entrego',d.entrego.length+d.pubsHoy.length,(d.entrego.length||d.pubsHoy.length)?d.entrego.map(itSec).join('')+d.pubsHoy.map(itPub).join(''):vac('Nada que entregar hoy.'))
+    +(sinMat.length?caja('📁','Falta subir material',sinMat.length,sinMat.map(t=>`<div class="md-it"><div class="md-hr">${fmtPubFecha(ultimaAct(t))}</div><div style="flex:1;min-width:0"><div class="md-t" onclick="irATarea('${t.id}')">${escH(t.titulo||'(Sin título)')}</div><div class="md-ac">${carpetaBtn(t,null,'btn bna bsm')}</div></div></div>`).join('')):'')
     +caja('👀',titVb,nvb,vb)
     +`</div>`
     +(hechas?`<div class="md-s" style="margin:-6px 0 16px">✅ Hoy ya terminaste ${plu(hechas,'cosa','cosas')}.</div>`:'')
