@@ -1274,6 +1274,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       <div class="fg"><label class="fl">Cédula</label><input type="text" class="fc" id="pCedula" placeholder="ej. 3-123-4567"></div>
       <div class="fg"><label class="fl">Unidad administrativa</label><input type="text" class="fc" id="pUnidad" placeholder="ej. Centro de Arte y Cultura de Colón"></div>
     </div>
+    <div class="fg"><label class="fl">Institución</label><input type="text" class="fc" id="pInst" placeholder="ej. MiCultura"></div>
     <div class="fg"><label class="fl">Correo de contacto</label><input type="email" class="fc" id="pCorreo" placeholder="Si es distinto al de inicio de sesión (minutas, avisos)"></div>
     <div style="font-size:12px;color:var(--tm);margin:-4px 0 14px">Puesto, unidad y posición se usan en el formulario de horas extra de la OIRH.</div>
     <button class="btn bna" onclick="guardarPerfil()">Guardar cambios</button>
@@ -1506,11 +1507,14 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 <div class="mov" id="mRepComp"><div class="mo">
   <div class="mcab"><div class="mtit">Reporte de tiempo compensatorio</div><button class="mx" onclick="cerM('mRepComp')">×</button></div>
   <div class="mbody">
+    <div class="fg" id="rcTipoGrupo"><label class="fl">Reporte</label><select class="fc" id="rcTipo" onchange="rcTipoCambio()"><option value="consolidado">Consolidado del equipo (días y horas pendientes)</option><option value="persona">Detalle por persona</option></select></div>
+    <div class="fg" id="rcAreaGrupo"><label class="fl">Departamento / Área</label><input type="text" class="fc" id="rcArea" placeholder="ej. Comunicaciones"></div>
     <div class="fg" id="rcMiemGrupo"><label class="fl">Persona</label><select class="fc" id="rcMiem"></select></div>
     <div class="fr">
       <div class="fg"><label class="fl">Desde</label><input type="date" class="fc" id="rcIni"></div>
       <div class="fg"><label class="fl">Hasta</label><input type="date" class="fc" id="rcFin"></div>
     </div>
+    <label id="rcIndivGrupo" style="display:flex;gap:8px;align-items:center;font-size:13px;margin-bottom:10px;cursor:pointer"><input type="checkbox" id="rcIndiv" checked> Adjuntar el control individual de cada persona</label>
     <div style="font-size:12px;color:var(--tm);line-height:1.5">Solo cuentan los registros aprobados. El saldo inicial incluye todo lo aprobado antes de la fecha «Desde».</div>
   </div>
   <div class="mpie"><button class="btn bgh" onclick="cerM('mRepComp')">Cancelar</button><button class="btn bna" onclick="generarRepComp()">Generar reporte</button></div>
@@ -1534,6 +1538,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
       <div class="fg"><label class="fl">Cédula</label><input type="text" class="fc" id="eqCedula" placeholder="ej. 3-123-4567"></div>
       <div class="fg"><label class="fl">Unidad administrativa</label><input type="text" class="fc" id="eqUnidad" placeholder="ej. Centro de Arte y Cultura de Colón"></div>
     </div>
+    <div class="fg"><label class="fl">Institución</label><input type="text" class="fc" id="eqInst" placeholder="ej. MiCultura"></div>
     <div class="fg"><label class="fl">Correo de contacto</label><input type="email" class="fc" id="eqCorreo" placeholder="Si es distinto al de inicio de sesión (minutas, avisos)"></div>
     <label class="fg" id="eqSisBlk" style="display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="eqSis" style="accent-color:var(--na);margin-top:2px"> <span><b>Cuenta del sistema</b><br><span style="color:var(--tm)">Puede entrar, pero no aparece en Parte Diario, asignaciones, formularios ni reportes. Para el asistente o una cuenta de soporte.</span></span></label>
     <div class="fg"><label class="fl">Secciones del equipo</label>
@@ -5785,6 +5790,7 @@ function abrirMEq(id){
   document.getElementById('eqPuesto').value=p?.puesto||'';
   document.getElementById('eqPosicion').value=p?.posicion||'';
   document.getElementById('eqUnidad').value=p?.unidad||'';
+  document.getElementById('eqInst').value=p?.institucion||'';
   document.getElementById('eqCedula').value=p?.cedula||'';
   document.getElementById('eqCorreo').value=p?.correo||'';
   document.getElementById('eqNivel').value=p?.nivel||'colaborador';
@@ -5816,7 +5822,7 @@ async function guardarEq(){
   // Conserva cualquier otro campo de la ficha que este formulario no muestra
   const prev=E.equipo.find(e=>e.id===id)||{};
   const p={...prev,...(niv==='lider'?{sistema:document.getElementById('eqSis').checked}:{}),id,nombre:n,cargo:document.getElementById('eqCargo').value.trim(),email,nivel,
-    puesto:document.getElementById('eqPuesto').value.trim(),posicion:document.getElementById('eqPosicion').value.trim(),unidad:document.getElementById('eqUnidad').value.trim(),cedula:document.getElementById('eqCedula').value.trim(),correo:document.getElementById('eqCorreo').value.trim().toLowerCase(),ingreso:document.getElementById('eqIng').value,foto:document.getElementById('eqFoto').value.trim(),cats,secciones};
+    puesto:document.getElementById('eqPuesto').value.trim(),posicion:document.getElementById('eqPosicion').value.trim(),unidad:document.getElementById('eqUnidad').value.trim(),institucion:document.getElementById('eqInst').value.trim(),cedula:document.getElementById('eqCedula').value.trim(),correo:document.getElementById('eqCorreo').value.trim().toLowerCase(),ingreso:document.getElementById('eqIng').value,foto:document.getElementById('eqFoto').value.trim(),cats,secciones};
 
   // Sincronizar credenciales en el servidor
   if(password||!E.equipo.find(e=>e.id===id)){
@@ -5872,6 +5878,7 @@ function renderPerfil(){
   document.getElementById('pPuesto').value=u.puesto||'';
   document.getElementById('pPosicion').value=u.posicion||'';
   document.getElementById('pUnidad').value=u.unidad||'';
+  document.getElementById('pInst').value=u.institucion||'';
   document.getElementById('pCedula').value=u.cedula||'';
   document.getElementById('pCorreo').value=u.correo||'';
 }
@@ -5884,6 +5891,7 @@ function guardarPerfil(){
   p.puesto=document.getElementById('pPuesto').value.trim();
   p.posicion=document.getElementById('pPosicion').value.trim();
   p.unidad=document.getElementById('pUnidad').value.trim();
+  p.institucion=document.getElementById('pInst').value.trim();
   p.cedula=document.getElementById('pCedula').value.trim();
   p.correo=document.getElementById('pCorreo').value.trim().toLowerCase();
   uAct=p;reg('Perfil actualizado',p.nombre);guardar();renderPerfil();
@@ -6799,21 +6807,34 @@ tbody td{height:20px;font-size:11px;line-height:1.1}td.c{text-align:center;white
 function abrirMRepComp(){
   if(!puede('registrarHora')){alert('Sin permiso.');return;}
   const sel=document.getElementById('rcMiem');
-  if(niv==='colaborador'){sel.innerHTML=`<option value="${escH(uAct.nombre)}">${escH(uAct.nombre)}</option>`;document.getElementById('rcMiemGrupo').style.display='none';}
-  else{sel.innerHTML='<option value="">Todo el equipo</option>'+equipoReal().map(p=>`<option value="${escH(p.nombre)}">${escH(p.nombre)}</option>`).join('');document.getElementById('rcMiemGrupo').style.display='block';}
+  const tipo=document.getElementById('rcTipo');
+  if(niv==='colaborador'){sel.innerHTML=`<option value="${escH(uAct.nombre)}">${escH(uAct.nombre)}</option>`;tipo.value='persona';document.getElementById('rcTipoGrupo').style.display='none';}
+  else{sel.innerHTML='<option value="">Todo el equipo</option>'+equipoReal().map(p=>`<option value="${escH(p.nombre)}">${escH(p.nombre)}</option>`).join('');document.getElementById('rcTipoGrupo').style.display='block';}
+  let area='';try{area=localStorage.getItem('cacco_rcArea')||'';}catch{}
+  document.getElementById('rcArea').value=area||'Comunicaciones';
+  rcTipoCambio();
   const h=hoy();
   document.getElementById('rcIni').value=h.slice(0,4)+'-01-01';
   document.getElementById('rcFin').value=h;
   abrirM('mRepComp');
 }
 
+function rcTipoCambio(){
+  const cons=document.getElementById('rcTipo').value==='consolidado'&&niv!=='colaborador';
+  document.getElementById('rcAreaGrupo').style.display=cons?'block':'none';
+  document.getElementById('rcIndivGrupo').style.display=cons?'flex':'none';
+  document.getElementById('rcMiemGrupo').style.display=cons||niv==='colaborador'?'none':'block';
+}
 function generarRepComp(){
-  const sel=document.getElementById('rcMiem').value,ini=document.getElementById('rcIni').value,fin=document.getElementById('rcFin').value;
+  const cons=document.getElementById('rcTipo').value==='consolidado'&&niv!=='colaborador';
+  const sel=cons?'':document.getElementById('rcMiem').value,ini=document.getElementById('rcIni').value,fin=document.getElementById('rcFin').value;
+  const area=document.getElementById('rcArea').value.trim();if(cons)try{localStorage.setItem('cacco_rcArea',area);}catch{}
   if(!ini||!fin||ini>fin){alert('Revisa las fechas: «Desde» debe ser anterior a «Hasta».');return;}
   const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const dia=f=>{const [a,m,d]=f.split('-').map(Number);const w=new Date(a,m-1,d).toLocaleDateString('es-PA',{weekday:'long'});return w.charAt(0).toUpperCase()+w.slice(1);};
   const antes=d=>{const [a,m,dd]=d.split('-').map(Number);const x=new Date(a,m-1,dd-1);return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;};
-  const personas=(sel?E.equipo.filter(p=>p.nombre===sel):equipoReal()).filter(p=>niv!=='colaborador'||p.nombre===uAct?.nombre);
+  const incl=!cons||document.getElementById('rcIndiv').checked;
+  const personas=!incl?[]:(sel?E.equipo.filter(p=>p.nombre===sel):equipoReal()).filter(p=>niv!=='colaborador'||p.nombre===uAct?.nombre);
   const rangoLbl=`${fmt(ini)} al ${fmt(fin)}`;
   const secciones=personas.map(p=>{
     const regs=E.horasExtra.filter(h=>h.miembro===p.nombre&&h.fecha>=ini&&h.fecha<=fin).sort((a,b)=>a.fecha.localeCompare(b.fecha));
@@ -6838,9 +6859,31 @@ ${filasU?`<table><thead><tr><th>Fecha</th><th>Día</th><th colspan="2">Motivo</t
 ${pend.length?`<p class="nota">Hay ${plu(pend.length,'registro pendiente','registros pendientes')} de aprobación en el período (${fmtSaldo(pend.reduce((t,h)=>t+(esComp(h)?-1:1)*parseFloat(h.horas||0),0))}). No se cuentan en el saldo.</p>`:''}
 <div class="firma"><div><div class="linea">Colaborador(a)</div></div><div><div class="linea">Jefe(a) inmediato(a)</div></div><div><div class="linea">Recursos Humanos</div></div></div>
 </section>`;}).filter(Boolean);
-  if(!secciones.length){alert('No hay horas registradas para ese período.');return;}
+  // Consolidado: una fila por colaborador con lo pendiente al cierre del período (8 h = 1 día)
+  let consHtml='';
+  if(cons){
+    const hm=n=>{const t=Math.round(n*60),h=Math.floor(t/60),m=t%60;return h+(m?':'+String(m).padStart(2,'0'):'');};
+    const filas=equipoReal().filter(p=>p.nivel!=='lector').map(p=>{
+      const saldo=Math.max(0,saldoComp(p.nombre,fin).saldo);
+      const real=E.horasExtra.filter(h=>h.miembro===p.nombre&&!esComp(h)&&h.aprobacion==='Aprobado'&&h.fecha>=ini&&h.fecha<=fin).reduce((t,h)=>t+parseFloat(h.horas||0),0);
+      const dias=Math.floor(saldo/HORAS_DIA+1e-9);
+      return {p,saldo,real,dias,horas:saldo-dias*HORAS_DIA};
+    }).filter(x=>x.saldo>0||x.real>0);
+    if(!filas.length){alert('Nadie tiene horas compensatorias en ese período.');return;}
+    const tS=filas.reduce((t,x)=>t+x.saldo,0),tR=filas.reduce((t,x)=>t+x.real,0);
+    consHtml=`<section class="persona cons">
+<table class="datos"><tr><th>Departamento / Área</th><td>${esc(area||'—')}</td><th>Fecha de entrega</th><td>${fmt(hoy())}</td></tr>
+<tr><th>Período que comprende</th><td colspan="3">${rangoLbl}</td></tr></table>
+<table class="tabcons"><thead><tr><th class="c">N.º</th><th>Colaborador</th><th>Institución</th><th class="c">Días pendientes</th><th class="c">Horas pendientes</th><th class="c">Total de horas compensatorias realizadas y detalladas en formatos</th><th class="c">Estado</th></tr></thead><tbody>
+${filas.map((x,i)=>`<tr><td class="c">${i+1}</td><td>${esc(x.p.nombre)}</td><td>${esc(x.p.institucion||'—')}</td><td class="c">${x.dias}</td><td class="c">${hm(x.horas)}</td><td class="c">${x.real?hm(x.real)+(x.real===1?' hora':' horas'):'0'}</td><td class="c"><b>${x.saldo>0?'Pendiente':'Sin saldo'}</b></td></tr>`).join('')}
+</tbody><tfoot><tr><td colspan="3">${plu(filas.length,'colaborador','colaboradores')}</td><td colspan="2" class="c">${(d=>`${d} ${d===1?'día':'días'}`)(Math.floor(tS/HORAS_DIA+1e-9))} y ${hm(tS-Math.floor(tS/HORAS_DIA+1e-9)*HORAS_DIA)} h</td><td class="c">${hm(tR)} horas</td><td></td></tr></tfoot></table>
+<p class="pie">El presente consolidado refleja el estado de las horas compensatorias pendientes de los colaboradores del Departamento/Área, correspondiente al período indicado.${incl?' El detalle de las fechas, actividades realizadas, horarios y horas generadas se encuentra en los controles individuales que acompañan este documento.':''}</p>
+<div class="firma"><div><div class="linea">Elaborado por</div></div><div><div class="linea">Jefe(a) del Departamento / Área</div></div><div><div class="linea">Recursos Humanos</div></div></div>
+</section>`;
+  }
+  if(!secciones.length&&!consHtml){alert('No hay horas registradas para ese período.');return;}
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
-<title>Tiempo compensatorio CACCO — ${rangoLbl}</title>
+<title>${cons?'Control de horas compensatorias':'Tiempo compensatorio'} CACCO — ${rangoLbl}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Segoe UI',Arial,sans-serif;font-size:12.5px;color:#1a1a1a;background:#fff;padding:28px;max-width:860px;margin:0 auto}
@@ -6857,17 +6900,19 @@ thead th{background:#f5f5f5;font-size:11px;text-transform:uppercase;letter-spaci
 .n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 h3{font-size:13px;margin:16px 0 6px;color:#333}
 .vacio{color:#777;font-style:italic;margin-bottom:10px}.nota{font-size:11px;color:#92400e;background:#fef3c7;padding:8px 10px;border-radius:6px;margin:8px 0}
+.tabcons thead th{background:#1f2a44;color:#fff;font-size:10.5px;vertical-align:middle}.tabcons td{padding:8px}.tabcons tfoot td{font-weight:800;background:#f5f5f5}.c{text-align:center}
+.pie{font-size:11px;color:#444;line-height:1.5;margin-top:6px}
 .firma{display:flex;gap:24px;margin-top:48px}.firma>div{flex:1}.linea{border-top:1px solid #333;padding-top:6px;text-align:center;font-size:11px;color:#444}
 @media print{body{padding:0}}
 </style></head><body>
-<div class="hdr"><div><h1>Reporte de tiempo compensatorio</h1><div class="sub">CACCO · Equipo de Comunicaciones · Período: ${rangoLbl}</div></div>
+<div class="hdr"><div><h1>${cons?'Control de horas compensatorias':'Reporte de tiempo compensatorio'}</h1><div class="sub">${cons?'Consolidado de horas y días pendientes por colaborador':'CACCO · Equipo de Comunicaciones · Período: '+rangoLbl}</div></div>
 <div class="meta">Generado el ${fmt(hoy())}<br>por ${esc(uAct?.nombre||'')}</div></div>
-${secciones.join('')}
+${consHtml}${secciones.join('')}
 <p style="font-size:10.5px;color:#777;margin-top:8px">Horas extra: en día laboral cuentan solo las trabajadas antes de 8:00 a. m. o después de 4:00 p. m.; en sábado, domingo o feriado cuenta toda la jornada. Cada 8 h equivalen a un día de trabajo. Solo se incluyen registros aprobados.</p>
 </body></html>`;
   cerM('mRepComp');
-  reg('Reporte compensatorio',`${sel||'Todo el equipo'} — ${rangoLbl}`);
-  mostrarDocumento(html,`🌴 Tiempo compensatorio — ${rangoLbl}`,`Compensatorio_CACCO_${(sel||'equipo').replace(/\s+/g,'_')}_${ini}_${fin}.html`);
+  reg('Reporte compensatorio',`${cons?'Consolidado':sel||'Todo el equipo'} — ${rangoLbl}`);
+  mostrarDocumento(html,`🌴 Tiempo compensatorio — ${rangoLbl}`,`Compensatorio_CACCO_${cons?'consolidado':(sel||'equipo').replace(/\s+/g,'_')}_${ini}_${fin}.html`);
 }
 
 function archivarRep(){
