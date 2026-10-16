@@ -31,6 +31,7 @@ textarea{min-height:110px;resize:vertical}
 @media (max-width:520px){.fila,.fila3{grid-template-columns:1fr}}
 .campo{margin-bottom:14px}
 .ayuda{font-size:12px;color:var(--tm);margin-top:4px}
+.tel-av{color:#92400e}@media (prefers-color-scheme:dark){.tel-av{color:#f3c35e}}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chips label{display:flex;align-items:center;gap:6px;padding:8px 12px;border:1.5px solid var(--bo);border-radius:20px;font-size:14px;cursor:pointer;user-select:none}
 .chips input{accent-color:var(--na)}
@@ -125,25 +126,29 @@ footer{text-align:center;font-size:12px;color:var(--tm);padding:0 16px 30px}
   <div class="sec">1. Quién pide<small>Tus datos se recuerdan en este aparato para la próxima vez.</small></div>
 
   <div class="fila">
-    <div class="campo"><label class="lbl" for="nombre">Tu nombre <span class="req">*</span></label><input type="text" id="nombre" maxlength="80" autocomplete="name"></div>
-    <div class="campo"><label class="lbl" for="contacto">Teléfono o correo <span class="req">*</span></label><input type="text" id="contacto" maxlength="120" autocomplete="tel"></div>
+    <div class="campo"><label class="lbl" for="nombre">Tu nombre <span class="req">*</span></label><input type="text" id="nombre" maxlength="80" autocomplete="name" autocapitalize="words"></div>
+    <div class="campo"><label class="lbl" for="contacto">Teléfono o correo <span class="req">*</span></label><input type="text" id="contacto" maxlength="120" autocomplete="tel"><div class="ayuda tel-av" id="avContacto" style="display:none"></div></div>
   </div>
 
   <div class="sec">2. Punto focal de la actividad<small>La persona con quien el equipo coordina y a quien busca el día de la actividad.</small></div>
   <label class="chk"><input type="checkbox" id="soyYo"> Soy yo</label>
   <div class="fila">
-    <div class="campo"><label class="lbl" for="pfNombre">Nombre <span class="req">*</span></label><input type="text" id="pfNombre" maxlength="80"></div>
+    <div class="campo"><label class="lbl" for="pfNombre">Nombre <span class="req">*</span></label><input type="text" id="pfNombre" maxlength="80" autocapitalize="words"></div>
     <div class="campo"><label class="lbl" for="pfCargo">Cargo</label><input type="text" id="pfCargo" maxlength="80" placeholder="ej. Coordinadora de Danza"></div>
   </div>
   <div class="fila">
-    <div class="campo"><label class="lbl" for="pfTel">Teléfono <span class="req">*</span></label><input type="tel" id="pfTel" maxlength="40" placeholder="ej. 6000-0000"></div>
+    <div class="campo"><label class="lbl" for="pfTel">Teléfono <span class="req">*</span></label><input type="tel" id="pfTel" maxlength="40" placeholder="ej. 6000-0000"><div class="ayuda tel-av" id="avPfTel" style="display:none"></div></div>
     <div class="campo"><label class="lbl" for="pfCorreo">Correo</label><input type="text" id="pfCorreo" maxlength="120" inputmode="email" autocapitalize="none"></div>
   </div>
 
   <div class="sec">3. La actividad</div>
-  <div class="campo"><label class="lbl" for="actividad">Nombre de la actividad <span class="req">*</span></label><input type="text" id="actividad" maxlength="140" placeholder="ej. Concierto de la Banda Juvenil"></div>
-  <div class="fila3">
+  <div class="campo"><label class="lbl" for="actividad">Nombre de la actividad <span class="req">*</span></label><input type="text" id="actividad" maxlength="140" autocapitalize="sentences" placeholder="ej. Concierto de la Banda Juvenil"></div>
+  <div class="fila">
     <div class="campo"><label class="lbl" for="fecha">Fecha <span class="req">*</span></label><input type="date" id="fecha"></div>
+    <div class="campo"><label class="lbl" for="fechaFin">Hasta <span style="font-weight:400;text-transform:none;letter-spacing:0">(si dura varios días)</span></label><input type="date" id="fechaFin"></div>
+  </div>
+  <div class="ayuda" id="fechaTxt" style="margin:-6px 0 12px;display:none"></div>
+  <div class="fila">
     <div class="campo"><label class="lbl" for="hora">Empieza</label><input type="time" id="hora"></div>
     <div class="campo"><label class="lbl" for="horaFin">Termina</label><input type="time" id="horaFin"></div>
   </div>
@@ -197,7 +202,27 @@ Object.entries(P.LARGOS).forEach(([id,n])=>{if($(id))$(id).maxLength=n;});
 try{$('clave').value=localStorage.getItem('cacco_clave_pedidos')||'';}catch{}
 const qFolio=new URLSearchParams(location.search).get('folio');
 const hoyPa=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Panama'}).format(new Date());
-$('fecha').min=hoyPa;$('entrega').min=hoyPa;
+$('fecha').min=hoyPa;$('fechaFin').min=hoyPa;$('entrega').min=hoyPa;
+// La fecha escrita en palabras: los teléfonos en inglés muestran mm/dd/aaaa y se confunden día y mes
+function fechaTexto(){
+  const f=$('fecha').value,ff=$('fechaFin').value,t=$('fechaTxt');
+  if(f)$('fechaFin').min=f;
+  t.textContent=!f?'':ff&&ff>f?`🗓️ Del ${fLarga(f)} al ${fLarga(ff)}`:`🗓️ ${cap(fLarga(f))}`;
+  t.style.color=ff&&ff<f?'var(--ro)':'';
+  if(ff&&f&&ff<f)t.textContent='⚠️ «Hasta» no puede ser antes de la fecha de inicio.';
+  t.style.display=t.textContent?'block':'none';
+}
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+['fecha','fechaFin'].forEach(id=>$(id).addEventListener('input',fechaTexto));
+// Teléfono: en Panamá tienen 7 u 8 dígitos (o 507 delante). Solo avisa: se puede enviar igual
+function revisarTel(inp,av,puedeCorreo){
+  const v=inp.value.trim(),d=v.replace(/\D/g,'');
+  const mal=v&&!(puedeCorreo&&v.includes('@'))&&!(d.length===7||d.length===8||(d.startsWith('507')&&(d.length===10||d.length===11)));
+  av.textContent=mal?`⚠️ Revisa el número: tiene ${d.length} dígito${d.length===1?'':'s'} y en Panamá son 7 u 8.`:'';
+  av.style.display=mal?'block':'none';
+}
+$('contacto').addEventListener('input',()=>revisarTel($('contacto'),$('avContacto'),true));
+$('pfTel').addEventListener('input',()=>revisarTel($('pfTel'),$('avPfTel'),false));
 document.addEventListener('change',e=>{
   if(e.target.name==='serv'){$('pg-'+e.target.value).style.display=e.target.checked?'block':'none';avisos();revisarHorario();}
   if(e.target.id==='soyYo')copiarFocal();
@@ -242,6 +267,7 @@ function copiarFocal(){
   const c=$('contacto').value.trim();
   $('pfNombre').value=$('nombre').value.trim();
   if(/@/.test(c)){$('pfCorreo').value=c;}else if(c)$('pfTel').value=c;
+  revisarTel($('pfTel'),$('avPfTel'),false);
 }
 ['nombre','contacto'].forEach(id=>$(id).addEventListener('input',copiarFocal));
 // ── Lo que este aparato recuerda: tus datos y tus pedidos anteriores (sin la clave) ──
@@ -364,7 +390,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 $('f').addEventListener('submit',async e=>{
   e.preventDefault();
   const body={area:oficina,areaOtra:$('areaOtra').value,nombre:$('nombre').value,contacto:$('contacto').value,
-    actividad:$('actividad').value,fecha:$('fecha').value,hora:$('hora').value,horaFin:$('horaFin').value,lugar:$('lugar').value,
+    actividad:$('actividad').value,fecha:$('fecha').value,fechaFin:$('fechaFin').value,hora:$('hora').value,horaFin:$('horaFin').value,lugar:$('lugar').value,
     puntoFocal:{nombre:$('pfNombre').value,cargo:$('pfCargo').value,telefono:$('pfTel').value,correo:$('pfCorreo').value},
     servicios:[...document.querySelectorAll('input[name=serv]:checked')].map(x=>x.value),clave:$('clave').value.trim(),entrega:$('entrega').value,material:$('material').value.trim(),descripcion:$('descripcion').value,web:$('web').value,
     detalles:Object.fromEntries(Object.entries(PREG).map(([k,qs])=>[k,Object.fromEntries(qs.filter(q=>q.max).map(q=>[q.c,valPreg(k,q.c)]))]))};
@@ -380,11 +406,11 @@ $('f').addEventListener('submit',async e=>{
     guardarLS('cacco_ped_hist',[{folio:j.folio,body:sinClave},...leerLS('cacco_ped_hist',[]).filter(x=>x.body.actividad.trim()!==body.actividad.trim())].slice(0,8));
     const of=oficina==='Otra'?body.areaOtra.trim():oficina;
     resumenTxt=[`📨 Pedido ${j.folio} a Comunicaciones · CACCO`,`Oficina: ${of}`,`Actividad: ${body.actividad.trim()}`,
-      `Fecha: ${fLarga(body.fecha)}${body.hora?', '+hTxt(body.hora):''}${body.horaFin?' a '+hTxt(body.horaFin):''}`,body.lugar.trim()?`Lugar: ${body.lugar.trim()}`:'',
+      `Fecha: ${fLarga(body.fecha)}${body.fechaFin>body.fecha?' al '+fLarga(body.fechaFin):''}${body.hora?', '+hTxt(body.hora):''}${body.horaFin?' a '+hTxt(body.horaFin):''}`,body.lugar.trim()?`Lugar: ${body.lugar.trim()}`:'',
       `Servicios: ${body.servicios.map(k=>SERV[k].lbl).join('; ')}`,`Punto focal: ${body.puntoFocal.nombre.trim()} · ${body.puntoFocal.telefono.trim()}`,
       `Ver en qué va: ${location.origin}/pedido?folio=${j.folio}`].filter(Boolean).join('\n');
     try{localStorage.setItem('cacco_mis_pedidos',JSON.stringify([{folio:j.folio,actividad:body.actividad.trim()},...misPed().filter(p=>p.folio!==j.folio)].slice(0,8)));}catch{}
-    $('okRes').innerHTML=`<strong>${esc(body.actividad)}</strong><br>🗓️ ${esc(fLarga(body.fecha))}${body.hora?' · '+hTxt(body.hora):''}${body.horaFin?' a '+hTxt(body.horaFin):''}${body.lugar?'<br>📍 '+esc(body.lugar):''}<br>🧰 ${body.servicios.map(k=>SERV[k].lbl).join('; ')}`;
+    $('okRes').innerHTML=`<strong>${esc(body.actividad)}</strong><br>🗓️ ${esc(fLarga(body.fecha))}${body.fechaFin>body.fecha?' al '+esc(fLarga(body.fechaFin)):''}${body.hora?' · '+hTxt(body.hora):''}${body.horaFin?' a '+hTxt(body.horaFin):''}${body.lugar?'<br>📍 '+esc(body.lugar):''}<br>🧰 ${body.servicios.map(k=>SERV[k].lbl).join('; ')}`;
     $('f').style.display='none';$('ok').style.display='block';window.scrollTo(0,0);
   }catch(x){err.textContent=x.message;err.style.display='block';err.scrollIntoView({block:'center',behavior:'smooth'});}
   btn.disabled=false;btn.textContent='Enviar pedido';
