@@ -48,3 +48,13 @@ test("horario laboral y choques", () => {
   assert.equal(P.fueraDeHorario("2099-05-10", "09:00"), "fin de semana");         // domingo
   assert.deepEqual(P.choquesHorario([{ fecha: "2099-05-11", hora: "10:00", horaFin: "12:00" }], "2099-05-11", "11:00", "13:00"), [["10:00", "12:00"]]);
 });
+
+test("una actividad de varios días guarda «Hasta» y rechaza fechas al revés", () => {
+  const r = P.pedidoATarea({ ...base(), fechaFin: "2099-05-12" }, ctx);
+  assert.equal(r.tarea.fechaFin, "2099-05-12");
+  assert.equal(r.registro.fechaFin, "2099-05-12");
+  assert.match(r.tarea.notas, /Dura varios días: del 10 de mayo de 2099 al 12 de mayo de 2099/);
+  assert.equal(P.pedidoATarea({ ...base(), fechaFin: "2099-05-10" }, ctx).tarea.fechaFin, undefined);
+  assert.match(P.pedidoATarea({ ...base(), fechaFin: "2099-05-09" }, ctx).error, /no puede ser antes/);
+  assert.match(P.pedidoATarea({ ...base(), fechaFin: "2099-07-01" }, ctx).error, /más de un mes/);
+});
