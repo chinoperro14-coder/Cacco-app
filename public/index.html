@@ -839,10 +839,10 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 <!-- Pestañas de cada grupo del menú -->
 <div class="subnav oculto" data-g="tareas">
   <button data-v="tareas" onclick="goV('tareas')">📋 Lista</button>
+  <button data-v="pedidos" class="ned oculto" onclick="goV('pedidos')">📨 Pedidos</button>
   <button data-v="calendario" onclick="goV('calendario')">🗓️ Calendario</button>
   <button data-v="asigVarias" onclick="goV('asigVarias')">🔁 Recurrentes</button>
   <button data-v="pantalla" onclick="goV('pantalla')">📺 Pantalla</button>
-  <button data-v="pedidos" class="ned oculto" onclick="goV('pedidos')">📨 Pedidos</button>
 </div>
 <div class="subnav oculto" data-g="pubs">
   <button data-v="calPub" onclick="goV('calPub')">📣 Calendario de publicaciones</button>
@@ -2237,7 +2237,7 @@ function limpNotifs(){E.notifs=[];renderNotifs();document.getElementById('notifP
 // ════════════════════════
 const VISTAS=['Pantalla','Pedidos','MiDia','Prensa','Adjuntos','Tareas','Aprobaciones','Calendario','HorasExtra','Compensatorio','Permisos','Equipo','Reportes','Historico','Bitacora','Perfil','CalPub','AsigVarias'];
 // Menú en 7 grupos; cada grupo con varias vistas muestra sus pestañas arriba
-const GRUPOS={miDia:['miDia'],tareas:['tareas','calendario','asigVarias','pantalla','pedidos'],pubs:['calPub','prensa'],
+const GRUPOS={miDia:['miDia'],tareas:['tareas','pedidos','calendario','asigVarias','pantalla'],pubs:['calPub','prensa'],
   tramites:['horasExtra','compensatorio','permisos'],aprob:['aprobaciones'],reportes:['reportes'],mas:['equipo','adjuntos','historico','bitacora']};
 const grupoDe=v=>Object.keys(GRUPOS).find(g=>GRUPOS[g].includes(v));
 function marcarMenu(v){
@@ -2386,7 +2386,8 @@ const fotosOficina=t=>(Array.isArray(t?.carpetaOficina)?t.carpetaOficina:[t?.car
 const waOficina=t=>{const d=String(t?.pedido?.contacto||'').replace(/\D/g,'');if(d.length<7)return '';
   const n=d.length<=8?'507'+d:d,ls=fotosOficina(t);return `https://wa.me/${n}?text=${encodeURIComponent(`Hola, aquí están las fotos de «${t.titulo||'la actividad'}»:\n${ls.join('\n')}`)}`;};
 // Desde que arrancan las carpetas (la primera fecha con carpeta creada), una tarea confirmada sin carpeta queda marcada
-const carpetaPend=t=>{const d=E.tareas.map(x=>x.carpetaFecha).filter(Boolean).sort()[0];return !!(d&&t&&!t.borrador&&!t.cancelada&&!carpetaDe(t)&&t.secciones?.Audiovisual&&t.fecha>=d&&!pasoAct(t));};
+const carpetasDesde=()=>E.tareas.map(x=>x.carpetaFecha).filter(Boolean).sort()[0]||'';
+const carpetaPend=t=>{const d=carpetasDesde();return !!(d&&t&&!t.borrador&&!t.cancelada&&!carpetaDe(t)&&t.secciones?.Audiovisual&&t.fecha>=d&&!pasoAct(t));};
 function carpetaInfo(t){
   if(niv==='lector'||t?.borrador||!carpetaDe(t))return '';
   const c=t.carpetaConteo,ft=+c?.fotos||0,vd=+c?.videos||0,partes=[carpetaBtn(t)];
@@ -2870,7 +2871,8 @@ function renderTareas(){
 
         const secKey=sec.replace(/\s/g,'_');
         // Audiovisual: fotos y videos van a la carpeta de Drive (Miguel: «el botón de subir material reemplaza el entregable»)
-        const addEntForm=sec==='Audiovisual'?(carpetaInfo(t)||(carpetaPend(t)?`<div class="revisar-tarj" style="margin:0">📁 Carpeta pendiente: se crea en la revisión de la mañana. Si urge, crea una y pega el enlace en ✏️ Editar.</div>`:`<div style="font-size:12px;color:var(--tm)">📁 Las fotos y videos se suben a la carpeta de Drive de la actividad; el botón aparece aquí cuando se crea.</div>`)):canAddEnt?`<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+        // Mientras no arranquen las carpetas de Drive, Audiovisual sigue con su formulario de entregables
+        const addEntForm=sec==='Audiovisual'&&(carpetasDesde()||carpetaDe(t))?(carpetaInfo(t)||(carpetaPend(t)?`<div class="revisar-tarj" style="margin:0">📁 Carpeta pendiente: se crea en la revisión de la mañana. Si urge, crea una y pega el enlace en ✏️ Editar.</div>`:`<div style="font-size:12px;color:var(--tm)">📁 Las fotos y videos se suben a la carpeta de Drive de la actividad; el botón aparece aquí cuando se crea.</div>`)):canAddEnt?`<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
           <input type="text" class="fc" id="ent-nom-${t.id}-${secKey}" placeholder="Nombre del entregable" style="flex:1;min-width:120px;font-size:12px;padding:5px 8px">
           <input type="url" class="fc" id="ent-url-${t.id}-${secKey}" placeholder="https://..." style="flex:2;min-width:150px;font-size:12px;padding:5px 8px">
           <button class="btn bna bsm" onclick="event.stopPropagation();agregarEntregableSeccion('${t.id}','${sec}')">+ Agregar</button>
