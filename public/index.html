@@ -1356,7 +1356,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 
   </div>
   <div class="mpie"><button class="btn bgh" id="tDescartar" onclick="descartarBorr([document.getElementById('tId').value],()=>cerM('mT'))" style="display:none;margin-right:auto;color:var(--ro)">🗑 Descartar borrador</button><button class="btn bgh" onclick="cerM('mT')">Cancelar</button>
-<button class="btn bgh" onclick="guardarBorrador()" style="border:1px dashed var(--na);color:var(--na)">Guardar borrador</button>
+<button class="btn bgh" id="tGuardarBorr" onclick="guardarBorrador()" style="border:1px dashed var(--na);color:var(--na)">Guardar borrador</button>
 <button class="btn bna" onclick="guardarT()">Guardar tarea</button></div>
 </div></div>
 
@@ -3441,6 +3441,7 @@ function abrirMT(id){
   ka.style.display=pre.cambios.length?'block':'none';
   ka.innerHTML=pre.cambios.length?`✨ <b>Ya lo dejé puesto</b>, revísalo antes de guardar:<br>${pre.cambios.map(x=>'• '+escH(x)).join('<br>')}`:'';
   document.getElementById('tDescartar').style.display=t?.borrador&&puede('descartarBorrador')?'':'none';
+  document.getElementById('tGuardarBorr').style.display=!t||t.borrador?'':'none';
   {const t0=t?snap(t):null;tAbierta={id:id||'',t:t0,form:t0&&!t0.borrador?snap(tDelModal(t0)):null};}
   abrirM('mT');
   setTimeout(()=>document.querySelectorAll('#mT .auto-alto').forEach(autoAlto),30);
@@ -3867,35 +3868,16 @@ function guardarT(){
   guardar();cerM('mT');renderTareas();actuCts();
 }
 
+// Solo para tareas nuevas o que ya son borrador: una tarea publicada no vuelve a borrador
 function guardarBorrador(){
   if(!puede('crearTarea')){alert('Sin permiso.');return;}
-  const titulo=document.getElementById('tTit').value.trim();
   const id=document.getElementById('tId').value;
-  const orig=id?E.tareas.find(t=>t.id===id):null;
-  const t={
-    id:id||gId(),
-    titulo:titulo||'(Borrador sin título)',
-    borrador:true,
-    etiquetas:[...etiqSel],
-    prioridad:document.getElementById('tPri').value,
-    fecha:document.getElementById('tFecha').value,
-    ...fechaFinDelModal(),
-    ...extrasDelModal(),
-    hora:document.getElementById('tHora').value,
-    horaFin:document.getElementById('tHoraFin').value,
-    lugar:document.getElementById('tLugar').value.trim(),
-    notas:document.getElementById('tNotas').value.trim(),
-    ...(orig?.kit?{kit:orig.kit}:{}),
-    recurrencia:document.getElementById('tRec').value,
-    ...(orig?.pedido?{pedido:orig.pedido}:{}),
-    creadaEn:orig?.creadaEn||hoy(),
-    creadaPor:orig?.creadaPor||uAct?.nombre,
-    creadoPorId:orig?.creadoPorId||uAct?.id,
-    secciones:orig?.secciones||{},
-    entregables:orig?.entregables||[]
-  };
-  if(id){const i=E.tareas.findIndex(t=>t.id===id);if(i>=0)E.tareas[i]=t;else E.tareas.unshift(t);}
-  else E.tareas.unshift(t);
+  const orig=tAlAbrir(id);
+  if(orig&&!orig.borrador){alert('⚠️ Esta tarea ya está publicada: usa «Guardar tarea».');return;}
+  const t={...tDelModal(orig),borrador:true};
+  if(!t.titulo)t.titulo='(Borrador sin título)';
+  const i=id?E.tareas.findIndex(t=>t.id===id):-1;
+  if(i>=0)E.tareas[i]=unir3(orig,t,E.tareas[i]);else E.tareas.unshift(t);
   reg('Borrador guardado',`"${t.titulo}" por ${uAct?.nombre}`);
   guardar();cerM('mT');renderTareas();
 }

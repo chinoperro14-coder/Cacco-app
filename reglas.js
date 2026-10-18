@@ -69,9 +69,13 @@ function aplicarReglasRol(nuevo, actual, usuario) {
     ];
   }
 
-  // Tareas: el Editor solo quita borradores (descartar, no cubrir, unir pedido); el Colaborador no quita ninguna
-  if (Array.isArray(nuevo.tareas))
+  // Tareas: una tarea publicada no vuelve a borrador (vuelve la guardada); el Editor solo quita borradores
+  // (descartar, no cubrir, unir pedido); el Colaborador no quita ninguna
+  if (Array.isArray(nuevo.tareas)) {
+    const prev = porId(actual.tareas);
+    nuevo.tareas = nuevo.tareas.map(t => { const a = prev.get(t.id); return a && !a.borrador && t.borrador ? a : t; });
     nuevo.tareas = reponer(nuevo.tareas, actual.tareas, t => !colab && t.borrador);
+  }
 
   // Horas extra y compensatorio
   if (Array.isArray(nuevo.horasExtra)) {

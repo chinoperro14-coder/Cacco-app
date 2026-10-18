@@ -48,6 +48,21 @@ test("el Colaborador no quita tareas y el Editor solo quita borradores", () => {
   assert.deepEqual(ids(aplicarReglasRol(sinTareas(), base(), EDITOR).tareas), ["t1"]);
 });
 
+test("una tarea publicada no vuelve a borrador salvo por el Líder, y el Editor no la quita así", () => {
+  const aBorrador = () => { const n = copia(base()); n.tareas[0] = { ...n.tareas[0], titulo: "Cambiada", borrador: true }; return n; };
+  [EDITOR, COLAB].forEach(u => assert.deepEqual(aplicarReglasRol(aBorrador(), base(), u).tareas[0], { id: "t1", titulo: "Confirmada" }));
+  assert.equal(aplicarReglasRol(aBorrador(), base(), LIDER).tareas[0].borrador, true);
+  // Volverla borrador y quitarla en el siguiente guardado: la guardada sigue publicada, así que vuelve
+  const actual = aplicarReglasRol(aBorrador(), base(), EDITOR), sinT1 = copia(actual);
+  sinT1.tareas = sinT1.tareas.filter(t => t.id !== "t1");
+  assert.deepEqual(ids(aplicarReglasRol(sinT1, actual, EDITOR).tareas), ["t1", "t2"]);
+  // Un borrador sigue siendo borrador al editarlo, y una tarea nueva puede nacer borrador
+  const n = copia(base()); n.tareas[1].titulo = "Borrador editado"; n.tareas.push({ id: "t3", titulo: "Nueva", borrador: true });
+  const r = aplicarReglasRol(n, base(), EDITOR).tareas;
+  assert.equal(r.find(t => t.id === "t2").titulo, "Borrador editado");
+  assert.equal(r.find(t => t.id === "t3").borrador, true);
+});
+
 test("nadie salvo el Líder cambia niveles, agrega personas o toca perfiles ajenos", () => {
   const n = copia(base());
   n.equipo[2].nivel = "lider"; n.equipo[2].cedula = "8-123-456"; n.equipo[2].cats = ["todo"];
