@@ -2655,7 +2655,7 @@ function renderTareas(){
         let btn=comp
           ?(puedoMarcar?`<button class="btn-hecho" onclick="event.stopPropagation();togCat('${t.id}','${cat}')" title="Clic para revertir">✅ Completado</button>`:`<span class="bg bapr">✅ Completado</span>`)
           :(puedoMarcar?`<button class="btn-comp" onclick="event.stopPropagation();togCat('${t.id}','${cat}')">Marcar completado</button>`:`<span class="bg bpen">⏳ Pendiente</span>`);
-        const quien=av.completadoPor?` · <strong>${av.completadoPor}</strong>`:'';
+        const quien=av.completadoPor?` · <strong>${escH(av.completadoPor)}</strong>`:'';
         return`<div class="grow ${comp?'comp':''}"><div class="ginfo"><span class="gico">${ICO[cat]||'📌'}</span><div><div class="gnom">${cat}</div><div class="gsub">${av.estado}${quien}</div></div></div><div>${btn}</div></div>`;
       }).join('');
     }
@@ -2707,7 +2707,7 @@ function renderTareas(){
             <span style="font-size:16px">${sInfo.ico}</span>
             <div>
               <div style="font-size:13px;font-weight:700;color:var(--tx)">${sec}</div>
-              <div style="font-size:11px;color:var(--tm)">👤 ${respNames}${sv.completadoPor?` · ✅ ${sv.completadoPor} · ${fmt(sv.completadoEn)}`:''}</div>
+              <div style="font-size:11px;color:var(--tm)">👤 ${escH(respNames)}${sv.completadoPor?` · ✅ ${escH(sv.completadoPor)} · ${fmt(sv.completadoEn)}`:''}</div>
               ${sv.fecha?`<div style="font-size:11px;color:var(--e-${sk}x);font-weight:600;margin-top:2px">🗓️ Entrega: ${fmt(sv.fecha)}${sv.hora?` · ${escH(sv.hora)}`:''}${SEC_EN_EVENTO.includes(sec)&&t.fecha&&sv.fecha<t.fecha?` <span style="color:var(--ro)">⚠️ antes de la actividad (${fmt(t.fecha)})</span>`:''}</div>`:''}
               ${resumenUnid}
               ${(sv.completadaTarde||sv.notaRetraso)?`<div style="font-size:11px;color:#dc2626;margin-top:2px">⏰ Completada con retraso${sv.notaRetraso?` — ${sv.notaRetraso}`:''}</div>`:''}
@@ -2896,7 +2896,7 @@ function renderTareas(){
                 <button class="btn bsm" style="padding:2px 7px;font-size:11px;background:#fee2e2;color:#dc2626;border:1px solid #dc2626" onclick="event.stopPropagation();marcarNocAV('${t.id}',${i})">${a.noCump?'Reabrir':'🚫'}</button>
               </div>`:'';
             return`<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--su);border:1px solid var(--bo);border-radius:var(--rs);margin-bottom:4px;flex-wrap:wrap">
-              ${medB}<span style="flex:1;font-size:13px;font-weight:600;min-width:80px">${nom}</span>${tipB}${est}
+              ${medB}<span style="flex:1;font-size:13px;font-weight:600;min-width:80px">${escH(nom)}</span>${tipB}${est}
               ${botones}
               ${a.noCump&&a.motivo?`<div style="flex-basis:100%;font-size:10px;color:#991b1b">🚫 ${escH(a.motivo)}</div>`:''}
             </div>`;
@@ -3500,7 +3500,7 @@ function renderSeccionesModal(t){
       ?`${fechaBlk}<div id="audiovisualWizBlk"></div>`
       :`${fechaBlk}<div style="font-size:11px;color:var(--tm);margin-bottom:6px">Responsable(s)</div>
         <div class="usr-chips" id="uch-${key}">${
-          assignableUsers.filter(u=>u.nivel!=='lector').map(u=>`<div class="uchip ${respActuales.includes(u.id)?'sel':''}" onclick="togRespModal('${sec}','${u.id}',this)">${rAv(u.nombre,u.foto||'',18,7)} ${u.nombre.split(' ')[0]}</div>`).join('')
+          assignableUsers.filter(u=>u.nivel!=='lector').map(u=>`<div class="uchip ${respActuales.includes(u.id)?'sel':''}" onclick="togRespModal('${sec}','${u.id}',this)">${rAv(u.nombre,u.foto||'',18,7)} ${escH(u.nombre.split(' ')[0])}</div>`).join('')
           ||'<span style="font-size:12px;color:var(--tm)">Sin miembros en esta sección</span>'
         }</div>`;
     return`<div class="secc-card ${activa?'activa':''}" id="sc-${key}">
@@ -3666,7 +3666,7 @@ function actualizarAudiovisualBlk(){
   // Paso 1: seleccionar usuario
   const paso1=`<div style="margin-bottom:10px">
     <div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;margin-bottom:5px">1. Fotógrafo / Camarógrafo</div>
-    <div class="usr-chips">${avUsers.map(u=>`<div class="uchip ${avWiz.userId===u.id?'sel':''}" onclick="avSelUser('${u.id}')">${rAv(u.nombre,u.foto||'',18,7)} ${u.nombre.split(' ')[0]}</div>`).join('')||'<span style="font-size:12px;color:var(--tm)">Sin miembros en Audiovisual</span>'}</div>
+    <div class="usr-chips">${avUsers.map(u=>`<div class="uchip ${avWiz.userId===u.id?'sel':''}" onclick="avSelUser('${u.id}')">${rAv(u.nombre,u.foto||'',18,7)} ${escH(u.nombre.split(' ')[0])}</div>`).join('')||'<span style="font-size:12px;color:var(--tm)">Sin miembros en Audiovisual</span>'}</div>
   </div>`;
 
   // Paso 2: Foto o Video (visible solo si hay usuario seleccionado)
@@ -4838,7 +4838,7 @@ function renderHoras(){
   const resDiv=document.getElementById('heResumen');
   if(resDiv&&niv!=='colaborador'&&niv!=='lector'&&apr.length){
     const porP={};apr.forEach(h=>{if(!porP[h.miembro])porP[h.miembro]=0;porP[h.miembro]+=(esComp(h)?-1:1)*parseFloat(h.horas||0);});
-    const items=Object.entries(porP).sort((a,b)=>b[1]-a[1]).map(([nom,hrs])=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--su);border:1px solid var(--bo);border-radius:8px"><div style="flex:1;font-size:13px;font-weight:600">${rAv(nom,'',22,8)} ${nom}</div><div style="text-align:right"><div style="font-size:14px;font-weight:800;color:var(--na)">${fmtD(hrs)}</div>${Math.abs(hrs)>=HORAS_DIA?`<div style="font-size:11px;color:var(--tm)">${fmtH(hrs)}</div>`:''}</div></div>`).join('');
+    const items=Object.entries(porP).sort((a,b)=>b[1]-a[1]).map(([nom,hrs])=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--su);border:1px solid var(--bo);border-radius:8px"><div style="flex:1;font-size:13px;font-weight:600">${rAv(nom,'',22,8)} ${escH(nom)}</div><div style="text-align:right"><div style="font-size:14px;font-weight:800;color:var(--na)">${fmtD(hrs)}</div>${Math.abs(hrs)>=HORAS_DIA?`<div style="font-size:11px;color:var(--tm)">${fmtH(hrs)}</div>`:''}</div></div>`).join('');
     resDiv.style.display='block';
     resDiv.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Saldo compensatorio por persona</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px">${items}</div>`;
   } else if(resDiv){resDiv.style.display='none';}
@@ -4866,7 +4866,7 @@ function renderHoras(){
       :'';
     return`<div class="hecard">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
-        <div style="display:flex;align-items:center;gap:9px;font-size:14px;font-weight:700">${rAv(h.miembro,'',30,11)} ${h.miembro}</div>
+        <div style="display:flex;align-items:center;gap:9px;font-size:14px;font-weight:700">${rAv(h.miembro,'',30,11)} ${escH(h.miembro)}</div>
         <div style="text-align:right"><div style="font-size:${esComp(h)?20:22}px;font-weight:800;color:${esComp(h)?'var(--az)':'var(--na)'};line-height:1">${esComp(h)?'−'+fmtD(parseFloat(h.horas||0)):fmtH(parseFloat(h.horas||0))}</div><div style="font-size:11px;color:var(--tm)">${esComp(h)?'compensatorio'+(parseFloat(h.horas||0)>=HORAS_DIA?' · '+fmtH(parseFloat(h.horas||0)):''):'horas extra'}</div></div>
       </div>
       <div style="font-size:13px;color:var(--tm);margin-bottom:12px;line-height:1.5">${escH(h.actividad||'')}</div>
@@ -6236,7 +6236,7 @@ function generarRep(){
             <div style="flex:1;min-width:0">
               <div style="font-size:13px;font-weight:600">${escH(t.titulo)}</div>
               ${meta?`<div style="font-size:11px;color:var(--tm);margin-top:1px">${meta}</div>`:''}
-              ${resps?`<div style="font-size:11px;color:var(--na);margin-top:1px">👤 ${resps}</div>`:''}
+              ${resps?`<div style="font-size:11px;color:var(--na);margin-top:1px">👤 ${escH(resps)}</div>`:''}
             </div>
             <span style="font-size:11px;padding:1px 7px;border-radius:20px;background:var(--su2);color:var(--tm);white-space:nowrap">${fmt(t.fecha)}</span>
           </div>`;
@@ -6267,7 +6267,7 @@ function generarRep(){
             <div style="flex:1;min-width:0">
               <div style="font-size:13px;font-weight:600">${escH(t.titulo)}</div>
               <div style="font-size:11px;color:var(--tm);margin-top:1px">🗓️ ${fmt(t.fecha)}${t.hora?' · 🕐 '+t.hora:''}${t.lugar?' · 📍 '+escH(t.lugar):''}</div>
-              ${resps?`<div style="font-size:11px;color:var(--na);margin-top:1px">👤 ${resps}</div>`:''}
+              ${resps?`<div style="font-size:11px;color:var(--na);margin-top:1px">👤 ${escH(resps)}</div>`:''}
               ${av>0?`<div style="margin-top:4px"><div class="pbar" style="height:4px"><div class="pfill" style="width:${av}%;background:var(--na)"></div></div><span style="font-size:10px;color:var(--tm)">${av}% completado</span></div>`:''}
             </div>
           </div>`;
@@ -6332,7 +6332,7 @@ function generarRep(){
             <span style="font-size:13px;font-weight:600">${m.ico} ${m.sec}</span>
             <span style="font-size:12px;font-weight:700;color:${m.col}">${m.sm2} ${m.cc}/${m.casig} (${m.pp}%)</span>
           </div>
-          ${m.resps?`<div style="font-size:11px;color:var(--tm);margin-bottom:3px">👤 ${m.resps}</div>`:''}
+          ${m.resps?`<div style="font-size:11px;color:var(--tm);margin-bottom:3px">👤 ${escH(m.resps)}</div>`:''}
           <div class="pbar"><div class="pfill" style="width:${m.pp}%;background:${m.col}"></div></div>
         </div>`;
       });
@@ -6450,7 +6450,7 @@ function imprimirReporte(){
     const col=pp>=80?'#16a34a':pp>=50?'#E35205':'#dc2626';
     const resps=[...new Set(tc.flatMap(t=>(t.secciones[sec].responsables||[]).map(uid=>{const u=E.equipo.find(e=>e.id===uid);return u?u.nombre:null;}).filter(Boolean)))].join(', ');
     secRows+=`<tr>
-      <td><strong>${SECCIONES[sec].ico} ${sec}</strong>${resps?'<br><span style="font-size:11px;color:#666">👤 '+resps+'</span>':''}</td>
+      <td><strong>${SECCIONES[sec].ico} ${sec}</strong>${resps?'<br><span style="font-size:11px;color:#666">👤 '+escH(resps)+'</span>':''}</td>
       <td style="text-align:center">${cc}/${su.asig}</td>
       <td style="width:120px">
         <div style="display:flex;align-items:center;gap:6px">
@@ -6562,7 +6562,7 @@ function imprimirReporte(){
     nocRows+=`<tr style="background:#fef2f2">
       <td><strong>${escH(i.titulo)}</strong><br><span style="font-size:11px;color:#666">${ico} ${escH(i.area)} · 👤 ${escH(i.resp)}</span></td>
       <td style="font-size:12px">${i.fecha?fmt(i.fecha):'-'}</td>
-      <td style="font-size:12px;color:#991b1b">${escH(i.motivo||'—')}${i.por?`<br><span style="font-size:10px;color:#888">— ${i.por}</span>`:''}</td>
+      <td style="font-size:12px;color:#991b1b">${escH(i.motivo||'—')}${i.por?`<br><span style="font-size:10px;color:#888">— ${escH(i.por)}</span>`:''}</td>
     </tr>`;
   });
 
@@ -6588,7 +6588,7 @@ function imprimirReporte(){
       <td><strong>${escH(t.titulo)}</strong>${tag}${t.notas?`<br><span style="font-size:11px;color:#666">📝 ${escH(t.notas)}</span>`:''}${motivoTxt}</td>
       <td style="font-size:12px;color:#166534">${secs||'—'}</td>
       <td style="font-size:12px">${t.fecha?'Límite: '+fmt(t.fecha):'-'}${compEn?`<br><span style="color:#16a34a">✓ ${fmt(compEn)}</span>`:''}</td>
-      <td style="font-size:12px">${[...new Set(resps)].join(', ')||'—'}</td>
+      <td style="font-size:12px">${escH([...new Set(resps)].join(', ')||'—')}</td>
     </tr>`;
   });
 
@@ -7445,7 +7445,7 @@ function renderAsigVarias(){
           <div style="font-size:14px;font-weight:800;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escH(av.titulo)}</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;align-items:center">
             ${recLbl?`<span style="font-size:10px;padding:1px 7px;border-radius:20px;background:var(--mos);color:var(--mo);font-weight:700">🔁 ${recLbl}${fechaFinLbl}</span>`:''}
-            ${resp?`<span style="font-size:11px;color:var(--na);font-weight:600">👤 ${resp}</span>`:''}
+            ${resp?`<span style="font-size:11px;color:var(--na);font-weight:600">👤 ${escH(resp)}</span>`:''}
             ${total?`<span style="font-size:10px;padding:1px 7px;border-radius:20px;background:var(--fo);color:${colPct};font-weight:700">${pct}%</span>`:''}
             ${venc?`<span style="font-size:10px;padding:1px 7px;border-radius:20px;background:var(--ros);color:var(--ro);font-weight:700">⚠️ Vencida</span>`:''}
           </div>
