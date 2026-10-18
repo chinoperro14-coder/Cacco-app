@@ -1056,9 +1056,9 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <button class="btn bgh bsm" onclick="navRep(1)" id="btnRepNext">Siguiente →</button>
   </div>
   <div id="repCont"></div>
-  <!-- Cierre de mes: aparte del resto porque borra las tareas únicas del mes -->
+  <!-- Cierre de mes: aparte del resto porque quita las tareas resueltas del mes -->
   <div class="nle oculto" style="margin-top:28px;border:1px dashed var(--ro);border-radius:var(--r);padding:14px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap">
-    <div style="font-size:13px;color:var(--tm);max-width:560px"><b style="color:var(--tx)">🗂️ Cierre de mes</b><br>Archiva el reporte y borra las tareas únicas del mes. Las recurrentes, las horas extra y el compensatorio se conservan. No se puede deshacer.</div>
+    <div style="font-size:13px;color:var(--tm);max-width:560px"><b style="color:var(--tx)">🗂️ Cierre de mes</b><br>Archiva el reporte, descarga una copia de los datos y quita las tareas ya resueltas (finalizadas, cerradas, no cumplidas o canceladas) que terminaron este mes o antes. Se conservan las pendientes, las futuras, los borradores, los pedidos, las recurrentes, las horas extra y el compensatorio. No se puede deshacer.</div>
     <button class="btn bpe bsm" onclick="cerrarMes()">Cerrar el mes…</button>
   </div>
 </div>
@@ -7031,13 +7031,16 @@ async function cerrarMes(){
   if(!puede('cerrarMes')){alert('Solo el Líder puede cerrar el mes.');return;}
   const ahora=new Date();
   const nombreMes=ahora.toLocaleDateString('es-PA',{month:'long',year:'numeric'});
-  if(!await confirmar(`✅ El reporte actual se archiva.\n🔁 Las tareas recurrentes se conservan y reinician.\n🗑 Las tareas únicas se eliminan.\n⏱️ Horas extra y compensatorio se conservan (el saldo pasa al mes siguiente).\n👥 Equipo, bitácora e histórico se conservan.\n\nNo se puede deshacer.`,{tit:`Cerrar el mes de ${nombreMes}`,ok:'Cerrar mes',peligro:true}))return;
+  const mes=hoy().slice(0,7),seQuita=t=>!(t.recurrencia&&t.recurrencia!=='ninguna')&&!t.borrador&&!t.pedido&&!regPedido(t.id)&&!!t.fecha&&ultimaAct(t).slice(0,7)<=mes&&tResuelta(t);
+  const nTar=n=>n===1?'1 tarea resuelta':n+' tareas resueltas',nq=E.tareas.filter(seQuita).length;
+  if(!await confirmar(`✅ El reporte actual se archiva y se descarga una copia de los datos.\n🗑 Se quita${nq===1?'':'n'} ${nTar(nq)} (finalizadas, cerradas, no cumplidas o canceladas) que terminaron en ${nombreMes} o antes.\n📌 Se conservan las pendientes, las futuras, los borradores y las de pedidos. Las recurrentes se reinician.\n⏱️ Horas extra y compensatorio se conservan (el saldo pasa al mes siguiente).\n👥 Equipo, bitácora e histórico se conservan.\n\nNo se puede deshacer.`,{tit:`Cerrar el mes de ${nombreMes}`,ok:'Cerrar mes',peligro:true}))return;
+  if(!await bajarResp('actual'))return;
   generarRep();
   const ts=E.tareas,comp=ts.filter(t=>eglobal(t)==='Completada').length;
   const _hora=new Date().toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit'});
   E.historico.push({id:gId(),mes:nombreMes,fecha:hoy(),hora:_hora,tareasTotales:ts.length,tareasCompletadas:comp,pct:ts.length?Math.round(comp/ts.length*100):0,reporte:repTxtActivo,archivadoPor:uAct?.nombre});
-  // Keep recurring tasks — reset their state for the new month
-  const recurrentes=E.tareas.filter(t=>t.recurrencia&&t.recurrencia!=='ninguna');
+  // Las recurrentes se conservan y reinician para el mes nuevo
+  const recurrentes=E.tareas.filter(t=>t.recurrencia&&t.recurrencia!=='ninguna'),quitadas=E.tareas.filter(seQuita);
   recurrentes.forEach(t=>{
     if(t.secciones)Object.keys(t.secciones).forEach(sec=>{t.secciones[sec].estado='Pendiente';delete t.secciones[sec].completadoPor;delete t.secciones[sec].completadoEn;});
     if(t.avances)Object.keys(t.avances).forEach(cat=>{t.avances[cat]={estado:'Pendiente'};});
@@ -7045,11 +7048,11 @@ async function cerrarMes(){
     if(t.mediosData)Object.keys(t.mediosData).forEach(m=>Object.keys(t.mediosData[m]).forEach(k=>{if(k.endsWith('_comp'))t.mediosData[m][k]=0;}));
   });
   // Las horas extras NO se borran: son el saldo de tiempo compensatorio y la base del formulario OIRH de cada mes
-  E.tareas=recurrentes;expandidas.clear();
-  reg('Mes cerrado',`${nombreMes} — ${comp}/${ts.length} tareas completadas — ${recurrentes.length} recurrentes conservadas`);
-  addNotif('🗂️',`Mes cerrado: ${nombreMes}`,'Datos operativos reiniciados · Histórico guardado');
+  E.tareas=E.tareas.filter(t=>!quitadas.includes(t));expandidas.clear();
+  reg('Mes cerrado',`${nombreMes} — ${comp}/${ts.length} tareas completadas — ${nTar(quitadas.length)} quitadas — ${recurrentes.length} recurrentes reiniciadas`);
+  addNotif('🗂️',`Mes cerrado: ${nombreMes}`,`${nTar(quitadas.length)} quitadas · Histórico guardado`);
   guardar();generarRep();renderTareas();renderHoras();actuCts();
-  alert(`✅ Mes "${nombreMes}" cerrado.\n\nEl reporte está en "Histórico".\nEl sistema está listo para el nuevo mes.`);
+  alert(`✅ Mes "${nombreMes}" cerrado.\n\nQuitadas: ${nTar(quitadas.length)}. El reporte está en "Histórico".`);
 }
 
 // ════════════════════════
@@ -8835,8 +8838,8 @@ async function bajarResp(f){
     if(!r.ok)throw 0;
     const url=URL.createObjectURL(await r.blob()),a=document.createElement('a');
     a.href=url;a.download=`respaldo-cacco-${f==='actual'?hoy()+'-ahora':f}.json`;document.body.appendChild(a);a.click();a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),5000);
-  }catch{alert('No se pudo descargar el respaldo. Intenta de nuevo.');}
+    setTimeout(()=>URL.revokeObjectURL(url),5000);return true;
+  }catch{alert('No se pudo descargar el respaldo. Intenta de nuevo.');return false;}
 }
 
 // ── Última actividad de cada persona (solo Líder y Editor) ──
