@@ -1959,32 +1959,54 @@ let Ebase=null;      // último estado del servidor con el que reconciliamos (an
 let _guardando=false,_reintentar=false,_guardarTimer=null;
 function snap(o){return JSON.parse(JSON.stringify(o));}
 
-// Fusiona dos listas de objetos {id,...} usando la base como ancestro.
-function mergeArrById(base,mine,theirs){
+// Iguales sin mirar el orden de las claves; vacío (null) y ausente cuentan igual
+const _canon=o=>JSON.stringify(o,(k,v)=>v===null?undefined:v&&typeof v==='object'&&!Array.isArray(v)?Object.keys(v).sort().reduce((r,x)=>(r[x]=v[x],r),{}):v);
+const igualJ=(a,z)=>a===z||JSON.stringify(a)===JSON.stringify(z)||_canon(a)===_canon(z);
+const esObj=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
+// Listas sin id que se unen elemento por elemento (clave de cada elemento)
+const CLAVE_LISTA={asignaciones:a=>[a.userId,a.medio,a.tipo].join('|')};
+// Une en tres vías (base común, lo mío, lo del otro), también por dentro: objetos clave por clave, listas con id
+// elemento por elemento y listas de textos como conjunto. Lo que cambió un solo lado se conserva; si los dos
+// cambiaron el mismo dato, gana lo mío (el último que guarda).
+function unir3(b,m,t,k){
+  if(igualJ(m,b))return t;
+  if(igualJ(t,b)||igualJ(m,t))return m;
+  if(esObj(m)&&esObj(t)){
+    const bb=esObj(b)?b:{},out={...t};
+    new Set([...Object.keys(bb),...Object.keys(m),...Object.keys(t)]).forEach(x=>{const v=unir3(bb[x],m[x],t[x],x);if(v===undefined)delete out[x];else out[x]=v;});
+    return out;
+  }
+  if(Array.isArray(m)&&Array.isArray(t)&&(b==null||Array.isArray(b))){
+    const l=[...(b||[]),...m,...t];
+    if(l.every(x=>esObj(x)&&x.id!=null))return mergeArrById(b,m,t);
+    if(CLAVE_LISTA[k]&&l.every(esObj))return mergeArrById(b,m,t,CLAVE_LISTA[k]);
+    if(l.every(x=>x===null||typeof x!=='object')){const bs=new Set(b||[]),ms=new Set(m),ts=new Set(t);
+      return [...t.filter(x=>!bs.has(x)||ms.has(x)),...m.filter(x=>!bs.has(x)&&!ts.has(x))];}
+  }
+  return m;
+}
+// Fusiona dos listas de objetos {id,...} usando la base como ancestro (o con otra clave, repetidas numeradas).
+function mergeArrById(base,mine,theirs,clave){
   base=base||[];mine=mine||[];theirs=theirs||[];
-  const b={},t={};base.forEach(x=>b[x.id]=x);theirs.forEach(x=>t[x.id]=x);
-  const eq=(a,z)=>JSON.stringify(a)===JSON.stringify(z);
+  const ids=l=>{const n={};return l.map(x=>{if(!clave)return x.id;const c=clave(x);n[c]=(n[c]||0)+1;return c+'#'+n[c];});};
+  const ib=ids(base),im=ids(mine),it=ids(theirs);
+  const b={},t={};base.forEach((x,i)=>b[ib[i]]=x);theirs.forEach((x,i)=>t[it[i]]=x);
   const out=[],seen=new Set();
-  mine.forEach(item=>{
-    const id=item.id;seen.add(id);
+  mine.forEach((item,i)=>{
+    const id=im[i];seen.add(id);
     const bi=b[id],ti=t[id];
     if(!ti){ // el otro no lo tiene
       if(!bi)out.push(item);            // lo agregué yo → conservar
-      else if(!eq(item,bi))out.push(item); // el otro lo borró pero yo lo edité → conservar el mío
+      else if(!igualJ(item,bi))out.push(item); // el otro lo borró pero yo lo edité → conservar el mío
       return;                            // el otro lo borró y yo no lo toqué → respetar borrado
     }
-    const myCh=!bi||!eq(item,bi),suCh=!bi||!eq(ti,bi);
-    if(myCh&&suCh&&bi&&!eq(item,ti)){     // los dos cambiamos el mismo elemento: se junta campo por campo
-      const m={...ti};
-      new Set([...Object.keys(bi),...Object.keys(item)]).forEach(k=>{if(!eq(item[k],bi[k])){if(item[k]===undefined)delete m[k];else m[k]=item[k];}});
-      out.push(m);
-    }else out.push(myCh?item:ti);        // si solo yo lo cambié gana el mío; si no, tomo el del otro
+    out.push(unir3(bi,item,ti));         // los dos lo tienen: se junta por dentro
   });
-  theirs.forEach(item=>{
-    const id=item.id;if(seen.has(id))return;
+  theirs.forEach((item,i)=>{
+    const id=it[i];if(seen.has(id))return;
     const bi=b[id];
     if(!bi)out.push(item);              // lo agregó el otro → conservar
-    else if(!eq(item,bi))out.push(item); // yo lo borré pero el otro lo editó → conservar el del otro
+    else if(!igualJ(item,bi))out.push(item); // yo lo borré pero el otro lo editó → conservar el del otro
     // yo lo borré y el otro no lo tocó → respetar mi borrado
   });
   return out;
@@ -3419,6 +3441,7 @@ function abrirMT(id){
   ka.style.display=pre.cambios.length?'block':'none';
   ka.innerHTML=pre.cambios.length?`✨ <b>Ya lo dejé puesto</b>, revísalo antes de guardar:<br>${pre.cambios.map(x=>'• '+escH(x)).join('<br>')}`:'';
   document.getElementById('tDescartar').style.display=t?.borrador&&puede('descartarBorrador')?'':'none';
+  {const t0=t?snap(t):null;tAbierta={id:id||'',t:t0,form:t0&&!t0.borrador?snap(tDelModal(t0)):null};}
   abrirM('mT');
   setTimeout(()=>document.querySelectorAll('#mT .auto-alto').forEach(autoAlto),30);
   const errEl=document.getElementById('tErrorMsg');if(errEl)errEl.style.display='none';
@@ -3714,14 +3737,12 @@ function extrasDelModal(){
   return{...(c?{contacto:c}:{}),...(r?{revisar:r}:{}),...(o.length?{otrasFechas:o}:{}),...(urlOk(cp)?{carpeta:cp}:{}),...(o0&&o0.carpeta===cp?Object.fromEntries(['carpetasDia','carpetaConteo','carpetaOficina','carpetaFecha'].filter(k=>o0[k]).map(k=>[k,o0[k]])):{})};
 }
 function fechaFinDelModal(){const a=document.getElementById('tFecha').value,b=document.getElementById('tFechaFin').value;return a&&b&&b>a?{fechaFin:b}:{};}
-function guardarT(){
-  const titulo=document.getElementById('tTit').value.trim();if(!titulo){mostrarErrorModal('❌ El título de la tarea es obligatorio.');document.getElementById('tTit').focus();return;}
+// Campos que decide el formulario de la tarea (si faltan en él, se quitan); el resto de la tarea se conserva
+const CAMPOS_FORM_T=['titulo','etiquetas','prioridad','fecha','fechaFin','contacto','revisar','otrasFechas','carpeta','carpetasDia','carpetaConteo','carpetaOficina','carpetaFecha','hora','horaFin','lugar','notas','recurrencia','secciones','redesSociales','mediosData','audiovisualData','borrador'];
+// La tarea tal como la deja el formulario, partiendo de b (la tarea al abrirlo)
+function tDelModal(b){
   const id=document.getElementById('tId').value;
-  const orig=id?E.tareas.find(t=>t.id===id):null;
-
-  // Build secciones from modal state
   const secciones={};
-  let seccionesCount=0;
   SECC_NAMES.forEach(sec=>{
     const key=sec.replace(/\s/g,'_');
     const card=document.getElementById(`sc-${key}`);
@@ -3731,73 +3752,73 @@ function guardarT(){
         const m=el.getAttribute('onclick').match(/'([^']+)','([^']+)'/);
         return m?m[2]:null;
       }).filter(Boolean);
-      const prev=orig?.secciones?.[sec]||{};
+      const prev=b?.secciones?.[sec]||{};
       const fEl=document.getElementById(`secfecha-${key}`);
       const hEl=document.getElementById(`sechora-${key}`);
       // Regla de fechas: la sección usa la fecha de la actividad salvo que alguien le ponga otra a propósito.
       // Si es igual a la de la actividad (o a la que tenía antes de moverla), queda vacía y sigue a la actividad.
       let fSec=fEl?.value||null;
-      if(fSec&&(fSec===document.getElementById('tFecha').value||fSec===orig?.fecha))fSec=null;
+      if(fSec&&(fSec===document.getElementById('tFecha').value||fSec===b?.fecha))fSec=null;
+      // Lo anotado en el área (no cumplida, retraso, horas extra, notas) se conserva
       secciones[sec]={
+        ...prev,
         responsables,
         estado:prev.estado||'Pendiente',
-        completadoPor:prev.completadoPor||null,
-        completadoEn:prev.completadoEn||null,
         fecha:fSec,
         hora:hEl?.value||null,
         ...(sec==='Diseño'?{etapa:prev.etapa||'Maquetación'}:{})
       };
-      seccionesCount++;
     }
   });
-  if(!seccionesCount){mostrarErrorModal('❌ Selecciona al menos una sección para la tarea.');return;}
 
-  // Build redesSociales data
-  let redesSociales=orig?.redesSociales||null;
+  // Build redesSociales data (se conservan las no cumplidas y sus motivos)
+  let redesSociales=b?.redesSociales||null;
   if(secciones['Redes Sociales']){
-    redesSociales={};
+    redesSociales={...(b?.redesSociales||{})};
     ['instagram','facebook','tiktok'].forEach(rKey=>{
       const campos={instagram:['publicaciones','reels','historias'],facebook:['publicaciones','historias'],tiktok:['videos','lives']}[rKey];
-      redesSociales[rKey]={};
+      const prevR=b?.redesSociales?.[rKey]||{},r=redesSociales[rKey]={...prevR};
       campos.forEach(c=>{
         const elA=document.getElementById(`rq-${rKey}-${c}`);
         const elC=document.getElementById(`rqc-${rKey}-${c}`);
-        redesSociales[rKey][c]=elA?parseInt(elA.textContent)||0:orig?.redesSociales?.[rKey]?.[c]||0;
-        redesSociales[rKey][c+'_comp']=elC?parseInt(elC.textContent)||0:orig?.redesSociales?.[rKey]?.[c+'_comp']||0;
+        r[c]=elA?parseInt(elA.textContent)||0:prevR[c]||0;
+        r[c+'_comp']=elC?parseInt(elC.textContent)||0:prevR[c+'_comp']||0;
         const selTipo=elA?.closest('.redes-row')?.querySelector('.redes-chip.sel');
-        if(selTipo)redesSociales[rKey]['tipo_'+c]=selTipo.textContent;
-        else if(orig?.redesSociales?.[rKey]?.['tipo_'+c]&&!elA)redesSociales[rKey]['tipo_'+c]=orig.redesSociales[rKey]['tipo_'+c];
+        if(selTipo)r['tipo_'+c]=selTipo.textContent;
+        else if(elA)delete r['tipo_'+c];
       });
     });
   }
 
-  // Build mediosData
-  let mediosData=orig?.mediosData||null;
+  // Build mediosData (se conservan las apariciones, las no cumplidas y sus motivos)
+  let mediosData=b?.mediosData||null;
   if(secciones['Medios']){
-    mediosData={};
+    mediosData={...(b?.mediosData||{})};
     const medMap={radio:['notas','entrevistas'],tv:['notas','entrevistas'],prensa:['notas','comunicados'],redaccion:['articulos','notas']};
     Object.entries(medMap).forEach(([mKey,campos])=>{
-      mediosData[mKey]={};
+      const prevM=b?.mediosData?.[mKey]||{},md=mediosData[mKey]={...prevM};
       campos.forEach(c=>{
         const elA=document.getElementById(`mq-${mKey}-${c}`);
         const elC=document.getElementById(`mqc-${mKey}-${c}`);
-        mediosData[mKey][c]=elA?parseInt(elA.textContent)||0:orig?.mediosData?.[mKey]?.[c]||0;
-        mediosData[mKey][c+'_comp']=elC?parseInt(elC.textContent)||0:orig?.mediosData?.[mKey]?.[c+'_comp']||0;
+        md[c]=elA?parseInt(elA.textContent)||0:prevM[c]||0;
+        md[c+'_comp']=elC?parseInt(elC.textContent)||0:prevM[c+'_comp']||0;
       });
     });
   }
 
   // Build audiovisualData
-  let audiovisualData=orig?.audiovisualData||null;
+  let audiovisualData=b?.audiovisualData||null;
   if(secciones['Audiovisual']){
-    audiovisualData={asignaciones:[...avAsignaciones]};
+    audiovisualData={...(b?.audiovisualData||{}),asignaciones:avAsignaciones.map(a=>({...a}))};
     // Actualizar responsables de la sección con los userIds de las asignaciones (sin duplicados)
     const respAV=[...new Set(avAsignaciones.map(a=>a.userId))];
     if(respAV.length)secciones['Audiovisual'].responsables=respAV;
   }
 
-  const t={
-    id:id||gId(),titulo,
+  const resto={...(b||{})};CAMPOS_FORM_T.forEach(k=>delete resto[k]);
+  return{
+    ...resto,
+    id:id||gId(),titulo:document.getElementById('tTit').value.trim(),
     etiquetas:[...etiqSel],
     prioridad:document.getElementById('tPri').value,
     fecha:document.getElementById('tFecha').value,
@@ -3807,28 +3828,39 @@ function guardarT(){
     horaFin:document.getElementById('tHoraFin').value,
     lugar:document.getElementById('tLugar').value.trim(),
     notas:document.getElementById('tNotas').value.trim(),
-    ...(orig?.kit?{kit:orig.kit}:{}),
     recurrencia:document.getElementById('tRec').value,
-    ...(orig?.pedido?{pedido:orig.pedido}:{}),
-    ...(orig?.cancelada?{cancelada:orig.cancelada}:{}),
-    creadaEn:orig?.creadaEn||hoy(),
-    creadaPor:orig?.creadaPor||uAct?.nombre,
-    creadoPorId:orig?.creadoPorId||uAct?.id,
+    creadaEn:b?.creadaEn||hoy(),
+    creadaPor:b?.creadaPor||uAct?.nombre,
+    creadoPorId:b?.creadoPorId||uAct?.id,
     secciones,
     redesSociales,
     mediosData,
     audiovisualData,
-    entregables:orig?.entregables||[]
+    entregables:b?.entregables||[]
   };
+}
+// La tarea y lo que mostraba el formulario al abrirlo: al guardar se aplica solo lo que la persona cambió
+let tAbierta=null;
+const tAlAbrir=id=>id&&tAbierta?.id===id?tAbierta.t:id?E.tareas.find(t=>t.id===id):null;
 
-  if(id){const i=E.tareas.findIndex(t=>t.id===id);if(i>=0)E.tareas[i]=t;reg('Tarea editada',`"${titulo}" por ${uAct?.nombre}`);
+function guardarT(){
+  const titulo=document.getElementById('tTit').value.trim();if(!titulo){mostrarErrorModal('❌ El título de la tarea es obligatorio.');document.getElementById('tTit').focus();return;}
+  const id=document.getElementById('tId').value;
+  const orig=tAlAbrir(id);
+  const t=tDelModal(orig);
+  if(!Object.keys(t.secciones).length){mostrarErrorModal('❌ Selecciona al menos una sección para la tarea.');return;}
+
+  if(id){const i=E.tareas.findIndex(t=>t.id===id);
+    // Sobre la versión actual: lo que otra persona avanzó mientras el formulario estaba abierto no se pierde
+    if(i>=0)E.tareas[i]=unir3(tAbierta?.id===id&&tAbierta.form||orig,t,E.tareas[i]);
+    reg('Tarea editada',`"${titulo}" por ${uAct?.nombre}`);
     if(orig?.borrador&&orig.pedido){
       E.pedidos=(E.pedidos||[]).map(p=>p.tareaId===id&&!p.aceptado?{...p,aceptado:{por:uAct?.nombre||'',en:hoy()}}:p);
       reg('Pedido aceptado',`${orig.pedido.folio||''} de ${orig.pedido.area||''}: "${titulo}" (por ${uAct?.nombre})`);
     }}
   else{
     E.tareas.unshift(t);
-    const secNames=Object.keys(secciones).join(', ');
+    const secNames=Object.keys(t.secciones).join(', ');
     reg('Tarea creada',`"${titulo}" — secciones: ${secNames}`);
     addNotif('📋',`Nueva tarea: "${titulo}"`,`Secciones: ${secNames}`);
   }
