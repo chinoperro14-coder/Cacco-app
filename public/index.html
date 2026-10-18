@@ -4909,7 +4909,7 @@ function abrirMH(id){
   document.getElementById('hFecha').value=h?.fecha||hoy();
   document.getElementById('hDesde').value=h?.desde||'';
   document.getElementById('hHasta').value=h?.hasta||'';
-  document.getElementById('hFeriado').checked=!!h?.feriado;
+  document.getElementById('hFeriado').checked=h?!!h.feriado:esFeriado(document.getElementById('hFecha').value);
   document.getElementById('hTipo').value=h&&esComp(h)?'compensatorio':'extra';
   document.getElementById('hHoras').value=h?.horas??'';
   // Compensatorio: la persona decide cuántos días (8 h c/u) y horas usa
