@@ -1,6 +1,7 @@
 // Reglas que el servidor hace cumplir en cada guardado, aunque alguien salte la interfaz.
 // La página manda todos los datos de una vez; aquí se compara con lo guardado y se deshace lo que ese nivel no puede hacer.
 // El Líder no tiene restricciones (salvo que las solicitudes de permiso nunca se borran).
+const { errorNombre, renombrar } = require("./nombres");
 
 // Listas que la página guarda como [{id, ...}]
 const LISTAS = ["tareas", "equipo", "publicaciones", "horasExtra", "permisos", "bitacora", "historico", "asigVarias",
@@ -37,10 +38,10 @@ function reponer(nueva, previa, puedeBorrar) {
   return faltan.length ? [...nueva, ...faltan] : nueva;
 }
 
-// Nombres con los que aparece la persona en horas y permisos (puede haber cambiado su nombre en Mi perfil)
-function nombresDe(usuario, actual, nuevo) {
+// Nombre con el que aparece la persona en horas y permisos: el guardado, no el que manda la página (solo el Líder lo cambia)
+function nombresDe(usuario, actual) {
   const n = new Set();
-  [actual, nuevo].forEach(d => (d && Array.isArray(d.equipo) ? d.equipo : []).forEach(p => { if (p && p.id === usuario.id && p.nombre) n.add(p.nombre); }));
+  (actual && Array.isArray(actual.equipo) ? actual.equipo : []).forEach(p => { if (p && p.id === usuario.id && p.nombre) n.add(p.nombre); });
   return n;
 }
 
@@ -49,14 +50,14 @@ function aplicarReglasRol(nuevo, actual, usuario) {
   actual = actual || {};
   const nivel = usuario && usuario.nivel;
   if (!nuevo || typeof nuevo !== "object") return nuevo;
-  if (nivel === "lider") return conservarPermisos(nuevo, actual);
-  const yo = nombresDe(usuario, actual, nuevo), esMio = r => r && yo.has(r.miembro);
+  if (nivel === "lider") return conservarPermisos(renombrarCambiados(nuevo, actual), actual);
+  const yo = nombresDe(usuario, actual), esMio = r => r && yo.has(r.miembro);
   const colab = nivel !== "editor";   // colaborador (y cualquier nivel desconocido) tiene las reglas más estrictas
 
-  // Equipo: solo se cambia el propio perfil, nunca nivel, correo de acceso, categorías ni secciones; no se agrega ni se quita a nadie
+  // Equipo: solo se cambia el propio perfil, nunca nombre, nivel, correo de acceso, categorías ni secciones; no se agrega ni se quita a nadie
   if (Array.isArray(nuevo.equipo)) {
     const prev = porId(actual.equipo);
-    const FIJOS = ["id", "email", "nivel", "cats", "secciones", "ingreso"];
+    const FIJOS = ["id", "nombre", "email", "nivel", "cats", "secciones", "ingreso"];
     nuevo.equipo = [
       ...nuevo.equipo.filter(p => prev.has(p.id)).map(p => {
         const a = prev.get(p.id);
@@ -130,6 +131,25 @@ function aplicarReglasRol(nuevo, actual, usuario) {
   return conservarPermisos(nuevo, actual);
 }
 
+// Si el Líder cambió el nombre de alguien, el nombre nuevo pasa a todos los registros que guardan el viejo
+function renombrarCambiados(nuevo, actual) {
+  const prev = porId(actual && actual.equipo);
+  const cambios = (Array.isArray(nuevo.equipo) ? nuevo.equipo : []).filter(p => p && prev.has(p.id) && prev.get(p.id).nombre !== p.nombre)
+    .map(p => ({ id: p.id, viejo: prev.get(p.id).nombre, nuevo: p.nombre }));
+  return renombrar(nuevo, cambios);
+}
+
+// Nombres nuevos o cambiados: sin < > " ', de 80 caracteres o menos y sin repetir el de otra persona. Devuelve el error o null.
+function validarNombres(nuevo, actual) {
+  const prev = porId(actual && actual.equipo), equipo = nuevo && Array.isArray(nuevo.equipo) ? nuevo.equipo : [];
+  for (const p of equipo) {
+    if (prev.has(p.id) && prev.get(p.id).nombre === p.nombre) continue;
+    const error = errorNombre(p.nombre, equipo, p.id);
+    if (error) return error;
+  }
+  return null;
+}
+
 // Las solicitudes de permiso no se borran: si un guardado omite alguna que ya existe, se conserva.
 function conservarPermisos(nuevo, actual) {
   if (!nuevo || typeof nuevo !== "object") return nuevo;
@@ -150,4 +170,4 @@ function limitador(n, ms) {
   };
 }
 
-module.exports = { LISTAS, NIVELES, validarDatos, aplicarReglasRol, conservarPermisos, limitador, igual };
+module.exports = { LISTAS, NIVELES, validarDatos, validarNombres, aplicarReglasRol, conservarPermisos, limitador, igual };

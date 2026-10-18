@@ -133,6 +133,21 @@ test("el servidor deshace lo que el nivel no permite y avisa", async () => {
   assert.equal((await (await pedir("/api/data", { token: lider })).json()).config.clavesPedidos["Dirección"], "clave-direccion-1");
 });
 
+test("un nombre con signos de código o repetido no se guarda, y el colaborador no se cambia el nombre", async () => {
+  assert.equal((await pedir("/nombres.js")).status, 200);
+  const t = await entrar("lider@x.org");
+  const d = await (await pedir("/api/data", { token: t })).json();
+  d.equipo.find(p => p.id === "u3").nombre = "<img src=x onerror=alert(1)>";
+  assert.equal((await pedir("/api/data", { metodo: "POST", token: t, cuerpo: d })).status, 400);
+  d.equipo.find(p => p.id === "u3").nombre = " beto ";
+  assert.equal((await pedir("/api/data", { metodo: "POST", token: t, cuerpo: d })).status, 400);
+  const c = await entrar("colab@x.org");
+  const dc = await (await pedir("/api/data", { token: c })).json();
+  dc.equipo.find(p => p.id === "u3").nombre = "Beto";
+  assert.equal((await (await pedir("/api/data", { metodo: "POST", token: c, cuerpo: dc })).json()).ajustado, true);
+  assert.equal((await (await pedir("/api/data", { token: c })).json()).equipo.find(p => p.id === "u3").nombre, "Caro");
+});
+
 test("al cambiar la contraseña, las sesiones anteriores dejan de valer", async () => {
   const vieja = await entrar("editor@x.org");
   await new Promise(r => setTimeout(r, 1100));          // las sesiones se fechan por segundo

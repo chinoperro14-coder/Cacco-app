@@ -7,7 +7,7 @@ const zlib     = require("zlib");
 const bcrypt   = require("bcrypt");
 const jwt      = require("jsonwebtoken");
 const mongoose = require("mongoose");
-const { validarDatos, aplicarReglasRol, NIVELES, limitador } = require("./reglas");
+const { validarDatos, validarNombres, aplicarReglasRol, NIVELES, limitador } = require("./reglas");
 
 const app        = express();
 // La clave de las sesiones nunca va en el código (el repositorio es público).
@@ -210,6 +210,8 @@ app.get("/", enviarArchivo(path.join(__dirname, "public", "index.html"), HTML));
 app.get("/pedido", enviarArchivo(path.join(__dirname, "public", "pedido.html"), HTML));
 // Oficinas, servicios, preguntas y largos del formulario: un solo archivo que usan el servidor, /pedido y el tablero
 app.get("/pedidos.js", enviarArchivo(path.join(__dirname, "pedidos.js"), "application/javascript; charset=utf-8"));
+// Reglas de los nombres de las personas (y cómo se renombra en todos los registros): las mismas para el servidor y el tablero
+app.get("/nombres.js", enviarArchivo(path.join(__dirname, "nombres.js"), "application/javascript; charset=utf-8"));
 
 // ════════════════════════
 //  PEDIDOS DE OTRAS ÁREAS (formulario público, sin sesión)
@@ -496,6 +498,8 @@ app.post("/api/data", verificarToken, async (req, res) => {
       await respaldoDiario(actual);
       const enviado = JSON.stringify(req.body);
       const nuevo = aplicarReglasRol(req.body, actual, req.usuario);
+      const errorNombre = validarNombres(nuevo, actual);
+      if (errorNombre) return res.status(400).json({ error: errorNombre });
       if (actual.config) nuevo.config = actual.config; else delete nuevo.config;   // las claves solo cambian por su ruta
       const { config: _a, ...sinConfig } = nuevo, { config: _b, ...enviadoSin } = JSON.parse(enviado);
       const guardado = await escribirData(nuevo);

@@ -1,7 +1,7 @@
 // Reglas por nivel que el servidor aplica a cada guardado (reglas.js)
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { validarDatos, aplicarReglasRol, limitador } = require("../reglas");
+const { validarDatos, validarNombres, aplicarReglasRol, limitador } = require("../reglas");
 
 const base = () => ({
   equipo: [
@@ -143,6 +143,66 @@ test("solo el Líder cambia la asignación automática por área", () => {
   assert.equal(aplicarReglasRol({ ...copia(base()), asigAuto: { x: ["u1"] } }, base(), COLAB).asigAuto, undefined);
   assert.ok(validarDatos({ tareas: [], equipo: [], asigAuto: { "Diseño": "u5" } }));
   assert.equal(validarDatos({ tareas: [], equipo: [], asigAuto: { "Diseño": ["u5"] } }), null);
+});
+
+test("solo el Líder cambia nombres: si otro nivel se renombra, se repone y no se adueña de registros ajenos", () => {
+  const n = copia(base());
+  n.equipo[2].nombre = "Beto"; n.equipo[2].cedula = "8-1-1";
+  n.horasExtra = n.horasExtra.filter(h => h.id !== "h3");
+  n.permisos.find(p => p.id === "p2").aprobacion = "Pendiente";
+  const r = aplicarReglasRol(n, base(), COLAB);
+  assert.equal(r.equipo.find(p => p.id === "u3").nombre, "Caro");
+  assert.equal(r.equipo.find(p => p.id === "u3").cedula, "8-1-1");
+  assert.ok(r.horasExtra.some(h => h.id === "h3"));
+  assert.equal(r.permisos.find(p => p.id === "p2").aprobacion, "Aprobado");
+  assert.equal(validarNombres(r, base()), null);
+  const e = copia(base()); e.equipo[1].nombre = "Roberto";
+  assert.equal(aplicarReglasRol(e, base(), EDITOR).equipo.find(p => p.id === "u2").nombre, "Beto");
+});
+
+test("un nombre con < > \" ' o de más de 80 caracteres se rechaza", () => {
+  const con = nombre => { const n = copia(base()); n.equipo[2].nombre = nombre; return validarNombres(aplicarReglasRol(n, base(), LIDER), base()); };
+  assert.ok(con("<script>alert(1)</script>"));
+  assert.ok(con("<img src=x onerror=alert(1)>"));
+  assert.ok(con('Caro "la jefa"'));
+  assert.ok(con("D'Caro"));
+  assert.ok(con("x".repeat(81)));
+  assert.ok(con(""));
+  assert.equal(con("Carolina Pérez"), null);
+  const nueva = copia(base()); nueva.equipo.push({ id: "u9", nombre: "<b>Nuevo</b>", nivel: "colaborador" });
+  assert.ok(validarNombres(nueva, base()));
+  const vieja = copia(base()); vieja.equipo[1].nombre = "Beto <viejo>";   // un nombre ya guardado no frena otros guardados
+  assert.equal(validarNombres(copia(vieja), vieja), null);
+});
+
+test("no puede haber dos personas con el mismo nombre (sin importar mayúsculas ni espacios)", () => {
+  const ren = copia(base()); ren.equipo[1].nombre = "  ana ";
+  assert.ok(validarNombres(ren, base()));
+  const nueva = copia(base()); nueva.equipo.push({ id: "u9", nombre: "CA RO", nivel: "colaborador" });
+  assert.ok(validarNombres(nueva, base()));
+  const ok = copia(base()); ok.equipo.push({ id: "u9", nombre: "Carolina", nivel: "colaborador" });
+  assert.equal(validarNombres(ok, base()), null);
+});
+
+test("cuando el Líder renombra a alguien, el nombre nuevo pasa a todos sus registros", () => {
+  const antes = copia(base());
+  antes.horasExtra.push({ id: "h4", miembro: "Beto", aprobacion: "Aprobado", aprobadoPor: "Caro", registradoPor: "Caro" });
+  antes.tareas[0] = { id: "t1", titulo: "Confirmada", creadaPor: "Caro", secciones: { "Diseño": { responsables: ["u3"], completadoPor: "Caro" } },
+    audiovisualData: { asignaciones: [{ userId: "u3", nombre: "Caro", medio: "foto" }, { userId: "u2", nombre: "Beto", medio: "video" }] } };
+  antes.bitacora = [{ id: "b1", usuario: "Caro", accion: "Antes", detalle: "Caro hizo algo" }];
+  const n = copia(antes); n.equipo[2].nombre = "Carolina";
+  const r = aplicarReglasRol(n, antes, LIDER);
+  assert.deepEqual(r.horasExtra.map(h => h.miembro), ["Carolina", "Carolina", "Beto", "Beto"]);
+  assert.equal(r.horasExtra[3].aprobadoPor, "Carolina");
+  assert.equal(r.horasExtra[3].registradoPor, "Carolina");
+  assert.equal(r.permisos.find(p => p.id === "p1").miembro, "Carolina");
+  assert.equal(r.publicaciones.find(p => p.id === "pub1").creadoPor, "Carolina");
+  assert.equal(r.tareas[0].creadaPor, "Carolina");
+  assert.equal(r.tareas[0].secciones["Diseño"].completadoPor, "Carolina");
+  assert.deepEqual(r.tareas[0].audiovisualData.asignaciones.map(a => a.nombre), ["Carolina", "Beto"]);
+  assert.equal(r.bitacora[0].usuario, "Carolina");
+  assert.equal(r.bitacora[0].detalle, "Caro hizo algo");
+  assert.equal(r.equipo.find(p => p.id === "u2").nombre, "Beto");
 });
 
 test("limitador cuenta intentos por clave", () => {

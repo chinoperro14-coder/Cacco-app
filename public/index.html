@@ -1267,7 +1267,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <div class="tc" style="padding:24px">
     <div style="font-size:15px;font-weight:700;margin-bottom:20px">Editar información</div>
     <div class="fr">
-      <div class="fg"><label class="fl">Nombre</label><input type="text" class="fc" id="pNom"></div>
+      <div class="fg"><label class="fl">Nombre</label><input type="text" class="fc" id="pNom" maxlength="80"></div>
       <div class="fg"><label class="fl">Cargo</label><input type="text" class="fc" id="pCargo"></div>
     </div>
     <div class="fg"><label class="fl">Foto (URL)</label><input type="url" class="fc" id="pFoto" placeholder="https://..."></div>
@@ -1529,7 +1529,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <div class="mbody">
     <input type="hidden" id="eqId">
     <div class="fr">
-      <div class="fg"><label class="fl">Nombre *</label><input type="text" class="fc" id="eqNom"></div>
+      <div class="fg"><label class="fl">Nombre *</label><input type="text" class="fc" id="eqNom" maxlength="80"></div>
       <div class="fg"><label class="fl">Cargo</label><input type="text" class="fc" id="eqCargo" placeholder="ej. Fotógrafo"></div>
     </div>
     <div class="fg"><label class="fl">Email (para iniciar sesión) *</label><input type="email" class="fc" id="eqEmail" placeholder="usuario@cacco.com"></div>
@@ -1850,6 +1850,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 </div></div>
 
 <script src="/pedidos.js"></script>
+<script src="/nombres.js"></script>
 <script>
 // ════════════════════════
 //  CONSTANTES
@@ -2055,7 +2056,7 @@ async function traerYJuntar(){
   if(theirs&&Object.keys(theirs).length){
     const merged=Ebase?mergeE(Ebase,E,theirs):theirs;
     const trajoAjeno=JSON.stringify(merged)!==JSON.stringify(E);
-    E=merged;completarE();
+    E=merged;completarE();refrescarYo();
     Ebase=snap(theirs);// el servidor es el nuevo ancestro común
     _huella=res.headers.get('ETag');
     // Un error al dibujar no debe frenar el guardado
@@ -2108,7 +2109,7 @@ async function cargar(){
         _huella=res.headers.get('ETag');
         if(s&&Object.keys(s).length){
           E=s;
-          completarE();
+          completarE();refrescarYo();
           // Migrate old t.publicacion / e.publicacion to E.publicaciones[]
           E.tareas.forEach(t=>{
             if(t.publicacion?.fecha){
@@ -2159,6 +2160,16 @@ function ajTxt(d){nivelTxt=Math.max(-1,Math.min(2,nivelTxt+d));document.body.cla
 // ════════════════════════
 //  LOGIN
 // ════════════════════════
+function pintarYo(){
+  const av=document.getElementById('hdrAv');
+  av.style.background=cAv(uAct.nombre);av.textContent=ini(uAct.nombre);
+  document.getElementById('hdrNom').textContent=uAct.nombre.split(' ')[0];
+}
+// Tras traer datos nuevos, la sesión toma la ficha actual (el Líder pudo cambiar el nombre)
+function refrescarYo(){
+  const p=uAct&&E.equipo.find(x=>x.id===uAct.id);if(!p)return;
+  const cambio=p.nombre!==uAct.nombre;uAct=p;if(cambio)pintarYo();
+}
 function renderLogin(){
   // Limpiar campos al regresar al login
   const lu=document.getElementById('loginUser'),lp=document.getElementById('loginPass'),le=document.getElementById('loginErr');
@@ -2238,9 +2249,7 @@ function iniciarApp(){
   document.querySelectorAll('.nmd,.npriv').forEach(el=>el.classList.toggle('oculto',niv==='lector'));
   if(localStorage.getItem('cacco_calPubVisto'))document.querySelectorAll('.new-tag').forEach(el=>el.style.display='none');
 
-  const av=document.getElementById('hdrAv');
-  av.style.background=cAv(uAct.nombre);av.textContent=ini(uAct.nombre);
-  document.getElementById('hdrNom').textContent=uAct.nombre.split(' ')[0];
+  pintarYo();
 
   const pHs=E.horasExtra.filter(h=>h.aprobacion==='Pendiente'&&!esComp(h));
   if(puede('aprobarHora')&&pHs.length)addNotif('⏱️',`${plu(pHs.length,'registro','registros')} de horas extra por aprobar (${fmtH(pHs.reduce((t,h)=>t+parseFloat(h.horas||0),0))})`,'Horas Extras');
@@ -2307,6 +2316,7 @@ function goV(v,el){
   if(v==='bitacora')renderBit();
   if(v==='calendario')renderCal();
   if(v==='equipo'){renderEquipo();cargarActividad();}
+  if(v==='horasExtra')renderHoras();
   if(v==='permisos')renderPermisos();
   if(v==='compensatorio')renderComp();
   if(v==='aprobaciones')renderAprob();
@@ -5871,7 +5881,8 @@ async function guardarEq(){
   if(!email){alert('Email obligatorio para poder iniciar sesión.');return;}
   const id=document.getElementById('eqId').value||gId();
   const password=document.getElementById('eqPin').value;
-  const esNueva=!E.equipo.some(e=>e.id===id);
+  const esNueva=!E.equipo.some(e=>e.id===id),nomAnt=E.equipo.find(e=>e.id===id)?.nombre;
+  if(n!==nomAnt){const err=CaccoNombres.errorNombre(n,E.equipo,id);if(err){alert(err);return;}}
   if(esNueva&&!password){alert('Escribe una contraseña inicial para la persona nueva.');return;}
   if(password&&password.length<8){alert('La contraseña debe tener al menos 8 caracteres.');return;}
   const cats=[...document.querySelectorAll('#chEqCats .chip.sel')].map(c=>c.dataset.v);
@@ -5895,9 +5906,11 @@ async function guardarEq(){
   }
 
   const isNew=!E.equipo.find(e=>e.id===id);
-  if(!isNew){const i=E.equipo.findIndex(e=>e.id===id);if(i>=0)E.equipo[i]=p;if(uAct?.id===id)uAct=p;reg('Persona editada',`${n} — ${NIVEL_NOM[p.nivel]} — cats: ${cats.join(', ')||'ninguna'}`);}
+  if(!isNew){const i=E.equipo.findIndex(e=>e.id===id);if(i>=0)E.equipo[i]=p;
+    const renombra=nomAnt&&nomAnt!==n;if(renombra)CaccoNombres.renombrar(E,[{id,viejo:nomAnt,nuevo:n}]);
+    if(uAct?.id===id){uAct=p;pintarYo();}reg('Persona editada',`${renombra?nomAnt+' → ':''}${n} — ${NIVEL_NOM[p.nivel]} — cats: ${cats.join(', ')||'ninguna'}`);}
   else{E.equipo.push(p);reg('Persona creada',`${n} — ${NIVEL_NOM[p.nivel]}`);}
-  guardar();cerM('mEq');renderEquipo();renderLogin();
+  guardar();cerM('mEq');renderTodo();renderLogin();
 }
 
 async function elimEq(){
@@ -5930,7 +5943,8 @@ function renderPerfil(){
       <div style="font-size:12px;color:var(--tm)"><strong style="display:block;font-size:16px;color:var(--tx)">${mt.filter(t=>eglobal(t)==='Completada').length}</strong>Completadas</div>
       <div style="font-size:12px;color:var(--tm)"><strong style="display:block;font-size:16px;color:var(--tx)">${fmtSaldo(mh)}</strong>Saldo compensatorio</div>
     </div></div>`;
-  document.getElementById('pNom').value=u.nombre||'';
+  const pNom=document.getElementById('pNom');pNom.value=u.nombre||'';pNom.readOnly=niv!=='lider';
+  pNom.style.cursor=pNom.readOnly?'not-allowed':'';pNom.title=pNom.readOnly?'Solo el Líder cambia el nombre':'';
   document.getElementById('pCargo').value=u.cargo||'';
   document.getElementById('pFoto').value=u.foto||'';
   document.getElementById('pPuesto').value=u.puesto||'';
@@ -5943,7 +5957,11 @@ function renderPerfil(){
 
 function guardarPerfil(){
   const p=E.equipo.find(e=>e.id===uAct?.id);if(!p)return;
-  p.nombre=document.getElementById('pNom').value.trim()||p.nombre;
+  const n=document.getElementById('pNom').value.trim();
+  if(niv==='lider'&&n&&n!==p.nombre){
+    const err=CaccoNombres.errorNombre(n,E.equipo,p.id);if(err){alert(err);return;}
+    CaccoNombres.renombrar(E,[{id:p.id,viejo:p.nombre,nuevo:n}]);p.nombre=n;
+  }
   p.cargo=document.getElementById('pCargo').value.trim();
   p.foto=document.getElementById('pFoto').value.trim();
   p.puesto=document.getElementById('pPuesto').value.trim();
@@ -5952,8 +5970,7 @@ function guardarPerfil(){
   p.institucion=document.getElementById('pInst').value.trim();
   p.cedula=document.getElementById('pCedula').value.trim();
   p.correo=document.getElementById('pCorreo').value.trim().toLowerCase();
-  uAct=p;reg('Perfil actualizado',p.nombre);guardar();renderPerfil();
-  document.getElementById('hdrNom').textContent=p.nombre.split(' ')[0];
+  uAct=p;reg('Perfil actualizado',p.nombre);guardar();renderPerfil();pintarYo();
   alert('✅ Perfil actualizado.');
 }
 
@@ -8318,8 +8335,8 @@ function renderAdjuntos(){
   if(!ADJ.cargado){cont.innerHTML=`<div style="padding:36px 20px;text-align:center;color:var(--tm);font-size:13px">${ADJ.error?escH(ADJ.error):'Cargando adjuntos…'}</div>`;return;}
   const cuenta=c=>ADJ.lista.filter(a=>a.categoria===c).length;
   const q=adjBusca.trim().toLowerCase();
-  const tarea=id=>id&&E.tareas.find(t=>t.id===id);
-  const vis=ADJ.lista.filter(a=>(!adjCat||a.categoria===adjCat)&&(!q||[a.nombre,a.archivo,a.nota,a.subidoPor,a.categoria,tarea(a.tareaId)?.titulo].join(' ').toLowerCase().includes(q)))
+  const tarea=id=>id&&E.tareas.find(t=>t.id===id),autorAdj=a=>E.equipo.find(u=>u.id===a.subidoPorId)?.nombre||a.subidoPor||'';
+  const vis=ADJ.lista.filter(a=>(!adjCat||a.categoria===adjCat)&&(!q||[a.nombre,a.archivo,a.nota,autorAdj(a),a.categoria,tarea(a.tareaId)?.titulo].join(' ').toLowerCase().includes(q)))
     .sort((a,b)=>(b.subidoEn||'').localeCompare(a.subidoEn||'')||(b.id||'').localeCompare(a.id||''));
   const chips=[['','Todos',ADJ.lista.length],...ADJ.cats.map(c=>[c,`${ADJ_CAT_ICO[c]||''} ${c}`,cuenta(c)])].filter(([c,,n])=>!c||n||c===adjCat)
     .map(([c,l,n])=>`<button class="adj-chip${c===adjCat?' on':''}" onclick="adjCat='${c}';renderAdjuntos()">${l} <span>${n}</span></button>`).join('');
@@ -8329,7 +8346,7 @@ function renderAdjuntos(){
       <div class="adj-info">
         <div class="adj-nom" title="${escH(a.archivo||a.enlace||'')}">${escH(a.nombre)}</div>
         <div class="md-s">${ADJ_CAT_ICO[a.categoria]||''} ${escH(a.categoria)} · ${a.enlace?'Enlace':fmtTam(a.tamano)}</div>
-        <div class="md-s">${escH((a.subidoPor||'').split(' ')[0])} · ${fmt(a.subidoEn)}</div>
+        <div class="md-s">${escH(autorAdj(a).split(' ')[0])} · ${fmt(a.subidoEn)}</div>
         ${t?`<div class="md-s">📋 <a style="color:var(--az);cursor:pointer" onclick="irATarea('${t.id}')">${escH(t.titulo)}</a></div>`:''}
         ${a.nota?`<div class="md-s" style="margin-top:2px">📝 ${escH(a.nota)}</div>`:''}
         <div style="display:flex;gap:5px;margin-top:8px;flex-wrap:wrap">
