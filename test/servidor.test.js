@@ -16,11 +16,13 @@ fs.writeFileSync(path.join(dir, "users.json"), JSON.stringify([
   { id: "u3", email: "colab@x.org", password: hash, nivel: "colaborador" },
   { id: "u4", email: "tv@x.org", password: hash, nivel: "lector" },
 ]));
+const CLAVES = { "Administración": "clave-admin-1", "Dirección": "clave-direccion-1", "Desarrollo Social": "clave-social-1",
+  "Coordinación de Arte y Cultura": "clave-arte-1", "Educación Artística y Cultural": "clave-educa-1", "Otra": "clave-otra-1" };
 fs.writeFileSync(path.join(dir, "data.json"), JSON.stringify({
   equipo: [{ id: "u1", nombre: "Ana", nivel: "lider" }, { id: "u2", nombre: "Beto", nivel: "editor" },
            { id: "u3", nombre: "Caro", nivel: "colaborador" }, { id: "u4", nombre: "TV", nivel: "lector" }],
   tareas: [{ id: "t1", titulo: "Confirmada" }], bitacora: [], permisos: [],
-  config: { clavesPedidos: { "Dirección": "clave-direccion-1" } },
+  config: { clavesPedidos: CLAVES },
 }));
 
 const app = require("../app");
@@ -157,9 +159,34 @@ test("al cambiar la contraseña, las sesiones anteriores dejan de valer", async 
   assert.equal((await pedir("/api/data", { token: r.token })).status, 200);
 });
 
+test("los fallos de un correo no impiden entrar a otra persona desde la misma conexión", async () => {
+  let ultima;
+  for (let i = 0; i < 11; i++) ultima = await pedir("/api/login", { metodo: "POST", cuerpo: { email: "otro@x.org", password: "mala" } });
+  assert.equal(ultima.status, 429);
+  const t = await entrar("colab@x.org");
+  assert.ok(t);
+  for (let i = 0; i < 11; i++) ultima = await pedir("/api/change-password", { metodo: "POST", token: t, cuerpo: { passwordActual: "mala", passwordNueva: "otra12345" } });
+  assert.equal(ultima.status, 429);
+  assert.ok(await entrar("tv@x.org"));                                   // cambiar contraseña tiene su propio contador
+});
+
+test("varias oficinas pueden enviar pedidos desde la misma conexión", async () => {
+  const pedido = clave => ({ clave, areaOtra: "Biblioteca", nombre: "Ana", contacto: "6000-0000", actividad: "Gala de Danza", fecha: "2099-05-10", hora: "17:00",
+    servicios: ["cobertura"], puntoFocal: { nombre: "Luis", telefono: "6111-1111" }, detalles: { cobertura: { llegada: "16:30" } } });
+  for (const clave of Object.values(CLAVES)) {
+    const r = await pedir("/api/pedidos", { metodo: "POST", cuerpo: pedido(clave) });
+    assert.equal(r.status, 200, `${clave}: ${(await r.json()).error}`);
+  }
+  let r;
+  for (let i = 0; i < 20; i++) r = await pedir("/api/pedidos", { metodo: "POST", cuerpo: pedido(CLAVES["Dirección"]) });
+  assert.equal(r.status, 429);
+  assert.match((await r.json()).error, /^Se enviaron muchos pedidos desde esta red/);
+  assert.equal((await pedir("/api/pedidos", { metodo: "POST", cuerpo: pedido(CLAVES["Administración"]) })).status, 200);
+});
+
 test("el formulario de pedidos frena a quien prueba claves", async () => {
   let ultima;
-  for (let i = 0; i < 11; i++) ultima = await pedir("/api/pedidos/oficina", { metodo: "POST", cuerpo: { clave: "mala" + i } });
+  for (let i = 0; i < 31; i++) ultima = await pedir("/api/pedidos/oficina", { metodo: "POST", cuerpo: { clave: "mala" + i } });
   assert.equal(ultima.status, 429);
 });
 
