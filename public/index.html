@@ -179,6 +179,7 @@ header{background:var(--na);height:60px;display:flex;align-items:center;justify-
 .uch{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.15);border-radius:20px;padding:5px 12px 5px 6px;cursor:pointer;transition:background .15s;}
 .uch:hover{background:rgba(255,255,255,.25);}
 .uch .unom{font-size:12px;font-weight:600;color:#fff;}
+#sinGuardar{font-size:12px;font-weight:700;color:#fff;white-space:nowrap;}
 /* NOTIF */
 .npanel{position:fixed;top:70px;right:20px;width:340px;max-height:480px;overflow-y:auto;background:var(--su);border:1px solid var(--bo);border-radius:var(--r);box-shadow:var(--shm);z-index:400;display:none;}
 .npanel.on{display:block;}
@@ -519,6 +520,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   .btn.bbl.bsm[onclick*="cerrarSes"]{padding:4px 8px;font-size:10px;}
   /* Avatar nombre oculto */
   .unom{display:none;}
+  #sinGuardar{font-size:11px;line-height:1.15;white-space:normal;}
   /* Ocultar texto CACCO en móvil — el isotipo ya identifica la app */
   .horg{display:none;}
   /* Notif panel */
@@ -798,6 +800,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <div><div class="horg">CACCO</div><div class="hdep">Equipo de Comunicaciones</div></div>
   </div>
   <div class="hr">
+    <span id="sinGuardar" class="oculto" role="status" title="Se envía solo en cuanto vuelva la conexión">⚠️ Sin guardar</span>
     <div style="display:flex;gap:4px">
       <button class="acb" onclick="togOsc()" id="btnOsc" title="Modo noche" aria-label="Modo noche">🌙</button>
       <button class="acb" onclick="ajTxt(1)" title="Letra más grande" aria-label="Letra más grande">A+</button>
@@ -1956,7 +1959,7 @@ function sesionExpirada(){
 
 // ── Anti-pisado: fusión 3-vías (base común, lo mío, lo del servidor) ──
 let Ebase=null;      // último estado del servidor con el que reconciliamos (ancestro común)
-let _guardando=false,_reintentar=false,_guardarTimer=null;
+let _guardando=false,_reintentar=false,_guardarTimer=null,_reintentoTimer=null,_sinGuardar=0;// _sinGuardar: cambios que aún no llegan al servidor
 function snap(o){return JSON.parse(JSON.stringify(o));}
 
 // Iguales sin mirar el orden de las claves; vacío (null) y ausente cuentan igual
@@ -2025,9 +2028,19 @@ function mergeE(base,mine,theirs){
 
 function guardar(){ // programa un guardado con fusión (agrupa cambios rápidos)
   if(!getToken())return;
+  _sinGuardar++;
   clearTimeout(_guardarTimer);
   _guardarTimer=setTimeout(ejecutarGuardado,350);
 }
+// Si no se pudo enviar: «⚠️ Sin guardar» en la cabecera y otro intento en 5 s o en cuanto vuelva la red
+function avisoSinGuardar(on){document.getElementById('sinGuardar')?.classList.toggle('oculto',!on);}
+function reintentarGuardado(){
+  avisoSinGuardar(_sinGuardar>0);
+  clearTimeout(_reintentoTimer);
+  _reintentoTimer=setTimeout(()=>{if(_sinGuardar)ejecutarGuardado();},5000);
+}
+window.addEventListener('online',()=>{if(_sinGuardar){clearTimeout(_reintentoTimer);ejecutarGuardado();}});
+window.addEventListener('beforeunload',e=>{if(_sinGuardar&&getToken()){e.preventDefault();e.returnValue='';}});
 // Huella (ETag) de la versión del servidor que ya tenemos: al preguntar «¿cambió algo?» el servidor responde
 // «sin cambios» (304) sin mandar nada, y al guardar avisa (409) si otra persona guardó en medio.
 let _huella=null;
@@ -2056,22 +2069,25 @@ async function ejecutarGuardado(intento=0){
   _guardando=true;
   try{
     // 1) traer lo último del servidor y fusionar antes de escribir (sin la versión del servidor no se escribe nada)
-    if(!await traerYJuntar()){_guardando=false;setTimeout(guardar,5000);return;}
+    if(!await traerYJuntar()){_guardando=false;reintentarGuardado();return;}
     // 2) escribir el resultado fusionado, diciendo de qué versión partimos
-    const enviado=snap(E);
+    const n=_sinGuardar,enviado=snap(E);
     const pr=await fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token,...(_huella?{'If-Match':_huella}:{})},body:JSON.stringify(enviado)});
     if(pr.status===401){sesionExpirada();_guardando=false;return;}
     if(pr.status===409&&intento<3){_guardando=false;_huella=null;return ejecutarGuardado(intento+1);}// alguien guardó en medio: juntar otra vez
     if(pr.status===403||pr.status===400){// el servidor rechazó el cambio: se avisa y se vuelve a lo que hay guardado
       const j=await pr.json().catch(()=>({}));alert(j.error||'No tienes permiso para guardar ese cambio.');
+      _sinGuardar=0;avisoSinGuardar(false);
       _guardando=false;_huella=null;await cargar();refrescarVistaAbierta();return;}
-    if(!pr.ok){_guardando=false;setTimeout(guardar,5000);return;}
+    if(!pr.ok){_guardando=false;reintentarGuardado();return;}
     const j=await pr.json().catch(()=>({}));
     Ebase=enviado;
+    _sinGuardar=Math.max(0,_sinGuardar-n);clearTimeout(_reintentoTimer);
+    if(!_sinGuardar)avisoSinGuardar(false);
     // Si el servidor deshizo algo que tu nivel no permite, la próxima consulta trae lo guardado de verdad
     _huella=j.ajustado?null:(j.huella||null);
     if(j.ajustado)setTimeout(sincronizar,300);
-  }catch(e){}
+  }catch(e){reintentarGuardado();}// sin red: el fetch falla y se reintenta
   _guardando=false;
   if(_reintentar){_reintentar=false;ejecutarGuardado();}
 }
