@@ -2044,12 +2044,15 @@ function reintentarGuardado(){
 window.addEventListener('online',()=>{if(_sinGuardar){clearTimeout(_reintentoTimer);ejecutarGuardado();}});
 window.addEventListener('beforeunload',e=>{if(_sinGuardar&&getToken()){e.preventDefault();e.returnValue='';}});
 // Une lo local con lo del servidor. Antes de unir, lo local que aún lleva un nombre que el Líder cambió (un registro
-// nuevo, un cambio sin enviar) toma el nuevo.
+// nuevo, un cambio sin enviar) toma el nuevo. Después, donde se juntaron marcas de los dos lados en un área con
+// unidades, su estado se vuelve a calcular: cada lado lo había calculado viendo solo sus propias marcas.
 function juntarE(base,mine,theirs){
   const ant=new Map((base?.equipo||[]).map(p=>[p.id,p.nombre]));
   const cambios=(theirs?.equipo||[]).filter(p=>ant.has(p.id)&&ant.get(p.id)!==p.nombre).map(p=>({id:p.id,viejo:ant.get(p.id),nuevo:p.nombre}));
   if(cambios.length){CaccoNombres.renombrar(base,cambios);CaccoNombres.renombrar(mine,cambios);}
-  return mergeE(base,mine,theirs);
+  const out=mergeE(base,mine,theirs),mt=new Map((mine?.tareas||[]).map(t=>[t.id,t])),tt=new Map((theirs?.tareas||[]).map(t=>[t.id,t]));
+  out.tareas=(out.tareas||[]).map(t=>estadosTrasUnir(t,mt.get(t.id),tt.get(t.id)));
+  return out;
 }
 // Huella (ETag) de la versión del servidor que ya tenemos: al preguntar «¿cambió algo?» el servidor responde
 // «sin cambios» (304) sin mandar nada, y al guardar avisa (409) si otra persona guardó en medio.
@@ -2537,17 +2540,31 @@ function noCumplidasUnidades(t,sec){
   return out;
 }
 
-// Recalcula el estado de un área con sub-asignaciones según sus unidades.
+// Estado que dicen las unidades de un área con sub-asignaciones (null si no tiene unidades).
 // Sin resolver>0 → Pendiente/En Progreso · todo hecho → Completada · todo no cumplido → No cumplida · mixto → Cerrada
+function estadoPorUnidades(t,sec){
+  const u=contarUnidadesSeccion(t,sec);if(!u||!u.asig)return null;
+  return u.sinResolver>0?(u.comp+u.noc>0?'En Progreso':'Pendiente'):u.noc===0?'Completada':u.comp===0?'No cumplida':'Cerrada';
+}
+// Tras unir una tarea (t) desde dos versiones (a, b): si las unidades de un área quedaron distintas de las dos,
+// ninguna calculó bien su estado y se calcula aquí, sin avisos ni bitácora
+const UNIDADES={Audiovisual:'audiovisualData','Redes Sociales':'redesSociales',Medios:'mediosData'};
+function estadosTrasUnir(t,a,b){
+  if(!t?.secciones||!a||!b)return t;
+  Object.entries(UNIDADES).forEach(([sec,k])=>{
+    const sv=t.secciones[sec];if(!sv||igualJ(t[k],a[k])||igualJ(t[k],b[k]))return;
+    const e=estadoPorUnidades(t,sec);if(!e||e===sv.estado)return;
+    t={...t,secciones:{...t.secciones,[sec]:e==='Completada'
+      ?{...sv,estado:e,completadoPor:sv.completadoPor||uAct?.nombre||null,completadoEn:sv.completadoEn||hoy(),...(pasoAct(t)?{completadaTarde:true}:{})}
+      :{...sv,estado:e,completadoPor:null,completadoEn:null,completadaTarde:false}}};
+  });
+  return t;
+}
+// Recalcula el estado de un área con sub-asignaciones según sus unidades (y lo anota)
 function recalcSeccionEstado(t,sec){
   const sv=t.secciones?.[sec];if(!sv)return;
-  const u=contarUnidadesSeccion(t,sec);
-  if(!u||u.asig===0)return;// sin unidades: se maneja manual con togSeccion
-  let nuevo;
-  if(u.sinResolver>0)nuevo=(u.comp+u.noc>0)?'En Progreso':'Pendiente';
-  else if(u.noc===0)nuevo='Completada';
-  else if(u.comp===0)nuevo='No cumplida';
-  else nuevo='Cerrada';
+  const nuevo=estadoPorUnidades(t,sec);
+  if(!nuevo)return;// sin unidades: se maneja manual con togSeccion
   const prev=sv.estado;
   if(nuevo==='Completada'){
     t.secciones[sec]={...sv,estado:'Completada',completadoPor:sv.completadoPor||uAct?.nombre,completadoEn:sv.completadoEn||hoy()};
@@ -3893,7 +3910,11 @@ function guardarT(){
 
   if(id){const i=E.tareas.findIndex(t=>t.id===id);
     // Sobre la versión actual: lo que otra persona avanzó mientras el formulario estaba abierto no se pierde
-    if(i>=0)E.tareas[i]=unir3(tAbierta?.id===id&&tAbierta.form||orig,t,E.tareas[i]);
+    if(i>=0){const cur=E.tareas[i],u=unir3(tAbierta?.id===id&&tAbierta.form||orig,t,cur);
+      // Responsables de Audiovisual: quienes tienen asignación, ya juntadas con lo que cambió la otra persona
+      const av=u.secciones?.Audiovisual,asg=u.audiovisualData?.asignaciones||[];
+      if(av&&asg.length)u.secciones={...u.secciones,Audiovisual:{...av,responsables:[...new Set(asg.map(a=>a.userId))]}};
+      E.tareas[i]=estadosTrasUnir(u,t,cur);}
     reg('Tarea editada',`"${titulo}" por ${uAct?.nombre}`);
     if(orig?.borrador&&orig.pedido){
       E.pedidos=(E.pedidos||[]).map(p=>p.tareaId===id&&!p.aceptado?{...p,aceptado:{por:uAct?.nombre||'',en:hoy()}}:p);
