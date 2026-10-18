@@ -2684,7 +2684,7 @@ function renderTareas(){
     const eg=eglobal(t),pct=pctT(t);
     const d=dH(finAct(t)),vencida=d!==null&&d<0&&eg!=='Completada';
     const abierta=expandidas.has(t.id);
-    const mySec=misCats();
+    const mySec=misCats(),miArea=sec=>mySec.includes(sec)||(t.secciones?.[sec]?.responsables||[]).includes(uAct?.id);
     const bPri={Alta:'balt',Media:'bmed',Baja:'bbaj'};
     const bEst={Pendiente:'bpen','En Progreso':'bpro',Completada:'blis'};
 
@@ -2722,7 +2722,7 @@ function renderTareas(){
         const noCump=sv.estado==='No cumplida';
         const cerr=sv.estado==='Cerrada';
         const enProg=secEnCurso(t,sec);
-        const canMark=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||mySec.includes(sec));
+        const canMark=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||miArea(sec));
         const sInfo=SECCIONES[sec]||{ico:'📌',color:'#888',bg:'#eee'};
         const respNames=(sv.responsables||[]).map(uid=>{const u=E.equipo.find(e=>e.id===uid);return u?u.nombre:uid;}).join(', ')||'Sin asignar';
         // ¿El área tiene sub-asignaciones (Redes/Medios/Audiovisual)? Entonces se resuelve por asignación, no con botón de área.
@@ -2772,7 +2772,7 @@ function renderTareas(){
         let detalle='';
         if(sec==='Redes Sociales'&&t.redesSociales){
           const rs=t.redesSociales;
-          const canMarkR=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||mySec.includes(sec));
+          const canMarkR=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||miArea(sec));
           const mkBtn=(rKey,campo,lbl)=>{
             const asig=rs[rKey]?.[campo]||0;if(!asig)return'';
             const comp=rs[rKey]?.[campo+'_comp']||0;
@@ -2814,7 +2814,7 @@ function renderTareas(){
           if(redRows.length)detalle=`<div style="margin-bottom:8px">${redRows.join('')}</div>`;
         }else if(sec==='Medios'&&t.mediosData){
           const md=t.mediosData;
-          const canMarkM=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||mySec.includes(sec));
+          const canMarkM=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||miArea(sec));
           const mkM=(mKey,campo,lbl)=>{
             const asig=md[mKey]?.[campo]||0;if(!asig)return'';
             const comp=md[mKey]?.[campo+'_comp']||0;
@@ -2855,7 +2855,7 @@ function renderTareas(){
           ].filter(Boolean);
           // Apariciones en medios externos
           const apars2=(t.mediosData?.apariciones||[]);
-          const canApar=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||mySec.includes(sec));
+          const canApar=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||miArea(sec));
           const aparsHtml=apars2.length?apars2.map(a=>`<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 8px;background:var(--su);border:1px solid var(--bo);border-radius:6px;margin-bottom:3px">
             <span style="flex-shrink:0;font-size:14px">${a.publicado?'✅':'⏳'}</span>
             <div style="flex:1;min-width:0">
@@ -2900,7 +2900,7 @@ function renderTareas(){
           const DIS_ETAPAS=['Maquetación','Diseño','Reemplazo','Revisión','Completado'];
           const etapaActual=sv.etapa||'Maquetación';
           const etapaIdx=DIS_ETAPAS.indexOf(etapaActual);
-          const canAvanzar=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||mySec.includes('Diseño'));
+          const canAvanzar=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||miArea('Diseño'));
           const stepper=DIS_ETAPAS.map((e,i)=>{
             const done=i<etapaIdx;
             const cur=i===etapaIdx;
@@ -2925,7 +2925,7 @@ function renderTareas(){
         }else if(sec==='Audiovisual'&&t.audiovisualData?.asignaciones?.length){
           const AV_MED={foto:{bg:'#E1F5EE',col:'#0F6E56',lbl:'📷 FOTO'},video:{bg:'#E3F2FD',col:'#185FA5',lbl:'🎬 VIDEO'}};
           const AV_TIPO={REEL:{bg:'#E3F2FD',col:'#185FA5'},INSTITUCIONAL:{bg:'#E8F5E9',col:'#2E7D32'},PROMOCIONAL:{bg:'#EDE7F6',col:'#6A1B9A'},COBERTURA:{bg:'#FFF8E1',col:'#F57F17'}};
-          const canMarkAV=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||mySec.includes(sec));
+          const canMarkAV=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||miArea(sec));
           detalle=t.audiovisualData.asignaciones.map((a,i)=>{
             const u=E.equipo.find(u=>u.id===a.userId);
             const nom=u?.nombre||a.nombre||'?';
@@ -5043,12 +5043,13 @@ function renderComp(){
     document.getElementById('cpSaldoLbl').textContent='Tu saldo disponible';
     document.getElementById('cpSaldo').textContent=fmtD(Math.max(0,d.disp));
     document.getElementById('cpSaldoSub').textContent=`${fmtH(Math.max(0,d.saldo))} aprobadas${d.pend?` · ${fmtH(d.pend)} pedidas y pendientes`:''}`;
-  }else{
+  }else if(niv!=='lector'){
     const tot=E.equipo.reduce((t,p)=>t+Math.max(0,saldoComp(p.nombre).saldo),0);
     document.getElementById('cpSaldoLbl').textContent='Saldo del equipo';
     document.getElementById('cpSaldo').textContent=fmtD(tot);
     document.getElementById('cpSaldoSub').textContent='horas extra aprobadas sin usar';
   }
+  {const c=document.getElementById('cpSaldo').parentElement;c.classList.toggle('oculto',niv==='lector');c.parentElement.style.gridTemplateColumns=`repeat(${niv==='lector'?2:3},1fr)`;}// el Lector no recibe horas: no hay saldo que mostrar
   document.getElementById('cpPen').textContent=pen.length;
   document.getElementById('cpFuera').textContent=fuera.length;
   document.getElementById('cpFueraSub').textContent=fuera.length?fuera.map(p=>p.nombre.split(' ')[0]).join(', '):'de compensatorio';
@@ -5858,7 +5859,7 @@ function renderEquipo(){
       return(p.cats||[]).some(c=>(t.categorias||[]).includes(c));
     });
     const mh=saldoComp(p.nombre).saldo;
-    const verSaldo=niv!=='colaborador'||p.nombre===uAct?.nombre;// el saldo de cada persona es privado
+    const verSaldo=['lider','editor'].includes(niv)||niv==='colaborador'&&p.nombre===uAct?.nombre;// el saldo de cada persona es privado (el Lector no recibe horas)
     const comp=mt.filter(t=>eglobal(t)==='Completada').length;
     const pen=mt.filter(t=>eglobal(t)==='Pendiente').length;
     const pct=mt.length?Math.round(comp/mt.length*100):0;
