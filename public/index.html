@@ -3925,6 +3925,7 @@ function mostrarErrorModal(msg){
 async function togSeccion(tareaId,sec){
   if(!puede('marcarAvance')){alert('Sin permiso.');return;}
   let t=E.tareas.find(t=>t.id===tareaId);if(!t||!t.secciones?.[sec])return;
+  if(contarUnidadesSeccion(t,sec)?.asig>0){irATarea(tareaId);return;}// con asignaciones, cada una se marca en la tarjeta
   let sv=t.secciones[sec];
   if(sv.estado==='Completada'){
     t.secciones[sec]={...sv,estado:'Pendiente',completadoPor:null,completadoEn:null,notaRetraso:null,completadaTarde:false};
@@ -4082,6 +4083,12 @@ function togCompAV(tareaId,idx){
   if(a.comp){a.noCump=false;a.motivo=null;}
   recalcSeccionEstado(t,'Audiovisual');
   expandidas.add(tareaId);guardar();renderTareas();
+}
+// Mi día: la persona marca solo su asignación
+function listoAV(tareaId,idx){
+  const a=E.tareas.find(t=>t.id===tareaId)?.audiovisualData?.asignaciones?.[idx];
+  if(!a||a.comp||a.userId!==uAct?.id)return;
+  togCompAV(tareaId,idx);proponerHEAlCompletar(tareaId,'Audiovisual');
 }
 async function marcarNocAV(tareaId,idx){
   if(!puede('marcarAvance')){alert('Sin permiso.');return;}
@@ -7705,7 +7712,8 @@ function misSecs(uid){
   const out=[];
   E.tareas.forEach(t=>{if(t.borrador||!t.secciones)return;
     Object.entries(t.secciones).forEach(([sec,sv])=>{if(!sv||!(sv.responsables||[]).includes(uid))return;
-      out.push({t,sec,sv,f:secFecha(t,sec),fin:secLimite(t,sec),propia:!!sv.fecha,h:secHora(t,sec)||t.hora||'',hecha:!!t.cancelada||['Completada','No cumplida','Cerrada'].includes(sv.estado)});});});
+      const unid=contarUnidadesSeccion(t,sec)?.asig>0,av=unid&&sec==='Audiovisual'?t.audiovisualData.asignaciones.map((a,i)=>({a,i})).filter(x=>x.a.userId===uid):[];
+      out.push({t,sec,sv,unid,av,f:secFecha(t,sec),fin:secLimite(t,sec),propia:!!sv.fecha,h:secHora(t,sec)||t.hora||'',hecha:!!t.cancelada||['Completada','No cumplida','Cerrada'].includes(sv.estado)||av.length>0&&av.every(x=>x.a.comp||x.a.noCump)});});});
   return out;
 }
 // Publicaciones que le tocan a la persona (las sin responsable las ven Líder y Editor)
@@ -7733,11 +7741,18 @@ function renderMiDia(){
   document.getElementById('mdFecha').textContent=cap1(fmtFechaLarga(d.f0));
   const caja=(ico,tit,n,cuerpo,extra='')=>`<div class="md-box"><div class="md-h">${ico} ${tit}${n?` <span class="md-n">${n}</span>`:''}${extra}</div>${cuerpo}</div>`;
   const vac=t=>`<div class="md-vac">${t}</div>`;
+  // Área con asignaciones: se marca solo lo propio (Audiovisual) o se abre la tarjeta; nunca el área entera
+  const btnListo=x=>{
+    if(!x.unid)return`<button class="btn bve bsm" onclick="togSeccion('${x.t.id}','${x.sec}')">✅ Listo</button>`;
+    const mias=x.av.filter(y=>!y.a.comp&&!y.a.noCump);
+    if(!mias.length)return`<button class="btn bve bsm" onclick="irATarea('${x.t.id}')">✅ Marcar en la tarea</button>`;
+    return mias.map(y=>`<button class="btn bve bsm" onclick="listoAV('${x.t.id}',${y.i})">✅ ${mias.length>1?(y.a.medio==='video'?'🎬 ':'📷 ')+escH(cap1(String(y.a.tipo||'').toLowerCase())):'Listo'}</button>`).join('');
+  };
   const itSec=x=>`<div class="md-it${x.f<d.f0?' md-atr':''}">
     <div class="md-hr">${x.f<d.f0?fmtPubFecha(x.f):x.h?txtHora(x.h):'Sin hora'}</div>
     <div style="flex:1;min-width:0"><div class="md-t" onclick="irATarea('${x.t.id}')">${escH(x.t.titulo||'(Sin título)')}</div>
       <div class="md-s">${SECCIONES[x.sec]?.ico||''} ${x.sec}${x.sec==='Diseño'&&x.sv.etapa?' · '+escH(x.sv.etapa):''}${x.t.lugar?' · 📍 '+escH(x.t.lugar):''}</div>
-      ${ed||carpetaBtn(x.t,x.f)?`<div class="md-ac">${ed?`<button class="btn bve bsm" onclick="togSeccion('${x.t.id}','${x.sec}')">✅ Listo</button>`:''}${carpetaBtn(x.t,x.f)}</div>`:''}</div></div>`;
+      ${ed||carpetaBtn(x.t,x.f)?`<div class="md-ac">${ed?btnListo(x):''}${carpetaBtn(x.t,x.f)}</div>`:''}</div></div>`;
   const itPub=p=>`<div class="md-it">
     <div class="md-hr">${p.hora?txtHora(p.hora):'Sin hora'}</div>
     <div style="flex:1;min-width:0"><div class="md-t" onclick="verPubEnCal('${p.id}')">${escH(p.titulo||'(Sin título)')} ${pubTipoBadge(p)}</div>
