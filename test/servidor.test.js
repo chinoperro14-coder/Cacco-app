@@ -241,6 +241,14 @@ test("el formulario de pedidos frena a quien prueba claves", async () => {
   assert.equal(ultima.status, 429);
 });
 
+test("diez contraseñas malas desde otra red no dejan fuera a la persona en su oficina", async () => {
+  let ultima;
+  for (let i = 0; i < 11; i++)
+    ultima = await pedir("/api/login", { metodo: "POST", cuerpo: { email: "editor@x.org", password: "mala" }, headers: { "X-Forwarded-For": "66.6.6.6" } });
+  assert.equal(ultima.status, 429);
+  assert.ok(await entrar("editor@x.org"));
+});
+
 test("tras varios intentos fallidos de entrar, se espera", async () => {
   let ultima;
   for (let i = 0; i < 11; i++) ultima = await pedir("/api/login", { metodo: "POST", cuerpo: { email: "lider@x.org", password: "mala" } });

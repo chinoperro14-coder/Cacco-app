@@ -364,10 +364,11 @@ app.post("/api/pedidos/correccion", async (req, res) => {
 // ════════════════════════
 //  LOGIN
 // ════════════════════════
-// Un solo mensaje de error (no dice si el correo existe) y límites de intentos fallidos por cuenta, por conexión y
-// correo, y por conexión (alto: toda la oficina sale por la misma). Cambiar la contraseña tiene su propio contador.
+// Un solo mensaje de error (no dice si el correo existe) y límites de intentos fallidos por conexión y correo (el que
+// frena a quien adivina), por cuenta (más alto: frena a quien prueba desde muchas conexiones sin que unos pocos fallos
+// ajenos dejen fuera a la persona) y por conexión (alto: toda la oficina sale por la misma). Cambiar la contraseña tiene su propio contador.
 const QUINCE_MIN = 15 * 60e3;
-const fallosLogin = limitador(100, QUINCE_MIN), fallosCorreo = limitador(10, QUINCE_MIN), fallosCuenta = limitador(10, QUINCE_MIN);
+const fallosLogin = limitador(100, QUINCE_MIN), fallosCorreo = limitador(10, QUINCE_MIN), fallosCuenta = limitador(50, QUINCE_MIN);
 const fallosCambioClave = limitador(10, QUINCE_MIN);
 const HASH_FALSO = bcrypt.hashSync("cacco-no-existe", 10);
 app.post("/api/login", async (req, res) => {
