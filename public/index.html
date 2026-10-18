@@ -2043,6 +2043,14 @@ function reintentarGuardado(){
 }
 window.addEventListener('online',()=>{if(_sinGuardar){clearTimeout(_reintentoTimer);ejecutarGuardado();}});
 window.addEventListener('beforeunload',e=>{if(_sinGuardar&&getToken()){e.preventDefault();e.returnValue='';}});
+// Une lo local con lo del servidor. Antes de unir, lo local que aún lleva un nombre que el Líder cambió (un registro
+// nuevo, un cambio sin enviar) toma el nuevo.
+function juntarE(base,mine,theirs){
+  const ant=new Map((base?.equipo||[]).map(p=>[p.id,p.nombre]));
+  const cambios=(theirs?.equipo||[]).filter(p=>ant.has(p.id)&&ant.get(p.id)!==p.nombre).map(p=>({id:p.id,viejo:ant.get(p.id),nuevo:p.nombre}));
+  if(cambios.length){CaccoNombres.renombrar(base,cambios);CaccoNombres.renombrar(mine,cambios);}
+  return mergeE(base,mine,theirs);
+}
 // Huella (ETag) de la versión del servidor que ya tenemos: al preguntar «¿cambió algo?» el servidor responde
 // «sin cambios» (304) sin mandar nada, y al guardar avisa (409) si otra persona guardó en medio.
 let _huella=null;
@@ -2055,7 +2063,7 @@ async function traerYJuntar(){
   if(!res.ok)return false;
   const theirs=await res.json();
   if(theirs&&Object.keys(theirs).length){
-    const merged=Ebase?mergeE(Ebase,E,theirs):theirs;
+    const merged=Ebase?juntarE(Ebase,E,theirs):theirs;
     const trajoAjeno=JSON.stringify(merged)!==JSON.stringify(E);
     E=merged;completarE();refrescarYo();
     Ebase=snap(theirs);// el servidor es el nuevo ancestro común

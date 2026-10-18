@@ -52,7 +52,7 @@ function aplicarReglasRol(nuevo, actual, usuario) {
   const nivel = usuario && usuario.nivel;
   if (!nuevo || typeof nuevo !== "object") return nuevo;
   if (nivel === "lider") return conservarPermisos(renombrarCambiados(nuevo, actual), actual);
-  const yo = nombresDe(usuario, actual), esMio = r => r && yo.has(r.miembro);
+  const yo = nombresDe(usuario, actual), esMio = r => r && yo.has(r.miembro), miNombre = [...yo][0];
   const colab = nivel !== "editor";   // colaborador (y cualquier nivel desconocido) tiene las reglas más estrictas
 
   // Una lista que no vino no se borra: queda como está guardada
@@ -84,15 +84,19 @@ function aplicarReglasRol(nuevo, actual, usuario) {
     nuevo.tareas = reponer(nuevo.tareas, actual.tareas, t => !colab && t.borrador);
   }
 
+  // Horas y permisos del Colaborador: los nuevos van a su nombre (aunque la página tuviera el anterior a un cambio
+  // de nombre) y quedan pendientes; de lo guardado solo cambia lo suyo pendiente, sin pasarlo a otra persona ni aprobarlo
+  const propio = (r, a) => {
+    if (!a) { if (miNombre) r = { ...r, miembro: miNombre }; return revisado(r) ? { ...r, aprobacion: "Pendiente", aprobadoPor: undefined, fechaAprob: undefined } : r; }
+    if (!esMio(a) || a.aprobacion !== "Pendiente") return a;   // lo ajeno y lo ya revisado no se toca
+    r = { ...r, miembro: a.miembro };
+    return revisado(r) ? { ...r, aprobacion: a.aprobacion, aprobadoPor: a.aprobadoPor, fechaAprob: a.fechaAprob } : r;
+  };
+
   // Horas extra y compensatorio
   if (Array.isArray(nuevo.horasExtra)) {
     const prev = porId(actual.horasExtra);
-    if (colab) nuevo.horasExtra = nuevo.horasExtra.map(r => {
-      const a = prev.get(r.id);
-      if (!a) return revisado(r) ? { ...r, aprobacion: "Pendiente", aprobadoPor: undefined, fechaAprob: undefined } : r;
-      if (!esMio(a) || a.aprobacion !== "Pendiente") return a;   // lo ajeno y lo ya revisado no se toca
-      return revisado(r) ? { ...r, aprobacion: a.aprobacion, aprobadoPor: a.aprobadoPor, fechaAprob: a.fechaAprob } : r;
-    });
+    if (colab) nuevo.horasExtra = nuevo.horasExtra.map(r => propio(r, prev.get(r.id)));
     // Solo el Líder elimina registros revisados o de otra persona; cada quien retira lo suyo pendiente
     nuevo.horasExtra = reponer(nuevo.horasExtra, actual.horasExtra, r => esMio(r) && r.aprobacion === "Pendiente");
   }
@@ -100,12 +104,7 @@ function aplicarReglasRol(nuevo, actual, usuario) {
   // Permisos: nunca se borran (se anulan). El Colaborador solo cambia los suyos pendientes y no los aprueba.
   if (colab && Array.isArray(nuevo.permisos)) {
     const prev = porId(actual.permisos);
-    nuevo.permisos = nuevo.permisos.map(r => {
-      const a = prev.get(r.id);
-      if (!a) return revisado(r) ? { ...r, aprobacion: "Pendiente", aprobadoPor: undefined, fechaAprob: undefined } : r;
-      if (!esMio(a) || a.aprobacion !== "Pendiente") return a;
-      return revisado(r) ? { ...r, aprobacion: a.aprobacion, aprobadoPor: a.aprobadoPor, fechaAprob: a.fechaAprob } : r;
-    });
+    nuevo.permisos = nuevo.permisos.map(r => propio(r, prev.get(r.id)));
   }
 
   // Publicaciones: el Colaborador no aprueba y solo quita las que él creó y aún no están aprobadas

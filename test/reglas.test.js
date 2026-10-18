@@ -279,6 +279,22 @@ test("los avisos de horas, compensatorio y permisos solo le llegan a esa persona
   assert.deepEqual(r.informesSem, antes.informesSem);
 });
 
+test("las horas y permisos nuevos del Colaborador van a su nombre, y no pasa lo suyo pendiente a otra persona", () => {
+  const antes = copia(base());
+  const n = copia(antes);
+  n.horasExtra.unshift({ id: "h9", miembro: "Carolina", aprobacion: "Pendiente", horas: "1" });   // nombre de antes de un cambio
+  n.horasExtra.find(h => h.id === "h1").miembro = "Beto";
+  n.permisos.unshift({ id: "p9", miembro: "Ana", aprobacion: "Pendiente" });
+  n.permisos.find(p => p.id === "p1").miembro = "Beto";
+  const r = aplicarReglasRol(n, antes, COLAB);
+  assert.equal(r.horasExtra.find(h => h.id === "h9").miembro, "Caro");
+  assert.equal(r.horasExtra.find(h => h.id === "h1").miembro, "Caro");
+  assert.equal(r.permisos.find(p => p.id === "p9").miembro, "Caro");
+  assert.equal(r.permisos.find(p => p.id === "p1").miembro, "Caro");
+  const e = copia(antes); e.horasExtra.unshift({ id: "h9", miembro: "Ana", aprobacion: "Pendiente", horas: "1" });
+  assert.equal(aplicarReglasRol(e, antes, EDITOR).horasExtra[0].miembro, "Ana");   // el Editor registra horas de otras personas
+});
+
 test("limitador cuenta intentos por clave", () => {
   const l = limitador(2, 60e3);
   assert.equal(l.lleno("a"), false);
