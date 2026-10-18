@@ -3598,8 +3598,9 @@ function togSeccionModal(sec){
     }
     body.style.display=bodyVisible?'none':'block';
   }
-  if(sec==='Redes Sociales')actualizarRedesBlk(null);
-  if(sec==='Medios')actualizarMediosBlk(null);
+  // Las cantidades se dibujan al activar el área; si ya estaba activa solo se pliega o despliega (volver a dibujarla las dejaba en 0)
+  if(!activa&&sec==='Redes Sociales')actualizarRedesBlk(tAbierta?.t?.redesSociales);
+  if(!activa&&sec==='Medios')actualizarMediosBlk(tAbierta?.t?.mediosData);
   if(sec==='Audiovisual')actualizarAudiovisualBlk();
 }
 
