@@ -173,15 +173,19 @@ function conservarPermisos(nuevo, actual) {
   return nuevo;
 }
 
-// Lo que recibe cada nivel. Líder y Editor, todo. Colaborador y Lector no reciben bitácora ni reportes archivados;
-// del resto del equipo, solo nombre, cargo, nivel, foto y áreas; de horas y compensatorio ajenos, solo quién sale por
-// compensatorio y en qué fechas. El Colaborador recibe completos sus horas y permisos; el Lector, ninguno.
+// Lo que recibe cada nivel. Líder y Editor, todo. Colaborador y Lector no reciben bitácora, reportes archivados ni el
+// informe semanal; del resto del equipo, solo nombre, cargo, nivel, foto y áreas; de horas y compensatorio ajenos, solo
+// quién sale por compensatorio y en qué fechas; ni los avisos de horas, compensatorio o permisos de otra persona.
+// El Colaborador recibe completos sus horas, permisos y avisos; el Lector, ninguno.
 const FICHA_VISIBLE = ["id", "nombre", "cargo", "nivel", "foto", "cats", "secciones", "seccion"];
 const COMP_VISIBLE = ["id", "miembro", "tipo", "aprobacion", "horas", "fecha", "fechaFin", "regreso"];
 const veTodo = u => ["lider", "editor"].includes(u && u.nivel);
 const tomar = (o, ks) => ks.reduce((r, k) => { if (o[k] !== undefined) r[k] = o[k]; return r; }, {});
 const esSistema = p => p.sistema === true || (p.sistema === undefined && /^ia@/i.test(p.email || ""));
 const fueraPorComp = h => h.tipo === "compensatorio" && h.aprobacion === "Aprobado" && parseFloat(h.horas || 0) >= 8 - 1e-9;
+// Avisos sobre horas, compensatorio o permisos de alguien: llevan «miembro»; los de antes se reconocen por el texto
+const AVISO_PERSONAL = /^(Solicitud de (horas|compensatorio|permiso)|Nueva solicitud de permiso|(Horas|Compensatorio|Permiso) (aprobado|rechazado|anulado))\b|horas extra por aprobar/;
+const avisoPersonal = n => !!n.miembro || AVISO_PERSONAL.test(String(n.txt || ""));
 const RECORTE = {
   equipo: p => ({ ...tomar(p, FICHA_VISIBLE), sistema: esSistema(p) }),
   horasExtra: h => fueraPorComp(h) ? tomar(h, COMP_VISIBLE) : null,
@@ -189,7 +193,8 @@ const RECORTE = {
 // Por lista: ¿este registro le llega completo?
 function completoPara(usuario, data) {
   const yo = nombresDe(usuario, data), mio = r => usuario.nivel === "colaborador" && yo.has(r.miembro), nada = () => false;
-  return { equipo: p => p.id === usuario.id, horasExtra: mio, permisos: mio, bitacora: nada, historico: nada };
+  return { equipo: p => p.id === usuario.id, horasExtra: mio, permisos: mio, bitacora: nada, historico: nada, informesSem: nada,
+    notifs: n => !avisoPersonal(n) || mio(n) };
 }
 function versionNivel(data, usuario) {
   if (veTodo(usuario) || !data || typeof data !== "object") return data;

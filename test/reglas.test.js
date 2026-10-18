@@ -260,6 +260,25 @@ test("una lista que no viene, o viene vacía sin poder quitarla, no se borra", (
   assert.deepEqual(aplicarReglasRol(copia(vacias), antes, LIDER).etiquetas, []);
 });
 
+test("los avisos de horas, compensatorio y permisos solo le llegan a esa persona (y a Líder y Editor)", () => {
+  const antes = { ...copia(base()), informesSem: [{ id: "2026-10-12", nudos: "x" }], notifs: [
+    { id: "n1", txt: "Horas rechazado: Beto", sub: "3 h", miembro: "Beto" },
+    { id: "n2", txt: "Solicitud de horas: Caro", miembro: "Caro" },
+    { id: "n3", txt: "Nueva tarea: \"Gala\"" },
+    { id: "n4", txt: "Permiso anulado: Beto", sub: "Enfermedad · 7 oct · motivo" },        // de antes, sin «miembro»
+    { id: "n5", txt: "2 registros de horas extra por aprobar (5 h)" },
+  ] };
+  const v = versionNivel(copia(antes), COLAB);
+  assert.deepEqual(v.notifs.map(n => n.id), ["n2", "n3"]);
+  assert.deepEqual(v.informesSem, []);
+  assert.deepEqual(versionNivel(copia(antes), { id: "u4", nivel: "lector" }).notifs.map(n => n.id), ["n3"]);
+  assert.equal(versionNivel(copia(antes), EDITOR).notifs.length, 5);
+  v.notifs = [];                                                           // «Limpiar» del Colaborador: lo que no vio queda
+  const r = aplicarReglasRol(reponerOculto(v, antes, COLAB), antes, COLAB);
+  assert.deepEqual(r.notifs.map(n => n.id), ["n1", "n4", "n5"]);
+  assert.deepEqual(r.informesSem, antes.informesSem);
+});
+
 test("limitador cuenta intentos por clave", () => {
   const l = limitador(2, 60e3);
   assert.equal(l.lleno("a"), false);

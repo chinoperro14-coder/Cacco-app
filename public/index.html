@@ -2253,7 +2253,7 @@ function iniciarApp(){
   pintarYo();
 
   const pHs=E.horasExtra.filter(h=>h.aprobacion==='Pendiente'&&!esComp(h));
-  if(puede('aprobarHora')&&pHs.length)addNotif('⏱️',`${plu(pHs.length,'registro','registros')} de horas extra por aprobar (${fmtH(pHs.reduce((t,h)=>t+parseFloat(h.horas||0),0))})`,'Horas Extras');
+  if(puede('aprobarHora')&&pHs.length)addNotif('⏱️',`${plu(pHs.length,'registro','registros')} de horas extra por aprobar (${fmtH(pHs.reduce((t,h)=>t+parseFloat(h.horas||0),0))})`,'Horas Extras',null,true);
 
   renderTodo();
   irInicio();
@@ -2262,7 +2262,7 @@ function iniciarApp(){
 }
 
 function cerrarSes(){
-  _sinGuardar=0;clearTimeout(_reintentoTimer);avisoSinGuardar(false);
+  _sinGuardar=0;clearTimeout(_reintentoTimer);avisoSinGuardar(false);notifsLocal=[];
   ADJ.lista=[];ADJ.cargado=false;
   uAct=null;niv=null;expandidas.clear();
   localStorage.removeItem('cacco_token');
@@ -2274,12 +2274,16 @@ function cerrarSes(){
 // ════════════════════════
 //  NOTIFICACIONES
 // ════════════════════════
-function addNotif(ico,txt,sub){E.notifs.unshift({id:gId(),ico,txt,sub,ts:new Date().toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit'})});if(E.notifs.length>50)E.notifs=E.notifs.slice(0,50);document.getElementById('ndot').classList.add('on');renderNotifs();}
-function renderNotifs(){const l=document.getElementById('notifLista');if(!E.notifs.length){l.innerHTML='<div class="nvac">Sin notificaciones.</div>';return;}l.innerHTML=E.notifs.map(n=>`<div class="nit"><div class="nico">${escH(n.ico)}</div><div class="ntxt">${escH(n.txt)}<div class="nsub">${escH(n.sub)} · ${escH(n.ts)}</div></div></div>`).join('');}
+// miembro: el aviso es sobre horas o permisos de esa persona y solo le llega a ella (y a Líder y Editor).
+// local: solo para esta sesión, no se guarda en los avisos del equipo.
+let notifsLocal=[];
+function addNotif(ico,txt,sub,miembro,local){const n={id:gId(),ico,txt,sub,ts:new Date().toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit'}),...(miembro?{miembro}:{})};
+  if(local)notifsLocal.unshift(n);else{E.notifs.unshift(n);if(E.notifs.length>50)E.notifs=E.notifs.slice(0,50);}document.getElementById('ndot').classList.add('on');renderNotifs();}
+function renderNotifs(){const l=document.getElementById('notifLista'),ns=[...notifsLocal,...E.notifs];if(!ns.length){l.innerHTML='<div class="nvac">Sin notificaciones.</div>';return;}l.innerHTML=ns.map(n=>`<div class="nit"><div class="nico">${escH(n.ico)}</div><div class="ntxt">${escH(n.txt)}<div class="nsub">${escH(n.sub)} · ${escH(n.ts)}</div></div></div>`).join('');}
 function togSid(){document.getElementById('sidNav').classList.toggle('open');document.getElementById('sidOverlay').classList.toggle('open');}
 function cerrarSid(){document.getElementById('sidNav').classList.remove('open');document.getElementById('sidOverlay').classList.remove('open');}
 function togNotif(){document.getElementById('notifPanel').classList.toggle('on');document.getElementById('ndot').classList.remove('on');}
-function limpNotifs(){E.notifs=[];renderNotifs();document.getElementById('notifPanel').classList.remove('on');}
+function limpNotifs(){E.notifs=[];notifsLocal=[];renderNotifs();document.getElementById('notifPanel').classList.remove('on');}
 
 // ════════════════════════
 //  NAVEGACIÓN
@@ -5124,7 +5128,7 @@ async function guardarComp(){
   // Un cambio en una solicitud ya revisada vuelve a quedar pendiente (salvo que la edite el Líder sin cambiar las horas)
   if(prev&&prev.aprobacion!=='Pendiente'&&parseFloat(prev.horas)!==r.horas){r.aprobacion='Pendiente';delete r.aprobadoPor;delete r.fechaAprob;}
   if(prev){const i=E.horasExtra.findIndex(x=>x.id===prev.id);if(i>=0)E.horasExtra[i]=r;reg('Compensatorio editado',`${c.m} — ${fmtH(r.horas)}`);}
-  else{E.horasExtra.unshift(r);reg('Compensatorio solicitado',`${c.m} — ${fmtH(r.horas)}`);addNotif('🌴',`Solicitud de compensatorio: ${c.m}`,`${fmtSaldo(r.horas)} · desde ${fmt(c.f)}`);}
+  else{E.horasExtra.unshift(r);reg('Compensatorio solicitado',`${c.m} — ${fmtH(r.horas)}`);addNotif('🌴',`Solicitud de compensatorio: ${c.m}`,`${fmtSaldo(r.horas)} · desde ${fmt(c.f)}`,c.m);}
   guardar();cerM('mComp');refrescarVistaAbierta();
 }
 function saldoComp(nombre,hasta){// solo lo aprobado; 'hasta' (AAAA-MM-DD) es inclusivo
@@ -5298,7 +5302,7 @@ function guardarH(){
   if(apro!=='Pendiente'&&apro!==prev?.aprobacion){r.aprobadoPor=uAct?.nombre;r.fechaAprob=hoy();}
   if(apro==='Pendiente'){delete r.aprobadoPor;delete r.fechaAprob;}
   if(id){const i=E.horasExtra.findIndex(h=>h.id===id);if(i>=0)E.horasExtra[i]=r;reg('Hora editada',`${m} — ${fmtH(h)}`);}
-  else{E.horasExtra.unshift(r);reg(comp?'Compensatorio solicitado':'Hora registrada',`${m} — ${fmtH(h)}`);if(apro==='Pendiente')addNotif(comp?'🌴':'⏱️',`${comp?'Solicitud de compensatorio':'Solicitud de horas'}: ${m}`,'Pendiente de aprobación');}
+  else{E.horasExtra.unshift(r);reg(comp?'Compensatorio solicitado':'Hora registrada',`${m} — ${fmtH(h)}`);if(apro==='Pendiente')addNotif(comp?'🌴':'⏱️',`${comp?'Solicitud de compensatorio':'Solicitud de horas'}: ${m}`,'Pendiente de aprobación',m);}
   guardar();cerM('mH');renderHoras();
 }
 
@@ -5310,7 +5314,7 @@ function aprobarH(id,ok){
     if(n>sc+1e-9){alert(`No se puede aprobar: ${h.miembro} tiene ${fmtSaldo(Math.max(0,sc))} de saldo aprobado y pide ${fmtSaldo(n)}. El saldo nunca puede quedar en negativo.`);return;}}
   h.aprobacion=ok?'Aprobado':'Rechazado';h.aprobadoPor=uAct?.nombre;h.fechaAprob=hoy();
   reg(ok?(esComp(h)?'Compensatorio aprobado':'Hora aprobada'):(esComp(h)?'Compensatorio rechazado':'Hora rechazada'),`${h.miembro} — ${fmtH(parseFloat(h.horas||0))}`);
-  addNotif(ok?'✅':'❌',`${esComp(h)?'Compensatorio':'Horas'} ${ok?'aprobado':'rechazado'}: ${h.miembro}`,fmtH(parseFloat(h.horas||0)));
+  addNotif(ok?'✅':'❌',`${esComp(h)?'Compensatorio':'Horas'} ${ok?'aprobado':'rechazado'}: ${h.miembro}`,fmtH(parseFloat(h.horas||0)),h.miembro);
   guardar();renderHoras();refrescarVistaAbierta();
 }
 
@@ -5567,7 +5571,7 @@ async function guardarPer(){
   if(apro!=='Pendiente'&&apro!==prev?.aprobacion){r.aprobadoPor=uAct?.nombre;r.fechaAprob=hoy();}
   if(apro==='Pendiente'){delete r.aprobadoPor;delete r.fechaAprob;}
   if(prev){const i=E.permisos.findIndex(x=>x.id===id);if(i>=0)E.permisos[i]=r;reg('Permiso editado',`${m} — ${MOTIVOS_PER[mot-1]} — ${fmtDHM(tot)}`);}
-  else{E.permisos.unshift(r);reg('Permiso solicitado',`${m} — ${MOTIVOS_PER[mot-1]} — ${fmtDHM(tot)}`);if(apro==='Pendiente')addNotif('📝',`Nueva solicitud de permiso de ${m}`,fmt(df));}
+  else{E.permisos.unshift(r);reg('Permiso solicitado',`${m} — ${MOTIVOS_PER[mot-1]} — ${fmtDHM(tot)}`);if(apro==='Pendiente')addNotif('📝',`Nueva solicitud de permiso de ${m}`,fmt(df),m);}
   guardar();cerM('mPer');renderPermisos();
 }
 function aprobarPer(id,ok){
@@ -5576,7 +5580,7 @@ function aprobarPer(id,ok){
   if(p.miembro===uAct?.nombre&&niv!=='lider'){alert('Sus propios permisos los aprueba otra persona.');return;}
   p.aprobacion=ok?'Aprobado':'Rechazado';p.aprobadoPor=uAct?.nombre;p.fechaAprob=hoy();
   reg(ok?'Permiso aprobado':'Permiso rechazado',`${p.miembro} — ${MOTIVOS_PER[p.motivo-1]}`);
-  addNotif(ok?'✅':'❌',`Permiso ${ok?'aprobado':'rechazado'}: ${p.miembro}`,fmt(p.desdeF));
+  addNotif(ok?'✅':'❌',`Permiso ${ok?'aprobado':'rechazado'}: ${p.miembro}`,fmt(p.desdeF),p.miembro);
   guardar();renderPermisos();
 }
 // Las solicitudes de permiso nunca se borran: se anulan y quedan en el historial.
@@ -5605,7 +5609,7 @@ function confirmarAnular(){
   cerM('mAnular');
   p.aprobacion='Anulado';p.anuladoPor=uAct?.nombre;p.fechaAnul=hoy();p.motivoAnul=motivo.trim();
   reg('Permiso anulado',`${p.miembro} — ${MOTIVOS_PER[p.motivo-1]} — ${fmt(p.desdeF)} — por ${uAct?.nombre}: ${p.motivoAnul}`);
-  if(p.miembro!==uAct?.nombre)addNotif('🚫',`Permiso anulado: ${p.miembro}`,fmt(p.desdeF));
+  if(p.miembro!==uAct?.nombre)addNotif('🚫',`Permiso anulado: ${p.miembro}`,fmt(p.desdeF),p.miembro);
   guardar();refrescarVistaAbierta();
 }
 
