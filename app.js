@@ -7,7 +7,7 @@ const zlib     = require("zlib");
 const bcrypt   = require("bcrypt");
 const jwt      = require("jsonwebtoken");
 const mongoose = require("mongoose");
-const { validarDatos, validarNombres, aplicarReglasRol, NIVELES, limitador } = require("./reglas");
+const { validarDatos, validarNombres, aplicarReglasRol, versionNivel, reponerOculto, veTodo, NIVELES, limitador } = require("./reglas");
 
 const app        = express();
 // La clave de las sesiones nunca va en el código (el repositorio es público).
@@ -406,25 +406,27 @@ app.get("/api/actividad", verificarToken, async (req, res) => {
 // ════════════════════════
 // La página pregunta cada pocos segundos si hubo cambios (con la huella de lo que ya tiene): si no los hubo,
 // la respuesta es «sin cambios» y no baja nada. Cuando sí, los datos van comprimidos.
-// Las claves del formulario de pedidos solo las reciben Líder y Editor.
-function versionPara(c, conClaves) {
-  const k = conClaves ? "c" : "s";
+// Cada nivel recibe lo suyo (versionNivel en reglas.js); las claves del formulario de pedidos solo las reciben Líder y Editor.
+// Colaborador y Lector tienen una versión por persona: su huella lleva delante una marca de la cuenta.
+function versionPara(c, u) {
+  const todo = veTodo(u), k = todo ? "c" : (u.nivel === "lector" ? "l" : "p") + crypto.createHash("sha1").update(String(u.id)).digest("hex").slice(0, 10);
   if (!c.variantes[k]) {
     let texto = c.json;
-    if (!conClaves && c.payload.config) {
-      const { clavePedidos, clavesPedidos, ...config } = c.payload.config;
-      texto = JSON.stringify({ ...c.payload, config });
+    if (!todo) {
+      const v = versionNivel(c.payload, u);
+      if (v.config) { const { clavePedidos, clavesPedidos, ...config } = v.config; v.config = config; }
+      texto = JSON.stringify(v);
     }
     let gz = null;
     c.variantes[k] = { texto, gz: () => gz || (gz = zlib.gzipSync(texto)), huella: `"${k}-${c.huella}"` };
   }
   return c.variantes[k];
 }
-// ¿La huella que manda la página es de la versión guardada ahora?
-const huellaVigente = (h, c) => String(h || "").replace(/^W\//, "").replace(/"/g, "").replace(/^[cs]-/, "") === c.huella;
+// ¿La huella que manda la página es de la versión guardada ahora? (sin la marca del nivel o la cuenta)
+const huellaVigente = (h, c) => String(h || "").replace(/^W\//, "").replace(/"/g, "").replace(/^[a-z0-9]+-/, "") === c.huella;
 app.get("/api/data", verificarToken, async (req, res) => {
   try {
-    const v = versionPara(await estadoData(), puedeClave(req.usuario));
+    const v = versionPara(await estadoData(), req.usuario);
     res.set("Vary", "Accept-Encoding, Authorization");
     mandarComprimido(req, res, v, "application/json; charset=utf-8", v.huella);
   }
@@ -506,14 +508,16 @@ app.post("/api/data", verificarToken, async (req, res) => {
       const actual = JSON.parse(c.json);
       await respaldoDiario(actual);
       const enviado = JSON.stringify(req.body);
-      const nuevo = aplicarReglasRol(req.body, actual, req.usuario);
+      // Lo que ese nivel no recibió (horas y permisos ajenos, fichas completas, bitácora…) vuelve antes de aplicar sus reglas
+      const nuevo = aplicarReglasRol(reponerOculto(req.body, actual, req.usuario), actual, req.usuario);
       const errorNombre = validarNombres(nuevo, actual);
       if (errorNombre) return res.status(400).json({ error: errorNombre });
       if (actual.config) nuevo.config = actual.config; else delete nuevo.config;   // las claves solo cambian por su ruta
-      const { config: _a, ...sinConfig } = nuevo, { config: _b, ...enviadoSin } = JSON.parse(enviado);
+      const comoLoVe = d => { const { config, ...resto } = versionNivel(d, req.usuario); return JSON.stringify(resto); };
+      const ajustado = comoLoVe(nuevo) !== comoLoVe(JSON.parse(enviado));
       const guardado = await escribirData(nuevo);
       // «ajustado»: el servidor deshizo algo que ese nivel no puede hacer; la página vuelve a cargar lo guardado
-      res.json({ ok: true, huella: versionPara(guardado, puedeClave(req.usuario)).huella, ajustado: JSON.stringify(sinConfig) !== JSON.stringify(enviadoSin) });
+      res.json({ ok: true, huella: versionPara(guardado, req.usuario).huella, ajustado });
     });
   }
   catch { res.status(500).json({ error: "No se pudo guardar" }); }

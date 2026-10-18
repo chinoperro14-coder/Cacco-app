@@ -5558,7 +5558,7 @@ async function guardarPer(){
   if(apro!=='Pendiente'&&apro!==prev?.aprobacion){r.aprobadoPor=uAct?.nombre;r.fechaAprob=hoy();}
   if(apro==='Pendiente'){delete r.aprobadoPor;delete r.fechaAprob;}
   if(prev){const i=E.permisos.findIndex(x=>x.id===id);if(i>=0)E.permisos[i]=r;reg('Permiso editado',`${m} — ${MOTIVOS_PER[mot-1]} — ${fmtDHM(tot)}`);}
-  else{E.permisos.unshift(r);reg('Permiso solicitado',`${m} — ${MOTIVOS_PER[mot-1]} — ${fmtDHM(tot)}`);if(apro==='Pendiente')addNotif('📝',`Solicitud de permiso: ${m}`,`${MOTIVOS_PER[mot-1]} · ${fmt(df)}`);}
+  else{E.permisos.unshift(r);reg('Permiso solicitado',`${m} — ${MOTIVOS_PER[mot-1]} — ${fmtDHM(tot)}`);if(apro==='Pendiente')addNotif('📝',`Nueva solicitud de permiso de ${m}`,fmt(df));}
   guardar();cerM('mPer');renderPermisos();
 }
 function aprobarPer(id,ok){
@@ -5567,7 +5567,7 @@ function aprobarPer(id,ok){
   if(p.miembro===uAct?.nombre&&niv!=='lider'){alert('Sus propios permisos los aprueba otra persona.');return;}
   p.aprobacion=ok?'Aprobado':'Rechazado';p.aprobadoPor=uAct?.nombre;p.fechaAprob=hoy();
   reg(ok?'Permiso aprobado':'Permiso rechazado',`${p.miembro} — ${MOTIVOS_PER[p.motivo-1]}`);
-  addNotif(ok?'✅':'❌',`Permiso ${ok?'aprobado':'rechazado'}: ${p.miembro}`,`${MOTIVOS_PER[p.motivo-1]} · ${fmt(p.desdeF)}`);
+  addNotif(ok?'✅':'❌',`Permiso ${ok?'aprobado':'rechazado'}: ${p.miembro}`,fmt(p.desdeF));
   guardar();renderPermisos();
 }
 // Las solicitudes de permiso nunca se borran: se anulan y quedan en el historial.
@@ -5596,7 +5596,7 @@ function confirmarAnular(){
   cerM('mAnular');
   p.aprobacion='Anulado';p.anuladoPor=uAct?.nombre;p.fechaAnul=hoy();p.motivoAnul=motivo.trim();
   reg('Permiso anulado',`${p.miembro} — ${MOTIVOS_PER[p.motivo-1]} — ${fmt(p.desdeF)} — por ${uAct?.nombre}: ${p.motivoAnul}`);
-  if(p.miembro!==uAct?.nombre)addNotif('🚫',`Permiso anulado: ${p.miembro}`,`${MOTIVOS_PER[p.motivo-1]} · ${fmt(p.desdeF)} · ${p.motivoAnul}`);
+  if(p.miembro!==uAct?.nombre)addNotif('🚫',`Permiso anulado: ${p.miembro}`,fmt(p.desdeF));
   guardar();refrescarVistaAbierta();
 }
 

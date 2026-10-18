@@ -1,7 +1,7 @@
 // Reglas por nivel que el servidor aplica a cada guardado (reglas.js)
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { validarDatos, validarNombres, aplicarReglasRol, limitador } = require("../reglas");
+const { validarDatos, validarNombres, aplicarReglasRol, versionNivel, reponerOculto, limitador } = require("../reglas");
 
 const base = () => ({
   equipo: [
@@ -203,6 +203,29 @@ test("cuando el Líder renombra a alguien, el nombre nuevo pasa a todos sus regi
   assert.equal(r.bitacora[0].usuario, "Carolina");
   assert.equal(r.bitacora[0].detalle, "Caro hizo algo");
   assert.equal(r.equipo.find(p => p.id === "u2").nombre, "Beto");
+});
+
+test("el Colaborador recibe lo suyo y al guardar vuelve lo ajeno que no recibió", () => {
+  const antes = copia(base());
+  antes.horasExtra.push({ id: "h4", miembro: "Beto", tipo: "compensatorio", aprobacion: "Aprobado", horas: "8", fecha: "2026-01-12", actividad: "Viaje" });
+  const v = versionNivel(copia(antes), COLAB);
+  assert.deepEqual(v.horasExtra.map(h => h.id), ["h1", "h2", "h4"]);
+  assert.equal(v.horasExtra[2].actividad, undefined);
+  assert.deepEqual(v.permisos.map(p => p.id), ["p1"]);
+  assert.deepEqual([v.bitacora, v.historico], [[], []]);
+  assert.deepEqual(v.equipo[1], { id: "u2", nombre: "Beto", nivel: "editor", cats: [], sistema: false });
+  assert.equal(v.equipo[2].email, "caro@x");
+  assert.deepEqual(versionNivel(copia(antes), { id: "u4", nivel: "lector" }).horasExtra.map(h => h.id), ["h4"]);
+  assert.deepEqual(versionNivel(antes, EDITOR), antes);
+  // borra su hora pendiente, agrega una y toca el compensatorio ajeno que recibió recortado
+  v.horasExtra = [{ id: "h5", miembro: "Caro", aprobacion: "Pendiente", horas: "1" }, v.horasExtra[1], { ...v.horasExtra[2], horas: "0" }];
+  v.permisos = [];
+  const r = aplicarReglasRol(reponerOculto(v, antes, COLAB), antes, COLAB);
+  assert.deepEqual(r.horasExtra.map(h => h.id), ["h5", "h2", "h3", "h4"]);
+  assert.deepEqual(r.horasExtra[3], antes.horasExtra[3]);
+  assert.deepEqual(ids(r.permisos), ["p1", "p2"]);
+  assert.deepEqual(r.equipo, antes.equipo);
+  assert.deepEqual([r.bitacora, r.historico], [antes.bitacora, antes.historico]);
 });
 
 test("limitador cuenta intentos por clave", () => {

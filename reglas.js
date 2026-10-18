@@ -159,6 +159,54 @@ function conservarPermisos(nuevo, actual) {
   return nuevo;
 }
 
+// Lo que recibe cada nivel. Líder y Editor, todo. Colaborador y Lector no reciben bitácora ni reportes archivados;
+// del resto del equipo, solo nombre, cargo, nivel, foto y áreas; de horas y compensatorio ajenos, solo quién sale por
+// compensatorio y en qué fechas. El Colaborador recibe completos sus horas y permisos; el Lector, ninguno.
+const FICHA_VISIBLE = ["id", "nombre", "cargo", "nivel", "foto", "cats", "secciones", "seccion"];
+const COMP_VISIBLE = ["id", "miembro", "tipo", "aprobacion", "horas", "fecha", "fechaFin", "regreso"];
+const veTodo = u => ["lider", "editor"].includes(u && u.nivel);
+const tomar = (o, ks) => ks.reduce((r, k) => { if (o[k] !== undefined) r[k] = o[k]; return r; }, {});
+const esSistema = p => p.sistema === true || (p.sistema === undefined && /^ia@/i.test(p.email || ""));
+const fueraPorComp = h => h.tipo === "compensatorio" && h.aprobacion === "Aprobado" && parseFloat(h.horas || 0) >= 8 - 1e-9;
+const RECORTE = {
+  equipo: p => ({ ...tomar(p, FICHA_VISIBLE), sistema: esSistema(p) }),
+  horasExtra: h => fueraPorComp(h) ? tomar(h, COMP_VISIBLE) : null,
+};
+// Por lista: ¿este registro le llega completo?
+function completoPara(usuario, data) {
+  const yo = nombresDe(usuario, data), mio = r => usuario.nivel === "colaborador" && yo.has(r.miembro), nada = () => false;
+  return { equipo: p => p.id === usuario.id, horasExtra: mio, permisos: mio, bitacora: nada, historico: nada };
+}
+function versionNivel(data, usuario) {
+  if (veTodo(usuario) || !data || typeof data !== "object") return data;
+  const completo = completoPara(usuario, data), out = { ...data };
+  for (const k in completo) if (Array.isArray(data[k]))
+    out[k] = data[k].map(x => !x || completo[k](x) ? x : RECORTE[k] ? RECORTE[k](x) : null).filter(Boolean);
+  return out;
+}
+// Al guardar, lo que ese nivel no recibió completo vuelve tal como está guardado y en su lugar, para que su guardado no lo borre
+function reponerOculto(nuevo, actual, usuario) {
+  if (veTodo(usuario) || !nuevo || typeof nuevo !== "object" || !actual) return nuevo;
+  const completo = completoPara(usuario, actual), out = { ...nuevo };
+  for (const k in completo) if (Array.isArray(actual[k]))
+    out[k] = juntarOcultos(Array.isArray(nuevo[k]) ? nuevo[k] : [], actual[k], x => !completo[k](x));
+  return out;
+}
+// Cada registro oculto que no vino se inserta antes del registro que lo seguía; si vino recortado, se cambia por el guardado
+function juntarOcultos(enviada, previa, oculto) {
+  const prev = previa.filter(x => x && x.id), ocultos = porId(prev.filter(oculto));
+  if (!ocultos.size) return enviada;
+  const ids = new Set(enviada.map(x => x && x.id)), antes = new Map();
+  for (let i = prev.length - 1, sig = null; i >= 0; i--) {
+    const x = prev[i];
+    if (ids.has(x.id)) sig = x.id;
+    else if (ocultos.has(x.id)) antes.set(sig, [x, ...(antes.get(sig) || [])]);
+  }
+  const out = [];
+  enviada.forEach(x => { if (x && antes.has(x.id)) out.push(...antes.get(x.id)); out.push(x && ocultos.has(x.id) ? ocultos.get(x.id) : x); });
+  return [...out, ...(antes.get(null) || [])];
+}
+
 // Límite de intentos por clave (conexión, cuenta…): n intentos en una ventana de ms
 function limitador(n, ms) {
   const m = new Map();
@@ -170,4 +218,4 @@ function limitador(n, ms) {
   };
 }
 
-module.exports = { LISTAS, NIVELES, validarDatos, validarNombres, aplicarReglasRol, conservarPermisos, limitador, igual };
+module.exports = { LISTAS, NIVELES, validarDatos, validarNombres, aplicarReglasRol, conservarPermisos, versionNivel, reponerOculto, veTodo, limitador, igual };

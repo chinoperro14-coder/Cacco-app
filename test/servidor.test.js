@@ -18,10 +18,20 @@ fs.writeFileSync(path.join(dir, "users.json"), JSON.stringify([
 ]));
 const CLAVES = { "Administración": "clave-admin-1", "Dirección": "clave-direccion-1", "Desarrollo Social": "clave-social-1",
   "Coordinación de Arte y Cultura": "clave-arte-1", "Educación Artística y Cultural": "clave-educa-1", "Otra": "clave-otra-1" };
+const ficha = (id, nombre, nivel) => ({ id, nombre, nivel, email: `${nombre.toLowerCase()}@x.org`, cargo: "Cargo", cats: [], secciones: ["Diseño"],
+  cedula: `8-${id}`, correo: `${nombre.toLowerCase()}@gmail.com`, puesto: "Puesto", posicion: "100", ingreso: "2024-01-01" });
 fs.writeFileSync(path.join(dir, "data.json"), JSON.stringify({
-  equipo: [{ id: "u1", nombre: "Ana", nivel: "lider" }, { id: "u2", nombre: "Beto", nivel: "editor" },
-           { id: "u3", nombre: "Caro", nivel: "colaborador" }, { id: "u4", nombre: "TV", nivel: "lector" }],
-  tareas: [{ id: "t1", titulo: "Confirmada" }], bitacora: [], permisos: [],
+  equipo: [ficha("u1", "Ana", "lider"), ficha("u2", "Beto", "editor"), ficha("u3", "Caro", "colaborador"), ficha("u4", "TV", "lector")],
+  tareas: [{ id: "t1", titulo: "Confirmada" }],
+  horasExtra: [
+    { id: "h1", miembro: "Beto", fecha: "2026-01-05", horas: "3", aprobacion: "Aprobado", actividad: "Gala" },
+    { id: "h2", miembro: "Caro", fecha: "2026-01-06", horas: "2", aprobacion: "Pendiente", actividad: "Concierto" },
+    { id: "h3", miembro: "Beto", tipo: "compensatorio", fecha: "2026-01-12", horas: "8", aprobacion: "Aprobado", actividad: "Día libre" },
+    { id: "h4", miembro: "Ana", tipo: "compensatorio", fecha: "2026-01-13", horas: "4", aprobacion: "Pendiente" },
+  ],
+  permisos: [{ id: "p1", miembro: "Beto", motivo: 3, desdeF: "2026-01-07", aprobacion: "Aprobado", motivoAnul: "x" },
+             { id: "p2", miembro: "Caro", motivo: 1, desdeF: "2026-01-08", aprobacion: "Pendiente" }],
+  bitacora: [{ id: "b0", accion: "Permiso solicitado", detalle: "Beto — Enfermedad" }], historico: [{ id: "his1", reporte: "Horas de Beto" }],
   config: { clavesPedidos: CLAVES },
 }));
 
@@ -157,6 +167,47 @@ test("al cambiar la contraseña, las sesiones anteriores dejan de valer", async 
   assert.ok(r.token);
   assert.equal((await pedir("/api/data", { token: vieja })).status, 401);
   assert.equal((await pedir("/api/data", { token: r.token })).status, 200);
+});
+
+test("colaborador y lector no reciben horas, permisos ni datos personales ajenos", async () => {
+  const ed = await (await pedir("/api/data", { token: await entrar("editor@x.org") })).json();
+  assert.equal(ed.horasExtra.length, 4); assert.equal(ed.permisos.length, 2); assert.equal(ed.equipo[0].cedula, "8-u1");
+  const c = await (await pedir("/api/data", { token: await entrar("colab@x.org") })).json();
+  assert.deepEqual(c.horasExtra.map(h => h.id), ["h2", "h3"]);             // las suyas y quién sale por compensatorio
+  assert.deepEqual(c.horasExtra[1], { id: "h3", miembro: "Beto", tipo: "compensatorio", aprobacion: "Aprobado", horas: "8", fecha: "2026-01-12" });
+  assert.deepEqual(c.permisos.map(p => p.id), ["p2"]);
+  assert.deepEqual(c.bitacora, []); assert.deepEqual(c.historico, []);
+  for (const p of c.equipo.filter(p => p.id !== "u3"))
+    for (const k of ["cedula", "correo", "email", "puesto", "posicion", "ingreso"]) assert.equal(p[k], undefined, `${p.nombre}.${k}`);
+  assert.equal(c.equipo.find(p => p.id === "u1").nombre, "Ana");
+  assert.equal(c.equipo.find(p => p.id === "u3").cedula, "8-u3");        // su propia ficha llega completa
+  const l = await (await pedir("/api/data", { token: await entrar("tv@x.org") })).json();
+  assert.deepEqual(l.horasExtra.map(h => h.id), ["h3"]); assert.deepEqual(l.permisos, []);
+  assert.equal(l.equipo.find(p => p.id === "u3").cedula, undefined);
+  assert.ok(!JSON.stringify(l).includes("Enfermedad") && !JSON.stringify(c).includes("Enfermedad"));
+});
+
+test("un guardado del colaborador con su versión no borra lo ajeno que no recibió", async () => {
+  const t = await entrar("colab@x.org"), antes = await (await pedir("/api/data", { token: await entrar("lider@x.org") })).json();
+  const r = await pedir("/api/data", { token: t }), huella = r.headers.get("etag"), d = await r.json();
+  assert.notEqual(huella, (await pedir("/api/data", { token: await entrar("editor@x.org") })).headers.get("etag"));
+  d.horasExtra.find(h => h.id === "h2").horas = "2.5";
+  d.horasExtra.unshift({ id: "h5", miembro: "Caro", fecha: "2026-01-20", horas: "1", aprobacion: "Pendiente" });
+  d.bitacora.unshift({ id: "b-colab", accion: "Hora registrada" });
+  const g = await pedir("/api/data", { metodo: "POST", token: t, cuerpo: d, headers: { "If-Match": huella } });
+  assert.equal(g.status, 200);
+  const j = await g.json();
+  assert.equal(j.ajustado, false);
+  assert.equal((await pedir("/api/data", { token: t, headers: { "If-None-Match": j.huella } })).status, 304);
+  assert.equal((await pedir("/api/data", { metodo: "POST", token: t, cuerpo: d, headers: { "If-Match": huella } })).status, 409);
+  const ahora = await (await pedir("/api/data", { token: await entrar("lider@x.org") })).json();
+  assert.deepEqual(ahora.horasExtra.map(h => h.id), ["h5", "h1", "h2", "h3", "h4"]);
+  assert.equal(ahora.horasExtra.find(h => h.id === "h2").horas, "2.5");
+  assert.deepEqual(ahora.horasExtra.find(h => h.id === "h3"), antes.horasExtra.find(h => h.id === "h3"));
+  assert.deepEqual(ahora.permisos, antes.permisos);
+  assert.deepEqual(ahora.equipo, antes.equipo);
+  assert.deepEqual(ahora.historico, antes.historico);
+  assert.deepEqual(ahora.bitacora.map(b => b.id), ["b-colab", ...antes.bitacora.map(b => b.id)]);
 });
 
 test("los fallos de un correo no impiden entrar a otra persona desde la misma conexión", async () => {
