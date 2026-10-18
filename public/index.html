@@ -1846,7 +1846,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <div style="font-size:40px;margin-bottom:14px">🔐</div>
     <div style="font-size:17px;font-weight:800;color:var(--tx);margin-bottom:8px">Sesión expirada</div>
     <div style="font-size:13px;color:var(--tm);margin-bottom:24px">Tu sesión ha caducado por seguridad. Debes volver a iniciar sesión para continuar.</div>
-    <button class="btn bna" style="width:100%" onclick="cerM('mSesExp');cerrarSes()">Volver al inicio de sesión</button>
+    <button class="btn bna" style="width:100%" onclick="cerM('mSesExp');cerrarSes(true)">Volver al inicio de sesión</button>
   </div>
 </div></div>
 
@@ -2223,6 +2223,9 @@ async function tryLogin() {
       // Cargar datos del servidor con el token ya disponible, luego entrar
       await cargar();
       entrar(data.userId);
+      // Lo que quedó sin enviar cuando venció la sesión se junta con lo guardado y se envía
+      if(_pendiente&&uAct){const pe=_pendiente;_pendiente=null;
+        if(pe.uid===uAct.id){E=juntarE(pe.base,pe.mine,E);completarE();refrescarYo();guardar();refrescarVistaAbierta();}}
     } else {
       errEl.textContent = data.error || 'Email o contraseña incorrectos.';
       errEl.classList.remove('oculto');
@@ -2272,8 +2275,17 @@ function iniciarApp(){
   cargarAdj();
 }
 
-function cerrarSes(){
-  _sinGuardar=0;clearTimeout(_reintentoTimer);avisoSinGuardar(false);notifsLocal=[];
+// Salir con cambios que no llegaron al servidor: se intenta enviarlos y, si no se puede, se pregunta antes de perderlos.
+// Si la sesión venció (o se cierra sola), esperan en esta pestaña y se envían al volver a entrar con la misma cuenta.
+let _pendiente=null;
+async function cerrarSes(sinPreguntar){
+  if(_sinGuardar&&!sinPreguntar&&getToken()){
+    if(!_guardando){clearTimeout(_guardarTimer);await ejecutarGuardado();}
+    if(document.getElementById('mSesExp')?.classList.contains('on'))return;// venció: sigue por «Volver al inicio de sesión»
+    if(_sinGuardar&&!await confirmar('Hay cambios que todavía no llegan al servidor. Si sales ahora, se pierden.',{tit:'⚠️ Sin guardar',ok:'Salir igual',no:'Quedarme',peligro:true}))return;
+  }
+  _pendiente=sinPreguntar&&_sinGuardar&&uAct?{uid:uAct.id,base:Ebase,mine:snap(E)}:null;
+  _sinGuardar=0;clearTimeout(_reintentoTimer);clearTimeout(_guardarTimer);avisoSinGuardar(false);notifsLocal=[];
   ADJ.lista=[];ADJ.cargado=false;
   uAct=null;niv=null;expandidas.clear();
   localStorage.removeItem('cacco_token');
@@ -8828,7 +8840,7 @@ async function sincronizar(){
     // Solo baja los datos si cambiaron (si no, el servidor responde «sin cambios» y no manda nada)
     if(getToken()&&await traerYJuntar()){
       // Si empezó su tiempo compensatorio con la sesión abierta, se cierra
-      if(uAct&&bloqueoComp(uAct)){const a=ausenciaComp(uAct.nombre);cerrarSes();const le=document.getElementById('loginErr');if(le){le.textContent=`🌴 Estás de tiempo compensatorio. Tu acceso se habilita el ${fmt(a.regreso)}.`;le.classList.remove('oculto');}}
+      if(uAct&&bloqueoComp(uAct)){const a=ausenciaComp(uAct.nombre);cerrarSes(true);const le=document.getElementById('loginErr');if(le){le.textContent=`🌴 Estás de tiempo compensatorio. Tu acceso se habilita el ${fmt(a.regreso)}.`;le.classList.remove('oculto');}}
     }
   }catch{}
   if(btn){btn.textContent='🔄';btn.disabled=false;}
