@@ -228,6 +228,38 @@ test("el Colaborador recibe lo suyo y al guardar vuelve lo ajeno que no recibió
   assert.deepEqual([r.bitacora, r.historico], [antes.bitacora, antes.historico]);
 });
 
+test("un registro repetido en lo que manda el Colaborador no multiplica lo ajeno ni lo suyo", () => {
+  const antes = copia(base());
+  const v = versionNivel(copia(antes), COLAB);
+  v.horasExtra = [v.horasExtra[1], v.horasExtra[1], v.horasExtra[1], v.horasExtra[0]];
+  let r = aplicarReglasRol(reponerOculto(copia(v), antes, COLAB), antes, COLAB);
+  assert.deepEqual(ids(r.horasExtra), ["h1", "h2", "h3"]);
+  // aunque lo guardado ya venga con un repetido, cada registro queda una vez
+  const sucio = copia(antes); sucio.horasExtra.push(copia(sucio.horasExtra[2]));
+  r = aplicarReglasRol(reponerOculto(versionNivel(copia(sucio), COLAB), sucio, COLAB), sucio, COLAB);
+  assert.deepEqual(ids(r.horasExtra), ["h1", "h2", "h3"]);
+});
+
+test("una lista que no viene, o viene vacía sin poder quitarla, no se borra", () => {
+  const antes = { ...copia(base()), medios: [{ id: "m1" }], notasPrensa: [{ id: "n1" }], informesSem: [{ id: "2026-10-12", nudos: "x" }],
+    asigVarias: [{ id: "a1", creadoPorId: "u2" }, { id: "a2", creadoPorId: "u3" }], etiquetas: ["Gala", "Taller"], notifs: [{ id: "no1", txt: "Nueva tarea" }] };
+  const sin = copia(antes);
+  ["informesSem", "pedidos", "publicaciones", "medios", "notasPrensa", "asigVarias", "notifs", "etiquetas", "horasExtra", "bitacora", "historico"].forEach(k => delete sin[k]);
+  for (const u of [EDITOR, COLAB]) {
+    const r = aplicarReglasRol(reponerOculto(copia(sin), antes, u), antes, u);
+    for (const k of ["informesSem", "pedidos", "publicaciones", "medios", "notasPrensa", "asigVarias", "notifs", "etiquetas", "horasExtra", "bitacora", "historico"])
+      assert.deepEqual(r[k], antes[k], `${u.nivel}: ${k}`);
+  }
+  const vacias = { ...copia(antes), medios: [], notasPrensa: [], informesSem: [], asigVarias: [], etiquetas: [] };
+  const c = aplicarReglasRol(reponerOculto(copia(vacias), antes, COLAB), antes, COLAB);
+  assert.deepEqual([c.medios, c.notasPrensa, c.informesSem, c.etiquetas], [antes.medios, antes.notasPrensa, antes.informesSem, antes.etiquetas]);
+  assert.deepEqual(ids(c.asigVarias), ["a1"]);                             // quita solo la recurrente que creó
+  const e = aplicarReglasRol(copia(vacias), antes, EDITOR);
+  assert.deepEqual([e.medios, e.notasPrensa, e.asigVarias], [[], [], []]); // el Editor sí los quita
+  assert.deepEqual(e.etiquetas, antes.etiquetas);                          // las etiquetas solo las quita el Líder
+  assert.deepEqual(aplicarReglasRol(copia(vacias), antes, LIDER).etiquetas, []);
+});
+
 test("limitador cuenta intentos por clave", () => {
   const l = limitador(2, 60e3);
   assert.equal(l.lleno("a"), false);

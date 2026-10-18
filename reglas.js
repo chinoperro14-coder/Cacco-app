@@ -33,8 +33,9 @@ const revisado = r => ["Aprobado", "Rechazado"].includes(r && r.aprobacion);
 
 // Vuelve a poner lo que faltó y no se podía borrar, en su lugar original si se puede
 function reponer(nueva, previa, puedeBorrar) {
+  if (!Array.isArray(previa)) return nueva;
   const ids = new Set(nueva.map(x => x && x.id));
-  const faltan = (previa || []).filter(x => x && x.id && !ids.has(x.id) && !puedeBorrar(x));
+  const faltan = previa.filter(x => x && x.id && !ids.has(x.id) && !puedeBorrar(x));
   return faltan.length ? [...nueva, ...faltan] : nueva;
 }
 
@@ -53,6 +54,11 @@ function aplicarReglasRol(nuevo, actual, usuario) {
   if (nivel === "lider") return conservarPermisos(renombrarCambiados(nuevo, actual), actual);
   const yo = nombresDe(usuario, actual), esMio = r => r && yo.has(r.miembro);
   const colab = nivel !== "editor";   // colaborador (y cualquier nivel desconocido) tiene las reglas más estrictas
+
+  // Una lista que no vino no se borra: queda como está guardada
+  [...LISTAS, "etiquetas"].forEach(k => { if (!Array.isArray(nuevo[k]) && Array.isArray(actual[k])) nuevo[k] = actual[k]; });
+  // Solo el Líder quita etiquetas de la lista
+  if (Array.isArray(actual.etiquetas)) nuevo.etiquetas = [...new Set([...nuevo.etiquetas, ...actual.etiquetas])];
 
   // Equipo: solo se cambia el propio perfil, nunca nombre, nivel, correo de acceso, categorías ni secciones; no se agrega ni se quita a nadie
   if (Array.isArray(nuevo.equipo)) {
@@ -117,6 +123,14 @@ function aplicarReglasRol(nuevo, actual, usuario) {
 
   // Pedidos de oficinas e histórico de reportes: solo el Líder los quita
   ["pedidos", "historico"].forEach(k => { if (Array.isArray(nuevo[k])) nuevo[k] = reponer(nuevo[k], actual[k], () => false); });
+
+  // Directorio de medios y notas de prensa: solo Líder y Editor los quitan. Tareas recurrentes: también quien la creó.
+  // Informe semanal: solo lo escriben Líder y Editor.
+  if (colab) {
+    const quita = { medios: () => false, notasPrensa: () => false, asigVarias: a => a.creadoPorId === usuario.id };
+    for (const k in quita) if (Array.isArray(nuevo[k])) nuevo[k] = reponer(nuevo[k], actual[k], quita[k]);
+    if (actual.informesSem === undefined) delete nuevo.informesSem; else nuevo.informesSem = actual.informesSem;
+  }
 
   // Asignación automática por área: solo la cambia el Líder
   if (actual.asigAuto === undefined) delete nuevo.asigAuto; else nuevo.asigAuto = actual.asigAuto;
@@ -184,17 +198,20 @@ function versionNivel(data, usuario) {
     out[k] = data[k].map(x => !x || completo[k](x) ? x : RECORTE[k] ? RECORTE[k](x) : null).filter(Boolean);
   return out;
 }
-// Al guardar, lo que ese nivel no recibió completo vuelve tal como está guardado y en su lugar, para que su guardado no lo borre
+// Al guardar, lo que ese nivel no recibió completo vuelve tal como está guardado y en su lugar, para que su guardado no lo borre.
+// Un registro repetido en lo que manda la página cuenta una sola vez (si no, se duplicarían horas y permisos).
 function reponerOculto(nuevo, actual, usuario) {
   if (veTodo(usuario) || !nuevo || typeof nuevo !== "object" || !actual) return nuevo;
   const completo = completoPara(usuario, actual), out = { ...nuevo };
+  LISTAS.forEach(k => { if (Array.isArray(out[k])) out[k] = sinRepetidos(out[k]); });
   for (const k in completo) if (Array.isArray(actual[k]))
-    out[k] = juntarOcultos(Array.isArray(nuevo[k]) ? nuevo[k] : [], actual[k], x => !completo[k](x));
+    out[k] = Array.isArray(out[k]) ? juntarOcultos(out[k], actual[k], x => !completo[k](x)) : actual[k];
   return out;
 }
-// Cada registro oculto que no vino se inserta antes del registro que lo seguía; si vino recortado, se cambia por el guardado
+const sinRepetidos = l => { const vistos = new Set(); return l.filter(x => !x || !x.id || (!vistos.has(x.id) && vistos.add(x.id))); };
+// Cada registro oculto que no vino se inserta (una sola vez) antes del registro que lo seguía; si vino recortado, se cambia por el guardado
 function juntarOcultos(enviada, previa, oculto) {
-  const prev = previa.filter(x => x && x.id), ocultos = porId(prev.filter(oculto));
+  const prev = sinRepetidos(previa.filter(x => x && x.id)), ocultos = porId(prev.filter(oculto));
   if (!ocultos.size) return enviada;
   const ids = new Set(enviada.map(x => x && x.id)), antes = new Map();
   for (let i = prev.length - 1, sig = null; i >= 0; i--) {
