@@ -180,6 +180,7 @@ header{background:var(--na);height:60px;display:flex;align-items:center;justify-
 .uch:hover{background:rgba(255,255,255,.25);}
 .uch .unom{font-size:12px;font-weight:600;color:#fff;}
 #sinGuardar{font-size:12px;font-weight:700;color:#fff;white-space:nowrap;}
+@media(max-width:340px){#sinGuardar .sgTxt{display:none;}}
 /* NOTIF */
 .npanel{position:fixed;top:70px;right:20px;width:340px;max-height:480px;overflow-y:auto;background:var(--su);border:1px solid var(--bo);border-radius:var(--r);box-shadow:var(--shm);z-index:400;display:none;}
 .npanel.on{display:block;}
@@ -800,7 +801,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <div><div class="horg">CACCO</div><div class="hdep">Equipo de Comunicaciones</div></div>
   </div>
   <div class="hr">
-    <span id="sinGuardar" class="oculto" role="status" title="Se envía solo en cuanto vuelva la conexión">⚠️ Sin guardar</span>
+    <span id="sinGuardar" class="oculto" role="status" title="Se envía solo en cuanto vuelva la conexión">⚠️<span class="sgTxt"> Sin guardar</span></span>
     <div style="display:flex;gap:4px">
       <button class="acb" onclick="togOsc()" id="btnOsc" title="Modo noche" aria-label="Modo noche">🌙</button>
       <button class="acb" onclick="ajTxt(1)" title="Letra más grande" aria-label="Letra más grande">A+</button>
@@ -2261,6 +2262,7 @@ function iniciarApp(){
 }
 
 function cerrarSes(){
+  _sinGuardar=0;clearTimeout(_reintentoTimer);avisoSinGuardar(false);
   ADJ.lista=[];ADJ.cargado=false;
   uAct=null;niv=null;expandidas.clear();
   localStorage.removeItem('cacco_token');
