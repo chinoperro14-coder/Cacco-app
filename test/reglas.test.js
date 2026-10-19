@@ -1,7 +1,7 @@
 // Reglas por nivel que el servidor aplica a cada guardado (reglas.js)
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { validarDatos, aplicarReglasRol, limitador } = require("../reglas");
+const { validarDatos, validarNombres, aplicarReglasRol, versionNivel, reponerOculto, limitador } = require("../reglas");
 
 const base = () => ({
   equipo: [
@@ -46,6 +46,21 @@ test("el Colaborador no quita tareas y el Editor solo quita borradores", () => {
   const sinTareas = () => ({ ...copia(base()), tareas: [] });
   assert.deepEqual(ids(aplicarReglasRol(sinTareas(), base(), COLAB).tareas), ["t1", "t2"]);
   assert.deepEqual(ids(aplicarReglasRol(sinTareas(), base(), EDITOR).tareas), ["t1"]);
+});
+
+test("una tarea publicada no vuelve a borrador salvo por el Líder, y el Editor no la quita así", () => {
+  const aBorrador = () => { const n = copia(base()); n.tareas[0] = { ...n.tareas[0], titulo: "Cambiada", borrador: true }; return n; };
+  [EDITOR, COLAB].forEach(u => assert.deepEqual(aplicarReglasRol(aBorrador(), base(), u).tareas[0], { id: "t1", titulo: "Confirmada" }));
+  assert.equal(aplicarReglasRol(aBorrador(), base(), LIDER).tareas[0].borrador, true);
+  // Volverla borrador y quitarla en el siguiente guardado: la guardada sigue publicada, así que vuelve
+  const actual = aplicarReglasRol(aBorrador(), base(), EDITOR), sinT1 = copia(actual);
+  sinT1.tareas = sinT1.tareas.filter(t => t.id !== "t1");
+  assert.deepEqual(ids(aplicarReglasRol(sinT1, actual, EDITOR).tareas), ["t1", "t2"]);
+  // Un borrador sigue siendo borrador al editarlo, y una tarea nueva puede nacer borrador
+  const n = copia(base()); n.tareas[1].titulo = "Borrador editado"; n.tareas.push({ id: "t3", titulo: "Nueva", borrador: true });
+  const r = aplicarReglasRol(n, base(), EDITOR).tareas;
+  assert.equal(r.find(t => t.id === "t2").titulo, "Borrador editado");
+  assert.equal(r.find(t => t.id === "t3").borrador, true);
 });
 
 test("nadie salvo el Líder cambia niveles, agrega personas o toca perfiles ajenos", () => {
@@ -128,6 +143,156 @@ test("solo el Líder cambia la asignación automática por área", () => {
   assert.equal(aplicarReglasRol({ ...copia(base()), asigAuto: { x: ["u1"] } }, base(), COLAB).asigAuto, undefined);
   assert.ok(validarDatos({ tareas: [], equipo: [], asigAuto: { "Diseño": "u5" } }));
   assert.equal(validarDatos({ tareas: [], equipo: [], asigAuto: { "Diseño": ["u5"] } }), null);
+});
+
+test("solo el Líder cambia nombres: si otro nivel se renombra, se repone y no se adueña de registros ajenos", () => {
+  const n = copia(base());
+  n.equipo[2].nombre = "Beto"; n.equipo[2].cedula = "8-1-1";
+  n.horasExtra = n.horasExtra.filter(h => h.id !== "h3");
+  n.permisos.find(p => p.id === "p2").aprobacion = "Pendiente";
+  const r = aplicarReglasRol(n, base(), COLAB);
+  assert.equal(r.equipo.find(p => p.id === "u3").nombre, "Caro");
+  assert.equal(r.equipo.find(p => p.id === "u3").cedula, "8-1-1");
+  assert.ok(r.horasExtra.some(h => h.id === "h3"));
+  assert.equal(r.permisos.find(p => p.id === "p2").aprobacion, "Aprobado");
+  assert.equal(validarNombres(r, base()), null);
+  const e = copia(base()); e.equipo[1].nombre = "Roberto";
+  assert.equal(aplicarReglasRol(e, base(), EDITOR).equipo.find(p => p.id === "u2").nombre, "Beto");
+});
+
+test("un nombre con < > \" ' o de más de 80 caracteres se rechaza", () => {
+  const con = nombre => { const n = copia(base()); n.equipo[2].nombre = nombre; return validarNombres(aplicarReglasRol(n, base(), LIDER), base()); };
+  assert.ok(con("<script>alert(1)</script>"));
+  assert.ok(con("<img src=x onerror=alert(1)>"));
+  assert.ok(con('Caro "la jefa"'));
+  assert.ok(con("D'Caro"));
+  assert.ok(con("x".repeat(81)));
+  assert.ok(con(""));
+  assert.equal(con("Carolina Pérez"), null);
+  const nueva = copia(base()); nueva.equipo.push({ id: "u9", nombre: "<b>Nuevo</b>", nivel: "colaborador" });
+  assert.ok(validarNombres(nueva, base()));
+  const vieja = copia(base()); vieja.equipo[1].nombre = "Beto <viejo>";   // un nombre ya guardado no frena otros guardados
+  assert.equal(validarNombres(copia(vieja), vieja), null);
+});
+
+test("no puede haber dos personas con el mismo nombre (sin importar mayúsculas ni espacios)", () => {
+  const ren = copia(base()); ren.equipo[1].nombre = "  ana ";
+  assert.ok(validarNombres(ren, base()));
+  const nueva = copia(base()); nueva.equipo.push({ id: "u9", nombre: "CA RO", nivel: "colaborador" });
+  assert.ok(validarNombres(nueva, base()));
+  const ok = copia(base()); ok.equipo.push({ id: "u9", nombre: "Carolina", nivel: "colaborador" });
+  assert.equal(validarNombres(ok, base()), null);
+});
+
+test("cuando el Líder renombra a alguien, el nombre nuevo pasa a todos sus registros", () => {
+  const antes = copia(base());
+  antes.horasExtra.push({ id: "h4", miembro: "Beto", aprobacion: "Aprobado", aprobadoPor: "Caro", registradoPor: "Caro" });
+  antes.tareas[0] = { id: "t1", titulo: "Confirmada", creadaPor: "Caro", secciones: { "Diseño": { responsables: ["u3"], completadoPor: "Caro" } },
+    audiovisualData: { asignaciones: [{ userId: "u3", nombre: "Caro", medio: "foto" }, { userId: "u2", nombre: "Beto", medio: "video" }] } };
+  antes.bitacora = [{ id: "b1", usuario: "Caro", accion: "Antes", detalle: "Caro hizo algo" }];
+  const n = copia(antes); n.equipo[2].nombre = "Carolina";
+  const r = aplicarReglasRol(n, antes, LIDER);
+  assert.deepEqual(r.horasExtra.map(h => h.miembro), ["Carolina", "Carolina", "Beto", "Beto"]);
+  assert.equal(r.horasExtra[3].aprobadoPor, "Carolina");
+  assert.equal(r.horasExtra[3].registradoPor, "Carolina");
+  assert.equal(r.permisos.find(p => p.id === "p1").miembro, "Carolina");
+  assert.equal(r.publicaciones.find(p => p.id === "pub1").creadoPor, "Carolina");
+  assert.equal(r.tareas[0].creadaPor, "Carolina");
+  assert.equal(r.tareas[0].secciones["Diseño"].completadoPor, "Carolina");
+  assert.deepEqual(r.tareas[0].audiovisualData.asignaciones.map(a => a.nombre), ["Carolina", "Beto"]);
+  assert.equal(r.bitacora[0].usuario, "Carolina");
+  assert.equal(r.bitacora[0].detalle, "Caro hizo algo");
+  assert.equal(r.equipo.find(p => p.id === "u2").nombre, "Beto");
+});
+
+test("el Colaborador recibe lo suyo y al guardar vuelve lo ajeno que no recibió", () => {
+  const antes = copia(base());
+  antes.horasExtra.push({ id: "h4", miembro: "Beto", tipo: "compensatorio", aprobacion: "Aprobado", horas: "8", fecha: "2026-01-12", actividad: "Viaje" });
+  const v = versionNivel(copia(antes), COLAB);
+  assert.deepEqual(v.horasExtra.map(h => h.id), ["h1", "h2", "h4"]);
+  assert.equal(v.horasExtra[2].actividad, undefined);
+  assert.deepEqual(v.permisos.map(p => p.id), ["p1"]);
+  assert.deepEqual([v.bitacora, v.historico], [[], []]);
+  assert.deepEqual(v.equipo[1], { id: "u2", nombre: "Beto", nivel: "editor", cats: [], sistema: false });
+  assert.equal(v.equipo[2].email, "caro@x");
+  assert.deepEqual(versionNivel(copia(antes), { id: "u4", nivel: "lector" }).horasExtra.map(h => h.id), ["h4"]);
+  assert.deepEqual(versionNivel(antes, EDITOR), antes);
+  // borra su hora pendiente, agrega una y toca el compensatorio ajeno que recibió recortado
+  v.horasExtra = [{ id: "h5", miembro: "Caro", aprobacion: "Pendiente", horas: "1" }, v.horasExtra[1], { ...v.horasExtra[2], horas: "0" }];
+  v.permisos = [];
+  const r = aplicarReglasRol(reponerOculto(v, antes, COLAB), antes, COLAB);
+  assert.deepEqual(r.horasExtra.map(h => h.id), ["h5", "h2", "h3", "h4"]);
+  assert.deepEqual(r.horasExtra[3], antes.horasExtra[3]);
+  assert.deepEqual(ids(r.permisos), ["p1", "p2"]);
+  assert.deepEqual(r.equipo, antes.equipo);
+  assert.deepEqual([r.bitacora, r.historico], [antes.bitacora, antes.historico]);
+});
+
+test("un registro repetido en lo que manda el Colaborador no multiplica lo ajeno ni lo suyo", () => {
+  const antes = copia(base());
+  const v = versionNivel(copia(antes), COLAB);
+  v.horasExtra = [v.horasExtra[1], v.horasExtra[1], v.horasExtra[1], v.horasExtra[0]];
+  let r = aplicarReglasRol(reponerOculto(copia(v), antes, COLAB), antes, COLAB);
+  assert.deepEqual(ids(r.horasExtra), ["h1", "h2", "h3"]);
+  // aunque lo guardado ya venga con un repetido, cada registro queda una vez
+  const sucio = copia(antes); sucio.horasExtra.push(copia(sucio.horasExtra[2]));
+  r = aplicarReglasRol(reponerOculto(versionNivel(copia(sucio), COLAB), sucio, COLAB), sucio, COLAB);
+  assert.deepEqual(ids(r.horasExtra), ["h1", "h2", "h3"]);
+});
+
+test("una lista que no viene, o viene vacía sin poder quitarla, no se borra", () => {
+  const antes = { ...copia(base()), medios: [{ id: "m1" }], notasPrensa: [{ id: "n1" }], informesSem: [{ id: "2026-10-12", nudos: "x" }],
+    asigVarias: [{ id: "a1", creadoPorId: "u2" }, { id: "a2", creadoPorId: "u3" }], etiquetas: ["Gala", "Taller"], notifs: [{ id: "no1", txt: "Nueva tarea" }] };
+  const sin = copia(antes);
+  ["informesSem", "pedidos", "publicaciones", "medios", "notasPrensa", "asigVarias", "notifs", "etiquetas", "horasExtra", "bitacora", "historico"].forEach(k => delete sin[k]);
+  for (const u of [EDITOR, COLAB]) {
+    const r = aplicarReglasRol(reponerOculto(copia(sin), antes, u), antes, u);
+    for (const k of ["informesSem", "pedidos", "publicaciones", "medios", "notasPrensa", "asigVarias", "notifs", "etiquetas", "horasExtra", "bitacora", "historico"])
+      assert.deepEqual(r[k], antes[k], `${u.nivel}: ${k}`);
+  }
+  const vacias = { ...copia(antes), medios: [], notasPrensa: [], informesSem: [], asigVarias: [], etiquetas: [] };
+  const c = aplicarReglasRol(reponerOculto(copia(vacias), antes, COLAB), antes, COLAB);
+  assert.deepEqual([c.medios, c.notasPrensa, c.informesSem, c.etiquetas], [antes.medios, antes.notasPrensa, antes.informesSem, antes.etiquetas]);
+  assert.deepEqual(ids(c.asigVarias), ["a1"]);                             // quita solo la recurrente que creó
+  const e = aplicarReglasRol(copia(vacias), antes, EDITOR);
+  assert.deepEqual([e.medios, e.notasPrensa, e.asigVarias], [[], [], []]); // el Editor sí los quita
+  assert.deepEqual(e.etiquetas, antes.etiquetas);                          // las etiquetas solo las quita el Líder
+  assert.deepEqual(aplicarReglasRol(copia(vacias), antes, LIDER).etiquetas, []);
+});
+
+test("los avisos de horas, compensatorio y permisos solo le llegan a esa persona (y a Líder y Editor)", () => {
+  const antes = { ...copia(base()), informesSem: [{ id: "2026-10-12", nudos: "x" }], notifs: [
+    { id: "n1", txt: "Horas rechazado: Beto", sub: "3 h", miembro: "Beto" },
+    { id: "n2", txt: "Solicitud de horas: Caro", miembro: "Caro" },
+    { id: "n3", txt: "Nueva tarea: \"Gala\"" },
+    { id: "n4", txt: "Permiso anulado: Beto", sub: "Enfermedad · 7 oct · motivo" },        // de antes, sin «miembro»
+    { id: "n5", txt: "2 registros de horas extra por aprobar (5 h)" },
+  ] };
+  const v = versionNivel(copia(antes), COLAB);
+  assert.deepEqual(v.notifs.map(n => n.id), ["n2", "n3"]);
+  assert.deepEqual(v.informesSem, []);
+  assert.deepEqual(versionNivel(copia(antes), { id: "u4", nivel: "lector" }).notifs.map(n => n.id), ["n3"]);
+  assert.equal(versionNivel(copia(antes), EDITOR).notifs.length, 5);
+  v.notifs = [];                                                           // «Limpiar» del Colaborador: lo que no vio queda
+  const r = aplicarReglasRol(reponerOculto(v, antes, COLAB), antes, COLAB);
+  assert.deepEqual(r.notifs.map(n => n.id), ["n1", "n4", "n5"]);
+  assert.deepEqual(r.informesSem, antes.informesSem);
+});
+
+test("las horas y permisos nuevos del Colaborador van a su nombre, y no pasa lo suyo pendiente a otra persona", () => {
+  const antes = copia(base());
+  const n = copia(antes);
+  n.horasExtra.unshift({ id: "h9", miembro: "Carolina", aprobacion: "Pendiente", horas: "1" });   // nombre de antes de un cambio
+  n.horasExtra.find(h => h.id === "h1").miembro = "Beto";
+  n.permisos.unshift({ id: "p9", miembro: "Ana", aprobacion: "Pendiente" });
+  n.permisos.find(p => p.id === "p1").miembro = "Beto";
+  const r = aplicarReglasRol(n, antes, COLAB);
+  assert.equal(r.horasExtra.find(h => h.id === "h9").miembro, "Caro");
+  assert.equal(r.horasExtra.find(h => h.id === "h1").miembro, "Caro");
+  assert.equal(r.permisos.find(p => p.id === "p9").miembro, "Caro");
+  assert.equal(r.permisos.find(p => p.id === "p1").miembro, "Caro");
+  const e = copia(antes); e.horasExtra.unshift({ id: "h9", miembro: "Ana", aprobacion: "Pendiente", horas: "1" });
+  assert.equal(aplicarReglasRol(e, antes, EDITOR).horasExtra[0].miembro, "Ana");   // el Editor registra horas de otras personas
 });
 
 test("limitador cuenta intentos por clave", () => {

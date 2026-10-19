@@ -16,11 +16,23 @@ fs.writeFileSync(path.join(dir, "users.json"), JSON.stringify([
   { id: "u3", email: "colab@x.org", password: hash, nivel: "colaborador" },
   { id: "u4", email: "tv@x.org", password: hash, nivel: "lector" },
 ]));
+const CLAVES = { "Administración": "clave-admin-1", "Dirección": "clave-direccion-1", "Desarrollo Social": "clave-social-1",
+  "Coordinación de Arte y Cultura": "clave-arte-1", "Educación Artística y Cultural": "clave-educa-1", "Otra": "clave-otra-1" };
+const ficha = (id, nombre, nivel) => ({ id, nombre, nivel, email: `${nombre.toLowerCase()}@x.org`, cargo: "Cargo", cats: [], secciones: ["Diseño"],
+  cedula: `8-${id}`, correo: `${nombre.toLowerCase()}@gmail.com`, puesto: "Puesto", posicion: "100", ingreso: "2024-01-01" });
 fs.writeFileSync(path.join(dir, "data.json"), JSON.stringify({
-  equipo: [{ id: "u1", nombre: "Ana", nivel: "lider" }, { id: "u2", nombre: "Beto", nivel: "editor" },
-           { id: "u3", nombre: "Caro", nivel: "colaborador" }, { id: "u4", nombre: "TV", nivel: "lector" }],
-  tareas: [{ id: "t1", titulo: "Confirmada" }], bitacora: [], permisos: [],
-  config: { clavesPedidos: { "Dirección": "clave-direccion-1" } },
+  equipo: [ficha("u1", "Ana", "lider"), ficha("u2", "Beto", "editor"), ficha("u3", "Caro", "colaborador"), ficha("u4", "TV", "lector")],
+  tareas: [{ id: "t1", titulo: "Confirmada" }],
+  horasExtra: [
+    { id: "h1", miembro: "Beto", fecha: "2026-01-05", horas: "3", aprobacion: "Aprobado", actividad: "Gala" },
+    { id: "h2", miembro: "Caro", fecha: "2026-01-06", horas: "2", aprobacion: "Pendiente", actividad: "Concierto" },
+    { id: "h3", miembro: "Beto", tipo: "compensatorio", fecha: "2026-01-12", horas: "8", aprobacion: "Aprobado", actividad: "Día libre" },
+    { id: "h4", miembro: "Ana", tipo: "compensatorio", fecha: "2026-01-13", horas: "4", aprobacion: "Pendiente" },
+  ],
+  permisos: [{ id: "p1", miembro: "Beto", motivo: 3, desdeF: "2026-01-07", aprobacion: "Aprobado", motivoAnul: "x" },
+             { id: "p2", miembro: "Caro", motivo: 1, desdeF: "2026-01-08", aprobacion: "Pendiente" }],
+  bitacora: [{ id: "b0", accion: "Permiso solicitado", detalle: "Beto — Enfermedad" }], historico: [{ id: "his1", reporte: "Horas de Beto" }],
+  config: { clavesPedidos: CLAVES },
 }));
 
 const app = require("../app");
@@ -133,6 +145,21 @@ test("el servidor deshace lo que el nivel no permite y avisa", async () => {
   assert.equal((await (await pedir("/api/data", { token: lider })).json()).config.clavesPedidos["Dirección"], "clave-direccion-1");
 });
 
+test("un nombre con signos de código o repetido no se guarda, y el colaborador no se cambia el nombre", async () => {
+  assert.equal((await pedir("/nombres.js")).status, 200);
+  const t = await entrar("lider@x.org");
+  const d = await (await pedir("/api/data", { token: t })).json();
+  d.equipo.find(p => p.id === "u3").nombre = "<img src=x onerror=alert(1)>";
+  assert.equal((await pedir("/api/data", { metodo: "POST", token: t, cuerpo: d })).status, 400);
+  d.equipo.find(p => p.id === "u3").nombre = " beto ";
+  assert.equal((await pedir("/api/data", { metodo: "POST", token: t, cuerpo: d })).status, 400);
+  const c = await entrar("colab@x.org");
+  const dc = await (await pedir("/api/data", { token: c })).json();
+  dc.equipo.find(p => p.id === "u3").nombre = "Beto";
+  assert.equal((await (await pedir("/api/data", { metodo: "POST", token: c, cuerpo: dc })).json()).ajustado, true);
+  assert.equal((await (await pedir("/api/data", { token: c })).json()).equipo.find(p => p.id === "u3").nombre, "Caro");
+});
+
 test("al cambiar la contraseña, las sesiones anteriores dejan de valer", async () => {
   const vieja = await entrar("editor@x.org");
   await new Promise(r => setTimeout(r, 1100));          // las sesiones se fechan por segundo
@@ -142,10 +169,84 @@ test("al cambiar la contraseña, las sesiones anteriores dejan de valer", async 
   assert.equal((await pedir("/api/data", { token: r.token })).status, 200);
 });
 
+test("colaborador y lector no reciben horas, permisos ni datos personales ajenos", async () => {
+  const ed = await (await pedir("/api/data", { token: await entrar("editor@x.org") })).json();
+  assert.equal(ed.horasExtra.length, 4); assert.equal(ed.permisos.length, 2); assert.equal(ed.equipo[0].cedula, "8-u1");
+  const c = await (await pedir("/api/data", { token: await entrar("colab@x.org") })).json();
+  assert.deepEqual(c.horasExtra.map(h => h.id), ["h2", "h3"]);             // las suyas y quién sale por compensatorio
+  assert.deepEqual(c.horasExtra[1], { id: "h3", miembro: "Beto", tipo: "compensatorio", aprobacion: "Aprobado", horas: "8", fecha: "2026-01-12" });
+  assert.deepEqual(c.permisos.map(p => p.id), ["p2"]);
+  assert.deepEqual(c.bitacora, []); assert.deepEqual(c.historico, []);
+  for (const p of c.equipo.filter(p => p.id !== "u3"))
+    for (const k of ["cedula", "correo", "email", "puesto", "posicion", "ingreso"]) assert.equal(p[k], undefined, `${p.nombre}.${k}`);
+  assert.equal(c.equipo.find(p => p.id === "u1").nombre, "Ana");
+  assert.equal(c.equipo.find(p => p.id === "u3").cedula, "8-u3");        // su propia ficha llega completa
+  const l = await (await pedir("/api/data", { token: await entrar("tv@x.org") })).json();
+  assert.deepEqual(l.horasExtra.map(h => h.id), ["h3"]); assert.deepEqual(l.permisos, []);
+  assert.equal(l.equipo.find(p => p.id === "u3").cedula, undefined);
+  assert.ok(!JSON.stringify(l).includes("Enfermedad") && !JSON.stringify(c).includes("Enfermedad"));
+});
+
+test("un guardado del colaborador con su versión no borra lo ajeno que no recibió", async () => {
+  const t = await entrar("colab@x.org"), antes = await (await pedir("/api/data", { token: await entrar("lider@x.org") })).json();
+  const r = await pedir("/api/data", { token: t }), huella = r.headers.get("etag"), d = await r.json();
+  assert.notEqual(huella, (await pedir("/api/data", { token: await entrar("editor@x.org") })).headers.get("etag"));
+  d.horasExtra.find(h => h.id === "h2").horas = "2.5";
+  d.horasExtra.unshift({ id: "h5", miembro: "Caro", fecha: "2026-01-20", horas: "1", aprobacion: "Pendiente" });
+  d.bitacora.unshift({ id: "b-colab", accion: "Hora registrada" });
+  const g = await pedir("/api/data", { metodo: "POST", token: t, cuerpo: d, headers: { "If-Match": huella } });
+  assert.equal(g.status, 200);
+  const j = await g.json();
+  assert.equal(j.ajustado, false);
+  assert.equal((await pedir("/api/data", { token: t, headers: { "If-None-Match": j.huella } })).status, 304);
+  assert.equal((await pedir("/api/data", { metodo: "POST", token: t, cuerpo: d, headers: { "If-Match": huella } })).status, 409);
+  const ahora = await (await pedir("/api/data", { token: await entrar("lider@x.org") })).json();
+  assert.deepEqual(ahora.horasExtra.map(h => h.id), ["h5", "h1", "h2", "h3", "h4"]);
+  assert.equal(ahora.horasExtra.find(h => h.id === "h2").horas, "2.5");
+  assert.deepEqual(ahora.horasExtra.find(h => h.id === "h3"), antes.horasExtra.find(h => h.id === "h3"));
+  assert.deepEqual(ahora.permisos, antes.permisos);
+  assert.deepEqual(ahora.equipo, antes.equipo);
+  assert.deepEqual(ahora.historico, antes.historico);
+  assert.deepEqual(ahora.bitacora.map(b => b.id), ["b-colab", ...antes.bitacora.map(b => b.id)]);
+});
+
+test("los fallos de un correo no impiden entrar a otra persona desde la misma conexión", async () => {
+  let ultima;
+  for (let i = 0; i < 11; i++) ultima = await pedir("/api/login", { metodo: "POST", cuerpo: { email: "otro@x.org", password: "mala" } });
+  assert.equal(ultima.status, 429);
+  const t = await entrar("colab@x.org");
+  assert.ok(t);
+  for (let i = 0; i < 11; i++) ultima = await pedir("/api/change-password", { metodo: "POST", token: t, cuerpo: { passwordActual: "mala", passwordNueva: "otra12345" } });
+  assert.equal(ultima.status, 429);
+  assert.ok(await entrar("tv@x.org"));                                   // cambiar contraseña tiene su propio contador
+});
+
+test("varias oficinas pueden enviar pedidos desde la misma conexión", async () => {
+  const pedido = clave => ({ clave, areaOtra: "Biblioteca", nombre: "Ana", contacto: "6000-0000", actividad: "Gala de Danza", fecha: "2099-05-10", hora: "17:00",
+    servicios: ["cobertura"], puntoFocal: { nombre: "Luis", telefono: "6111-1111" }, detalles: { cobertura: { llegada: "16:30" } } });
+  for (const clave of Object.values(CLAVES)) {
+    const r = await pedir("/api/pedidos", { metodo: "POST", cuerpo: pedido(clave) });
+    assert.equal(r.status, 200, `${clave}: ${(await r.json()).error}`);
+  }
+  let r;
+  for (let i = 0; i < 20; i++) r = await pedir("/api/pedidos", { metodo: "POST", cuerpo: pedido(CLAVES["Dirección"]) });
+  assert.equal(r.status, 429);
+  assert.match((await r.json()).error, /^Se enviaron muchos pedidos desde esta red/);
+  assert.equal((await pedir("/api/pedidos", { metodo: "POST", cuerpo: pedido(CLAVES["Administración"]) })).status, 200);
+});
+
 test("el formulario de pedidos frena a quien prueba claves", async () => {
   let ultima;
-  for (let i = 0; i < 11; i++) ultima = await pedir("/api/pedidos/oficina", { metodo: "POST", cuerpo: { clave: "mala" + i } });
+  for (let i = 0; i < 31; i++) ultima = await pedir("/api/pedidos/oficina", { metodo: "POST", cuerpo: { clave: "mala" + i } });
   assert.equal(ultima.status, 429);
+});
+
+test("diez contraseñas malas desde otra red no dejan fuera a la persona en su oficina", async () => {
+  let ultima;
+  for (let i = 0; i < 11; i++)
+    ultima = await pedir("/api/login", { metodo: "POST", cuerpo: { email: "editor@x.org", password: "mala" }, headers: { "X-Forwarded-For": "66.6.6.6" } });
+  assert.equal(ultima.status, 429);
+  assert.ok(await entrar("editor@x.org"));
 });
 
 test("tras varios intentos fallidos de entrar, se espera", async () => {

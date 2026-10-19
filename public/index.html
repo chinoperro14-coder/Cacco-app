@@ -179,6 +179,8 @@ header{background:var(--na);height:60px;display:flex;align-items:center;justify-
 .uch{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.15);border-radius:20px;padding:5px 12px 5px 6px;cursor:pointer;transition:background .15s;}
 .uch:hover{background:rgba(255,255,255,.25);}
 .uch .unom{font-size:12px;font-weight:600;color:#fff;}
+#sinGuardar{font-size:12px;font-weight:700;color:#fff;white-space:nowrap;}
+@media(max-width:340px){#sinGuardar .sgTxt{display:none;}}
 /* NOTIF */
 .npanel{position:fixed;top:70px;right:20px;width:340px;max-height:480px;overflow-y:auto;background:var(--su);border:1px solid var(--bo);border-radius:var(--r);box-shadow:var(--shm);z-index:400;display:none;}
 .npanel.on{display:block;}
@@ -519,6 +521,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   .btn.bbl.bsm[onclick*="cerrarSes"]{padding:4px 8px;font-size:10px;}
   /* Avatar nombre oculto */
   .unom{display:none;}
+  #sinGuardar{font-size:11px;line-height:1.15;white-space:normal;}
   /* Ocultar texto CACCO en móvil — el isotipo ya identifica la app */
   .horg{display:none;}
   /* Notif panel */
@@ -798,6 +801,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <div><div class="horg">CACCO</div><div class="hdep">Equipo de Comunicaciones</div></div>
   </div>
   <div class="hr">
+    <span id="sinGuardar" class="oculto" role="status" title="Se envía solo en cuanto vuelva la conexión">⚠️<span class="sgTxt"> Sin guardar</span></span>
     <div style="display:flex;gap:4px">
       <button class="acb" onclick="togOsc()" id="btnOsc" title="Modo noche" aria-label="Modo noche">🌙</button>
       <button class="acb" onclick="ajTxt(1)" title="Letra más grande" aria-label="Letra más grande">A+</button>
@@ -839,10 +843,10 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 <!-- Pestañas de cada grupo del menú -->
 <div class="subnav oculto" data-g="tareas">
   <button data-v="tareas" onclick="goV('tareas')">📋 Lista</button>
+  <button data-v="pedidos" class="ned oculto" onclick="goV('pedidos')">📨 Pedidos</button>
   <button data-v="calendario" onclick="goV('calendario')">🗓️ Calendario</button>
   <button data-v="asigVarias" onclick="goV('asigVarias')">🔁 Recurrentes</button>
   <button data-v="pantalla" onclick="goV('pantalla')">📺 Pantalla</button>
-  <button data-v="pedidos" class="ned oculto" onclick="goV('pedidos')">📨 Pedidos</button>
 </div>
 <div class="subnav oculto" data-g="pubs">
   <button data-v="calPub" onclick="goV('calPub')">📣 Calendario de publicaciones</button>
@@ -1053,9 +1057,9 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <button class="btn bgh bsm" onclick="navRep(1)" id="btnRepNext">Siguiente →</button>
   </div>
   <div id="repCont"></div>
-  <!-- Cierre de mes: aparte del resto porque borra las tareas únicas del mes -->
+  <!-- Cierre de mes: aparte del resto porque quita las tareas resueltas del mes -->
   <div class="nle oculto" style="margin-top:28px;border:1px dashed var(--ro);border-radius:var(--r);padding:14px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap">
-    <div style="font-size:13px;color:var(--tm);max-width:560px"><b style="color:var(--tx)">🗂️ Cierre de mes</b><br>Archiva el reporte y borra las tareas únicas del mes. Las recurrentes, las horas extra y el compensatorio se conservan. No se puede deshacer.</div>
+    <div style="font-size:13px;color:var(--tm);max-width:560px"><b style="color:var(--tx)">🗂️ Cierre de mes</b><br>Archiva el reporte, descarga una copia de los datos y quita las tareas ya resueltas (finalizadas, cerradas, no cumplidas o canceladas) que terminaron este mes o antes. Se conservan las pendientes, las futuras, los borradores, los pedidos, las recurrentes, las horas extra y el compensatorio. No se puede deshacer.</div>
     <button class="btn bpe bsm" onclick="cerrarMes()">Cerrar el mes…</button>
   </div>
 </div>
@@ -1264,7 +1268,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <div class="tc" style="padding:24px">
     <div style="font-size:15px;font-weight:700;margin-bottom:20px">Editar información</div>
     <div class="fr">
-      <div class="fg"><label class="fl">Nombre</label><input type="text" class="fc" id="pNom"></div>
+      <div class="fg"><label class="fl">Nombre</label><input type="text" class="fc" id="pNom" maxlength="80"></div>
       <div class="fg"><label class="fl">Cargo</label><input type="text" class="fc" id="pCargo"></div>
     </div>
     <div class="fg"><label class="fl">Foto (URL)</label><input type="url" class="fc" id="pFoto" placeholder="https://..."></div>
@@ -1319,6 +1323,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
         <div style="display:flex;gap:6px;align-items:flex-start"><div style="flex:1;min-width:0"><input type="date" class="fc" id="tOtraF"></div><button class="btn bgh bsm" onclick="addOtraF()" title="Agregar fecha">+ Agregar</button></div>
         <div class="chw" id="chOtrasF"></div></div>
     </div>
+    <div class="fg"><label class="fl">📁 Carpeta del material (Drive)</label><input type="url" class="fc" id="tCarpeta" placeholder="Se llena sola cuando se crea la carpeta; también puedes pegar un enlace"></div>
     <div class="fg"><label class="fl">⚠️ Por revisar</label><input type="text" class="fc" id="tRevisar" placeholder="Algo que confirmar antes de la actividad" oninput="this.classList.toggle('fc-aviso',!!this.value.trim())"></div>
     <div class="fr">
       <div class="fg"><label class="fl">Prioridad</label>
@@ -1355,7 +1360,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
 
   </div>
   <div class="mpie"><button class="btn bgh" id="tDescartar" onclick="descartarBorr([document.getElementById('tId').value],()=>cerM('mT'))" style="display:none;margin-right:auto;color:var(--ro)">🗑 Descartar borrador</button><button class="btn bgh" onclick="cerM('mT')">Cancelar</button>
-<button class="btn bgh" onclick="guardarBorrador()" style="border:1px dashed var(--na);color:var(--na)">Guardar borrador</button>
+<button class="btn bgh" id="tGuardarBorr" onclick="guardarBorrador()" style="border:1px dashed var(--na);color:var(--na)">Guardar borrador</button>
 <button class="btn bna" onclick="guardarT()">Guardar tarea</button></div>
 </div></div>
 
@@ -1525,7 +1530,7 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
   <div class="mbody">
     <input type="hidden" id="eqId">
     <div class="fr">
-      <div class="fg"><label class="fl">Nombre *</label><input type="text" class="fc" id="eqNom"></div>
+      <div class="fg"><label class="fl">Nombre *</label><input type="text" class="fc" id="eqNom" maxlength="80"></div>
       <div class="fg"><label class="fl">Cargo</label><input type="text" class="fc" id="eqCargo" placeholder="ej. Fotógrafo"></div>
     </div>
     <div class="fg"><label class="fl">Email (para iniciar sesión) *</label><input type="email" class="fc" id="eqEmail" placeholder="usuario@cacco.com"></div>
@@ -1841,11 +1846,12 @@ body.osc .login-card{box-shadow:0 2px 8px rgba(0,0,0,.2),0 16px 40px rgba(0,0,0,
     <div style="font-size:40px;margin-bottom:14px">🔐</div>
     <div style="font-size:17px;font-weight:800;color:var(--tx);margin-bottom:8px">Sesión expirada</div>
     <div style="font-size:13px;color:var(--tm);margin-bottom:24px">Tu sesión ha caducado por seguridad. Debes volver a iniciar sesión para continuar.</div>
-    <button class="btn bna" style="width:100%" onclick="cerM('mSesExp');cerrarSes()">Volver al inicio de sesión</button>
+    <button class="btn bna" style="width:100%" onclick="cerM('mSesExp');cerrarSes(true)">Volver al inicio de sesión</button>
   </div>
 </div></div>
 
 <script src="/pedidos.js"></script>
+<script src="/nombres.js"></script>
 <script>
 // ════════════════════════
 //  CONSTANTES
@@ -1955,35 +1961,57 @@ function sesionExpirada(){
 
 // ── Anti-pisado: fusión 3-vías (base común, lo mío, lo del servidor) ──
 let Ebase=null;      // último estado del servidor con el que reconciliamos (ancestro común)
-let _guardando=false,_reintentar=false,_guardarTimer=null;
+let _guardando=false,_reintentar=false,_guardarTimer=null,_reintentoTimer=null,_sinGuardar=0;// _sinGuardar: cambios que aún no llegan al servidor
 function snap(o){return JSON.parse(JSON.stringify(o));}
 
-// Fusiona dos listas de objetos {id,...} usando la base como ancestro.
-function mergeArrById(base,mine,theirs){
+// Iguales sin mirar el orden de las claves; vacío (null) y ausente cuentan igual
+const _canon=o=>JSON.stringify(o,(k,v)=>v===null?undefined:v&&typeof v==='object'&&!Array.isArray(v)?Object.keys(v).sort().reduce((r,x)=>(r[x]=v[x],r),{}):v);
+const igualJ=(a,z)=>a===z||JSON.stringify(a)===JSON.stringify(z)||_canon(a)===_canon(z);
+const esObj=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
+// Listas sin id que se unen elemento por elemento (clave de cada elemento)
+const CLAVE_LISTA={asignaciones:a=>[a.userId,a.medio,a.tipo].join('|')};
+// Une en tres vías (base común, lo mío, lo del otro), también por dentro: objetos clave por clave, listas con id
+// elemento por elemento y listas de textos como conjunto. Lo que cambió un solo lado se conserva; si los dos
+// cambiaron el mismo dato, gana lo mío (el último que guarda).
+function unir3(b,m,t,k){
+  if(igualJ(m,b))return t;
+  if(igualJ(t,b)||igualJ(m,t))return m;
+  if(esObj(m)&&esObj(t)){
+    const bb=esObj(b)?b:{},out={...t};
+    new Set([...Object.keys(bb),...Object.keys(m),...Object.keys(t)]).forEach(x=>{const v=unir3(bb[x],m[x],t[x],x);if(v===undefined)delete out[x];else out[x]=v;});
+    return out;
+  }
+  if(Array.isArray(m)&&Array.isArray(t)&&(b==null||Array.isArray(b))){
+    const l=[...(b||[]),...m,...t];
+    if(l.every(x=>esObj(x)&&x.id!=null))return mergeArrById(b,m,t);
+    if(CLAVE_LISTA[k]&&l.every(esObj))return mergeArrById(b,m,t,CLAVE_LISTA[k]);
+    if(l.every(x=>x===null||typeof x!=='object')){const bs=new Set(b||[]),ms=new Set(m),ts=new Set(t);
+      return [...t.filter(x=>!bs.has(x)||ms.has(x)),...m.filter(x=>!bs.has(x)&&!ts.has(x))];}
+  }
+  return m;
+}
+// Fusiona dos listas de objetos {id,...} usando la base como ancestro (o con otra clave, repetidas numeradas).
+function mergeArrById(base,mine,theirs,clave){
   base=base||[];mine=mine||[];theirs=theirs||[];
-  const b={},t={};base.forEach(x=>b[x.id]=x);theirs.forEach(x=>t[x.id]=x);
-  const eq=(a,z)=>JSON.stringify(a)===JSON.stringify(z);
+  const ids=l=>{const n={};return l.map(x=>{if(!clave)return x.id;const c=clave(x);n[c]=(n[c]||0)+1;return c+'#'+n[c];});};
+  const ib=ids(base),im=ids(mine),it=ids(theirs);
+  const b={},t={};base.forEach((x,i)=>b[ib[i]]=x);theirs.forEach((x,i)=>t[it[i]]=x);
   const out=[],seen=new Set();
-  mine.forEach(item=>{
-    const id=item.id;seen.add(id);
+  mine.forEach((item,i)=>{
+    const id=im[i];seen.add(id);
     const bi=b[id],ti=t[id];
     if(!ti){ // el otro no lo tiene
       if(!bi)out.push(item);            // lo agregué yo → conservar
-      else if(!eq(item,bi))out.push(item); // el otro lo borró pero yo lo edité → conservar el mío
+      else if(!igualJ(item,bi))out.push(item); // el otro lo borró pero yo lo edité → conservar el mío
       return;                            // el otro lo borró y yo no lo toqué → respetar borrado
     }
-    const myCh=!bi||!eq(item,bi),suCh=!bi||!eq(ti,bi);
-    if(myCh&&suCh&&bi&&!eq(item,ti)){     // los dos cambiamos el mismo elemento: se junta campo por campo
-      const m={...ti};
-      new Set([...Object.keys(bi),...Object.keys(item)]).forEach(k=>{if(!eq(item[k],bi[k])){if(item[k]===undefined)delete m[k];else m[k]=item[k];}});
-      out.push(m);
-    }else out.push(myCh?item:ti);        // si solo yo lo cambié gana el mío; si no, tomo el del otro
+    out.push(unir3(bi,item,ti));         // los dos lo tienen: se junta por dentro
   });
-  theirs.forEach(item=>{
-    const id=item.id;if(seen.has(id))return;
+  theirs.forEach((item,i)=>{
+    const id=it[i];if(seen.has(id))return;
     const bi=b[id];
     if(!bi)out.push(item);              // lo agregó el otro → conservar
-    else if(!eq(item,bi))out.push(item); // yo lo borré pero el otro lo editó → conservar el del otro
+    else if(!igualJ(item,bi))out.push(item); // yo lo borré pero el otro lo editó → conservar el del otro
     // yo lo borré y el otro no lo tocó → respetar mi borrado
   });
   return out;
@@ -2002,8 +2030,29 @@ function mergeE(base,mine,theirs){
 
 function guardar(){ // programa un guardado con fusión (agrupa cambios rápidos)
   if(!getToken())return;
+  _sinGuardar++;
   clearTimeout(_guardarTimer);
   _guardarTimer=setTimeout(ejecutarGuardado,350);
+}
+// Si no se pudo enviar: «⚠️ Sin guardar» en la cabecera y otro intento en 5 s o en cuanto vuelva la red
+function avisoSinGuardar(on){document.getElementById('sinGuardar')?.classList.toggle('oculto',!on);}
+function reintentarGuardado(){
+  avisoSinGuardar(_sinGuardar>0);
+  clearTimeout(_reintentoTimer);
+  _reintentoTimer=setTimeout(()=>{if(_sinGuardar)ejecutarGuardado();},5000);
+}
+window.addEventListener('online',()=>{if(_sinGuardar){clearTimeout(_reintentoTimer);ejecutarGuardado();}});
+window.addEventListener('beforeunload',e=>{if(_sinGuardar&&getToken()){e.preventDefault();e.returnValue='';}});
+// Une lo local con lo del servidor. Antes de unir, lo local que aún lleva un nombre que el Líder cambió (un registro
+// nuevo, un cambio sin enviar) toma el nuevo. Después, donde se juntaron marcas de los dos lados en un área con
+// unidades, su estado se vuelve a calcular: cada lado lo había calculado viendo solo sus propias marcas.
+function juntarE(base,mine,theirs){
+  const ant=new Map((base?.equipo||[]).map(p=>[p.id,p.nombre]));
+  const cambios=(theirs?.equipo||[]).filter(p=>ant.has(p.id)&&ant.get(p.id)!==p.nombre).map(p=>({id:p.id,viejo:ant.get(p.id),nuevo:p.nombre}));
+  if(cambios.length){CaccoNombres.renombrar(base,cambios);CaccoNombres.renombrar(mine,cambios);}
+  const out=mergeE(base,mine,theirs),mt=new Map((mine?.tareas||[]).map(t=>[t.id,t])),tt=new Map((theirs?.tareas||[]).map(t=>[t.id,t]));
+  out.tareas=(out.tareas||[]).map(t=>estadosTrasUnir(t,mt.get(t.id),tt.get(t.id)));
+  return out;
 }
 // Huella (ETag) de la versión del servidor que ya tenemos: al preguntar «¿cambió algo?» el servidor responde
 // «sin cambios» (304) sin mandar nada, y al guardar avisa (409) si otra persona guardó en medio.
@@ -2017,9 +2066,9 @@ async function traerYJuntar(){
   if(!res.ok)return false;
   const theirs=await res.json();
   if(theirs&&Object.keys(theirs).length){
-    const merged=Ebase?mergeE(Ebase,E,theirs):theirs;
+    const merged=Ebase?juntarE(Ebase,E,theirs):theirs;
     const trajoAjeno=JSON.stringify(merged)!==JSON.stringify(E);
-    E=merged;completarE();
+    E=merged;completarE();refrescarYo();
     Ebase=snap(theirs);// el servidor es el nuevo ancestro común
     _huella=res.headers.get('ETag');
     // Un error al dibujar no debe frenar el guardado
@@ -2033,22 +2082,25 @@ async function ejecutarGuardado(intento=0){
   _guardando=true;
   try{
     // 1) traer lo último del servidor y fusionar antes de escribir (sin la versión del servidor no se escribe nada)
-    if(!await traerYJuntar()){_guardando=false;setTimeout(guardar,5000);return;}
+    if(!await traerYJuntar()){_guardando=false;reintentarGuardado();return;}
     // 2) escribir el resultado fusionado, diciendo de qué versión partimos
-    const enviado=snap(E);
+    const n=_sinGuardar,enviado=snap(E);
     const pr=await fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token,...(_huella?{'If-Match':_huella}:{})},body:JSON.stringify(enviado)});
     if(pr.status===401){sesionExpirada();_guardando=false;return;}
     if(pr.status===409&&intento<3){_guardando=false;_huella=null;return ejecutarGuardado(intento+1);}// alguien guardó en medio: juntar otra vez
     if(pr.status===403||pr.status===400){// el servidor rechazó el cambio: se avisa y se vuelve a lo que hay guardado
       const j=await pr.json().catch(()=>({}));alert(j.error||'No tienes permiso para guardar ese cambio.');
+      _sinGuardar=0;avisoSinGuardar(false);
       _guardando=false;_huella=null;await cargar();refrescarVistaAbierta();return;}
-    if(!pr.ok){_guardando=false;setTimeout(guardar,5000);return;}
+    if(!pr.ok){_guardando=false;reintentarGuardado();return;}
     const j=await pr.json().catch(()=>({}));
     Ebase=enviado;
+    _sinGuardar=Math.max(0,_sinGuardar-n);clearTimeout(_reintentoTimer);
+    if(!_sinGuardar)avisoSinGuardar(false);
     // Si el servidor deshizo algo que tu nivel no permite, la próxima consulta trae lo guardado de verdad
     _huella=j.ajustado?null:(j.huella||null);
     if(j.ajustado)setTimeout(sincronizar,300);
-  }catch(e){}
+  }catch(e){reintentarGuardado();}// sin red: el fetch falla y se reintenta
   _guardando=false;
   if(_reintentar){_reintentar=false;ejecutarGuardado();}
 }
@@ -2069,7 +2121,7 @@ async function cargar(){
         _huella=res.headers.get('ETag');
         if(s&&Object.keys(s).length){
           E=s;
-          completarE();
+          completarE();refrescarYo();
           // Migrate old t.publicacion / e.publicacion to E.publicaciones[]
           E.tareas.forEach(t=>{
             if(t.publicacion?.fecha){
@@ -2120,6 +2172,16 @@ function ajTxt(d){nivelTxt=Math.max(-1,Math.min(2,nivelTxt+d));document.body.cla
 // ════════════════════════
 //  LOGIN
 // ════════════════════════
+function pintarYo(){
+  const av=document.getElementById('hdrAv');
+  av.style.background=cAv(uAct.nombre);av.textContent=ini(uAct.nombre);
+  document.getElementById('hdrNom').textContent=uAct.nombre.split(' ')[0];
+}
+// Tras traer datos nuevos, la sesión toma la ficha actual (el Líder pudo cambiar el nombre)
+function refrescarYo(){
+  const p=uAct&&E.equipo.find(x=>x.id===uAct.id);if(!p)return;
+  const cambio=p.nombre!==uAct.nombre;uAct=p;if(cambio)pintarYo();
+}
 function renderLogin(){
   // Limpiar campos al regresar al login
   const lu=document.getElementById('loginUser'),lp=document.getElementById('loginPass'),le=document.getElementById('loginErr');
@@ -2161,6 +2223,9 @@ async function tryLogin() {
       // Cargar datos del servidor con el token ya disponible, luego entrar
       await cargar();
       entrar(data.userId);
+      // Lo que quedó sin enviar cuando venció la sesión se junta con lo guardado y se envía
+      if(_pendiente&&uAct){const pe=_pendiente;_pendiente=null;
+        if(pe.uid===uAct.id){E=juntarE(pe.base,pe.mine,E);completarE();refrescarYo();guardar();refrescarVistaAbierta();}}
     } else {
       errEl.textContent = data.error || 'Email o contraseña incorrectos.';
       errEl.classList.remove('oculto');
@@ -2199,12 +2264,10 @@ function iniciarApp(){
   document.querySelectorAll('.nmd,.npriv').forEach(el=>el.classList.toggle('oculto',niv==='lector'));
   if(localStorage.getItem('cacco_calPubVisto'))document.querySelectorAll('.new-tag').forEach(el=>el.style.display='none');
 
-  const av=document.getElementById('hdrAv');
-  av.style.background=cAv(uAct.nombre);av.textContent=ini(uAct.nombre);
-  document.getElementById('hdrNom').textContent=uAct.nombre.split(' ')[0];
+  pintarYo();
 
   const pHs=E.horasExtra.filter(h=>h.aprobacion==='Pendiente'&&!esComp(h));
-  if(puede('aprobarHora')&&pHs.length)addNotif('⏱️',`${plu(pHs.length,'registro','registros')} de horas extra por aprobar (${fmtH(pHs.reduce((t,h)=>t+parseFloat(h.horas||0),0))})`,'Horas Extras');
+  if(puede('aprobarHora')&&pHs.length)addNotif('⏱️',`${plu(pHs.length,'registro','registros')} de horas extra por aprobar (${fmtH(pHs.reduce((t,h)=>t+parseFloat(h.horas||0),0))})`,'Horas Extras',null,true);
 
   renderTodo();
   irInicio();
@@ -2212,7 +2275,17 @@ function iniciarApp(){
   cargarAdj();
 }
 
-function cerrarSes(){
+// Salir con cambios que no llegaron al servidor: se intenta enviarlos y, si no se puede, se pregunta antes de perderlos.
+// Si la sesión venció (o se cierra sola), esperan en esta pestaña y se envían al volver a entrar con la misma cuenta.
+let _pendiente=null;
+async function cerrarSes(sinPreguntar){
+  if(_sinGuardar&&!sinPreguntar&&getToken()){
+    if(!_guardando){clearTimeout(_guardarTimer);await ejecutarGuardado();}
+    if(document.getElementById('mSesExp')?.classList.contains('on'))return;// venció: sigue por «Volver al inicio de sesión»
+    if(_sinGuardar&&!await confirmar('Hay cambios que todavía no llegan al servidor. Si sales ahora, se pierden.',{tit:'⚠️ Sin guardar',ok:'Salir igual',no:'Quedarme',peligro:true}))return;
+  }
+  _pendiente=sinPreguntar&&_sinGuardar&&uAct?{uid:uAct.id,base:Ebase,mine:snap(E)}:null;
+  _sinGuardar=0;clearTimeout(_reintentoTimer);clearTimeout(_guardarTimer);avisoSinGuardar(false);notifsLocal=[];
   ADJ.lista=[];ADJ.cargado=false;
   uAct=null;niv=null;expandidas.clear();
   localStorage.removeItem('cacco_token');
@@ -2224,19 +2297,23 @@ function cerrarSes(){
 // ════════════════════════
 //  NOTIFICACIONES
 // ════════════════════════
-function addNotif(ico,txt,sub){E.notifs.unshift({id:gId(),ico,txt,sub,ts:new Date().toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit'})});if(E.notifs.length>50)E.notifs=E.notifs.slice(0,50);document.getElementById('ndot').classList.add('on');renderNotifs();}
-function renderNotifs(){const l=document.getElementById('notifLista');if(!E.notifs.length){l.innerHTML='<div class="nvac">Sin notificaciones.</div>';return;}l.innerHTML=E.notifs.map(n=>`<div class="nit"><div class="nico">${escH(n.ico)}</div><div class="ntxt">${escH(n.txt)}<div class="nsub">${escH(n.sub)} · ${escH(n.ts)}</div></div></div>`).join('');}
+// miembro: el aviso es sobre horas o permisos de esa persona y solo le llega a ella (y a Líder y Editor).
+// local: solo para esta sesión, no se guarda en los avisos del equipo.
+let notifsLocal=[];
+function addNotif(ico,txt,sub,miembro,local){const n={id:gId(),ico,txt,sub,ts:new Date().toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit'}),...(miembro?{miembro}:{})};
+  if(local)notifsLocal.unshift(n);else{E.notifs.unshift(n);if(E.notifs.length>50)E.notifs=E.notifs.slice(0,50);}document.getElementById('ndot').classList.add('on');renderNotifs();}
+function renderNotifs(){const l=document.getElementById('notifLista'),ns=[...notifsLocal,...E.notifs];if(!ns.length){l.innerHTML='<div class="nvac">Sin notificaciones.</div>';return;}l.innerHTML=ns.map(n=>`<div class="nit"><div class="nico">${escH(n.ico)}</div><div class="ntxt">${escH(n.txt)}<div class="nsub">${escH(n.sub)} · ${escH(n.ts)}</div></div></div>`).join('');}
 function togSid(){document.getElementById('sidNav').classList.toggle('open');document.getElementById('sidOverlay').classList.toggle('open');}
 function cerrarSid(){document.getElementById('sidNav').classList.remove('open');document.getElementById('sidOverlay').classList.remove('open');}
 function togNotif(){document.getElementById('notifPanel').classList.toggle('on');document.getElementById('ndot').classList.remove('on');}
-function limpNotifs(){E.notifs=[];renderNotifs();document.getElementById('notifPanel').classList.remove('on');}
+function limpNotifs(){E.notifs=[];notifsLocal=[];renderNotifs();document.getElementById('notifPanel').classList.remove('on');}
 
 // ════════════════════════
 //  NAVEGACIÓN
 // ════════════════════════
 const VISTAS=['Pantalla','Pedidos','MiDia','Prensa','Adjuntos','Tareas','Aprobaciones','Calendario','HorasExtra','Compensatorio','Permisos','Equipo','Reportes','Historico','Bitacora','Perfil','CalPub','AsigVarias'];
 // Menú en 7 grupos; cada grupo con varias vistas muestra sus pestañas arriba
-const GRUPOS={miDia:['miDia'],tareas:['tareas','calendario','asigVarias','pantalla','pedidos'],pubs:['calPub','prensa'],
+const GRUPOS={miDia:['miDia'],tareas:['tareas','pedidos','calendario','asigVarias','pantalla'],pubs:['calPub','prensa'],
   tramites:['horasExtra','compensatorio','permisos'],aprob:['aprobaciones'],reportes:['reportes'],mas:['equipo','adjuntos','historico','bitacora']};
 const grupoDe=v=>Object.keys(GRUPOS).find(g=>GRUPOS[g].includes(v));
 function marcarMenu(v){
@@ -2268,6 +2345,7 @@ function goV(v,el){
   if(v==='bitacora')renderBit();
   if(v==='calendario')renderCal();
   if(v==='equipo'){renderEquipo();cargarActividad();}
+  if(v==='horasExtra')renderHoras();
   if(v==='permisos')renderPermisos();
   if(v==='compensatorio')renderComp();
   if(v==='aprobaciones')renderAprob();
@@ -2374,6 +2452,30 @@ const fmtCorta=f=>{const d=new Date(f+'T00:00:00');return d.getDate()+' '+d.toLo
 const fmtOtras=t=>otrasF(t).map(fmtCorta).join(' · ');
 // Contacto y otras fechas en una línea cada uno (para notas de tarjeta y revisión)
 const extrasTxt=t=>[t.contacto?'📞 '+t.contacto:'',otrasF(t).length?'🗓️ También: '+fmtOtras(t):''].filter(Boolean).join('\n');
+// Carpeta de Drive para subir el material (la de la actividad, o la del día si dura varios días)
+const urlOk=u=>/^https:\/\/\S+$/.test(String(u||'').trim());
+const carpetaDe=(t,f)=>{const d=t?.carpetasDia&&f?t.carpetasDia[f]:'';return urlOk(d)?d:urlOk(t?.carpeta)?t.carpeta:'';};
+const carpetaBtn=(t,f,cls='btn bgh bsm')=>niv!=='lector'&&!t?.borrador&&carpetaDe(t,f)?`<a class="${cls}" href="${escH(carpetaDe(t,f))}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="text-decoration:none">📁 Subir material</a>`:'';
+// Material subido (lo cuenta la revisión de cada mañana) y aviso si la actividad ya pasó y la carpeta sigue vacía
+const faltaMaterial=t=>!!(t?.carpeta&&t.carpetaConteo&&!t.cancelada&&pasoAct(t)&&ultimaAct(t)>=sumarDias(hoy(),-30)&&!((+t.carpetaConteo.fotos||0)+(+t.carpetaConteo.videos||0)));
+// Carpeta(s) FOTO que se comparten con la oficina que hizo el pedido (una por día si la actividad dura varios)
+const fotosOficina=t=>(Array.isArray(t?.carpetaOficina)?t.carpetaOficina:[t?.carpetaOficina]).filter(urlOk);
+const waOficina=t=>{const d=String(t?.pedido?.contacto||'').replace(/\D/g,'');if(d.length<7)return '';
+  const n=d.length<=8?'507'+d:d,ls=fotosOficina(t);return `https://wa.me/${n}?text=${encodeURIComponent(`Hola, aquí están las fotos de «${t.titulo||'la actividad'}»:\n${ls.join('\n')}`)}`;};
+// Desde que arrancan las carpetas (la primera fecha con carpeta creada), una tarea confirmada sin carpeta queda marcada
+const carpetasDesde=()=>E.tareas.map(x=>x.carpetaFecha).filter(Boolean).sort()[0]||'';
+const carpetaPend=t=>{const d=carpetasDesde();return !!(d&&t&&!t.borrador&&!t.cancelada&&!carpetaDe(t)&&t.secciones?.Audiovisual&&t.fecha>=d&&!pasoAct(t));};
+function carpetaInfo(t){
+  if(niv==='lector'||t?.borrador||!carpetaDe(t))return '';
+  const c=t.carpetaConteo,ft=+c?.fotos||0,vd=+c?.videos||0,partes=[carpetaBtn(t)];
+  // El conteo lo hace la revisión de la mañana: se dice de cuándo es para que no confunda si se subió después
+  const rev=c?.fecha?` · revisado ${c.fecha===hoy()?'hoy':fmtCorta(c.fecha)}`:'';
+  if(faltaMaterial(t))partes.push(`<span class="revisar-tarj" style="display:inline-block;margin:0;padding:4px 10px">📁 Falta subir material<span style="font-weight:400">${rev}</span></span>`);
+  else if(c&&(ft||vd))partes.push(`<span style="font-size:12px;color:var(--tm)">${[ft?`📸 ${ft} foto${ft===1?'':'s'}`:'',vd?`🎥 ${vd} video${vd===1?'':'s'}`:''].filter(Boolean).join(' · ')}${rev}</span>`);
+  if(fotosOficina(t).length){partes.push(`<span style="font-size:12px;color:var(--tm)">📤 FOTO compartida con la oficina</span>`);
+    const wa=!/@/.test(t.pedido?.contacto||'')&&waOficina(t);if(wa)partes.push(`<a class="btn bgh bsm" href="${escH(wa)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="text-decoration:none">💬 Enviar por WhatsApp</a>`);}
+  return `<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px">${partes.join('')}</div>`;
+}
 const revisarHtml=t=>String(t.revisar||'').trim()?`<div class="revisar-tarj">⚠️ ${escH(t.revisar.trim())}</div>`:'';
 // Plazo de una sección: su fecha propia o el último día de la actividad
 function secLimite(t,sec){return t.secciones?.[sec]?.fecha||finAct(t)||null;}
@@ -2450,17 +2552,31 @@ function noCumplidasUnidades(t,sec){
   return out;
 }
 
-// Recalcula el estado de un área con sub-asignaciones según sus unidades.
+// Estado que dicen las unidades de un área con sub-asignaciones (null si no tiene unidades).
 // Sin resolver>0 → Pendiente/En Progreso · todo hecho → Completada · todo no cumplido → No cumplida · mixto → Cerrada
+function estadoPorUnidades(t,sec){
+  const u=contarUnidadesSeccion(t,sec);if(!u||!u.asig)return null;
+  return u.sinResolver>0?(u.comp+u.noc>0?'En Progreso':'Pendiente'):u.noc===0?'Completada':u.comp===0?'No cumplida':'Cerrada';
+}
+// Tras unir una tarea (t) desde dos versiones (a, b): si las unidades de un área quedaron distintas de las dos,
+// ninguna calculó bien su estado y se calcula aquí, sin avisos ni bitácora
+const UNIDADES={Audiovisual:'audiovisualData','Redes Sociales':'redesSociales',Medios:'mediosData'};
+function estadosTrasUnir(t,a,b){
+  if(!t?.secciones||!a||!b)return t;
+  Object.entries(UNIDADES).forEach(([sec,k])=>{
+    const sv=t.secciones[sec];if(!sv||igualJ(t[k],a[k])||igualJ(t[k],b[k]))return;
+    const e=estadoPorUnidades(t,sec);if(!e||e===sv.estado)return;
+    t={...t,secciones:{...t.secciones,[sec]:e==='Completada'
+      ?{...sv,estado:e,completadoPor:sv.completadoPor||uAct?.nombre||null,completadoEn:sv.completadoEn||hoy(),...(pasoAct(t)?{completadaTarde:true}:{})}
+      :{...sv,estado:e,completadoPor:null,completadoEn:null,completadaTarde:false}}};
+  });
+  return t;
+}
+// Recalcula el estado de un área con sub-asignaciones según sus unidades (y lo anota)
 function recalcSeccionEstado(t,sec){
   const sv=t.secciones?.[sec];if(!sv)return;
-  const u=contarUnidadesSeccion(t,sec);
-  if(!u||u.asig===0)return;// sin unidades: se maneja manual con togSeccion
-  let nuevo;
-  if(u.sinResolver>0)nuevo=(u.comp+u.noc>0)?'En Progreso':'Pendiente';
-  else if(u.noc===0)nuevo='Completada';
-  else if(u.comp===0)nuevo='No cumplida';
-  else nuevo='Cerrada';
+  const nuevo=estadoPorUnidades(t,sec);
+  if(!nuevo)return;// sin unidades: se maneja manual con togSeccion
   const prev=sv.estado;
   if(nuevo==='Completada'){
     t.secciones[sec]={...sv,estado:'Completada',completadoPor:sv.completadoPor||uAct?.nombre,completadoEn:sv.completadoEn||hoy()};
@@ -2568,7 +2684,7 @@ function renderTareas(){
     const eg=eglobal(t),pct=pctT(t);
     const d=dH(finAct(t)),vencida=d!==null&&d<0&&eg!=='Completada';
     const abierta=expandidas.has(t.id);
-    const mySec=misCats();
+    const mySec=misCats(),miArea=sec=>mySec.includes(sec)||(t.secciones?.[sec]?.responsables||[]).includes(uAct?.id);
     const bPri={Alta:'balt',Media:'bmed',Baja:'bbaj'};
     const bEst={Pendiente:'bpen','En Progreso':'bpro',Completada:'blis'};
 
@@ -2582,7 +2698,7 @@ function renderTareas(){
         let btn=comp
           ?(puedoMarcar?`<button class="btn-hecho" onclick="event.stopPropagation();togCat('${t.id}','${cat}')" title="Clic para revertir">✅ Completado</button>`:`<span class="bg bapr">✅ Completado</span>`)
           :(puedoMarcar?`<button class="btn-comp" onclick="event.stopPropagation();togCat('${t.id}','${cat}')">Marcar completado</button>`:`<span class="bg bpen">⏳ Pendiente</span>`);
-        const quien=av.completadoPor?` · <strong>${av.completadoPor}</strong>`:'';
+        const quien=av.completadoPor?` · <strong>${escH(av.completadoPor)}</strong>`:'';
         return`<div class="grow ${comp?'comp':''}"><div class="ginfo"><span class="gico">${ICO[cat]||'📌'}</span><div><div class="gnom">${cat}</div><div class="gsub">${av.estado}${quien}</div></div></div><div>${btn}</div></div>`;
       }).join('');
     }
@@ -2606,7 +2722,7 @@ function renderTareas(){
         const noCump=sv.estado==='No cumplida';
         const cerr=sv.estado==='Cerrada';
         const enProg=secEnCurso(t,sec);
-        const canMark=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||mySec.includes(sec));
+        const canMark=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||miArea(sec));
         const sInfo=SECCIONES[sec]||{ico:'📌',color:'#888',bg:'#eee'};
         const respNames=(sv.responsables||[]).map(uid=>{const u=E.equipo.find(e=>e.id===uid);return u?u.nombre:uid;}).join(', ')||'Sin asignar';
         // ¿El área tiene sub-asignaciones (Redes/Medios/Audiovisual)? Entonces se resuelve por asignación, no con botón de área.
@@ -2634,7 +2750,7 @@ function renderTareas(){
             <span style="font-size:16px">${sInfo.ico}</span>
             <div>
               <div style="font-size:13px;font-weight:700;color:var(--tx)">${sec}</div>
-              <div style="font-size:11px;color:var(--tm)">👤 ${respNames}${sv.completadoPor?` · ✅ ${sv.completadoPor} · ${fmt(sv.completadoEn)}`:''}</div>
+              <div style="font-size:11px;color:var(--tm)">👤 ${escH(respNames)}${sv.completadoPor?` · ✅ ${escH(sv.completadoPor)} · ${fmt(sv.completadoEn)}`:''}</div>
               ${sv.fecha?`<div style="font-size:11px;color:var(--e-${sk}x);font-weight:600;margin-top:2px">🗓️ Entrega: ${fmt(sv.fecha)}${sv.hora?` · ${escH(sv.hora)}`:''}${SEC_EN_EVENTO.includes(sec)&&t.fecha&&sv.fecha<t.fecha?` <span style="color:var(--ro)">⚠️ antes de la actividad (${fmt(t.fecha)})</span>`:''}</div>`:''}
               ${resumenUnid}
               ${(sv.completadaTarde||sv.notaRetraso)?`<div style="font-size:11px;color:#dc2626;margin-top:2px">⏰ Completada con retraso${sv.notaRetraso?` — ${sv.notaRetraso}`:''}</div>`:''}
@@ -2656,7 +2772,7 @@ function renderTareas(){
         let detalle='';
         if(sec==='Redes Sociales'&&t.redesSociales){
           const rs=t.redesSociales;
-          const canMarkR=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||mySec.includes(sec));
+          const canMarkR=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||miArea(sec));
           const mkBtn=(rKey,campo,lbl)=>{
             const asig=rs[rKey]?.[campo]||0;if(!asig)return'';
             const comp=rs[rKey]?.[campo+'_comp']||0;
@@ -2698,7 +2814,7 @@ function renderTareas(){
           if(redRows.length)detalle=`<div style="margin-bottom:8px">${redRows.join('')}</div>`;
         }else if(sec==='Medios'&&t.mediosData){
           const md=t.mediosData;
-          const canMarkM=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||mySec.includes(sec));
+          const canMarkM=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||miArea(sec));
           const mkM=(mKey,campo,lbl)=>{
             const asig=md[mKey]?.[campo]||0;if(!asig)return'';
             const comp=md[mKey]?.[campo+'_comp']||0;
@@ -2739,7 +2855,7 @@ function renderTareas(){
           ].filter(Boolean);
           // Apariciones en medios externos
           const apars2=(t.mediosData?.apariciones||[]);
-          const canApar=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||mySec.includes(sec));
+          const canApar=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||miArea(sec));
           const aparsHtml=apars2.length?apars2.map(a=>`<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 8px;background:var(--su);border:1px solid var(--bo);border-radius:6px;margin-bottom:3px">
             <span style="flex-shrink:0;font-size:14px">${a.publicado?'✅':'⏳'}</span>
             <div style="flex:1;min-width:0">
@@ -2784,7 +2900,7 @@ function renderTareas(){
           const DIS_ETAPAS=['Maquetación','Diseño','Reemplazo','Revisión','Completado'];
           const etapaActual=sv.etapa||'Maquetación';
           const etapaIdx=DIS_ETAPAS.indexOf(etapaActual);
-          const canAvanzar=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||mySec.includes('Diseño'));
+          const canAvanzar=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||miArea('Diseño'));
           const stepper=DIS_ETAPAS.map((e,i)=>{
             const done=i<etapaIdx;
             const cur=i===etapaIdx;
@@ -2809,7 +2925,7 @@ function renderTareas(){
         }else if(sec==='Audiovisual'&&t.audiovisualData?.asignaciones?.length){
           const AV_MED={foto:{bg:'#E1F5EE',col:'#0F6E56',lbl:'📷 FOTO'},video:{bg:'#E3F2FD',col:'#185FA5',lbl:'🎬 VIDEO'}};
           const AV_TIPO={REEL:{bg:'#E3F2FD',col:'#185FA5'},INSTITUCIONAL:{bg:'#E8F5E9',col:'#2E7D32'},PROMOCIONAL:{bg:'#EDE7F6',col:'#6A1B9A'},COBERTURA:{bg:'#FFF8E1',col:'#F57F17'}};
-          const canMarkAV=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||mySec.includes(sec));
+          const canMarkAV=puede('marcarAvance')&&(niv==='lider'||niv==='editor'||miArea(sec));
           detalle=t.audiovisualData.asignaciones.map((a,i)=>{
             const u=E.equipo.find(u=>u.id===a.userId);
             const nom=u?.nombre||a.nombre||'?';
@@ -2823,7 +2939,7 @@ function renderTareas(){
                 <button class="btn bsm" style="padding:2px 7px;font-size:11px;background:#fee2e2;color:#dc2626;border:1px solid #dc2626" onclick="event.stopPropagation();marcarNocAV('${t.id}',${i})">${a.noCump?'Reabrir':'🚫'}</button>
               </div>`:'';
             return`<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--su);border:1px solid var(--bo);border-radius:var(--rs);margin-bottom:4px;flex-wrap:wrap">
-              ${medB}<span style="flex:1;font-size:13px;font-weight:600;min-width:80px">${nom}</span>${tipB}${est}
+              ${medB}<span style="flex:1;font-size:13px;font-weight:600;min-width:80px">${escH(nom)}</span>${tipB}${est}
               ${botones}
               ${a.noCump&&a.motivo?`<div style="flex-basis:100%;font-size:10px;color:#991b1b">🚫 ${escH(a.motivo)}</div>`:''}
             </div>`;
@@ -2845,7 +2961,9 @@ function renderTareas(){
         }).join('');
 
         const secKey=sec.replace(/\s/g,'_');
-        const addEntForm=canAddEnt?`<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+        // Audiovisual: fotos y videos van a la carpeta de Drive (Miguel: «el botón de subir material reemplaza el entregable»)
+        // Mientras no arranquen las carpetas de Drive, Audiovisual sigue con su formulario de entregables
+        const addEntForm=sec==='Audiovisual'&&(carpetasDesde()||carpetaDe(t))?(carpetaInfo(t)||(carpetaPend(t)?`<div class="revisar-tarj" style="margin:0">📁 Carpeta pendiente: se crea en la revisión de la mañana. Si urge, crea una y pega el enlace en ✏️ Editar.</div>`:`<div style="font-size:12px;color:var(--tm)">📁 Las fotos y videos se suben a la carpeta de Drive de la actividad; el botón aparece aquí cuando se crea.</div>`)):canAddEnt?`<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
           <input type="text" class="fc" id="ent-nom-${t.id}-${secKey}" placeholder="Nombre del entregable" style="flex:1;min-width:120px;font-size:12px;padding:5px 8px">
           <input type="url" class="fc" id="ent-url-${t.id}-${secKey}" placeholder="https://..." style="flex:2;min-width:150px;font-size:12px;padding:5px 8px">
           <button class="btn bna bsm" onclick="event.stopPropagation();agregarEntregableSeccion('${t.id}','${sec}')">+ Agregar</button>
@@ -2855,7 +2973,7 @@ function renderTareas(){
           ${sHdr}
           ${abiertaSec?`${detalle?`<div style="margin-bottom:8px">${detalle}</div>`:''}
           ${entItems}
-          ${addEntForm}`:''}
+          ${addEntForm}`:sec==='Audiovisual'?carpetaInfo(t):''}
         </div>`;
       }).join('');
     }
@@ -2965,6 +3083,7 @@ function renderTareas(){
       </div>
       <div id="tbody-${t.id}" style="display:${abierta?'block':'none'};padding:14px;border-top:2px solid ${cardColor}30">
         ${abierta?revisarHtml(t):''}
+        ${abierta&&!t.secciones?.Audiovisual?carpetaInfo(t):''}
         ${abierta&&(t.notas||extrasTxt(t))?`<div class="notas-tarj">${escH([extrasTxt(t),t.notas?(extrasTxt(t)?'':'📝 ')+t.notas.replace(/📅/g,'🗓️'):''].filter(Boolean).join('\n'))}</div>`:''}
         ${gruposHTML?`<div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Avance por sección</div>${gruposHTML}`:''}
         ${seccionesHTML}
@@ -3379,6 +3498,7 @@ function abrirMT(id){
   document.getElementById('tHoraFin').value=t?.horaFin||'';
   document.getElementById('tLugar').value=t?.lugar||'';
   document.getElementById('tContacto').value=t?.contacto||'';
+  document.getElementById('tCarpeta').value=t?.carpeta||'';
   const rv=document.getElementById('tRevisar');rv.value=t?.revisar||'';rv.classList.toggle('fc-aviso',!!rv.value.trim());
   otrasFSel=t?otrasF(t):[];{const of=document.getElementById('tOtraF');of.value='';of.dispatchEvent(new Event('input',{bubbles:true}));}renderOtrasF();
   document.getElementById('tNotas').value=t?.notas||'';
@@ -3390,6 +3510,8 @@ function abrirMT(id){
   ka.style.display=pre.cambios.length?'block':'none';
   ka.innerHTML=pre.cambios.length?`✨ <b>Ya lo dejé puesto</b>, revísalo antes de guardar:<br>${pre.cambios.map(x=>'• '+escH(x)).join('<br>')}`:'';
   document.getElementById('tDescartar').style.display=t?.borrador&&puede('descartarBorrador')?'':'none';
+  document.getElementById('tGuardarBorr').style.display=!t||t.borrador?'':'none';
+  {const t0=t?snap(t):null;tAbierta={id:id||'',t:t0,form:t0&&!t0.borrador?snap(tDelModal(t0)):null};}
   abrirM('mT');
   setTimeout(()=>document.querySelectorAll('#mT .auto-alto').forEach(autoAlto),30);
   const errEl=document.getElementById('tErrorMsg');if(errEl)errEl.style.display='none';
@@ -3421,7 +3543,7 @@ function renderSeccionesModal(t){
       ?`${fechaBlk}<div id="audiovisualWizBlk"></div>`
       :`${fechaBlk}<div style="font-size:11px;color:var(--tm);margin-bottom:6px">Responsable(s)</div>
         <div class="usr-chips" id="uch-${key}">${
-          assignableUsers.filter(u=>u.nivel!=='lector').map(u=>`<div class="uchip ${respActuales.includes(u.id)?'sel':''}" onclick="togRespModal('${sec}','${u.id}',this)">${rAv(u.nombre,u.foto||'',18,7)} ${u.nombre.split(' ')[0]}</div>`).join('')
+          assignableUsers.filter(u=>u.nivel!=='lector').map(u=>`<div class="uchip ${respActuales.includes(u.id)?'sel':''}" onclick="togRespModal('${sec}','${u.id}',this)">${rAv(u.nombre,u.foto||'',18,7)} ${escH(u.nombre.split(' ')[0])}</div>`).join('')
           ||'<span style="font-size:12px;color:var(--tm)">Sin miembros en esta sección</span>'
         }</div>`;
     return`<div class="secc-card ${activa?'activa':''}" id="sc-${key}">
@@ -3476,8 +3598,9 @@ function togSeccionModal(sec){
     }
     body.style.display=bodyVisible?'none':'block';
   }
-  if(sec==='Redes Sociales')actualizarRedesBlk(null);
-  if(sec==='Medios')actualizarMediosBlk(null);
+  // Las cantidades se dibujan al activar el área; si ya estaba activa solo se pliega o despliega (volver a dibujarla las dejaba en 0)
+  if(!activa&&sec==='Redes Sociales')actualizarRedesBlk(tAbierta?.t?.redesSociales);
+  if(!activa&&sec==='Medios')actualizarMediosBlk(tAbierta?.t?.mediosData);
   if(sec==='Audiovisual')actualizarAudiovisualBlk();
 }
 
@@ -3587,7 +3710,7 @@ function actualizarAudiovisualBlk(){
   // Paso 1: seleccionar usuario
   const paso1=`<div style="margin-bottom:10px">
     <div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;margin-bottom:5px">1. Fotógrafo / Camarógrafo</div>
-    <div class="usr-chips">${avUsers.map(u=>`<div class="uchip ${avWiz.userId===u.id?'sel':''}" onclick="avSelUser('${u.id}')">${rAv(u.nombre,u.foto||'',18,7)} ${u.nombre.split(' ')[0]}</div>`).join('')||'<span style="font-size:12px;color:var(--tm)">Sin miembros en Audiovisual</span>'}</div>
+    <div class="usr-chips">${avUsers.map(u=>`<div class="uchip ${avWiz.userId===u.id?'sel':''}" onclick="avSelUser('${u.id}')">${rAv(u.nombre,u.foto||'',18,7)} ${escH(u.nombre.split(' ')[0])}</div>`).join('')||'<span style="font-size:12px;color:var(--tm)">Sin miembros en Audiovisual</span>'}</div>
   </div>`;
 
   // Paso 2: Foto o Video (visible solo si hay usuario seleccionado)
@@ -3679,20 +3802,18 @@ let otrasFSel=[];
 function renderOtrasF(){document.getElementById('chOtrasF').innerHTML=otrasFSel.map((f,i)=>`<div class="chip sel" style="display:inline-flex;align-items:center;gap:4px">${fmtCorta(f)}<span onclick="otrasFSel.splice(${i},1);renderOtrasF()" style="cursor:pointer;opacity:.6;font-size:10px" title="Quitar">✕</span></div>`).join('');}
 function addOtraF(){const el=document.getElementById('tOtraF'),f=el.value;if(!f)return;if(!otrasFSel.includes(f))otrasFSel=[...otrasFSel,f].sort();el.value='';el.dispatchEvent(new Event('input',{bubbles:true}));renderOtrasF();}
 function extrasDelModal(){
-  const c=document.getElementById('tContacto').value.trim(),r=document.getElementById('tRevisar').value.trim();
-  const pend=document.getElementById('tOtraF').value;
+  const c=document.getElementById('tContacto').value.trim(),r=document.getElementById('tRevisar').value.trim(),cp=document.getElementById('tCarpeta').value.trim();
+  const pend=document.getElementById('tOtraF').value,id0=document.getElementById('tId').value,o0=id0?E.tareas.find(t=>t.id===id0):null;// los datos de la carpeta (días, conteo, oficina) se conservan si no cambió la carpeta
   const o=otrasF({fecha:document.getElementById('tFecha').value,...fechaFinDelModal(),otrasFechas:pend?[...otrasFSel,pend]:otrasFSel});
-  return{...(c?{contacto:c}:{}),...(r?{revisar:r}:{}),...(o.length?{otrasFechas:o}:{})};
+  return{...(c?{contacto:c}:{}),...(r?{revisar:r}:{}),...(o.length?{otrasFechas:o}:{}),...(urlOk(cp)?{carpeta:cp}:{}),...(o0&&o0.carpeta===cp?Object.fromEntries(['carpetasDia','carpetaConteo','carpetaOficina','carpetaFecha'].filter(k=>o0[k]).map(k=>[k,o0[k]])):{})};
 }
 function fechaFinDelModal(){const a=document.getElementById('tFecha').value,b=document.getElementById('tFechaFin').value;return a&&b&&b>a?{fechaFin:b}:{};}
-function guardarT(){
-  const titulo=document.getElementById('tTit').value.trim();if(!titulo){mostrarErrorModal('❌ El título de la tarea es obligatorio.');document.getElementById('tTit').focus();return;}
+// Campos que decide el formulario de la tarea (si faltan en él, se quitan); el resto de la tarea se conserva
+const CAMPOS_FORM_T=['titulo','etiquetas','prioridad','fecha','fechaFin','contacto','revisar','otrasFechas','carpeta','carpetasDia','carpetaConteo','carpetaOficina','carpetaFecha','hora','horaFin','lugar','notas','recurrencia','secciones','redesSociales','mediosData','audiovisualData','borrador'];
+// La tarea tal como la deja el formulario, partiendo de b (la tarea al abrirlo)
+function tDelModal(b){
   const id=document.getElementById('tId').value;
-  const orig=id?E.tareas.find(t=>t.id===id):null;
-
-  // Build secciones from modal state
   const secciones={};
-  let seccionesCount=0;
   SECC_NAMES.forEach(sec=>{
     const key=sec.replace(/\s/g,'_');
     const card=document.getElementById(`sc-${key}`);
@@ -3702,73 +3823,73 @@ function guardarT(){
         const m=el.getAttribute('onclick').match(/'([^']+)','([^']+)'/);
         return m?m[2]:null;
       }).filter(Boolean);
-      const prev=orig?.secciones?.[sec]||{};
+      const prev=b?.secciones?.[sec]||{};
       const fEl=document.getElementById(`secfecha-${key}`);
       const hEl=document.getElementById(`sechora-${key}`);
       // Regla de fechas: la sección usa la fecha de la actividad salvo que alguien le ponga otra a propósito.
       // Si es igual a la de la actividad (o a la que tenía antes de moverla), queda vacía y sigue a la actividad.
       let fSec=fEl?.value||null;
-      if(fSec&&(fSec===document.getElementById('tFecha').value||fSec===orig?.fecha))fSec=null;
+      if(fSec&&(fSec===document.getElementById('tFecha').value||fSec===b?.fecha))fSec=null;
+      // Lo anotado en el área (no cumplida, retraso, horas extra, notas) se conserva
       secciones[sec]={
+        ...prev,
         responsables,
         estado:prev.estado||'Pendiente',
-        completadoPor:prev.completadoPor||null,
-        completadoEn:prev.completadoEn||null,
         fecha:fSec,
         hora:hEl?.value||null,
         ...(sec==='Diseño'?{etapa:prev.etapa||'Maquetación'}:{})
       };
-      seccionesCount++;
     }
   });
-  if(!seccionesCount){mostrarErrorModal('❌ Selecciona al menos una sección para la tarea.');return;}
 
-  // Build redesSociales data
-  let redesSociales=orig?.redesSociales||null;
+  // Build redesSociales data (se conservan las no cumplidas y sus motivos)
+  let redesSociales=b?.redesSociales||null;
   if(secciones['Redes Sociales']){
-    redesSociales={};
+    redesSociales={...(b?.redesSociales||{})};
     ['instagram','facebook','tiktok'].forEach(rKey=>{
       const campos={instagram:['publicaciones','reels','historias'],facebook:['publicaciones','historias'],tiktok:['videos','lives']}[rKey];
-      redesSociales[rKey]={};
+      const prevR=b?.redesSociales?.[rKey]||{},r=redesSociales[rKey]={...prevR};
       campos.forEach(c=>{
         const elA=document.getElementById(`rq-${rKey}-${c}`);
         const elC=document.getElementById(`rqc-${rKey}-${c}`);
-        redesSociales[rKey][c]=elA?parseInt(elA.textContent)||0:orig?.redesSociales?.[rKey]?.[c]||0;
-        redesSociales[rKey][c+'_comp']=elC?parseInt(elC.textContent)||0:orig?.redesSociales?.[rKey]?.[c+'_comp']||0;
+        r[c]=elA?parseInt(elA.textContent)||0:prevR[c]||0;
+        r[c+'_comp']=elC?parseInt(elC.textContent)||0:prevR[c+'_comp']||0;
         const selTipo=elA?.closest('.redes-row')?.querySelector('.redes-chip.sel');
-        if(selTipo)redesSociales[rKey]['tipo_'+c]=selTipo.textContent;
-        else if(orig?.redesSociales?.[rKey]?.['tipo_'+c]&&!elA)redesSociales[rKey]['tipo_'+c]=orig.redesSociales[rKey]['tipo_'+c];
+        if(selTipo)r['tipo_'+c]=selTipo.textContent;
+        else if(elA)delete r['tipo_'+c];
       });
     });
   }
 
-  // Build mediosData
-  let mediosData=orig?.mediosData||null;
+  // Build mediosData (se conservan las apariciones, las no cumplidas y sus motivos)
+  let mediosData=b?.mediosData||null;
   if(secciones['Medios']){
-    mediosData={};
+    mediosData={...(b?.mediosData||{})};
     const medMap={radio:['notas','entrevistas'],tv:['notas','entrevistas'],prensa:['notas','comunicados'],redaccion:['articulos','notas']};
     Object.entries(medMap).forEach(([mKey,campos])=>{
-      mediosData[mKey]={};
+      const prevM=b?.mediosData?.[mKey]||{},md=mediosData[mKey]={...prevM};
       campos.forEach(c=>{
         const elA=document.getElementById(`mq-${mKey}-${c}`);
         const elC=document.getElementById(`mqc-${mKey}-${c}`);
-        mediosData[mKey][c]=elA?parseInt(elA.textContent)||0:orig?.mediosData?.[mKey]?.[c]||0;
-        mediosData[mKey][c+'_comp']=elC?parseInt(elC.textContent)||0:orig?.mediosData?.[mKey]?.[c+'_comp']||0;
+        md[c]=elA?parseInt(elA.textContent)||0:prevM[c]||0;
+        md[c+'_comp']=elC?parseInt(elC.textContent)||0:prevM[c+'_comp']||0;
       });
     });
   }
 
   // Build audiovisualData
-  let audiovisualData=orig?.audiovisualData||null;
+  let audiovisualData=b?.audiovisualData||null;
   if(secciones['Audiovisual']){
-    audiovisualData={asignaciones:[...avAsignaciones]};
+    audiovisualData={...(b?.audiovisualData||{}),asignaciones:avAsignaciones.map(a=>({...a}))};
     // Actualizar responsables de la sección con los userIds de las asignaciones (sin duplicados)
     const respAV=[...new Set(avAsignaciones.map(a=>a.userId))];
     if(respAV.length)secciones['Audiovisual'].responsables=respAV;
   }
 
-  const t={
-    id:id||gId(),titulo,
+  const resto={...(b||{})};CAMPOS_FORM_T.forEach(k=>delete resto[k]);
+  return{
+    ...resto,
+    id:id||gId(),titulo:document.getElementById('tTit').value.trim(),
     etiquetas:[...etiqSel],
     prioridad:document.getElementById('tPri').value,
     fecha:document.getElementById('tFecha').value,
@@ -3778,63 +3899,59 @@ function guardarT(){
     horaFin:document.getElementById('tHoraFin').value,
     lugar:document.getElementById('tLugar').value.trim(),
     notas:document.getElementById('tNotas').value.trim(),
-    ...(orig?.kit?{kit:orig.kit}:{}),
     recurrencia:document.getElementById('tRec').value,
-    ...(orig?.pedido?{pedido:orig.pedido}:{}),
-    ...(orig?.cancelada?{cancelada:orig.cancelada}:{}),
-    creadaEn:orig?.creadaEn||hoy(),
-    creadaPor:orig?.creadaPor||uAct?.nombre,
-    creadoPorId:orig?.creadoPorId||uAct?.id,
+    creadaEn:b?.creadaEn||hoy(),
+    creadaPor:b?.creadaPor||uAct?.nombre,
+    creadoPorId:b?.creadoPorId||uAct?.id,
     secciones,
     redesSociales,
     mediosData,
     audiovisualData,
-    entregables:orig?.entregables||[]
+    entregables:b?.entregables||[]
   };
+}
+// La tarea y lo que mostraba el formulario al abrirlo: al guardar se aplica solo lo que la persona cambió
+let tAbierta=null;
+const tAlAbrir=id=>id&&tAbierta?.id===id?tAbierta.t:id?E.tareas.find(t=>t.id===id):null;
 
-  if(id){const i=E.tareas.findIndex(t=>t.id===id);if(i>=0)E.tareas[i]=t;reg('Tarea editada',`"${titulo}" por ${uAct?.nombre}`);
+function guardarT(){
+  const titulo=document.getElementById('tTit').value.trim();if(!titulo){mostrarErrorModal('❌ El título de la tarea es obligatorio.');document.getElementById('tTit').focus();return;}
+  const id=document.getElementById('tId').value;
+  const orig=tAlAbrir(id);
+  const t=tDelModal(orig);
+  if(!Object.keys(t.secciones).length){mostrarErrorModal('❌ Selecciona al menos una sección para la tarea.');return;}
+
+  if(id){const i=E.tareas.findIndex(t=>t.id===id);
+    // Sobre la versión actual: lo que otra persona avanzó mientras el formulario estaba abierto no se pierde
+    if(i>=0){const cur=E.tareas[i],u=unir3(tAbierta?.id===id&&tAbierta.form||orig,t,cur);
+      // Responsables de Audiovisual: quienes tienen asignación, ya juntadas con lo que cambió la otra persona
+      const av=u.secciones?.Audiovisual,asg=u.audiovisualData?.asignaciones||[];
+      if(av&&asg.length)u.secciones={...u.secciones,Audiovisual:{...av,responsables:[...new Set(asg.map(a=>a.userId))]}};
+      E.tareas[i]=estadosTrasUnir(u,t,cur);}
+    reg('Tarea editada',`"${titulo}" por ${uAct?.nombre}`);
     if(orig?.borrador&&orig.pedido){
       E.pedidos=(E.pedidos||[]).map(p=>p.tareaId===id&&!p.aceptado?{...p,aceptado:{por:uAct?.nombre||'',en:hoy()}}:p);
       reg('Pedido aceptado',`${orig.pedido.folio||''} de ${orig.pedido.area||''}: "${titulo}" (por ${uAct?.nombre})`);
     }}
   else{
     E.tareas.unshift(t);
-    const secNames=Object.keys(secciones).join(', ');
+    const secNames=Object.keys(t.secciones).join(', ');
     reg('Tarea creada',`"${titulo}" — secciones: ${secNames}`);
     addNotif('📋',`Nueva tarea: "${titulo}"`,`Secciones: ${secNames}`);
   }
   guardar();cerM('mT');renderTareas();actuCts();
 }
 
+// Solo para tareas nuevas o que ya son borrador: una tarea publicada no vuelve a borrador
 function guardarBorrador(){
   if(!puede('crearTarea')){alert('Sin permiso.');return;}
-  const titulo=document.getElementById('tTit').value.trim();
   const id=document.getElementById('tId').value;
-  const orig=id?E.tareas.find(t=>t.id===id):null;
-  const t={
-    id:id||gId(),
-    titulo:titulo||'(Borrador sin título)',
-    borrador:true,
-    etiquetas:[...etiqSel],
-    prioridad:document.getElementById('tPri').value,
-    fecha:document.getElementById('tFecha').value,
-    ...fechaFinDelModal(),
-    ...extrasDelModal(),
-    hora:document.getElementById('tHora').value,
-    horaFin:document.getElementById('tHoraFin').value,
-    lugar:document.getElementById('tLugar').value.trim(),
-    notas:document.getElementById('tNotas').value.trim(),
-    ...(orig?.kit?{kit:orig.kit}:{}),
-    recurrencia:document.getElementById('tRec').value,
-    ...(orig?.pedido?{pedido:orig.pedido}:{}),
-    creadaEn:orig?.creadaEn||hoy(),
-    creadaPor:orig?.creadaPor||uAct?.nombre,
-    creadoPorId:orig?.creadoPorId||uAct?.id,
-    secciones:orig?.secciones||{},
-    entregables:orig?.entregables||[]
-  };
-  if(id){const i=E.tareas.findIndex(t=>t.id===id);if(i>=0)E.tareas[i]=t;else E.tareas.unshift(t);}
-  else E.tareas.unshift(t);
+  const orig=tAlAbrir(id);
+  if(orig&&!orig.borrador){alert('⚠️ Esta tarea ya está publicada: usa «Guardar tarea».');return;}
+  const t={...tDelModal(orig),borrador:true};
+  if(!t.titulo)t.titulo='(Borrador sin título)';
+  const i=id?E.tareas.findIndex(t=>t.id===id):-1;
+  if(i>=0)E.tareas[i]=unir3(orig,t,E.tareas[i]);else E.tareas.unshift(t);
   reg('Borrador guardado',`"${t.titulo}" por ${uAct?.nombre}`);
   guardar();cerM('mT');renderTareas();
 }
@@ -3856,6 +3973,7 @@ function mostrarErrorModal(msg){
 async function togSeccion(tareaId,sec){
   if(!puede('marcarAvance')){alert('Sin permiso.');return;}
   let t=E.tareas.find(t=>t.id===tareaId);if(!t||!t.secciones?.[sec])return;
+  if(contarUnidadesSeccion(t,sec)?.asig>0){irATarea(tareaId);return;}// con asignaciones, cada una se marca en la tarjeta
   let sv=t.secciones[sec];
   if(sv.estado==='Completada'){
     t.secciones[sec]={...sv,estado:'Pendiente',completadoPor:null,completadoEn:null,notaRetraso:null,completadaTarde:false};
@@ -4013,6 +4131,12 @@ function togCompAV(tareaId,idx){
   if(a.comp){a.noCump=false;a.motivo=null;}
   recalcSeccionEstado(t,'Audiovisual');
   expandidas.add(tareaId);guardar();renderTareas();
+}
+// Mi día: la persona marca solo su asignación
+function listoAV(tareaId,idx){
+  const a=E.tareas.find(t=>t.id===tareaId)?.audiovisualData?.asignaciones?.[idx];
+  if(!a||a.comp||a.userId!==uAct?.id)return;
+  togCompAV(tareaId,idx);proponerHEAlCompletar(tareaId,'Audiovisual');
 }
 async function marcarNocAV(tareaId,idx){
   if(!puede('marcarAvance')){alert('Sin permiso.');return;}
@@ -4769,7 +4893,7 @@ function renderHoras(){
   const resDiv=document.getElementById('heResumen');
   if(resDiv&&niv!=='colaborador'&&niv!=='lector'&&apr.length){
     const porP={};apr.forEach(h=>{if(!porP[h.miembro])porP[h.miembro]=0;porP[h.miembro]+=(esComp(h)?-1:1)*parseFloat(h.horas||0);});
-    const items=Object.entries(porP).sort((a,b)=>b[1]-a[1]).map(([nom,hrs])=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--su);border:1px solid var(--bo);border-radius:8px"><div style="flex:1;font-size:13px;font-weight:600">${rAv(nom,'',22,8)} ${nom}</div><div style="text-align:right"><div style="font-size:14px;font-weight:800;color:var(--na)">${fmtD(hrs)}</div>${Math.abs(hrs)>=HORAS_DIA?`<div style="font-size:11px;color:var(--tm)">${fmtH(hrs)}</div>`:''}</div></div>`).join('');
+    const items=Object.entries(porP).sort((a,b)=>b[1]-a[1]).map(([nom,hrs])=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--su);border:1px solid var(--bo);border-radius:8px"><div style="flex:1;font-size:13px;font-weight:600">${rAv(nom,'',22,8)} ${escH(nom)}</div><div style="text-align:right"><div style="font-size:14px;font-weight:800;color:var(--na)">${fmtD(hrs)}</div>${Math.abs(hrs)>=HORAS_DIA?`<div style="font-size:11px;color:var(--tm)">${fmtH(hrs)}</div>`:''}</div></div>`).join('');
     resDiv.style.display='block';
     resDiv.innerHTML=`<div style="font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Saldo compensatorio por persona</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px">${items}</div>`;
   } else if(resDiv){resDiv.style.display='none';}
@@ -4797,7 +4921,7 @@ function renderHoras(){
       :'';
     return`<div class="hecard">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
-        <div style="display:flex;align-items:center;gap:9px;font-size:14px;font-weight:700">${rAv(h.miembro,'',30,11)} ${h.miembro}</div>
+        <div style="display:flex;align-items:center;gap:9px;font-size:14px;font-weight:700">${rAv(h.miembro,'',30,11)} ${escH(h.miembro)}</div>
         <div style="text-align:right"><div style="font-size:${esComp(h)?20:22}px;font-weight:800;color:${esComp(h)?'var(--az)':'var(--na)'};line-height:1">${esComp(h)?'−'+fmtD(parseFloat(h.horas||0)):fmtH(parseFloat(h.horas||0))}</div><div style="font-size:11px;color:var(--tm)">${esComp(h)?'compensatorio'+(parseFloat(h.horas||0)>=HORAS_DIA?' · '+fmtH(parseFloat(h.horas||0)):''):'horas extra'}</div></div>
       </div>
       <div style="font-size:13px;color:var(--tm);margin-bottom:12px;line-height:1.5">${escH(h.actividad||'')}</div>
@@ -4833,7 +4957,7 @@ function abrirMH(id){
   document.getElementById('hFecha').value=h?.fecha||hoy();
   document.getElementById('hDesde').value=h?.desde||'';
   document.getElementById('hHasta').value=h?.hasta||'';
-  document.getElementById('hFeriado').checked=!!h?.feriado;
+  document.getElementById('hFeriado').checked=h?!!h.feriado:esFeriado(document.getElementById('hFecha').value);
   document.getElementById('hTipo').value=h&&esComp(h)?'compensatorio':'extra';
   document.getElementById('hHoras').value=h?.horas??'';
   // Compensatorio: la persona decide cuántos días (8 h c/u) y horas usa
@@ -4919,12 +5043,13 @@ function renderComp(){
     document.getElementById('cpSaldoLbl').textContent='Tu saldo disponible';
     document.getElementById('cpSaldo').textContent=fmtD(Math.max(0,d.disp));
     document.getElementById('cpSaldoSub').textContent=`${fmtH(Math.max(0,d.saldo))} aprobadas${d.pend?` · ${fmtH(d.pend)} pedidas y pendientes`:''}`;
-  }else{
+  }else if(niv!=='lector'){
     const tot=E.equipo.reduce((t,p)=>t+Math.max(0,saldoComp(p.nombre).saldo),0);
     document.getElementById('cpSaldoLbl').textContent='Saldo del equipo';
     document.getElementById('cpSaldo').textContent=fmtD(tot);
     document.getElementById('cpSaldoSub').textContent='horas extra aprobadas sin usar';
   }
+  {const c=document.getElementById('cpSaldo').parentElement;c.classList.toggle('oculto',niv==='lector');c.parentElement.style.gridTemplateColumns=`repeat(${niv==='lector'?2:3},1fr)`;}// el Lector no recibe horas: no hay saldo que mostrar
   document.getElementById('cpPen').textContent=pen.length;
   document.getElementById('cpFuera').textContent=fuera.length;
   document.getElementById('cpFueraSub').textContent=fuera.length?fuera.map(p=>p.nombre.split(' ')[0]).join(', '):'de compensatorio';
@@ -5046,7 +5171,7 @@ async function guardarComp(){
   // Un cambio en una solicitud ya revisada vuelve a quedar pendiente (salvo que la edite el Líder sin cambiar las horas)
   if(prev&&prev.aprobacion!=='Pendiente'&&parseFloat(prev.horas)!==r.horas){r.aprobacion='Pendiente';delete r.aprobadoPor;delete r.fechaAprob;}
   if(prev){const i=E.horasExtra.findIndex(x=>x.id===prev.id);if(i>=0)E.horasExtra[i]=r;reg('Compensatorio editado',`${c.m} — ${fmtH(r.horas)}`);}
-  else{E.horasExtra.unshift(r);reg('Compensatorio solicitado',`${c.m} — ${fmtH(r.horas)}`);addNotif('🌴',`Solicitud de compensatorio: ${c.m}`,`${fmtSaldo(r.horas)} · desde ${fmt(c.f)}`);}
+  else{E.horasExtra.unshift(r);reg('Compensatorio solicitado',`${c.m} — ${fmtH(r.horas)}`);addNotif('🌴',`Solicitud de compensatorio: ${c.m}`,`${fmtSaldo(r.horas)} · desde ${fmt(c.f)}`,c.m);}
   guardar();cerM('mComp');refrescarVistaAbierta();
 }
 function saldoComp(nombre,hasta){// solo lo aprobado; 'hasta' (AAAA-MM-DD) es inclusivo
@@ -5220,7 +5345,7 @@ function guardarH(){
   if(apro!=='Pendiente'&&apro!==prev?.aprobacion){r.aprobadoPor=uAct?.nombre;r.fechaAprob=hoy();}
   if(apro==='Pendiente'){delete r.aprobadoPor;delete r.fechaAprob;}
   if(id){const i=E.horasExtra.findIndex(h=>h.id===id);if(i>=0)E.horasExtra[i]=r;reg('Hora editada',`${m} — ${fmtH(h)}`);}
-  else{E.horasExtra.unshift(r);reg(comp?'Compensatorio solicitado':'Hora registrada',`${m} — ${fmtH(h)}`);if(apro==='Pendiente')addNotif(comp?'🌴':'⏱️',`${comp?'Solicitud de compensatorio':'Solicitud de horas'}: ${m}`,'Pendiente de aprobación');}
+  else{E.horasExtra.unshift(r);reg(comp?'Compensatorio solicitado':'Hora registrada',`${m} — ${fmtH(h)}`);if(apro==='Pendiente')addNotif(comp?'🌴':'⏱️',`${comp?'Solicitud de compensatorio':'Solicitud de horas'}: ${m}`,'Pendiente de aprobación',m);}
   guardar();cerM('mH');renderHoras();
 }
 
@@ -5232,7 +5357,7 @@ function aprobarH(id,ok){
     if(n>sc+1e-9){alert(`No se puede aprobar: ${h.miembro} tiene ${fmtSaldo(Math.max(0,sc))} de saldo aprobado y pide ${fmtSaldo(n)}. El saldo nunca puede quedar en negativo.`);return;}}
   h.aprobacion=ok?'Aprobado':'Rechazado';h.aprobadoPor=uAct?.nombre;h.fechaAprob=hoy();
   reg(ok?(esComp(h)?'Compensatorio aprobado':'Hora aprobada'):(esComp(h)?'Compensatorio rechazado':'Hora rechazada'),`${h.miembro} — ${fmtH(parseFloat(h.horas||0))}`);
-  addNotif(ok?'✅':'❌',`${esComp(h)?'Compensatorio':'Horas'} ${ok?'aprobado':'rechazado'}: ${h.miembro}`,fmtH(parseFloat(h.horas||0)));
+  addNotif(ok?'✅':'❌',`${esComp(h)?'Compensatorio':'Horas'} ${ok?'aprobado':'rechazado'}: ${h.miembro}`,fmtH(parseFloat(h.horas||0)),h.miembro);
   guardar();renderHoras();refrescarVistaAbierta();
 }
 
@@ -5489,7 +5614,7 @@ async function guardarPer(){
   if(apro!=='Pendiente'&&apro!==prev?.aprobacion){r.aprobadoPor=uAct?.nombre;r.fechaAprob=hoy();}
   if(apro==='Pendiente'){delete r.aprobadoPor;delete r.fechaAprob;}
   if(prev){const i=E.permisos.findIndex(x=>x.id===id);if(i>=0)E.permisos[i]=r;reg('Permiso editado',`${m} — ${MOTIVOS_PER[mot-1]} — ${fmtDHM(tot)}`);}
-  else{E.permisos.unshift(r);reg('Permiso solicitado',`${m} — ${MOTIVOS_PER[mot-1]} — ${fmtDHM(tot)}`);if(apro==='Pendiente')addNotif('📝',`Solicitud de permiso: ${m}`,`${MOTIVOS_PER[mot-1]} · ${fmt(df)}`);}
+  else{E.permisos.unshift(r);reg('Permiso solicitado',`${m} — ${MOTIVOS_PER[mot-1]} — ${fmtDHM(tot)}`);if(apro==='Pendiente')addNotif('📝',`Nueva solicitud de permiso de ${m}`,fmt(df),m);}
   guardar();cerM('mPer');renderPermisos();
 }
 function aprobarPer(id,ok){
@@ -5498,7 +5623,7 @@ function aprobarPer(id,ok){
   if(p.miembro===uAct?.nombre&&niv!=='lider'){alert('Sus propios permisos los aprueba otra persona.');return;}
   p.aprobacion=ok?'Aprobado':'Rechazado';p.aprobadoPor=uAct?.nombre;p.fechaAprob=hoy();
   reg(ok?'Permiso aprobado':'Permiso rechazado',`${p.miembro} — ${MOTIVOS_PER[p.motivo-1]}`);
-  addNotif(ok?'✅':'❌',`Permiso ${ok?'aprobado':'rechazado'}: ${p.miembro}`,`${MOTIVOS_PER[p.motivo-1]} · ${fmt(p.desdeF)}`);
+  addNotif(ok?'✅':'❌',`Permiso ${ok?'aprobado':'rechazado'}: ${p.miembro}`,fmt(p.desdeF),p.miembro);
   guardar();renderPermisos();
 }
 // Las solicitudes de permiso nunca se borran: se anulan y quedan en el historial.
@@ -5527,7 +5652,7 @@ function confirmarAnular(){
   cerM('mAnular');
   p.aprobacion='Anulado';p.anuladoPor=uAct?.nombre;p.fechaAnul=hoy();p.motivoAnul=motivo.trim();
   reg('Permiso anulado',`${p.miembro} — ${MOTIVOS_PER[p.motivo-1]} — ${fmt(p.desdeF)} — por ${uAct?.nombre}: ${p.motivoAnul}`);
-  if(p.miembro!==uAct?.nombre)addNotif('🚫',`Permiso anulado: ${p.miembro}`,`${MOTIVOS_PER[p.motivo-1]} · ${fmt(p.desdeF)} · ${p.motivoAnul}`);
+  if(p.miembro!==uAct?.nombre)addNotif('🚫',`Permiso anulado: ${p.miembro}`,fmt(p.desdeF),p.miembro);
   guardar();refrescarVistaAbierta();
 }
 
@@ -5734,7 +5859,7 @@ function renderEquipo(){
       return(p.cats||[]).some(c=>(t.categorias||[]).includes(c));
     });
     const mh=saldoComp(p.nombre).saldo;
-    const verSaldo=niv!=='colaborador'||p.nombre===uAct?.nombre;// el saldo de cada persona es privado
+    const verSaldo=['lider','editor'].includes(niv)||niv==='colaborador'&&p.nombre===uAct?.nombre;// el saldo de cada persona es privado (el Lector no recibe horas)
     const comp=mt.filter(t=>eglobal(t)==='Completada').length;
     const pen=mt.filter(t=>eglobal(t)==='Pendiente').length;
     const pct=mt.length?Math.round(comp/mt.length*100):0;
@@ -5812,7 +5937,8 @@ async function guardarEq(){
   if(!email){alert('Email obligatorio para poder iniciar sesión.');return;}
   const id=document.getElementById('eqId').value||gId();
   const password=document.getElementById('eqPin').value;
-  const esNueva=!E.equipo.some(e=>e.id===id);
+  const esNueva=!E.equipo.some(e=>e.id===id),nomAnt=E.equipo.find(e=>e.id===id)?.nombre;
+  if(n!==nomAnt){const err=CaccoNombres.errorNombre(n,E.equipo,id);if(err){alert(err);return;}}
   if(esNueva&&!password){alert('Escribe una contraseña inicial para la persona nueva.');return;}
   if(password&&password.length<8){alert('La contraseña debe tener al menos 8 caracteres.');return;}
   const cats=[...document.querySelectorAll('#chEqCats .chip.sel')].map(c=>c.dataset.v);
@@ -5836,9 +5962,11 @@ async function guardarEq(){
   }
 
   const isNew=!E.equipo.find(e=>e.id===id);
-  if(!isNew){const i=E.equipo.findIndex(e=>e.id===id);if(i>=0)E.equipo[i]=p;if(uAct?.id===id)uAct=p;reg('Persona editada',`${n} — ${NIVEL_NOM[p.nivel]} — cats: ${cats.join(', ')||'ninguna'}`);}
+  if(!isNew){const i=E.equipo.findIndex(e=>e.id===id);if(i>=0)E.equipo[i]=p;
+    const renombra=nomAnt&&nomAnt!==n;if(renombra)CaccoNombres.renombrar(E,[{id,viejo:nomAnt,nuevo:n}]);
+    if(uAct?.id===id){uAct=p;pintarYo();}reg('Persona editada',`${renombra?nomAnt+' → ':''}${n} — ${NIVEL_NOM[p.nivel]} — cats: ${cats.join(', ')||'ninguna'}`);}
   else{E.equipo.push(p);reg('Persona creada',`${n} — ${NIVEL_NOM[p.nivel]}`);}
-  guardar();cerM('mEq');renderEquipo();renderLogin();
+  guardar();cerM('mEq');renderTodo();renderLogin();
 }
 
 async function elimEq(){
@@ -5871,7 +5999,8 @@ function renderPerfil(){
       <div style="font-size:12px;color:var(--tm)"><strong style="display:block;font-size:16px;color:var(--tx)">${mt.filter(t=>eglobal(t)==='Completada').length}</strong>Completadas</div>
       <div style="font-size:12px;color:var(--tm)"><strong style="display:block;font-size:16px;color:var(--tx)">${fmtSaldo(mh)}</strong>Saldo compensatorio</div>
     </div></div>`;
-  document.getElementById('pNom').value=u.nombre||'';
+  const pNom=document.getElementById('pNom');pNom.value=u.nombre||'';pNom.readOnly=niv!=='lider';
+  pNom.style.cursor=pNom.readOnly?'not-allowed':'';pNom.title=pNom.readOnly?'Solo el Líder cambia el nombre':'';
   document.getElementById('pCargo').value=u.cargo||'';
   document.getElementById('pFoto').value=u.foto||'';
   document.getElementById('pPuesto').value=u.puesto||'';
@@ -5884,7 +6013,11 @@ function renderPerfil(){
 
 function guardarPerfil(){
   const p=E.equipo.find(e=>e.id===uAct?.id);if(!p)return;
-  p.nombre=document.getElementById('pNom').value.trim()||p.nombre;
+  const n=document.getElementById('pNom').value.trim();
+  if(niv==='lider'&&n&&n!==p.nombre){
+    const err=CaccoNombres.errorNombre(n,E.equipo,p.id);if(err){alert(err);return;}
+    CaccoNombres.renombrar(E,[{id:p.id,viejo:p.nombre,nuevo:n}]);p.nombre=n;
+  }
   p.cargo=document.getElementById('pCargo').value.trim();
   p.foto=document.getElementById('pFoto').value.trim();
   p.puesto=document.getElementById('pPuesto').value.trim();
@@ -5893,8 +6026,7 @@ function guardarPerfil(){
   p.institucion=document.getElementById('pInst').value.trim();
   p.cedula=document.getElementById('pCedula').value.trim();
   p.correo=document.getElementById('pCorreo').value.trim().toLowerCase();
-  uAct=p;reg('Perfil actualizado',p.nombre);guardar();renderPerfil();
-  document.getElementById('hdrNom').textContent=p.nombre.split(' ')[0];
+  uAct=p;reg('Perfil actualizado',p.nombre);guardar();renderPerfil();pintarYo();
   alert('✅ Perfil actualizado.');
 }
 
@@ -6160,7 +6292,7 @@ function generarRep(){
             <div style="flex:1;min-width:0">
               <div style="font-size:13px;font-weight:600">${escH(t.titulo)}</div>
               ${meta?`<div style="font-size:11px;color:var(--tm);margin-top:1px">${meta}</div>`:''}
-              ${resps?`<div style="font-size:11px;color:var(--na);margin-top:1px">👤 ${resps}</div>`:''}
+              ${resps?`<div style="font-size:11px;color:var(--na);margin-top:1px">👤 ${escH(resps)}</div>`:''}
             </div>
             <span style="font-size:11px;padding:1px 7px;border-radius:20px;background:var(--su2);color:var(--tm);white-space:nowrap">${fmt(t.fecha)}</span>
           </div>`;
@@ -6191,7 +6323,7 @@ function generarRep(){
             <div style="flex:1;min-width:0">
               <div style="font-size:13px;font-weight:600">${escH(t.titulo)}</div>
               <div style="font-size:11px;color:var(--tm);margin-top:1px">🗓️ ${fmt(t.fecha)}${t.hora?' · 🕐 '+t.hora:''}${t.lugar?' · 📍 '+escH(t.lugar):''}</div>
-              ${resps?`<div style="font-size:11px;color:var(--na);margin-top:1px">👤 ${resps}</div>`:''}
+              ${resps?`<div style="font-size:11px;color:var(--na);margin-top:1px">👤 ${escH(resps)}</div>`:''}
               ${av>0?`<div style="margin-top:4px"><div class="pbar" style="height:4px"><div class="pfill" style="width:${av}%;background:var(--na)"></div></div><span style="font-size:10px;color:var(--tm)">${av}% completado</span></div>`:''}
             </div>
           </div>`;
@@ -6256,7 +6388,7 @@ function generarRep(){
             <span style="font-size:13px;font-weight:600">${m.ico} ${m.sec}</span>
             <span style="font-size:12px;font-weight:700;color:${m.col}">${m.sm2} ${m.cc}/${m.casig} (${m.pp}%)</span>
           </div>
-          ${m.resps?`<div style="font-size:11px;color:var(--tm);margin-bottom:3px">👤 ${m.resps}</div>`:''}
+          ${m.resps?`<div style="font-size:11px;color:var(--tm);margin-bottom:3px">👤 ${escH(m.resps)}</div>`:''}
           <div class="pbar"><div class="pfill" style="width:${m.pp}%;background:${m.col}"></div></div>
         </div>`;
       });
@@ -6374,7 +6506,7 @@ function imprimirReporte(){
     const col=pp>=80?'#16a34a':pp>=50?'#E35205':'#dc2626';
     const resps=[...new Set(tc.flatMap(t=>(t.secciones[sec].responsables||[]).map(uid=>{const u=E.equipo.find(e=>e.id===uid);return u?u.nombre:null;}).filter(Boolean)))].join(', ');
     secRows+=`<tr>
-      <td><strong>${SECCIONES[sec].ico} ${sec}</strong>${resps?'<br><span style="font-size:11px;color:#666">👤 '+resps+'</span>':''}</td>
+      <td><strong>${SECCIONES[sec].ico} ${sec}</strong>${resps?'<br><span style="font-size:11px;color:#666">👤 '+escH(resps)+'</span>':''}</td>
       <td style="text-align:center">${cc}/${su.asig}</td>
       <td style="width:120px">
         <div style="display:flex;align-items:center;gap:6px">
@@ -6486,7 +6618,7 @@ function imprimirReporte(){
     nocRows+=`<tr style="background:#fef2f2">
       <td><strong>${escH(i.titulo)}</strong><br><span style="font-size:11px;color:#666">${ico} ${escH(i.area)} · 👤 ${escH(i.resp)}</span></td>
       <td style="font-size:12px">${i.fecha?fmt(i.fecha):'-'}</td>
-      <td style="font-size:12px;color:#991b1b">${escH(i.motivo||'—')}${i.por?`<br><span style="font-size:10px;color:#888">— ${i.por}</span>`:''}</td>
+      <td style="font-size:12px;color:#991b1b">${escH(i.motivo||'—')}${i.por?`<br><span style="font-size:10px;color:#888">— ${escH(i.por)}</span>`:''}</td>
     </tr>`;
   });
 
@@ -6512,7 +6644,7 @@ function imprimirReporte(){
       <td><strong>${escH(t.titulo)}</strong>${tag}${t.notas?`<br><span style="font-size:11px;color:#666">📝 ${escH(t.notas)}</span>`:''}${motivoTxt}</td>
       <td style="font-size:12px;color:#166534">${secs||'—'}</td>
       <td style="font-size:12px">${t.fecha?'Límite: '+fmt(t.fecha):'-'}${compEn?`<br><span style="color:#16a34a">✓ ${fmt(compEn)}</span>`:''}</td>
-      <td style="font-size:12px">${[...new Set(resps)].join(', ')||'—'}</td>
+      <td style="font-size:12px">${escH([...new Set(resps)].join(', ')||'—')}</td>
     </tr>`;
   });
 
@@ -6955,13 +7087,16 @@ async function cerrarMes(){
   if(!puede('cerrarMes')){alert('Solo el Líder puede cerrar el mes.');return;}
   const ahora=new Date();
   const nombreMes=ahora.toLocaleDateString('es-PA',{month:'long',year:'numeric'});
-  if(!await confirmar(`✅ El reporte actual se archiva.\n🔁 Las tareas recurrentes se conservan y reinician.\n🗑 Las tareas únicas se eliminan.\n⏱️ Horas extra y compensatorio se conservan (el saldo pasa al mes siguiente).\n👥 Equipo, bitácora e histórico se conservan.\n\nNo se puede deshacer.`,{tit:`Cerrar el mes de ${nombreMes}`,ok:'Cerrar mes',peligro:true}))return;
+  const mes=hoy().slice(0,7),seQuita=t=>!(t.recurrencia&&t.recurrencia!=='ninguna')&&!t.borrador&&!t.pedido&&!regPedido(t.id)&&!!t.fecha&&ultimaAct(t).slice(0,7)<=mes&&tResuelta(t);
+  const nTar=n=>n===1?'1 tarea resuelta':n+' tareas resueltas',nq=E.tareas.filter(seQuita).length;
+  if(!await confirmar(`✅ El reporte actual se archiva y se descarga una copia de los datos.\n🗑 Se quita${nq===1?'':'n'} ${nTar(nq)} (finalizadas, cerradas, no cumplidas o canceladas) que terminaron en ${nombreMes} o antes.\n📌 Se conservan las pendientes, las futuras, los borradores y las de pedidos. Las recurrentes se reinician.\n⏱️ Horas extra y compensatorio se conservan (el saldo pasa al mes siguiente).\n👥 Equipo, bitácora e histórico se conservan.\n\nNo se puede deshacer.`,{tit:`Cerrar el mes de ${nombreMes}`,ok:'Cerrar mes',peligro:true}))return;
+  if(!await bajarResp('actual'))return;
   generarRep();
   const ts=E.tareas,comp=ts.filter(t=>eglobal(t)==='Completada').length;
   const _hora=new Date().toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit'});
   E.historico.push({id:gId(),mes:nombreMes,fecha:hoy(),hora:_hora,tareasTotales:ts.length,tareasCompletadas:comp,pct:ts.length?Math.round(comp/ts.length*100):0,reporte:repTxtActivo,archivadoPor:uAct?.nombre});
-  // Keep recurring tasks — reset their state for the new month
-  const recurrentes=E.tareas.filter(t=>t.recurrencia&&t.recurrencia!=='ninguna');
+  // Las recurrentes se conservan y reinician para el mes nuevo
+  const recurrentes=E.tareas.filter(t=>t.recurrencia&&t.recurrencia!=='ninguna'),quitadas=E.tareas.filter(seQuita);
   recurrentes.forEach(t=>{
     if(t.secciones)Object.keys(t.secciones).forEach(sec=>{t.secciones[sec].estado='Pendiente';delete t.secciones[sec].completadoPor;delete t.secciones[sec].completadoEn;});
     if(t.avances)Object.keys(t.avances).forEach(cat=>{t.avances[cat]={estado:'Pendiente'};});
@@ -6969,11 +7104,11 @@ async function cerrarMes(){
     if(t.mediosData)Object.keys(t.mediosData).forEach(m=>Object.keys(t.mediosData[m]).forEach(k=>{if(k.endsWith('_comp'))t.mediosData[m][k]=0;}));
   });
   // Las horas extras NO se borran: son el saldo de tiempo compensatorio y la base del formulario OIRH de cada mes
-  E.tareas=recurrentes;expandidas.clear();
-  reg('Mes cerrado',`${nombreMes} — ${comp}/${ts.length} tareas completadas — ${recurrentes.length} recurrentes conservadas`);
-  addNotif('🗂️',`Mes cerrado: ${nombreMes}`,'Datos operativos reiniciados · Histórico guardado');
+  E.tareas=E.tareas.filter(t=>!quitadas.includes(t));expandidas.clear();
+  reg('Mes cerrado',`${nombreMes} — ${comp}/${ts.length} tareas completadas — ${nTar(quitadas.length)} quitadas — ${recurrentes.length} recurrentes reiniciadas`);
+  addNotif('🗂️',`Mes cerrado: ${nombreMes}`,`${nTar(quitadas.length)} quitadas · Histórico guardado`);
   guardar();generarRep();renderTareas();renderHoras();actuCts();
-  alert(`✅ Mes "${nombreMes}" cerrado.\n\nEl reporte está en "Histórico".\nEl sistema está listo para el nuevo mes.`);
+  alert(`✅ Mes "${nombreMes}" cerrado.\n\nQuitadas: ${nTar(quitadas.length)}. El reporte está en "Histórico".`);
 }
 
 // ════════════════════════
@@ -7369,7 +7504,7 @@ function renderAsigVarias(){
           <div style="font-size:14px;font-weight:800;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escH(av.titulo)}</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;align-items:center">
             ${recLbl?`<span style="font-size:10px;padding:1px 7px;border-radius:20px;background:var(--mos);color:var(--mo);font-weight:700">🔁 ${recLbl}${fechaFinLbl}</span>`:''}
-            ${resp?`<span style="font-size:11px;color:var(--na);font-weight:600">👤 ${resp}</span>`:''}
+            ${resp?`<span style="font-size:11px;color:var(--na);font-weight:600">👤 ${escH(resp)}</span>`:''}
             ${total?`<span style="font-size:10px;padding:1px 7px;border-radius:20px;background:var(--fo);color:${colPct};font-weight:700">${pct}%</span>`:''}
             ${venc?`<span style="font-size:10px;padding:1px 7px;border-radius:20px;background:var(--ros);color:var(--ro);font-weight:700">⚠️ Vencida</span>`:''}
           </div>
@@ -7626,7 +7761,8 @@ function misSecs(uid){
   const out=[];
   E.tareas.forEach(t=>{if(t.borrador||!t.secciones)return;
     Object.entries(t.secciones).forEach(([sec,sv])=>{if(!sv||!(sv.responsables||[]).includes(uid))return;
-      out.push({t,sec,sv,f:secFecha(t,sec),fin:secLimite(t,sec),propia:!!sv.fecha,h:secHora(t,sec)||t.hora||'',hecha:!!t.cancelada||['Completada','No cumplida','Cerrada'].includes(sv.estado)});});});
+      const unid=contarUnidadesSeccion(t,sec)?.asig>0,av=unid&&sec==='Audiovisual'?t.audiovisualData.asignaciones.map((a,i)=>({a,i})).filter(x=>x.a.userId===uid):[];
+      out.push({t,sec,sv,unid,av,f:secFecha(t,sec),fin:secLimite(t,sec),propia:!!sv.fecha,h:secHora(t,sec)||t.hora||'',hecha:!!t.cancelada||['Completada','No cumplida','Cerrada'].includes(sv.estado)||av.length>0&&av.every(x=>x.a.comp||x.a.noCump)});});});
   return out;
 }
 // Publicaciones que le tocan a la persona (las sin responsable las ven Líder y Editor)
@@ -7654,11 +7790,18 @@ function renderMiDia(){
   document.getElementById('mdFecha').textContent=cap1(fmtFechaLarga(d.f0));
   const caja=(ico,tit,n,cuerpo,extra='')=>`<div class="md-box"><div class="md-h">${ico} ${tit}${n?` <span class="md-n">${n}</span>`:''}${extra}</div>${cuerpo}</div>`;
   const vac=t=>`<div class="md-vac">${t}</div>`;
+  // Área con asignaciones: se marca solo lo propio (Audiovisual) o se abre la tarjeta; nunca el área entera
+  const btnListo=x=>{
+    if(!x.unid)return`<button class="btn bve bsm" onclick="togSeccion('${x.t.id}','${x.sec}')">✅ Listo</button>`;
+    const mias=x.av.filter(y=>!y.a.comp&&!y.a.noCump);
+    if(!mias.length)return`<button class="btn bve bsm" onclick="irATarea('${x.t.id}')">✅ Marcar en la tarea</button>`;
+    return mias.map(y=>`<button class="btn bve bsm" onclick="listoAV('${x.t.id}',${y.i})">✅ ${mias.length>1?(y.a.medio==='video'?'🎬 ':'📷 ')+escH(cap1(String(y.a.tipo||'').toLowerCase())):'Listo'}</button>`).join('');
+  };
   const itSec=x=>`<div class="md-it${x.f<d.f0?' md-atr':''}">
     <div class="md-hr">${x.f<d.f0?fmtPubFecha(x.f):x.h?txtHora(x.h):'Sin hora'}</div>
     <div style="flex:1;min-width:0"><div class="md-t" onclick="irATarea('${x.t.id}')">${escH(x.t.titulo||'(Sin título)')}</div>
       <div class="md-s">${SECCIONES[x.sec]?.ico||''} ${x.sec}${x.sec==='Diseño'&&x.sv.etapa?' · '+escH(x.sv.etapa):''}${x.t.lugar?' · 📍 '+escH(x.t.lugar):''}</div>
-      ${ed?`<div class="md-ac"><button class="btn bve bsm" onclick="togSeccion('${x.t.id}','${x.sec}')">✅ Listo</button></div>`:''}</div></div>`;
+      ${ed||carpetaBtn(x.t,x.f)?`<div class="md-ac">${ed?btnListo(x):''}${carpetaBtn(x.t,x.f)}</div>`:''}</div></div>`;
   const itPub=p=>`<div class="md-it">
     <div class="md-hr">${p.hora?txtHora(p.hora):'Sin hora'}</div>
     <div style="flex:1;min-width:0"><div class="md-t" onclick="verPubEnCal('${p.id}')">${escH(p.titulo||'(Sin título)')} ${pubTipoBadge(p)}</div>
@@ -7683,6 +7826,7 @@ function renderMiDia(){
     vb=mios.length?mios.map(([i,t,v])=>`<div class="md-li" onclick="goV('${v}',navDe('${v}'))"><span style="font-size:17px">${i}</span><span style="flex:1">${t}</span><span style="color:var(--tm)">›</span></div>`).join(''):vac('Nada pendiente.');
   }
 
+  const sinMat=[...new Set(d.ms.filter(x=>SEC_CUBRE.includes(x.sec)).map(x=>x.t))].filter(faltaMaterial);
   const he=propuestasHE(uAct.id);
   const heHtml=he.map(p=>`<div class="md-it"><div class="md-hr">${fmtPubFecha(p.f)}</div><div style="flex:1;min-width:0">
       <div class="md-t" onclick="irATarea('${p.t.id}')">${escH(p.t.titulo)}</div>
@@ -7715,6 +7859,7 @@ function renderMiDia(){
     +`<div class="md-grid">`
     +caja('📸','Hoy cubro',d.cubro.length,d.cubro.length?d.cubro.map(itSec).join(''):vac('No tienes coberturas hoy.'))
     +caja('📦','Hoy entrego',d.entrego.length+d.pubsHoy.length,(d.entrego.length||d.pubsHoy.length)?d.entrego.map(itSec).join('')+d.pubsHoy.map(itPub).join(''):vac('Nada que entregar hoy.'))
+    +(sinMat.length?caja('📁','Falta subir material',sinMat.length,sinMat.map(t=>`<div class="md-it"><div class="md-hr">${fmtPubFecha(ultimaAct(t))}</div><div style="flex:1;min-width:0"><div class="md-t" onclick="irATarea('${t.id}')">${escH(t.titulo||'(Sin título)')}</div><div class="md-ac">${carpetaBtn(t,null,'btn bna bsm')}</div></div></div>`).join('')):'')
     +caja('👀',titVb,nvb,vb)
     +`</div>`
     +(hechas?`<div class="md-s" style="margin:-6px 0 16px">✅ Hoy ya terminaste ${plu(hechas,'cosa','cosas')}.</div>`:'')
@@ -8257,8 +8402,8 @@ function renderAdjuntos(){
   if(!ADJ.cargado){cont.innerHTML=`<div style="padding:36px 20px;text-align:center;color:var(--tm);font-size:13px">${ADJ.error?escH(ADJ.error):'Cargando adjuntos…'}</div>`;return;}
   const cuenta=c=>ADJ.lista.filter(a=>a.categoria===c).length;
   const q=adjBusca.trim().toLowerCase();
-  const tarea=id=>id&&E.tareas.find(t=>t.id===id);
-  const vis=ADJ.lista.filter(a=>(!adjCat||a.categoria===adjCat)&&(!q||[a.nombre,a.archivo,a.nota,a.subidoPor,a.categoria,tarea(a.tareaId)?.titulo].join(' ').toLowerCase().includes(q)))
+  const tarea=id=>id&&E.tareas.find(t=>t.id===id),autorAdj=a=>E.equipo.find(u=>u.id===a.subidoPorId)?.nombre||a.subidoPor||'';
+  const vis=ADJ.lista.filter(a=>(!adjCat||a.categoria===adjCat)&&(!q||[a.nombre,a.archivo,a.nota,autorAdj(a),a.categoria,tarea(a.tareaId)?.titulo].join(' ').toLowerCase().includes(q)))
     .sort((a,b)=>(b.subidoEn||'').localeCompare(a.subidoEn||'')||(b.id||'').localeCompare(a.id||''));
   const chips=[['','Todos',ADJ.lista.length],...ADJ.cats.map(c=>[c,`${ADJ_CAT_ICO[c]||''} ${c}`,cuenta(c)])].filter(([c,,n])=>!c||n||c===adjCat)
     .map(([c,l,n])=>`<button class="adj-chip${c===adjCat?' on':''}" onclick="adjCat='${c}';renderAdjuntos()">${l} <span>${n}</span></button>`).join('');
@@ -8268,7 +8413,7 @@ function renderAdjuntos(){
       <div class="adj-info">
         <div class="adj-nom" title="${escH(a.archivo||a.enlace||'')}">${escH(a.nombre)}</div>
         <div class="md-s">${ADJ_CAT_ICO[a.categoria]||''} ${escH(a.categoria)} · ${a.enlace?'Enlace':fmtTam(a.tamano)}</div>
-        <div class="md-s">${escH((a.subidoPor||'').split(' ')[0])} · ${fmt(a.subidoEn)}</div>
+        <div class="md-s">${escH(autorAdj(a).split(' ')[0])} · ${fmt(a.subidoEn)}</div>
         ${t?`<div class="md-s">📋 <a style="color:var(--az);cursor:pointer" onclick="irATarea('${t.id}')">${escH(t.titulo)}</a></div>`:''}
         ${a.nota?`<div class="md-s" style="margin-top:2px">📝 ${escH(a.nota)}</div>`:''}
         <div style="display:flex;gap:5px;margin-top:8px;flex-wrap:wrap">
@@ -8697,7 +8842,7 @@ async function sincronizar(){
     // Solo baja los datos si cambiaron (si no, el servidor responde «sin cambios» y no manda nada)
     if(getToken()&&await traerYJuntar()){
       // Si empezó su tiempo compensatorio con la sesión abierta, se cierra
-      if(uAct&&bloqueoComp(uAct)){const a=ausenciaComp(uAct.nombre);cerrarSes();const le=document.getElementById('loginErr');if(le){le.textContent=`🌴 Estás de tiempo compensatorio. Tu acceso se habilita el ${fmt(a.regreso)}.`;le.classList.remove('oculto');}}
+      if(uAct&&bloqueoComp(uAct)){const a=ausenciaComp(uAct.nombre);cerrarSes(true);const le=document.getElementById('loginErr');if(le){le.textContent=`🌴 Estás de tiempo compensatorio. Tu acceso se habilita el ${fmt(a.regreso)}.`;le.classList.remove('oculto');}}
     }
   }catch{}
   if(btn){btn.textContent='🔄';btn.disabled=false;}
@@ -8757,8 +8902,8 @@ async function bajarResp(f){
     if(!r.ok)throw 0;
     const url=URL.createObjectURL(await r.blob()),a=document.createElement('a');
     a.href=url;a.download=`respaldo-cacco-${f==='actual'?hoy()+'-ahora':f}.json`;document.body.appendChild(a);a.click();a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),5000);
-  }catch{alert('No se pudo descargar el respaldo. Intenta de nuevo.');}
+    setTimeout(()=>URL.revokeObjectURL(url),5000);return true;
+  }catch{alert('No se pudo descargar el respaldo. Intenta de nuevo.');return false;}
 }
 
 // ── Última actividad de cada persona (solo Líder y Editor) ──

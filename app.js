@@ -7,7 +7,7 @@ const zlib     = require("zlib");
 const bcrypt   = require("bcrypt");
 const jwt      = require("jsonwebtoken");
 const mongoose = require("mongoose");
-const { validarDatos, aplicarReglasRol, NIVELES, limitador } = require("./reglas");
+const { validarDatos, validarNombres, aplicarReglasRol, versionNivel, reponerOculto, veTodo, NIVELES, limitador } = require("./reglas");
 
 const app        = express();
 // La clave de las sesiones nunca va en el código (el repositorio es público).
@@ -210,19 +210,26 @@ app.get("/", enviarArchivo(path.join(__dirname, "public", "index.html"), HTML));
 app.get("/pedido", enviarArchivo(path.join(__dirname, "public", "pedido.html"), HTML));
 // Oficinas, servicios, preguntas y largos del formulario: un solo archivo que usan el servidor, /pedido y el tablero
 app.get("/pedidos.js", enviarArchivo(path.join(__dirname, "pedidos.js"), "application/javascript; charset=utf-8"));
+// Reglas de los nombres de las personas (y cómo se renombra en todos los registros): las mismas para el servidor y el tablero
+app.get("/nombres.js", enviarArchivo(path.join(__dirname, "nombres.js"), "application/javascript; charset=utf-8"));
 
 // ════════════════════════
 //  PEDIDOS DE OTRAS ÁREAS (formulario público, sin sesión)
 // ════════════════════════
-// Cada pedido entra como borrador de tarea. Como el formulario es público, se limita cuántos
-// pedidos puede enviar cada conexión y cuántos borradores de pedidos pueden esperar revisión.
+// Cada pedido entra como borrador de tarea. Como el formulario es público, se limita cuántos pedidos puede enviar
+// cada oficina desde una conexión, cuántos la conexión en total (todo el edificio sale por la misma) y cuántos
+// borradores de pedidos pueden esperar revisión.
 const { AREAS, pedidoATarea, siguienteFolio, buscarDuplicado, estadoPedido, normFolio, nuevaCorreccion, fueraDeHorario, choquesHorario } = require("./pedidos");
 const PEDIDOS_SIN_REVISAR = 40;
-const envios = limitador(5, 3600e3);                 // pedidos o correcciones por conexión y hora
+const enviosOficina = limitador(20, 3600e3);         // pedidos o correcciones por conexión y oficina, por hora
+const enviosRed = limitador(60, 3600e3);             // y por conexión, sumando todas las oficinas
+const MSG_ENVIOS = "Se enviaron muchos pedidos desde esta red. Intenta en unos minutos o escribe al equipo de Comunicaciones.";
+const enviosLlenos = (req, area) => enviosRed.lleno(req.ip) || (area && enviosOficina.lleno(req.ip + "|" + area));
+const sumarEnvio = (req, area) => { enviosRed.sumar(req.ip); enviosOficina.sumar(req.ip + "|" + area); };
 // Claves de acceso del formulario: una por oficina. La clave dice de qué oficina viene el pedido, así que la
 // oficina no se elige a mano y cada una solo consulta sus propios folios. Líder y Editor las ven y las cambian.
 // Viven en data.config.clavesPedidos y solo se cambian por /api/pedidos/claves (nunca con un guardado normal).
-const fallosClave = limitador(10, 3600e3);           // claves equivocadas por conexión y hora
+const fallosClave = limitador(30, 3600e3);           // claves equivocadas por conexión y hora
 const fallosClaveTodos = limitador(100, 3600e3);     // y en total: frena a quien prueba claves desde muchas conexiones
 const puedeClave = u => ["lider", "editor"].includes(u?.nivel);
 const ahoraPanama = () => {
@@ -275,12 +282,12 @@ app.post("/api/pedidos/oficina", async (req, res) => {
   catch { res.status(500).json({ error: "No se pudo revisar la clave" }); }
 });
 app.post("/api/pedidos", async (req, res) => {
-  if (envios.lleno(req.ip))
-    return res.status(429).json({ error: "Ya enviaste varios pedidos en la última hora. Si es urgente, escribe directamente al equipo de Comunicaciones." });
+  if (enviosLlenos(req)) return res.status(429).json({ error: MSG_ENVIOS });
   try {
     await enCola(async () => {
       const data = await leerData();
       const area = oficinaValida(req, res, data); if (!area) return;
+      if (enviosLlenos(req, area)) return res.status(429).json({ error: MSG_ENVIOS });
       data.tareas = data.tareas || []; data.pedidos = data.pedidos || []; data.notifs = data.notifs || [];
       if (data.tareas.filter(t => t && t.borrador && t.pedido).length >= PEDIDOS_SIN_REVISAR)
         return res.status(503).json({ error: "Hay muchos pedidos esperando revisión. Escribe directamente al equipo de Comunicaciones." });
@@ -299,7 +306,7 @@ app.post("/api/pedidos", async (req, res) => {
         detalle: `${folio} de ${r.registro.area}: "${r.tarea.titulo}" (${r.tarea.fecha}) · pide ${r.registro.solicitante}${parecida ? ` · se parece a "${parecida.titulo}"` : ""}` },
         ...(data.bitacora || [])].slice(0, 300);
       await escribirData(data);
-      envios.sumar(req.ip);
+      sumarEnvio(req, area);
       res.json({ ok: true, folio });
     });
   } catch { res.status(500).json({ error: "No se pudo enviar el pedido. Intenta de nuevo en unos minutos." }); }
@@ -330,12 +337,12 @@ app.post("/api/pedidos/estado", async (req, res) => {
 // Si la oficina se equivocó al llenar el pedido, pide una corrección con el folio y su clave.
 // No cambia la tarea: queda en la bandeja del equipo hasta que alguien la aplica.
 app.post("/api/pedidos/correccion", async (req, res) => {
-  if (envios.lleno(req.ip))
-    return res.status(429).json({ error: "Ya enviaste varios mensajes en la última hora. Si es urgente, escribe directamente al equipo de Comunicaciones." });
+  if (enviosLlenos(req)) return res.status(429).json({ error: MSG_ENVIOS });
   try {
     await enCola(async () => {
       const data = await leerData();
       const area = oficinaValida(req, res, data); if (!area) return;
+      if (enviosLlenos(req, area)) return res.status(429).json({ error: MSG_ENVIOS });
       const folio = normFolio(req.body?.folio), reg = pedidoDeOficina(data, folio, area);
       if (!reg) return res.status(404).json({ error: `No encontramos el pedido ${folio || "con ese número"} de tu oficina. Revisa el folio.` });
       if ((reg.correcciones || []).length >= 10) return res.status(400).json({ error: "Este pedido ya tiene muchas correcciones. Escribe directamente al equipo de Comunicaciones." });
@@ -348,7 +355,7 @@ app.post("/api/pedidos/correccion", async (req, res) => {
       data.bitacora = [{ id: r.correccion.id + "b", fecha, hora, usuario: "Formulario de pedidos", accion: "Pedido: corrección pedida",
         detalle: `${txt} (pide ${r.correccion.nombre}, ${reg.area})` }, ...(data.bitacora || [])].slice(0, 300);
       await escribirData(data);
-      envios.sumar(req.ip);
+      sumarEnvio(req, area);
       res.json({ ok: true });
     });
   } catch { res.status(500).json({ error: "No se pudo enviar la corrección. Intenta de nuevo en unos minutos." }); }
@@ -357,22 +364,27 @@ app.post("/api/pedidos/correccion", async (req, res) => {
 // ════════════════════════
 //  LOGIN
 // ════════════════════════
-// Un solo mensaje de error (no dice si el correo existe) y un límite de intentos fallidos por conexión y por cuenta
-const fallosLogin = limitador(10, 15 * 60e3), fallosCuenta = limitador(10, 15 * 60e3);
+// Un solo mensaje de error (no dice si el correo existe) y límites de intentos fallidos por conexión y correo (el que
+// frena a quien adivina), por cuenta (más alto: frena a quien prueba desde muchas conexiones sin que unos pocos fallos
+// ajenos dejen fuera a la persona) y por conexión (alto: toda la oficina sale por la misma). Cambiar la contraseña tiene su propio contador.
+const QUINCE_MIN = 15 * 60e3;
+const fallosLogin = limitador(100, QUINCE_MIN), fallosCorreo = limitador(10, QUINCE_MIN), fallosCuenta = limitador(50, QUINCE_MIN);
+const fallosCambioClave = limitador(10, QUINCE_MIN);
 const HASH_FALSO = bcrypt.hashSync("cacco-no-existe", 10);
 app.post("/api/login", async (req, res) => {
   const email = String(req.body?.email || "").toLowerCase().trim(), password = String(req.body?.password || "");
   if (!email || !password) return res.status(400).json({ error: "Escribe tu correo y tu contraseña." });
-  if (fallosLogin.lleno(req.ip) || fallosCuenta.lleno(email))
+  const conCorreo = req.ip + "|" + email;
+  if (fallosLogin.lleno(req.ip) || fallosCorreo.lleno(conCorreo) || fallosCuenta.lleno(email))
     return res.status(429).json({ error: "Demasiados intentos fallidos. Espera 15 minutos y vuelve a probar." });
   try {
     const user = (await leerUsers()).find(u => u.email === email);
     const valid = await bcrypt.compare(password, user?.password || HASH_FALSO);
     if (!user || !valid) {
-      fallosLogin.sumar(req.ip); fallosCuenta.sumar(email);
+      fallosLogin.sumar(req.ip); fallosCorreo.sumar(conCorreo); fallosCuenta.sumar(email);
       return res.status(401).json({ error: "Correo o contraseña incorrectos." });
     }
-    fallosCuenta.limpiar(email);
+    fallosCuenta.limpiar(email); fallosCorreo.limpiar(conCorreo);
     const regreso = await regresoSiAusente(user.id, user.nivel);
     if (regreso) return res.status(403).json({ error: msgAusente(regreso) });
     marcarActivo(user.id);
@@ -395,25 +407,27 @@ app.get("/api/actividad", verificarToken, async (req, res) => {
 // ════════════════════════
 // La página pregunta cada pocos segundos si hubo cambios (con la huella de lo que ya tiene): si no los hubo,
 // la respuesta es «sin cambios» y no baja nada. Cuando sí, los datos van comprimidos.
-// Las claves del formulario de pedidos solo las reciben Líder y Editor.
-function versionPara(c, conClaves) {
-  const k = conClaves ? "c" : "s";
+// Cada nivel recibe lo suyo (versionNivel en reglas.js); las claves del formulario de pedidos solo las reciben Líder y Editor.
+// Colaborador y Lector tienen una versión por persona: su huella lleva delante una marca de la cuenta.
+function versionPara(c, u) {
+  const todo = veTodo(u), k = todo ? "c" : (u.nivel === "lector" ? "l" : "p") + crypto.createHash("sha1").update(String(u.id)).digest("hex").slice(0, 10);
   if (!c.variantes[k]) {
     let texto = c.json;
-    if (!conClaves && c.payload.config) {
-      const { clavePedidos, clavesPedidos, ...config } = c.payload.config;
-      texto = JSON.stringify({ ...c.payload, config });
+    if (!todo) {
+      const v = versionNivel(c.payload, u);
+      if (v.config) { const { clavePedidos, clavesPedidos, ...config } = v.config; v.config = config; }
+      texto = JSON.stringify(v);
     }
     let gz = null;
     c.variantes[k] = { texto, gz: () => gz || (gz = zlib.gzipSync(texto)), huella: `"${k}-${c.huella}"` };
   }
   return c.variantes[k];
 }
-// ¿La huella que manda la página es de la versión guardada ahora?
-const huellaVigente = (h, c) => String(h || "").replace(/^W\//, "").replace(/"/g, "").replace(/^[cs]-/, "") === c.huella;
+// ¿La huella que manda la página es de la versión guardada ahora? (sin la marca del nivel o la cuenta)
+const huellaVigente = (h, c) => String(h || "").replace(/^W\//, "").replace(/"/g, "").replace(/^[a-z0-9]+-/, "") === c.huella;
 app.get("/api/data", verificarToken, async (req, res) => {
   try {
-    const v = versionPara(await estadoData(), puedeClave(req.usuario));
+    const v = versionPara(await estadoData(), req.usuario);
     res.set("Vary", "Accept-Encoding, Authorization");
     mandarComprimido(req, res, v, "application/json; charset=utf-8", v.huella);
   }
@@ -495,12 +509,16 @@ app.post("/api/data", verificarToken, async (req, res) => {
       const actual = JSON.parse(c.json);
       await respaldoDiario(actual);
       const enviado = JSON.stringify(req.body);
-      const nuevo = aplicarReglasRol(req.body, actual, req.usuario);
+      // Lo que ese nivel no recibió (horas y permisos ajenos, fichas completas, bitácora…) vuelve antes de aplicar sus reglas
+      const nuevo = aplicarReglasRol(reponerOculto(req.body, actual, req.usuario), actual, req.usuario);
+      const errorNombre = validarNombres(nuevo, actual);
+      if (errorNombre) return res.status(400).json({ error: errorNombre });
       if (actual.config) nuevo.config = actual.config; else delete nuevo.config;   // las claves solo cambian por su ruta
-      const { config: _a, ...sinConfig } = nuevo, { config: _b, ...enviadoSin } = JSON.parse(enviado);
+      const comoLoVe = d => { const { config, ...resto } = versionNivel(d, req.usuario); return JSON.stringify(resto); };
+      const ajustado = comoLoVe(nuevo) !== comoLoVe(JSON.parse(enviado));
       const guardado = await escribirData(nuevo);
       // «ajustado»: el servidor deshizo algo que ese nivel no puede hacer; la página vuelve a cargar lo guardado
-      res.json({ ok: true, huella: versionPara(guardado, puedeClave(req.usuario)).huella, ajustado: JSON.stringify(sinConfig) !== JSON.stringify(enviadoSin) });
+      res.json({ ok: true, huella: versionPara(guardado, req.usuario).huella, ajustado });
     });
   }
   catch { res.status(500).json({ error: "No se pudo guardar" }); }
@@ -690,11 +708,12 @@ app.post("/api/change-password", verificarToken, async (req, res) => {
   const passwordActual = String(req.body?.passwordActual || ""), passwordNueva = String(req.body?.passwordNueva || "");
   if (!passwordActual || !passwordNueva) return res.status(400).json({ error: "Ambas contraseñas requeridas" });
   if (passwordNueva.length < 8) return res.status(400).json({ error: "Mínimo 8 caracteres" });
-  if (fallosLogin.lleno(req.ip)) return res.status(429).json({ error: "Demasiados intentos fallidos. Espera 15 minutos." });
+  if (fallosCambioClave.lleno(req.usuario.id)) return res.status(429).json({ error: "Demasiados intentos fallidos. Espera 15 minutos." });
   try {
     const user = (await leerUsers()).find(u => u.id === req.usuario.id);
     if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
-    if (!await bcrypt.compare(passwordActual, user.password)) { fallosLogin.sumar(req.ip); return res.status(401).json({ error: "Contraseña actual incorrecta" }); }
+    if (!await bcrypt.compare(passwordActual, user.password)) { fallosCambioClave.sumar(user.id); return res.status(401).json({ error: "Contraseña actual incorrecta" }); }
+    fallosCambioClave.limpiar(user.id);
     const claveCambiada = new Date(Math.floor(Date.now() / 1000) * 1000);
     await escribirUser({ ...user, password: await bcrypt.hash(passwordNueva, 10), claveCambiada });
     res.json({ ok: true, token: firmarSesion(user, req.sesionLarga) });

@@ -117,7 +117,7 @@
     const titulo = limpiar(b.actividad, L.actividad), lugar = limpiar(b.lugar, L.lugar);
     const descripcion = limpiar(b.descripcion, L.descripcion, true);
     const servicios = (Array.isArray(b.servicios) ? b.servicios : []).filter(k => SERVICIOS[k]);
-    const fecha = String(b.fecha || ""), hora = String(b.hora || ""), horaFin = String(b.horaFin || "");
+    const fecha = String(b.fecha || ""), fechaFin0 = String(b.fechaFin || ""), hora = String(b.hora || ""), horaFin = String(b.horaFin || "");
     const entrega = String(b.entrega || "");
     const materialTxt = String(b.material || "").trim(), material = materialTxt ? limpiarUrl(materialTxt) : "";
     if (!area) return { error: "Elige la oficina que hace el pedido." };
@@ -128,6 +128,10 @@
     if (!servicios.length) return { error: "Marca al menos una cosa que necesitas." };
     if (!esFecha(fecha)) return { error: "Elige la fecha de la actividad." };
     if (fecha < ctx.hoy) return { error: "La fecha de la actividad ya pasó." };
+    // «Hasta» solo cuenta si es otro día después del inicio (máximo un mes)
+    if (fechaFin0 && (!esFecha(fechaFin0) || fechaFin0 < fecha)) return { error: "La fecha «Hasta» no puede ser antes de la fecha de inicio." };
+    const fechaFin = fechaFin0 > fecha ? fechaFin0 : "";
+    if (fechaFin && (new Date(fechaFin + "T12:00:00Z") - new Date(fecha + "T12:00:00Z")) / 864e5 > 31) return { error: "Una actividad de más de un mes se pide por partes." };
     if (hora && !esHora(hora)) return { error: "La hora de inicio no es válida." };
     if (horaFin && !esHora(horaFin)) return { error: "La hora de fin no es válida." };
     if (entrega && (!esFecha(entrega) || entrega < ctx.hoy)) return { error: "La fecha de entrega del diseño no es válida." };
@@ -160,6 +164,7 @@
       `📨 Pedido ${ctx.folio} de ${nomArea}, recibido el ${fechaLarga(ctx.hoy)} por el formulario de pedidos.`,
       `👤 Lo pide: ${nombre} · ${contacto}`,
       `📍 Punto focal: ${focal.nombre}${focal.cargo ? ` (${focal.cargo})` : ""} · ${focal.telefono}${focal.correo ? ` · ${focal.correo}` : ""}`,
+      fechaFin ? `🗓️ Dura varios días: del ${fechaLarga(fecha)} al ${fechaLarga(fechaFin)}.` : "",
       `🧰 Necesita: ${servicios.map(k => SERVICIOS[k].lbl).join("; ")}.`,
       fuera ? `🌙 Fuera del horario laboral (${fuera}): se cubre con horas extra (tiempo compensatorio).` : "",
       entrega ? `🎨 Diseño para el ${fechaLarga(entrega)}.` : "",
@@ -171,12 +176,12 @@
       ...(Object.keys(detalles).length ? { detalles } : {}), ...(fuera ? { fueraHorario: fuera } : {}),
       ...(material ? { material } : {}), ...(entrega ? { entrega } : {}) };
     const tarea = {
-      id: ctx.id(), titulo, borrador: true, etiquetas: [], prioridad: "Media", fecha, hora, horaFin, lugar, notas,
+      id: ctx.id(), titulo, borrador: true, etiquetas: [], prioridad: "Media", fecha, ...(fechaFin ? { fechaFin } : {}), hora, horaFin, lugar, notas,
       recurrencia: "ninguna", secciones, entregables: [], creadaEn: ctx.hoy, creadaPor: "Formulario de pedidos", creadoPorId: "pedidos", pedido,
     };
     // El registro de pedidos no se borra al descartar el borrador: sirve para medir cuánto pide cada área
     // Guarda el pedido tal como llegó, para el historial aunque la tarea se edite, se una a otra o se descarte
-    const registro = { id: tarea.id, tareaId: tarea.id, folio: ctx.folio, area: nomArea, claveDe: area, titulo, fecha, servicios, recibido: ctx.hoy, solicitante: nombre,
+    const registro = { id: tarea.id, tareaId: tarea.id, folio: ctx.folio, area: nomArea, claveDe: area, titulo, fecha, ...(fechaFin ? { fechaFin } : {}), servicios, recibido: ctx.hoy, solicitante: nombre,
       contacto, puntoFocal: focal, ...(hora ? { hora } : {}), ...(horaFin ? { horaFin } : {}), ...(lugar ? { lugar } : {}), nota: notas };
     return { tarea, registro, notaPedido: notas };
   }
