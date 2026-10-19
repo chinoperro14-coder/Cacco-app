@@ -104,24 +104,24 @@ body.pant .pt-wrap{height:92vh;}
 .pt-n{background:var(--na);color:#fff;border-radius:12px;padding:0 9px;font-size:.8em;}
 .pt-col.atr .pt-h{border-bottom-color:var(--e-att);}.pt-col.atr .pt-n{background:var(--e-att);}
 .pt-col.man .pt-h{border-bottom-color:#0d9488;}.pt-col.man .pt-n{background:#0d9488;}
-.pt-lista{flex:1;min-height:0;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;}
-.pt-it{border:1px solid var(--bo);border-left:5px solid var(--na);border-radius:8px;padding:10px 12px;background:var(--fo);}
+.pt-lista{flex:1;min-height:0;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:calc(6px*var(--z,1));}
+.pt-it{border:1px solid var(--bo);border-left:5px solid var(--na);border-radius:8px;padding:calc(7px*var(--z,1)) 11px;background:var(--fo);}
 .pt-it.abre{cursor:pointer;}.pt-it.abre:hover{filter:brightness(.97);}.pt-it.mio{box-shadow:0 0 0 2px var(--na);}
 .pt-it.s-ini{border-left-color:var(--e-ini);}.pt-it.s-cur{border-left-color:var(--e-cur);}.pt-it.s-fin{border-left-color:var(--e-fin);}.pt-it.s-can{border-left-color:var(--e-can);}
 .pt-it.hecho{opacity:.6;}
 .pt-it.hecho .pt-t{text-decoration:line-through;}
-.pt-t{font-size:clamp(15px,1.8vw,32px);font-weight:700;line-height:1.25;}
-.pt-m{font-size:clamp(12px,1.35vw,24px);color:var(--tm);margin-top:3px;}
+.pt-t{font-size:max(14px,calc(clamp(14px,1.3vw,25px)*var(--z,1)));font-weight:700;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.pt-m{font-size:max(12px,calc(clamp(12px,1vw,19px)*var(--z,1)));color:var(--tm);margin:2px 8px 0 0;display:inline-block;vertical-align:middle;}
 .pt-hr{font-weight:800;color:var(--tx);}
-.pt-ch{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
-.pt-ch span{font-size:clamp(11px,1.15vw,20px);font-weight:600;padding:2px 9px;border-radius:12px;background:var(--su2);}
+.pt-ch{display:inline-flex;flex-wrap:wrap;gap:4px;margin-top:calc(3px*var(--z,1));vertical-align:middle;}
+.pt-ch span{font-size:max(11px,calc(clamp(11px,.85vw,16px)*var(--z,1)));font-weight:600;padding:1px 7px;border-radius:10px;background:var(--su2);}
 .pt-ch .sa{background:var(--e-att);color:#fff;font-weight:800;}
 .pt-res{display:flex;gap:10px;flex-wrap:wrap;padding:7px 16px;font-size:clamp(12px,1.3vw,22px);font-weight:600;color:var(--tm);border-bottom:1px solid var(--bo);}
 .pt-res .sa{color:var(--e-att);font-weight:800;}
 .pt-it.curso{border-color:var(--e-cur);background:var(--e-curs);box-shadow:0 0 0 2px #16a34a55;}
 .pt-it.canc{background:var(--e-cans);}
 .pt-it.canc .pt-t{text-decoration:line-through;color:var(--e-canx);}
-.pt-tag{display:inline-block;margin-top:5px;font-size:clamp(11px,1.15vw,20px);font-weight:800;padding:2px 9px;border-radius:12px;}
+.pt-tag{display:inline-block;margin-top:calc(4px*var(--z,1));font-size:max(11px,calc(clamp(11px,.85vw,16px)*var(--z,1)));font-weight:800;padding:1px 7px;border-radius:10px;}
 .pt-tag.verde{background:var(--e-cur);color:#fff;}.pt-tag.rojo{background:var(--e-can);color:#fff;text-decoration:underline;}.pt-tag.ambar{background:var(--e-atts);color:var(--e-attx);}
 .pt-sem{margin-top:12px;background:var(--su);border:1px solid var(--bo);border-radius:var(--r);padding:10px 16px;display:flex;gap:14px;align-items:center;overflow:hidden;}
 .pt-sh{font-weight:800;font-size:clamp(14px,1.5vw,26px);white-space:nowrap;}
@@ -8712,6 +8712,9 @@ function hayModalAbierto(){return !!document.querySelector('.mov.on')||!!documen
 // ── Modo pantalla: Pendiente · Hoy · Mañana (se actualiza solo con el refresco de datos y cada minuto) ──
 // En la tele, una columna que no cabe baja sola despacio, espera abajo y vuelve arriba
 const ptPausa=new WeakMap();
+// Si una columna no cabe, sus actividades se achican un poco; solo si aun así no caben, baja sola
+function ptAjustar(cont){cont.querySelectorAll('.pt-lista').forEach(l=>{for(const z of [1,.92,.85,.78]){l.style.setProperty('--z',z);if(l.scrollHeight<=l.clientHeight+2)break;}});}
+window.addEventListener('resize',()=>{const c=document.getElementById('ptCols');if(c&&c.offsetParent)ptAjustar(c);});
 setInterval(()=>{if(!document.body.classList.contains('pant'))return;const ahora=Date.now();
   document.querySelectorAll('#ptCols .pt-lista').forEach(l=>{if(l.scrollHeight<=l.clientHeight+2)return;if((ptPausa.get(l)||0)>ahora)return;
     if(l.scrollTop+l.clientHeight>=l.scrollHeight-2){l.scrollTop=0;ptPausa.set(l,ahora+5000);}
@@ -8801,6 +8804,7 @@ function renderPantalla(){
   cont.innerHTML=caja('atr','⚠️ Pendiente','sin terminar',d.col.atr,d.pc.atr,true,'Nada atrasado 🎉')
     +caja('hoy','📍 Hoy',cap1(fmtPubFecha(d.f0)),d.col.hoy,d.pc.hoy,false,'No hay actividades para hoy')
     +caja('man','➡️ Mañana',cap1(fmtPubFecha(d.f1)),d.col.man,d.pc.man,false,'No hay actividades para mañana');
+  ptAjustar(cont);
   cont.querySelectorAll('.pt-lista').forEach((l,i)=>l.scrollTop=scr[i]||0);
   const dia=f=>cap1(new Date(f+'T12:00:00').toLocaleDateString('es-PA',{weekday:'short',day:'numeric'}).replace('.',''));
   const si=(x,fd=dia)=>`<span class="pt-si${x.t.cancelada?' canc':''}"><b>${fd(x.f)}</b>${x.t.hora?' '+txtHora(x.t.hora):''} · ${x.t.cancelada?'🚫 ':''}${escH(x.t.titulo||'')}</span>`;
