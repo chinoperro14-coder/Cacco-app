@@ -139,6 +139,22 @@ body.pant:not(.pt-raton){cursor:none;}
 body.pant .pt-bt button{display:none;}
 body.pant header,body.pant nav.sid,body.pant .subnav{display:none!important;}
 body.pant .cont{padding:4vh 4vw;}
+/* En pantalla completa todo crece y se achica con el ancho de la tele (sin mínimos fijos), así una TV que se presenta como 960×540 se ve igual que una de 1920×1080 */
+body.pant .pt-top{margin-bottom:.6vw;}
+body.pant .pt-fecha,body.pant .pt-hora{font-size:min(3vw,56px);}
+body.pant .pt-cols{gap:.75vw;}
+body.pant .pt-h{padding:.6vw .85vw;font-size:min(2vw,36px);}
+body.pant .pt-res{flex-wrap:nowrap;white-space:nowrap;overflow:hidden;gap:.55vw;padding:.35vw .85vw;font-size:min(1.1vw,21px);}
+body.pant .pt-lista{padding:.45vw;}
+body.pant .pt-it{padding:calc(.4vw*var(--z,1)) .6vw;font-size:calc(min(.85vw,16px)*var(--z,1));line-height:1.3;}
+body.pant .pt-t{font-size:calc(min(1.3vw,25px)*var(--z,1));}
+body.pant .pt-m{font-size:calc(min(1vw,19px)*var(--z,1));}
+body.pant .pt-ch span,body.pant .pt-tag{font-size:calc(min(.85vw,16px)*var(--z,1));}
+body.pant .pt-sem{margin-top:.6vw;padding:.5vw .85vw;}
+body.pant .pt-sh{font-size:min(1.5vw,26px);}
+body.pant .pt-si{font-size:min(1.3vw,22px);}
+body.pant .pt-leyenda{font-size:min(.85vw,15px);}
+body.pant .pt-vac{font-size:min(1.6vw,28px);}
 @media (max-width:900px){.pt-cols{grid-template-columns:1fr;}.pt-wrap{height:auto;}.pt-lista{max-height:none;}}
 
 @media print{body.slr *{display:none!important;}body.slr::after{display:block!important;content:"Impresión restringida.";font-size:18px;text-align:center;margin-top:40px;}}
@@ -8713,8 +8729,11 @@ function hayModalAbierto(){return !!document.querySelector('.mov.on')||!!documen
 // En la tele, una columna que no cabe baja sola despacio, espera abajo y vuelve arriba
 const ptPausa=new WeakMap();
 // Si una columna no cabe, sus actividades se achican un poco; solo si aun así no caben, baja sola
-function ptAjustar(cont){cont.querySelectorAll('.pt-lista').forEach(l=>{for(const z of [1,.92,.85,.78]){l.style.setProperty('--z',z);if(l.scrollHeight<=l.clientHeight+2)break;}});}
-window.addEventListener('resize',()=>{const c=document.getElementById('ptCols');if(c&&c.offsetParent)ptAjustar(c);});
+function ptAjustar(cont){cont.querySelectorAll('.pt-lista').forEach(l=>{for(const z of [1,.92,.85,.8]){l.style.setProperty('--z',z);if(l.scrollHeight<=l.clientHeight+2)break;}});}
+// Vuelve a medir cuando la tele termina de acomodar la página (pantalla completa, letras cargadas)
+function ptReajustar(){const c=document.getElementById('ptCols');if(!c)return;requestAnimationFrame(()=>{if(c.offsetParent)ptAjustar(c);});setTimeout(()=>{if(c.offsetParent)ptAjustar(c);},600);}
+window.addEventListener('resize',ptReajustar);
+if(document.fonts)document.fonts.ready.then(ptReajustar);
 setInterval(()=>{if(!document.body.classList.contains('pant'))return;const ahora=Date.now();
   document.querySelectorAll('#ptCols .pt-lista').forEach(l=>{if(l.scrollHeight<=l.clientHeight+2)return;if((ptPausa.get(l)||0)>ahora)return;
     if(l.scrollTop+l.clientHeight>=l.scrollHeight-2){l.scrollTop=0;ptPausa.set(l,ahora+5000);}
@@ -8726,6 +8745,7 @@ function ptCompleta(on){
   try{if(on&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{});
       else if(!on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});}catch{}
   history.replaceState(null,'',on?'#pantalla':location.pathname+location.search);
+  ptReajustar();
 }
 document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&document.body.classList.contains('pant')&&!document.getElementById('vPantalla').classList.contains('oculto'))ptCompleta(false);});
 function ptDatos(){
