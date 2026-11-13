@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>CACCO — Equipo de Comunicaciones</title>
 <link rel="icon" href="/caccoisotipo.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#ef561f">
+<link rel="apple-touch-icon" href="/icono-apple-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="CACCO">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 :root{--e-init:#1a1a1a;--e-curt:#fff;--e-fint:#fff;--e-cant:#fff;--e-ini:#eab308;--e-inis:#fef9c3;--e-inix:#854d0e;--e-cur:#16a34a;--e-curs:#dcfce7;--e-curx:#166534;--e-fin:#2563eb;--e-fins:#dbeafe;--e-finx:#1e40af;--e-can:#dc2626;--e-cans:#fee2e2;--e-canx:#991b1b;--e-att:#c026d3;--e-atts:#fae8ff;--e-attx:#86198f;--na:#E35205;--na2:#c44604;--nas:#fff4ee;--nab:#fcd9c4;--fo:#f5f4f2;--su:#ffffff;--su2:#f0eeeb;--bo:#e2ddd8;--tx:#1a1816;--tm:#6b6258;--ve:#166534;--ves:#dcfce7;--az:#1e40af;--azs:#dbeafe;--ro:#991b1b;--ros:#fee2e2;--am:#92400e;--ams:#fef3c7;--mo:#5b21b6;--mos:#ede9fe;--r:10px;--rs:6px;--sh:0 1px 3px rgba(0,0,0,.07),0 4px 12px rgba(0,0,0,.05);--shm:0 4px 16px rgba(0,0,0,.10),0 1px 4px rgba(0,0,0,.06);}
@@ -2288,6 +2294,7 @@ function iniciarApp(){
   renderTodo();
   irInicio();
   if(location.hash==='#pantalla'){goV('pantalla');ptCompleta(true);}
+  else if(location.hash.startsWith('#t=')){const id=decodeURIComponent(location.hash.slice(3));history.replaceState(null,'',location.pathname);if(E.tareas.some(t=>t.id===id))irATarea(id);}
   cargarAdj();
 }
 
@@ -2300,6 +2307,7 @@ async function cerrarSes(sinPreguntar){
     if(document.getElementById('mSesExp')?.classList.contains('on'))return;// venció: sigue por «Volver al inicio de sesión»
     if(_sinGuardar&&!await confirmar('Hay cambios que todavía no llegan al servidor. Si sales ahora, se pierden.',{tit:'⚠️ Sin guardar',ok:'Salir igual',no:'Quedarme',peligro:true}))return;
   }
+  if(!sinPreguntar)pushQuitar();   // al salir a propósito, este celular deja de recibir los avisos de esa cuenta
   _pendiente=sinPreguntar&&_sinGuardar&&uAct?{uid:uAct.id,base:Ebase,mine:snap(E)}:null;
   _sinGuardar=0;clearTimeout(_reintentoTimer);clearTimeout(_guardarTimer);avisoSinGuardar(false);notifsLocal=[];
   ADJ.lista=[];ADJ.cargado=false;
@@ -2309,6 +2317,48 @@ async function cerrarSes(sinPreguntar){
   document.getElementById('pLog').style.display='flex';
   renderLogin();
 }
+
+// ════════════════════════
+//  AVISOS AL CELULAR (app instalada)
+// ════════════════════════
+// Cada persona los activa en Mi perfil, en cada celular. En iPhone solo funcionan con el Tablero agregado a la pantalla de inicio.
+const PUSH_OK='serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+const esIOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const instalada=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  // Al tocar un aviso con el Tablero abierto, se va a esa actividad
+  navigator.serviceWorker.addEventListener('message',e=>{const u=e.data&&e.data.abrir;if(!u||!uAct)return;
+    const h=new URL(u).hash;if(h.startsWith('#t=')){const id=decodeURIComponent(h.slice(3));if(E.tareas.some(t=>t.id===id))irATarea(id);}});
+}
+const pushApi=(ruta,cuerpo)=>fetch('/api/push/'+ruta,{method:cuerpo?'POST':'GET',headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()},body:cuerpo?JSON.stringify(cuerpo):undefined}).then(r=>r.json().then(j=>{if(!r.ok)throw new Error(j.error||'Error');return j;}));
+const pushSub=async()=>PUSH_OK?(await navigator.serviceWorker.ready).pushManager.getSubscription():null;
+async function pushPintar(){
+  const el=document.getElementById('perfAvisos');if(!el)return;
+  if(!PUSH_OK||(esIOS&&!instalada())){el.innerHTML=`🔔 <span style="color:var(--tm)">${esIOS?'Para recibir avisos, agrega el Tablero a tu pantalla de inicio: botón Compartir → «Agregar a inicio». Luego ábrelo desde ese ícono.':'Este navegador no recibe avisos.'}</span>`;return;}
+  if(Notification.permission==='denied'){el.innerHTML='🔕 <span style="color:var(--tm)">Los avisos están bloqueados para esta página. Actívalos en los ajustes del navegador.</span>';return;}
+  const on=!!(await pushSub().catch(()=>null))&&Notification.permission==='granted';
+  el.innerHTML=on?'🔔 <b>Avisos activos en este celular</b> <button class="btn bgh bsm" onclick="pushProbar()">Probar</button> <button class="btn bgh bsm" onclick="pushApagar()">Desactivar</button>'
+    :'🔕 <span style="color:var(--tm)">Avisos apagados en este celular</span> <button class="btn bna bsm" onclick="pushActivar()">🔔 Activar avisos</button>';
+}
+async function pushActivar(){
+  try{
+    if(await Notification.requestPermission()!=='granted'){pushPintar();return;}
+    const {clave}=await pushApi('clave');
+    const reg=await navigator.serviceWorker.ready;
+    const b=atob(clave.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-clave.length%4)%4));
+    const sub=await reg.pushManager.getSubscription()||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:Uint8Array.from(b,c=>c.charCodeAt(0))});
+    await pushApi('suscribir',{sub:sub.toJSON()});
+    avisar('✅ Avisos activados en este celular');
+  }catch(e){avisar('No se pudo activar los avisos: '+(e.message||e));}
+  pushPintar();
+}
+async function pushApagar(){
+  try{const sub=await pushSub();if(sub){await pushApi('quitar',{endpoint:sub.endpoint}).catch(()=>{});await sub.unsubscribe();}}catch{}
+  avisar('Avisos desactivados en este celular');pushPintar();
+}
+async function pushProbar(){try{const r=await pushApi('prueba',{});avisar(r.enviados?'✅ Aviso de prueba enviado':'⚠️ No hay avisos activos para tu cuenta');}catch(e){avisar('No se pudo enviar la prueba: '+(e.message||e));}}
+function pushQuitar(){pushSub().then(sub=>{if(sub&&getToken())pushApi('quitar',{endpoint:sub.endpoint}).catch(()=>{});}).catch(()=>{});}
 
 // ════════════════════════
 //  NOTIFICACIONES
@@ -6014,7 +6064,8 @@ function renderPerfil(){
       <div style="font-size:12px;color:var(--tm)"><strong style="display:block;font-size:16px;color:var(--tx)">${mt.length}</strong>Tareas asignadas a mí</div>
       <div style="font-size:12px;color:var(--tm)"><strong style="display:block;font-size:16px;color:var(--tx)">${mt.filter(t=>eglobal(t)==='Completada').length}</strong>Completadas</div>
       <div style="font-size:12px;color:var(--tm)"><strong style="display:block;font-size:16px;color:var(--tx)">${fmtSaldo(mh)}</strong>Saldo compensatorio</div>
-    </div></div>`;
+    </div>${niv!=='lector'?'<div id="perfAvisos" style="margin-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px"></div>':''}</div>`;
+  pushPintar();
   const pNom=document.getElementById('pNom');pNom.value=u.nombre||'';pNom.readOnly=niv!=='lider';
   pNom.style.cursor=pNom.readOnly?'not-allowed':'';pNom.title=pNom.readOnly?'Solo el Líder cambia el nombre':'';
   document.getElementById('pCargo').value=u.cargo||'';

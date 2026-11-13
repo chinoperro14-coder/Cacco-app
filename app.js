@@ -8,6 +8,7 @@ const bcrypt   = require("bcrypt");
 const jwt      = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const { validarDatos, validarNombres, aplicarReglasRol, versionNivel, reponerOculto, veTodo, NIVELES, limitador } = require("./reglas");
+const { crearPush } = require("./push");
 
 const app        = express();
 // La clave de las sesiones nunca va en el código (el repositorio es público).
@@ -97,6 +98,8 @@ async function leerUsers() {
   cacheUsers = { t: Date.now(), lista };
   return lista;
 }
+const push = crearPush({ mongoose, MONGO_URI, DIR_DATOS, leerData, leerUsers });
+
 async function escribirUser(u) {
   cacheUsers = null;
   if (!MONGO_URI) {
@@ -306,6 +309,7 @@ app.post("/api/pedidos", async (req, res) => {
         detalle: `${folio} de ${r.registro.area}: "${r.tarea.titulo}" (${r.tarea.fecha}) · pide ${r.registro.solicitante}${parecida ? ` · se parece a "${parecida.titulo}"` : ""}` },
         ...(data.bitacora || [])].slice(0, 300);
       await escribirData(data);
+      push.avisarCambios({ ...data, notifs: data.notifs.slice(1) }, data, null);
       sumarEnvio(req, area);
       res.json({ ok: true, folio });
     });
@@ -355,6 +359,7 @@ app.post("/api/pedidos/correccion", async (req, res) => {
       data.bitacora = [{ id: r.correccion.id + "b", fecha, hora, usuario: "Formulario de pedidos", accion: "Pedido: corrección pedida",
         detalle: `${txt} (pide ${r.correccion.nombre}, ${reg.area})` }, ...(data.bitacora || [])].slice(0, 300);
       await escribirData(data);
+      push.avisarCambios({ ...data, notifs: data.notifs.slice(1) }, data, null);
       sumarEnvio(req, area);
       res.json({ ok: true });
     });
@@ -517,6 +522,7 @@ app.post("/api/data", verificarToken, async (req, res) => {
       const comoLoVe = d => { const { config, ...resto } = versionNivel(d, req.usuario); return JSON.stringify(resto); };
       const ajustado = comoLoVe(nuevo) !== comoLoVe(JSON.parse(enviado));
       const guardado = await escribirData(nuevo);
+      push.avisarCambios(actual, nuevo, req.usuario.id);
       // «ajustado»: el servidor deshizo algo que ese nivel no puede hacer; la página vuelve a cargar lo guardado
       res.json({ ok: true, huella: versionPara(guardado, req.usuario).huella, ajustado });
     });
@@ -720,6 +726,8 @@ app.post("/api/change-password", verificarToken, async (req, res) => {
   } catch { res.status(500).json({ error: "Error cambiando contraseña" }); }
 });
 
+push.rutas(app, verificarToken);
+
 // Cualquier otra ruta de /api/ no existe
 app.use("/api", (req, res) => res.status(404).json({ error: "No existe" }));
 
@@ -736,6 +744,7 @@ async function iniciar() {
   app.listen(PORT, () => console.log(`✅ Servidor CACCO corriendo en http://localhost:${PORT}`));
   respaldoDiario();
   setInterval(() => respaldoDiario(), 3600e3);
+  setInterval(() => push.revisarRecordatorios(), 60e3);
 }
 // Las pruebas (test/) cargan la app sin arrancar el servidor
 if (require.main === module) iniciar().catch(e => { console.error("Error al iniciar:", e); process.exit(1); });
