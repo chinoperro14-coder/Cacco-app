@@ -5683,7 +5683,7 @@ function docOirh(titulo,cuerpo,archivo,tituloVisor){
 @page{size:letter portrait;margin:12mm 20mm}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Times New Roman',Times,serif;font-size:15px;color:#000;background:#fff;padding:24px;max-width:780px;margin:0 auto}
-.logo{display:block;margin:0 auto 16px;width:160px;height:auto}
+.logo{display:block;margin:0 auto 16px;width:140px;height:auto}
 .tit{text-align:center;font-weight:700;font-size:15px;line-height:1.5;margin-bottom:26px}
 p{line-height:1.95;margin-bottom:12px}
 .just{text-align:justify}
@@ -5699,7 +5699,7 @@ ol.mot{list-style:none;margin:4px 0 16px 28px}ol.mot li{line-height:1.85;display
 .pie{font-size:10px;color:#666;margin-top:26px}
 @media print{body{padding:0;max-width:none}.pie{display:none}}
 </style></head><body>
-<img class="logo" src="${LOGO_MICULTURA}" alt="Gobierno Nacional · Con paso firme · Ministerio de Cultura">
+<img class="logo" src="${LOGO_MICULTURA}" alt="Gobierno Nacional · Ministerio de Cultura">
 ${cuerpo}
 </body></html>`;
   mostrarDocumento(html,tituloVisor,archivo);
@@ -6846,7 +6846,7 @@ function mostrarDocumento(htmlContent,titulo,archivo){
 // ════════════════════════
 // Logo del Ministerio de Cultura (va centrado arriba del título, como en el impreso)
 // Logo del Ministerio de Cultura para los formularios impresos (dirección completa: también sirve en el archivo descargado)
-const LOGO_MICULTURA=location.origin+'/logo-micultura.png';
+const LOGO_MICULTURA=location.origin+'/logo-micultura.png?v=2';
 function abrirMOirh(){
   if(!puede('registrarHora')){alert('Sin permiso.');return;}
   const sel=document.getElementById('oiMiem');
@@ -6903,7 +6903,7 @@ function generarOirh(){
     const filas=regs.map(h=>`<tr><td class="c">${fDia(h.fecha)}</td><td class="c">${esc(h.desde||'')}</td><td class="c">${esc(h.hasta||'')}</td><td class="c">${fTot(parseFloat(h.horas||0))}</td><td class="trab">${esc(h.actividad)}</td><td></td><td></td><td></td></tr>`);
     while(filas.length<MIN_FILAS)filas.push('<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>');
     return `<section class="hoja">
-<img class="logo" src="${LOGO_MICULTURA}" alt="Gobierno Nacional · Con paso firme · Ministerio de Cultura">
+<img class="logo" src="${LOGO_MICULTURA}" alt="Gobierno Nacional · Ministerio de Cultura">
 <div class="tit">OFICINA INSTITUCIONAL DE RECURSOS HUMANOS<br>REGISTRO DE HORAS EXTRAS</div>
 <div class="cab">
   <div class="campo"><span>Nombre del servidor público</span><b>${esc(p.nombre)}</b></div>
@@ -6929,7 +6929,7 @@ function generarOirh(){
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Times New Roman',Times,serif;font-size:12px;color:#000;background:#fff;padding:20px;max-width:1000px;margin:0 auto}
 .hoja+.hoja{page-break-before:always;break-before:page;margin-top:40px}
-.logo{display:block;margin:0 auto 4px;width:150px;height:auto}
+.logo{display:block;margin:0 auto 4px;width:130px;height:auto}
 .tit{text-align:center;font-weight:700;font-size:15px;line-height:1.25;margin:0 0 16px}
 .cab{width:81%;margin-bottom:12px}
 .campo{display:flex;align-items:flex-end;gap:4px;margin-bottom:6px;font-weight:700;font-size:12.5px}
@@ -8316,7 +8316,7 @@ function informeMensual(ym){
 @page{size:letter portrait;margin:14mm 16mm}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:Arial,Helvetica,sans-serif;font-size:12.5px;color:#1a1a1a;background:#fff;padding:28px;max-width:820px;margin:0 auto;line-height:1.45}
-.logo{display:block;margin:0 auto 10px;width:150px;height:auto}
+.logo{display:block;margin:0 auto 10px;width:130px;height:auto}
 .cab{text-align:center;border-bottom:2.5px solid #E35205;padding-bottom:12px;margin-bottom:16px}
 .cab h1{font-size:17px;letter-spacing:.6px;font-weight:800}
 .cab .s{font-size:12.5px;color:#444;margin-top:2px}
